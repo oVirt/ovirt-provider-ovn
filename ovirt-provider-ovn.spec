@@ -77,9 +77,12 @@ The driver handles the connection of NICs provisioned on oVirt hosts to OVN.
 %config(noreplace) %{_sysconfdir}/ovirt-provider-ovn/logger.conf
 %{_datadir}/ovirt-provider-ovn/*
 %{_unitdir}/ovirt-provider-ovn.service
+/etc/firewalld/services/ovirt-provider-ovn.xml
 
 
 %files driver
+%{_libexecdir}/vdsm/hooks/before_nic_hotplug/*
+%{_libexecdir}/vdsm/hooks/before_device_create/*
 %{_libexecdir}/vdsm/hooks/ovirt-provider-ovn/setup_ovn_controller.sh
 %{python_sitelib}/vdsm/tool/ovn_config.py
 
