@@ -27,7 +27,7 @@ import logging.config
 from keystone import TokenHandler
 
 
-LOG_CONFIG_FILE = '/opt/ovirt-provider-ovn/logger.conf'
+LOG_CONFIG_FILE = '/etc/ovirt-provider-ovn/logger.conf'
 
 
 def _init_logging():
@@ -47,6 +47,7 @@ def main():
         logging.info('Http shut down successfully, exiting. Bye.')
 
     atexit.register(kill_handler)
+
 
 if __name__ == '__main__':
     main()
