@@ -17,6 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
+from ovndb.ovn_rest2db_mappers import PortMapper
+
 
 TABLES = [['table0', ['column0', 'column1']]]
 REMOTE = 'address://url'
@@ -34,3 +36,15 @@ class OvnNetworkRow(object):
         self.name = name
         self.other_config = other_config or {}
         self.ports = ports or []
+
+    def verify(self, parent_children_column):
+        pass
+
+
+class OvnPortRow(object):
+    def __init__(self, uuid, name=None, options=None, device_id=None):
+        self.uuid = uuid
+        self.name = name
+        self.options = options or {PortMapper.DEVICE_ID: device_id}
+        self.dhcpv4_options = None
+        self.addresses = None
