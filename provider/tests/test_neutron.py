@@ -1,0 +1,146 @@
+# Copyright 2016 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+from __future__ import absolute_import
+
+from mock import MagicMock
+import mock
+import pytest
+
+from neutron import NeutronHandler
+
+from neutron_responses import rest
+
+
+REST_RESPONSE_GET = 'REST_RESPONSE_GET'
+REST_RESPONSE_SHOW = 'REST_RESPONSE_SHOW'
+REST_RESPONSE_POST = 'REST_RESPONSE_POST'
+
+
+@rest('GET', 'testports')
+def get_handler(nb_db, content, id):
+    return REST_RESPONSE_GET
+
+
+@rest('SHOW', 'testports')
+def show_handler(nb_db, content, id):
+    return REST_RESPONSE_SHOW + id
+
+
+@rest('DELETE', 'testports')
+def delete_handler(nb_db, content, id):
+    return None
+
+
+@rest('POST', 'testports')
+def post_handler(nb_db, content, id):
+    return REST_RESPONSE_POST + content
+
+
+@mock.patch('neutron.NeutronHandler._run_server', lambda *args: None)
+class TestNeutronHandler(object):
+
+    @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
+    @mock.patch('neutron.NeutronHandler.end_headers')
+    @mock.patch('neutron.NeutronHandler.send_header')
+    @mock.patch('neutron.NeutronHandler.send_response', autospec=True)
+    def test_handle_get_request(self, mock_send_response, mock_send_header,
+                                mock_end_headers, mock_ndb_api):
+
+        handler = NeutronHandler(None, None, None)
+        handler.wfile = MagicMock()
+        handler.path = '/v2.0/testports'
+
+        handler.do_GET()
+
+        assert mock_send_response.call_args[0][1] == 200
+        assert handler.wfile.write.call_args[0][0] == REST_RESPONSE_GET
+        assert mock_send_response.call_count == 1
+
+    @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
+    @mock.patch('neutron.NeutronHandler.end_headers')
+    @mock.patch('neutron.NeutronHandler.send_header')
+    @mock.patch('neutron.NeutronHandler.send_response', autospec=True)
+    def test_handle_get_request_with_id(self, mock_send_response,
+                                        mock_send_header, mock_end_headers,
+                                        mock_ndb_api):
+
+        handler = NeutronHandler(None, None, None)
+        handler.wfile = MagicMock()
+        id = '123456'
+        handler.path = '/v2.0/testports/' + id
+
+        handler.do_GET()
+
+        assert mock_send_response.call_args[0][1] == 200
+        assert handler.wfile.write.call_args[0][0] == REST_RESPONSE_SHOW + id
+        assert mock_send_response.call_count == 1
+
+    @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
+    @mock.patch('neutron.NeutronHandler.end_headers')
+    @mock.patch('neutron.NeutronHandler.send_header')
+    @mock.patch('neutron.NeutronHandler.send_response', autospec=True)
+    def test_handle_delete_request(self, mock_send_response, mock_send_header,
+                                   mock_end_headers, mock_ndb_api):
+
+        handler = NeutronHandler(None, None, None)
+        handler.wfile = MagicMock()
+        id = '123456'
+        handler.path = '/v2.0/testports/' + id
+
+        handler.do_DELETE()
+
+        assert mock_send_response.call_args[0][1] == 204
+        assert handler.wfile.write.call_count == 0
+        assert mock_send_response.call_count == 1
+
+    @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
+    @mock.patch('neutron.NeutronHandler.end_headers')
+    @mock.patch('neutron.NeutronHandler.send_header')
+    @mock.patch('neutron.NeutronHandler.send_response', autospec=True)
+    def test_handle_delete_with_no_id(self, mock_send_response,
+                                      mock_send_header, mock_end_headers,
+                                      mock_ndb_api):
+
+        handler = NeutronHandler(None, None, None)
+        handler.wfile = MagicMock()
+        handler.path = '/v2.0/testports'
+        with pytest.raises(AssertionError,
+                           message='Delete request must specify an id'):
+            handler.do_DELETE()
+
+    @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
+    @mock.patch('neutron.NeutronHandler.end_headers')
+    @mock.patch('neutron.NeutronHandler.send_header')
+    @mock.patch('neutron.NeutronHandler.send_response', autospec=True)
+    def test_handle_post_request(self, mock_send_response, mock_send_header,
+                                 mock_end_headers, mock_ndb_api):
+
+        handler = NeutronHandler(None, None, None)
+        handler.wfile = MagicMock()
+        handler.rfile = MagicMock()
+        handler.rfile.read.return_value = 'content'
+        handler.headers = {'Content-Length': 7}
+
+        handler.path = '/v2.0/testports'
+
+        handler.do_POST()
+
+        assert mock_send_response.call_args[0][1] == 200
+        expected_response = REST_RESPONSE_POST + 'content'
+        assert handler.wfile.write.call_args[0][0] == expected_response
+        assert mock_send_response.call_count == 1

@@ -25,6 +25,7 @@ import logging
 import logging.config
 
 from keystone import TokenHandler
+from neutron import NeutronHandler
 
 
 LOG_CONFIG_FILE = '/etc/ovirt-provider-ovn/logger.conf'
@@ -41,10 +42,15 @@ def main():
     server_keystone = HTTPServer(('', 35357), TokenHandler)
     Thread(target=server_keystone.serve_forever).start()
 
+    server_neutron = HTTPServer(('', 9696), NeutronHandler)
+    Thread(target=server_neutron.serve_forever).start()
+
     def kill_handler(signal, frame):
         logging.info('Shutting down http ...')
         server_keystone.shutdown()
+        server_neutron.shutdown()
         logging.info('Http shut down successfully, exiting. Bye.')
+        logging.shutdown()
 
     atexit.register(kill_handler)
 
