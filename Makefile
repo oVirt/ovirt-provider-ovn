@@ -31,11 +31,15 @@ install:
 	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/ provider/ovndb/*py
 	install -D provider/scripts/ovirt-provider-ovn.service $(DESTDIR)/usr/lib/systemd/system/ovirt-provider-ovn.service
 
+	install -m 744 -D driver/scripts/setup_ovn_controller.sh $(DESTDIR)/usr/libexec/vdsm/hooks/ovirt-provider-ovn/setup_ovn_controller.sh
+	install -D driver/vdsm_tool/ovn_config.py $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/ovn_config.py
+
 distcheck: check dist
 
 dist:
 	mkdir -p build/$(DIST_DIR)
 	cp -r provider build/$(DIST_DIR)/
+	cp -r driver build/$(DIST_DIR)/
 	cp Makefile build/$(DIST_DIR)/
 	tar -zcf $(DIST_FILE) -C build $(DIST_DIR)
 	rm -rf build

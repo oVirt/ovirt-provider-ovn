@@ -56,10 +56,32 @@ oVirt engine and OVN northd.
 %systemd_preun ovirt-provider-ovn.service
 
 
+%package driver
+Summary: The virtual interface driver for oVirt external network provider for OVN
+License: GPLv2+
+BuildArch: noarch
+Requires: firewalld-filesystem
+Requires: openvswitch >= 2.6
+Requires: openvswitch-ovn-host >= 2.6
+Requires: python-openvswitch  >= 2.6
+Requires: vdsm
+Requires(post): firewalld-filesystem
+
+
+%description driver
+The virtual interface driver for oVirt external network provider for OVN.
+The driver handles the connection of NICs provisioned on oVirt hosts to OVN.
+
+
 %files
 %config(noreplace) %{_sysconfdir}/ovirt-provider-ovn/logger.conf
 %{_datadir}/ovirt-provider-ovn/*
 %{_unitdir}/ovirt-provider-ovn.service
+
+
+%files driver
+%{_libexecdir}/vdsm/hooks/ovirt-provider-ovn/setup_ovn_controller.sh
+%{python_sitelib}/vdsm/tool/ovn_config.py
 
 
 %changelog
