@@ -49,11 +49,17 @@ external network API. The oVirt provider for OVN serves as a proxy between
 oVirt engine and OVN northd.
 
 %post
+%systemd_post ovirt-provider-ovn.service
+
+
+%preun
+%systemd_preun ovirt-provider-ovn.service
 
 
 %files
 %config(noreplace) %{_sysconfdir}/ovirt-provider-ovn/logger.conf
 %{_datadir}/ovirt-provider-ovn/*
+%{_unitdir}/ovirt-provider-ovn.service
 
 
 %changelog

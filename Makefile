@@ -29,6 +29,7 @@ install:
 	install -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/logger.conf
 	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ provider/*py
 	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/ provider/ovndb/*py
+	install -D provider/scripts/ovirt-provider-ovn.service $(DESTDIR)/usr/lib/systemd/system/ovirt-provider-ovn.service
 
 distcheck: check dist
 
