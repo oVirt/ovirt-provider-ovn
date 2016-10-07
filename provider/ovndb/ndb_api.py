@@ -23,7 +23,13 @@ import logging
 import six
 
 from .ovsdb_api import OvsDb
-from ovndb.ovn_rest2db_mappers import NetworkMapper, PortMapper
+from ovndb.ovn_rest2db_mappers import NetworkMapper, PortMapper, SubnetMapper
+
+
+# Locally administered mac for use by OVN to assign to dhcp server
+DHCP_SERVER_MAC = '02:00:00:00:00:00'
+# Make the lease time
+DHCP_LEASE_TIME = '86400'
 
 
 NetworkPort = namedtuple('NetworkPort', ['port', 'network'])
@@ -33,16 +39,19 @@ class OvnNbDb(OvsDb):
 
     NETWORK_TABLE = 'Logical_Switch'
     PORTS_TABLE = 'Logical_Switch_Port'
+    DHCP_TABLE = 'DHCP_Options'
     OVN_NB_OVSSCHEMA_FILE = '/usr/share/openvswitch/ovn-nb.ovsschema'
     NETWORK_TABLE_COLUMNS = ['name', 'ports', 'other_config']
     PORTS_TABLE_COLUMNS = ['name', 'type', 'options', 'parent_name', 'tag',
                            'up', 'enabled', 'addresses', 'port_security',
-                           'external_ids']
+                           'external_ids', 'dhcpv4_options']
+    DHCP_TABLE_COLUMNS = ['cidr', 'options', 'external_ids']
 
     def __init__(self, remote):
         tables = [
             (self.NETWORK_TABLE, self.NETWORK_TABLE_COLUMNS),
-            (self.PORTS_TABLE, self.PORTS_TABLE_COLUMNS)]
+            (self.PORTS_TABLE, self.PORTS_TABLE_COLUMNS),
+            (self.DHCP_TABLE, self.DHCP_TABLE_COLUMNS)]
         self.connect(tables, remote, self.OVN_NB_OVSSCHEMA_FILE)
 
     @property
@@ -84,6 +93,7 @@ class OvnNbDb(OvsDb):
         row = self.set_row(self.PORTS_TABLE, port_rest_data, PortMapper,
                            transaction)
         self._synchronize_network_ports(row, network_id)
+        self._set_port_subnet(row, network_id)
         self.commit(transaction)
         row = self.get_real_row_from_inserted(self.PORTS_TABLE, row,
                                               transaction)
@@ -107,6 +117,45 @@ class OvnNbDb(OvsDb):
         self._synchronize_network_ports(port_row, None)
         port_row.delete()
         self.commit(transaction)
+
+    def update_subnet(self, subnet):
+        network_row = self.get_network(subnet['network_id'])
+        self._validate_subnet(subnet, network_row)
+        transaction = self.create_transaction()
+        row = self.set_row(self.DHCP_TABLE, subnet, SubnetMapper, transaction)
+        row.setkey('options', 'server_mac', DHCP_SERVER_MAC)
+        row.setkey('options', 'lease_time', DHCP_LEASE_TIME)
+        network_row.setkey('other_config', NetworkMapper.SUBNET,
+                           subnet['cidr'])
+        self.commit(transaction)
+        return self.get_real_row_from_inserted(self.DHCP_TABLE, row,
+                                               transaction)
+
+    def get_subnets(self):
+        return [row for row in six.itervalues(
+                self._ovsdb_connection.tables[self.DHCP_TABLE].rows)
+                if 'network_id' in row.external_ids]
+
+    def get_subnet(self, id):
+        return self.row_lookup(self.DHCP_TABLE,
+                               lambda row: str(row.uuid) == id)
+
+    def delete_subnet(self, id):
+        row = self.row_lookup(self.DHCP_TABLE, lambda row: str(row.uuid) == id)
+        if not row:
+            return
+        transaction = self.create_transaction()
+        if 'network_id' in row.options:
+            network_row = self.get_network(row.options['network_id'])
+            if network_row:
+                port_rows = network_row.ports
+                network_row.delvalue('other_config', NetworkMapper.SUBNET)
+                for port in port_rows:
+                    port.dhcpv4_options = None
+        row.delete()
+        self.commit(transaction)
+        # TODO: should we update macs (delete 'dynamic' everywhere)?
+        # This will be known once the OVS IPAM patch is finished.
 
     def _get_port_row(self, id):
         return self.row_lookup(self.PORTS_TABLE,
@@ -144,3 +193,27 @@ class OvnNbDb(OvsDb):
 
     def _is_port_ovirt_controlled(self, port_row):
         return PortMapper.NIC_NAME in port_row.options
+
+    def _set_port_subnet(self, port_row, network_id):
+        subnet = self.row_lookup(self.DHCP_TABLE, lambda row:
+                                 str(row.external_ids.get('network_id')) ==
+                                 network_id)
+        if subnet:
+            port_row.dhcpv4_options = subnet
+            port_row.addresses = [port_row.addresses[0] + ' dynamic']
+
+    def _validate_subnet(self, subnet_values, network_row):
+        id = subnet_values['network_id']
+        if not network_row:
+            raise SubnetConfigError('Subnet can not be created, network {}'
+                                    ' does not exist'.format(id))
+
+        subnet = self.row_lookup(self.DHCP_TABLE, lambda row: row.external_ids.
+                                 get('network_id') == id)
+        if subnet is not None:
+            raise SubnetConfigError('Unable to create more than one subnet'
+                                    ' for network {}'.format(id))
+
+
+class SubnetConfigError(Exception):
+    pass

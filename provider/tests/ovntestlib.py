@@ -40,6 +40,9 @@ class OvnNetworkRow(object):
     def verify(self, parent_children_column):
         pass
 
+    def setkey(self, column_name, key, value):
+        getattr(self, column_name)[key] = value
+
 
 class OvnPortRow(object):
     def __init__(self, uuid, name=None, options=None, device_id=None):
@@ -48,3 +51,18 @@ class OvnPortRow(object):
         self.options = options or {PortMapper.DEVICE_ID: device_id}
         self.dhcpv4_options = None
         self.addresses = None
+
+
+class OvnSubnetRow(object):
+    def __init__(self, uuid, name=None, cidr=None, external_ids=None,
+                 options=None, network_id=None):
+        self.uuid = uuid
+        self.name = name
+        self.cidr = cidr
+        self.external_ids = external_ids or {}
+        self.options = options or {}
+        if network_id:
+            self.external_ids['network_id'] = network_id
+
+    def setkey(self, column_name, key, value):
+        getattr(self, column_name)[key] = value

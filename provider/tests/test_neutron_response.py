@@ -30,6 +30,7 @@ from neutron_responses import PUT
 
 from neutron_responses import NETWORKS
 from neutron_responses import PORTS
+from neutron_responses import SUBNETS
 
 from ovndb.ovn_rest2db_mappers import PortMapper
 from ovndb.ndb_api import NetworkPort
@@ -71,7 +72,7 @@ class TestNeutronResponse(object):
 
     def test_check_neutron_responses_required_by_engine_are_present(self):
         for method in [GET, SHOW, DELETE, POST]:
-            for path in [NETWORKS, PORTS]:
+            for path in [NETWORKS, PORTS, SUBNETS]:
                 assert responses()[method][path] is not None
         assert responses()[PUT][PORTS] is not None
         # This is a test call engine makes to check if provider is alive

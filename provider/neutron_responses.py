@@ -21,6 +21,7 @@ import json
 
 from ovndb.ovn_rest2db_mappers import NetworkMapper
 from ovndb.ovn_rest2db_mappers import PortMapper
+from ovndb.ovn_rest2db_mappers import SubnetMapper
 
 GET = 'GET'  # list of entities
 SHOW = 'SHOW'  # concrete entity
@@ -71,7 +72,7 @@ def show_port(nb_db, content, id=None):
 @rest(SHOW, SUBNETS)
 def show_subnet(nb_db, content, id):
     return json.dumps({
-        'subnet': ''
+        'subnet': SubnetMapper.row2rest(nb_db.get_subnet(id) if id else None)
     })
 
 
@@ -99,7 +100,8 @@ def get_ports(nb_db, content, id):
 @rest(GET, SUBNETS)
 def get_subnets(nb_db, content, id):
     return json.dumps({
-        'subnets': ''
+        'subnets': [SubnetMapper.row2rest(subnet)
+                    for subnet in nb_db.get_subnets()]
     })
 
 
@@ -117,7 +119,8 @@ def delete_port(nb_db, content=None, id=None):
 
 @rest(DELETE, SUBNETS)
 def delete_subnet(nb_db, content, id):
-    pass
+    if id is not None:
+        nb_db.delete_subnet(id)
 
 
 @rest(POST, NETWORKS)
@@ -138,7 +141,9 @@ def post_ports(nb_db, content, id):
 
 @rest(POST, SUBNETS)
 def post_subnets(nb_db, content, id):
-    return json.dumps({'subnet': ''})
+    received_subnet = json.loads(content)['subnet']
+    subnet = nb_db.update_subnet(received_subnet)
+    return json.dumps({'subnet': SubnetMapper.row2rest(subnet)})
 
 
 @rest(PUT, PORTS)

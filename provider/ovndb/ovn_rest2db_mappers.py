@@ -22,6 +22,8 @@ from ovndb.ovsdb_api import RestToDbRowMapper
 
 class NetworkMapper(RestToDbRowMapper):
 
+    SUBNET = 'subnet'
+
     @staticmethod
     def rest2row(rest_network_data, network_row):
         if 'name' in rest_network_data:
@@ -80,3 +82,73 @@ class PortMapper(RestToDbRowMapper):
         if port.addresses:
             rest_port_data['mac_address'] = port.addresses[0]
         return rest_port_data
+
+
+class SubnetMapper(RestToDbRowMapper):
+
+    GATEWAY_IP = 'gateway_ip'
+    CIDR = 'cidr'
+    DNS = 'dns_nameservers'
+
+    @staticmethod
+    def rest2row(rest_subnet_data, row):
+        SubnetMapper._validate_rest_input(rest_subnet_data)
+
+        options = {
+            'server_id': rest_subnet_data[SubnetMapper.CIDR].split('/', 1)[0],
+            'router': rest_subnet_data[SubnetMapper.GATEWAY_IP],
+        }
+        if SubnetMapper.DNS in rest_subnet_data:
+            dns_servers = rest_subnet_data[SubnetMapper.DNS]
+            if len(dns_servers) == 1:
+                options['dns_server'] = dns_servers[0]
+
+        external_ids = {
+            'name': rest_subnet_data['name'],
+            'network_id': rest_subnet_data['network_id']
+        }
+
+        row.cidr = rest_subnet_data['cidr']
+        row.options = options
+        row.external_ids = external_ids
+
+        # TODO: add support for IP v6
+        # rest_subnet_data['ip_version']
+        # The current status in OVN (2016-09-30) is that
+        # LS.other_config.subnet is only for IPv4
+
+    @staticmethod
+    def row2rest(row):
+        if not row:
+            return {}
+        options = row.options
+        external_ids = row.external_ids
+        result = {
+            'id': str(row.uuid),
+            'cidr': row.cidr,
+            'network_id': external_ids['network_id'],
+            'enable_dhcp': 'true',
+            'name': external_ids['name'],
+            'ip_version': 4,
+            'gateway_ip': options['router']
+        }
+        if 'dns_server' in options:
+            result['dns_nameservers'] = [options['dns_server']]
+        return result
+
+    @staticmethod
+    def _validate_rest_input(rest_data):
+        if SubnetMapper.GATEWAY_IP not in rest_data:
+            raise RestDataError('Default gateway must be specified to create'
+                                ' a subnet')
+
+        if SubnetMapper.CIDR not in rest_data:
+            raise RestDataError('Cidr must be specified to create a subnet')
+
+        if (SubnetMapper.DNS in rest_data and
+                len(rest_data[SubnetMapper.DNS]) > 1):
+            raise RestDataError('Only one DNS can be specified.')
+
+
+class RestDataError(Exception):
+    pass

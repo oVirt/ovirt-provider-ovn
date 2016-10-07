@@ -61,7 +61,8 @@ class TestOvnNbDb(object):
         }
         tables = {
             OvnNbDb.NETWORK_TABLE: OvnTable(networks),
-            OvnNbDb.PORTS_TABLE: OvnTable(ports)
+            OvnNbDb.PORTS_TABLE: OvnTable(ports),
+            OvnNbDb.DHCP_TABLE: OvnTable({})
         }
         mock_idl.Idl.return_value.tables = tables
 
