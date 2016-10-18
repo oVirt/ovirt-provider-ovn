@@ -172,3 +172,59 @@ class OvsDb(object):
 
     def create_transaction(self):
         return ovs.db.idl.Transaction(self._ovsdb_connection)
+
+    def update_child_parent(self, parent_table, child_row,
+                            new_parent_row, parent_children_column):
+        """
+        Updates the child-parent relation.
+        OVN keeps row relation info as a list of children in the parent row.
+        parent_table - table in which parent rows are stored
+        child_row - row with ports being added/updated/deleted
+        new_parent_row - new parent row, None if a child is deleted
+        parent_children_column - the column in parent table used to store
+        children
+        """
+        current_parent_row = self._get_current_parent(parent_table, child_row,
+                                                      parent_children_column)
+
+        if new_parent_row:
+            self._attach_child_row_to_parent(new_parent_row, child_row,
+                                             parent_children_column)
+        if current_parent_row:
+            self._detach_child_row_from_parent(current_parent_row, child_row,
+                                               parent_children_column)
+
+    def _get_current_parent(self, parent_table, child_row,
+                            parent_children_column):
+        for parent_row in six.itervalues(
+                self._ovsdb_connection.tables[parent_table].rows):
+            if OvsDb._is_current_parent(parent_row, child_row,
+                                        parent_children_column):
+                return parent_row
+        return None
+
+    @staticmethod
+    def _is_current_parent(parent_row, child_row, parent_children_column):
+        for parents_child_row in getattr(parent_row, parent_children_column):
+            if parents_child_row.uuid == child_row.uuid:
+                return True
+        return False
+
+    def _attach_child_row_to_parent(self, parent_row, child_row,
+                                    parent_children_column):
+        # TODO: replace with the following after moving to OVS 2.6.1
+        # parent_row.addvalue(parent_children_column, child_row)
+        new_children = []
+        new_children.append(child_row)
+        new_children.extend(getattr(parent_row, parent_children_column))
+        parent_row.verify(parent_children_column)
+        setattr(parent_row, parent_children_column, new_children)
+
+    def _detach_child_row_from_parent(self, parent_row, child_row,
+                                      parent_children_column):
+        # TODO: replace with the following after moving to OVS 2.6.1
+        # parent_row.delvalue(parent_children_column, child_row)
+        new_children = [p for p in getattr(parent_row, parent_children_column)
+                        if p.uuid != child_row.uuid]
+        parent_row.verify(parent_children_column)
+        setattr(parent_row, parent_children_column, new_children)
