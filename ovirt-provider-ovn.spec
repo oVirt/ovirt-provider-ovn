@@ -79,6 +79,7 @@ The driver handles the connection of NICs provisioned on oVirt hosts to OVN.
 
 %files
 %config(noreplace) %{_sysconfdir}/ovirt-provider-ovn/logger.conf
+%config(noreplace) %{_sysconfdir}/ovirt-provider-ovn/ovirt-provider-ovn.conf
 %{_datadir}/ovirt-provider-ovn/*
 %{_unitdir}/ovirt-provider-ovn.service
 /etc/firewalld/services/ovirt-provider-ovn.xml

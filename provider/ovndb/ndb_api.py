@@ -22,6 +22,7 @@ import logging
 
 import six
 
+import ovirt_provider_config
 from .ovsdb_api import OvsDb
 from ovndb.ovn_rest2db_mappers import NetworkMapper, PortMapper, SubnetMapper
 
@@ -123,8 +124,8 @@ class OvnNbDb(OvsDb):
         self._validate_subnet(subnet, network_row)
         transaction = self.create_transaction()
         row = self.set_row(self.DHCP_TABLE, subnet, SubnetMapper, transaction)
-        row.setkey('options', 'server_mac', DHCP_SERVER_MAC)
-        row.setkey('options', 'lease_time', DHCP_LEASE_TIME)
+        row.setkey('options', 'server_mac', OvnNbDb._dhcp_server_mac)
+        row.setkey('options', 'lease_time', OvnNbDb._dhcp_lease_time)
         network_row.setkey('other_config', NetworkMapper.SUBNET,
                            subnet['cidr'])
         self.commit(transaction)
@@ -213,6 +214,18 @@ class OvnNbDb(OvsDb):
         if subnet is not None:
             raise SubnetConfigError('Unable to create more than one subnet'
                                     ' for network {}'.format(id))
+
+    @staticmethod
+    @property
+    def _dhcp_lease_time():
+        return ovirt_provider_config.get('DHCP', 'dhcp-lease-time',
+                                         DHCP_LEASE_TIME)
+
+    @staticmethod
+    @property
+    def _dhcp_server_mac():
+        return ovirt_provider_config.get('DHCP', 'dhcp-server-mac',
+                                         DHCP_SERVER_MAC)
 
 
 class SubnetConfigError(Exception):

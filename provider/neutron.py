@@ -22,6 +22,7 @@ from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
 
 import logging
 
+import ovirt_provider_config
 from neutron_responses import DELETE
 from neutron_responses import GET
 from neutron_responses import POST
@@ -31,6 +32,9 @@ from neutron_responses import responses
 from ovndb.ndb_api import OvnNbDb
 
 
+OVN_REMOTE_AT_LOCALHOST = 'tcp:127.0.0.1:6641'
+
+
 class IncorrectRequestError(AttributeError):
     pass
 
@@ -38,19 +42,13 @@ class IncorrectRequestError(AttributeError):
 class NeutronHandler(BaseHTTPRequestHandler):
 
     # TODO: this is made configurable in a later patch
-    OVN_REMOTE_AT_LOCALHOST = 'tcp:127.0.0.1:6641'
 
     def __init__(self, request, client_address, server):
-        self.response_handler = ResponseHandler(self._get_remote())
+        self.response_handler = ResponseHandler(self._remote)
         self._run_server(request, client_address, server)
 
     def _run_server(self, request, client_address, server):
         BaseHTTPRequestHandler.__init__(self, request, client_address, server)
-
-    @staticmethod
-    def _get_remote():
-        # TODO: for now we only want to connect to localhost
-        return NeutronHandler.OVN_REMOTE_AT_LOCALHOST
 
     def do_GET(self):
         self._handle_request(SHOW if self._parse_request_path(self.path)[1]
@@ -120,6 +118,12 @@ class NeutronHandler(BaseHTTPRequestHandler):
         path = full_path[6:] if len(full_path) >= 6 else None
         key, id = path.split('/', 1) if '/' in path else (path, None)
         return key, id
+
+    @staticmethod
+    @property
+    def _remote():
+        return ovirt_provider_config.get('OVN REMOTE', 'ovn-remote',
+                                         OVN_REMOTE_AT_LOCALHOST)
 
 
 class ResponseHandler(object):
