@@ -1,0 +1,7 @@
+pytest
+python-mock
+python-openvswitch
+python-pytest
+python-setuptools
+python2-pytest
+python2-setuptools
