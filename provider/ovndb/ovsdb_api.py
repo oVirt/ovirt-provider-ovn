@@ -117,6 +117,9 @@ class OvsDb(object):
                 return row
         return None
 
+    def row_lookup_by_id(self, table, id):
+        return self.row_lookup(table, lambda row: str(row.uuid) == id)
+
     def commit(self, transaction):
         status = transaction.commit_block()
         if (status == ovs.db.idl.Transaction.ERROR or
@@ -142,7 +145,7 @@ class OvsDb(object):
         commit.
         """
         received_id = rest_values_dict.get('id')
-        row = (self.row_lookup(table, lambda row: str(row.uuid) == received_id)
+        row = (self.row_lookup_by_id(table, received_id)
                if received_id else None)
         if not row:
             row = transaction.insert(self._ovsdb_connection.tables[table])
@@ -156,8 +159,7 @@ class OvsDb(object):
         if not self._is_new_row(row.uuid, transaction):
             return row
         new_row_uuid = transaction.get_insert_uuid(row.uuid)
-        new_row = self.row_lookup(table, lambda row:
-                                  row.uuid == new_row_uuid)
+        new_row = self.row_lookup(table, lambda row: row.uuid == new_row_uuid)
         return new_row
 
     def _is_new_row(self, uuid, transaction):

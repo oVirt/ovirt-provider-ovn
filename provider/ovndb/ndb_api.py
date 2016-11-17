@@ -68,8 +68,7 @@ class OvnNbDb(OvsDb):
                 if self._is_port_ovirt_controlled(port_row)]
 
     def get_network(self, id):
-        return self.row_lookup(self.NETWORK_TABLE,
-                               lambda row: str(row.uuid) == id)
+        return self.row_lookup_by_id(self.NETWORK_TABLE, id)
 
     def get_port(self, port_id):
         port_row = self._get_port_row(port_id)
@@ -144,11 +143,10 @@ class OvnNbDb(OvsDb):
                 if 'network_id' in row.external_ids]
 
     def get_subnet(self, id):
-        return self.row_lookup(self.DHCP_TABLE,
-                               lambda row: str(row.uuid) == id)
+        return self.row_lookup_by_id(self.DHCP_TABLE, id)
 
     def delete_subnet(self, id):
-        row = self.row_lookup(self.DHCP_TABLE, lambda row: str(row.uuid) == id)
+        row = self.row_lookup_by_id(self.DHCP_TABLE, id)
         if row is None:
             raise DeletedRowDoesNotExistError('Subnet {} does not exist'
                                               .format(id))
@@ -166,13 +164,11 @@ class OvnNbDb(OvsDb):
         # This will be known once the OVS IPAM patch is finished.
 
     def _get_port_row(self, id):
-        return self.row_lookup(self.PORTS_TABLE,
-                               lambda row: str(row.uuid) == id)
+        return self.row_lookup_by_id(self.PORTS_TABLE, id)
 
     def _synchronize_network_ports(self, port, network_id):
         if network_id:
-            network = self.row_lookup(self.NETWORK_TABLE,
-                                      lambda row: str(row.uuid) == network_id)
+            network = self.row_lookup_by_id(self.NETWORK_TABLE, network_id)
         else:
             network = None
         self.update_child_parent(self.NETWORK_TABLE, port, network, 'ports')

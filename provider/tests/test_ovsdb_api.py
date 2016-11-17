@@ -47,12 +47,22 @@ class TestOvsDb(object):
                    }
         mock_idl.Idl.return_value.tables = {TABLE_NAME: OvnTable(db_rows)}
 
-    def test_fetch_row_by_value(self, mock_idl):
+    def test_fetch_row_by_predicate(self, mock_idl):
         self.setup_db(mock_idl)
 
         ovsdb = OvsDb()
         ovsdb.connect(TABLES, REMOTE, SCHEMA_FILE)
         row = ovsdb.row_lookup(TABLE_NAME, lambda row: row.uuid == 1)
+
+        assert row.uuid == 1
+        assert row.name == 'name1'
+
+    def test_fetch_row_by_id(self, mock_idl):
+        self.setup_db(mock_idl)
+
+        ovsdb = OvsDb()
+        ovsdb.connect(TABLES, REMOTE, SCHEMA_FILE)
+        row = ovsdb.row_lookup_by_id(TABLE_NAME, '1')
 
         assert row.uuid == 1
         assert row.name == 'name1'
