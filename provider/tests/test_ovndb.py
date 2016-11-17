@@ -19,8 +19,10 @@ from __future__ import absolute_import
 
 from uuid import UUID
 import mock
+import pytest
 
 from ovndb.ovn_rest2db_mappers import PortMapper
+from ovndb.ndb_api import DeletedRowDoesNotExistError
 from ovndb.ndb_api import OvnNbDb
 
 from ovntestlib import OvnNetworkRow
@@ -197,6 +199,20 @@ class TestOvnNbDb(object):
         assert new_port.network.uuid == ID11
 
         transaction.get_insert_uuid.assert_called_with(ID07)
+
+    def test_delete_unknown_network_fails(self, mock_idl):
+        TestOvnNbDb.setup_db(mock_idl)
+
+        with pytest.raises(DeletedRowDoesNotExistError):
+            ovndb = OvnNbDb(OVN_REMOTE)
+            ovndb.delete_network(str(ID01))
+
+    def test_delete_unknown_port_fails(self, mock_idl):
+        TestOvnNbDb.setup_db(mock_idl)
+
+        with pytest.raises(DeletedRowDoesNotExistError):
+            ovndb = OvnNbDb(OVN_REMOTE)
+            ovndb.delete_port(str(ID10))
 
     def _assert_netport(self, netport,  expected_port_id,
                         expected_network_id):

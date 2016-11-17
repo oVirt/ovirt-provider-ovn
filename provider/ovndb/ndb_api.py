@@ -109,12 +109,18 @@ class OvnNbDb(OvsDb):
     def delete_network(self, network_id):
         transaction = self.create_transaction()
         network_row = self.get_network(network_id)
+        if network_row is None:
+            raise DeletedRowDoesNotExistError('Network {} does not exist.'
+                                              .format(network_id))
         network_row.delete()
         self.commit(transaction)
 
     def delete_port(self, port_id):
         transaction = self.create_transaction()
         port_row = self._get_port_row(port_id)
+        if port_row is None:
+            raise DeletedRowDoesNotExistError('Port {} does not exist.'
+                                              .format(port_id))
         self._synchronize_network_ports(port_row, None)
         port_row.delete()
         self.commit(transaction)
@@ -143,8 +149,9 @@ class OvnNbDb(OvsDb):
 
     def delete_subnet(self, id):
         row = self.row_lookup(self.DHCP_TABLE, lambda row: str(row.uuid) == id)
-        if not row:
-            return
+        if row is None:
+            raise DeletedRowDoesNotExistError('Subnet {} does not exist'
+                                              .format(id))
         transaction = self.create_transaction()
         if 'network_id' in row.options:
             network_row = self.get_network(row.options['network_id'])
@@ -226,6 +233,10 @@ class OvnNbDb(OvsDb):
     def _dhcp_server_mac():
         return ovirt_provider_config.get('DHCP', 'dhcp-server-mac',
                                          DHCP_SERVER_MAC)
+
+
+class DeletedRowDoesNotExistError(Exception):
+    pass
 
 
 class SubnetConfigError(Exception):

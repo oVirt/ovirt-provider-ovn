@@ -23,6 +23,7 @@ import mock
 import pytest
 
 from ovndb.ovn_rest2db_mappers import PortMapper
+from ovndb.ndb_api import DeletedRowDoesNotExistError
 from ovndb.ndb_api import OvnNbDb
 from ovndb.ndb_api import SubnetConfigError
 from ovntestlib import OvnNetworkRow
@@ -164,3 +165,10 @@ class TestOvnDbSubnets():
                 'dns_nameservers': ['1.1.1.1'],
                 'network_id': str(ID19),
             })
+
+    def test_delete_unknown_subnet_fails(self, mock_idl):
+        self.setup_db(mock_idl)
+
+        with pytest.raises(DeletedRowDoesNotExistError):
+            ovndb = OvnNbDb(OVN_REMOTE)
+            ovndb.delete_subnet(str(ID10))
