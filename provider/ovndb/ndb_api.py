@@ -112,7 +112,15 @@ class OvnNbDb(OvsDb):
             raise DeletedRowDoesNotExistError('Network {} does not exist.'
                                               .format(network_id))
         network_row.delete()
+        self._delete_subnet_for_network(network_id)
         self.commit(transaction)
+
+    def _delete_subnet_for_network(self, network_id):
+        subnet_row = self.row_lookup(self.DHCP_TABLE,
+                                     lambda row: row.external_ids.
+                                     get('network_id') == network_id)
+        if subnet_row:
+            self._delete_subnet_row(subnet_row)
 
     def delete_port(self, port_id):
         transaction = self.create_transaction()
@@ -151,17 +159,23 @@ class OvnNbDb(OvsDb):
             raise DeletedRowDoesNotExistError('Subnet {} does not exist'
                                               .format(id))
         transaction = self.create_transaction()
-        if 'network_id' in row.options:
-            network_row = self.get_network(row.options['network_id'])
+        self._delete_subnet_references(row)
+        self._delete_subnet_row(row)
+        self.commit(transaction)
+        # TODO: should we update macs (delete 'dynamic' everywhere)?
+        # This will be known once the OVS IPAM patch is finished.
+
+    def _delete_subnet_references(self, subnet_row):
+        if 'network_id' in subnet_row.options:
+            network_row = self.get_network(subnet_row.options['network_id'])
             if network_row:
                 port_rows = network_row.ports
                 network_row.delvalue('other_config', NetworkMapper.SUBNET)
                 for port in port_rows:
                     port.dhcpv4_options = None
-        row.delete()
-        self.commit(transaction)
-        # TODO: should we update macs (delete 'dynamic' everywhere)?
-        # This will be known once the OVS IPAM patch is finished.
+
+    def _delete_subnet_row(self, subnet_row):
+        subnet_row.delete()
 
     def _get_port_row(self, id):
         return self.row_lookup_by_id(self.PORTS_TABLE, id)

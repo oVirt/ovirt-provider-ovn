@@ -27,6 +27,7 @@ from ovndb.ndb_api import OvnNbDb
 
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
+from ovntestlib import OvnSubnetRow
 from ovntestlib import OvnTable
 
 
@@ -42,6 +43,8 @@ ID03 = UUID(int=3)
 ID07 = UUID(int=7)
 ID10 = UUID(int=10)
 ID11 = UUID(int=11)
+ID12 = UUID(int=12)
+ID21 = UUID(int=21)
 
 
 @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
@@ -59,12 +62,17 @@ class TestOvnNbDb(object):
         }
         networks = {
             10: OvnNetworkRow(ID10, ports=[port_1, port_2]),
-            11: OvnNetworkRow(ID11)
+            11: OvnNetworkRow(ID11),
+            12: OvnNetworkRow(ID12)
+
+        }
+        subnets = {
+            21: OvnSubnetRow(ID21, network_id=str(ID12))
         }
         tables = {
             OvnNbDb.NETWORK_TABLE: OvnTable(networks),
             OvnNbDb.PORTS_TABLE: OvnTable(ports),
-            OvnNbDb.DHCP_TABLE: OvnTable({})
+            OvnNbDb.DHCP_TABLE: OvnTable(subnets)
         }
         mock_idl.Idl.return_value.tables = tables
 
@@ -74,10 +82,11 @@ class TestOvnNbDb(object):
         ovndb = OvnNbDb(OVN_REMOTE)
         networks = ovndb.networks
 
-        assert len(networks) == 2
+        assert len(networks) == 3
         networks = sorted(networks, key=lambda row: row.uuid)
         assert networks[0].uuid == ID10
         assert networks[1].uuid == ID11
+        assert networks[2].uuid == ID12
 
     def test_get_multiple_ports(self, mock_idl):
         TestOvnNbDb.setup_db(mock_idl)
@@ -120,7 +129,7 @@ class TestOvnNbDb(object):
         networks = ovndb.networks
 
         assert updated_network.uuid == ID11
-        assert len(networks) == 2
+        assert len(networks) == 3
         networks = sorted(networks, key=lambda row: row.uuid)
         assert networks[0].uuid == ID10
         assert networks[1].uuid == ID11
@@ -213,6 +222,15 @@ class TestOvnNbDb(object):
         with pytest.raises(DeletedRowDoesNotExistError):
             ovndb = OvnNbDb(OVN_REMOTE)
             ovndb.delete_port(str(ID10))
+
+    def test_delete_network(self, mock_idl):
+        TestOvnNbDb.setup_db(mock_idl)
+
+        ovndb = OvnNbDb(OVN_REMOTE)
+        ovndb.delete_network(str(ID12))
+
+        assert ovndb.get_network(str(ID12)).deleted
+        assert ovndb.get_subnet(str(ID21)).deleted
 
     def _assert_netport(self, netport,  expected_port_id,
                         expected_network_id):

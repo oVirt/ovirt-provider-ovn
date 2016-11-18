@@ -30,12 +30,10 @@ class OvnTable(object):
         self.rows = rows
 
 
-class OvnNetworkRow(object):
-    def __init__(self, uuid, name=None, other_config=None, ports=None):
-        self.uuid = uuid
-        self.name = name
-        self.other_config = other_config or {}
-        self.ports = ports or []
+class OvnRow(object):
+
+    def __init__(self):
+        self.deleted = False
 
     def verify(self, parent_children_column):
         pass
@@ -43,8 +41,19 @@ class OvnNetworkRow(object):
     def setkey(self, column_name, key, value):
         getattr(self, column_name)[key] = value
 
+    def delete(self):
+        self.deleted = True
 
-class OvnPortRow(object):
+
+class OvnNetworkRow(OvnRow):
+    def __init__(self, uuid, name=None, other_config=None, ports=None):
+        self.uuid = uuid
+        self.name = name
+        self.other_config = other_config or {}
+        self.ports = ports or []
+
+
+class OvnPortRow(OvnRow):
     def __init__(self, uuid, name=None, options=None, device_id=None):
         self.uuid = uuid
         self.name = name
@@ -53,7 +62,7 @@ class OvnPortRow(object):
         self.addresses = None
 
 
-class OvnSubnetRow(object):
+class OvnSubnetRow(OvnRow):
     def __init__(self, uuid, name=None, cidr=None, external_ids=None,
                  options=None, network_id=None):
         self.uuid = uuid
@@ -63,6 +72,3 @@ class OvnSubnetRow(object):
         self.options = options or {}
         if network_id:
             self.external_ids['network_id'] = network_id
-
-    def setkey(self, column_name, key, value):
-        getattr(self, column_name)[key] = value
