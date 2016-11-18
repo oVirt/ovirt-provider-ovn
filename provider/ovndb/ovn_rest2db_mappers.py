@@ -32,6 +32,8 @@ class NetworkMapper(RestToDbRowMapper):
 
     @staticmethod
     def row2rest(network_row):
+        if not network_row:
+            return {}
         return {
             'id': str(network_row.uuid),
             'name': str(network_row.name)
@@ -71,6 +73,8 @@ class PortMapper(RestToDbRowMapper):
 
     @staticmethod
     def row2rest(row):
+        if not row:
+            return {}
         port, network = row
         rest_port_data = {
             'id': str(port.uuid),
