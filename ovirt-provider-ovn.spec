@@ -30,6 +30,7 @@ URL:            https://gerrit.ovirt.org/#/admin/projects/ovirt-provider-ovn
 Source0:        %{name}-%{version}.tar.gz
 
 Requires: openvswitch-ovn-central >= 2.6, python-openvswitch >= 2.6, firewalld-filesystem
+Requires: kernel >= 3.10.0-512
 
 %prep
 %setup -q
@@ -61,6 +62,7 @@ Summary: The virtual interface driver for oVirt external network provider for OV
 License: GPLv2+
 BuildArch: noarch
 Requires: firewalld-filesystem
+Requires: kernel >= 3.10.0-512
 Requires: openvswitch >= 2.6
 Requires: openvswitch-ovn-host >= 2.6
 Requires: python-openvswitch  >= 2.6
