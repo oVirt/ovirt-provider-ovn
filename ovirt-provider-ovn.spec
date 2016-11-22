@@ -29,8 +29,10 @@ BuildArch:      noarch
 URL:            https://gerrit.ovirt.org/#/admin/projects/ovirt-provider-ovn
 Source0:        %{name}-%{version}.tar.gz
 
-Requires: openvswitch-ovn-central >= 2.6, python-openvswitch >= 2.6, firewalld-filesystem
+Requires: firewalld-filesystem
 Requires: kernel >= 3.10.0-512
+Requires: openvswitch-ovn-central >= 2.6
+Requires: python-openvswitch >= 2.6
 
 %prep
 %setup -q
