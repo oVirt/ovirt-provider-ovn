@@ -158,11 +158,11 @@ def put_ports(nb_db, content, id):
 
 @rest(GET, 'tech')
 def get_debug(nb_db, content, id):
-    networks = nb_db.get_networks()
-    ports = nb_db.get_ports()
+    networks = nb_db.networks
+    ports = nb_db.ports
     response = json.dumps({
         'networks': [NetworkMapper.row2rest(network) for network in networks],
-        'ports': [PortMapper.row2rest() for port in ports]
+        'ports': [PortMapper.row2rest(port) for port in ports]
     })
     return response
 
