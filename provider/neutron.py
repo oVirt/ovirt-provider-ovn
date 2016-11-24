@@ -44,7 +44,7 @@ class NeutronHandler(BaseHTTPRequestHandler):
     # TODO: this is made configurable in a later patch
 
     def __init__(self, request, client_address, server):
-        self.response_handler = ResponseHandler(self._remote)
+        self.response_handler = ResponseHandler(self._remote())
         self._run_server(request, client_address, server)
 
     def _run_server(self, request, client_address, server):
@@ -120,7 +120,6 @@ class NeutronHandler(BaseHTTPRequestHandler):
         return key, id
 
     @staticmethod
-    @property
     def _remote():
         return ovirt_provider_config.get('OVN REMOTE', 'ovn-remote',
                                          OVN_REMOTE_AT_LOCALHOST)

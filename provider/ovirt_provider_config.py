@@ -27,12 +27,12 @@ CONFIG_FILE = '/etc/ovirt-provider-ovn/ovirt-provider-ovn.conf'
 _config = None
 
 
-def load(self):
+def load():
     global _config
-    self._config = ConfigParser.ConfigParser()
+    _config = ConfigParser.ConfigParser()
     _config.read(CONFIG_FILE)
 
 
-def get(self, section, key, default=None):
+def get(section, key, default=None):
     global _config
     return _config.get(section, key) if _config else default
