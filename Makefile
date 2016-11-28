@@ -45,6 +45,7 @@ dist:
 	cp -r provider build/$(DIST_DIR)/
 	cp -r driver build/$(DIST_DIR)/
 	cp Makefile build/$(DIST_DIR)/
+	cp ovirt-provider-ovn.spec build/$(DIST_DIR)/
 	tar -zcf $(DIST_FILE) -C build $(DIST_DIR)
 	rm -rf build
 
