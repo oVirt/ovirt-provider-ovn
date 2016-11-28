@@ -23,6 +23,7 @@ import mock
 import pytest
 
 from ovndb.ovn_rest2db_mappers import PortMapper
+from ovndb.ovn_rest2db_mappers import SubnetMapper
 from ovndb.ndb_api import DeletedRowDoesNotExistError
 from ovndb.ndb_api import OvnNbDb
 from ovndb.ndb_api import SubnetConfigError
@@ -48,8 +49,8 @@ ID27 = UUID(int=27)
 class TestOvnDbSubnets():
 
     def setup_db(self, mock_idl):
-        port_1 = OvnPortRow(ID01, options={PortMapper.NIC_NAME: 'port1'})
-        port_2 = OvnPortRow(ID02, options={PortMapper.NIC_NAME: 'port1'})
+        port_1 = OvnPortRow(ID01, external_ids={PortMapper.NIC_NAME: 'port1'})
+        port_2 = OvnPortRow(ID02, external_ids={PortMapper.NIC_NAME: 'port1'})
         port_3 = OvnPortRow(ID03)
         ports = {
             ID01: port_1,
@@ -98,12 +99,12 @@ class TestOvnDbSubnets():
 
         ovndb = OvnNbDb(OVN_REMOTE)
         subnet = ovndb.update_subnet({
-            'name': 'subnet_name',
+            SubnetMapper.REST_NAME: 'subnet_name',
             'cidr': '10.10.10.0/24',
             'server_mac': 'ma:ca:ad:dr:es',
             'gateway_ip': '10.10.10.255',
             'dns_nameservers': ['1.1.1.1'],
-            'network_id': str(ID11),
+            SubnetMapper.REST_NETWORK_ID: str(ID11),
         })
 
         assert subnet.uuid == ID21
@@ -116,12 +117,12 @@ class TestOvnDbSubnets():
         ovndb = OvnNbDb(OVN_REMOTE)
         ovndb.update_subnet({
             'id': str(ID21),
-            'name': 'subnet_name',
+            SubnetMapper.REST_NAME: 'subnet_name',
             'cidr': '10.10.10.0/24',
             'server_mac': 'ma:ca:ad:dr:es',
             'gateway_ip': '10.10.10.255',
             'dns_nameservers': ['1.1.1.1'],
-            'network_id': str(ID11),
+            SubnetMapper.REST_NETWORK_ID: str(ID11),
         })
 
         subnet = ovndb.get_subnet(str(ID21))
@@ -132,8 +133,8 @@ class TestOvnDbSubnets():
         assert options['router'] == '10.10.10.255'
         assert options['dns_server'] == '1.1.1.1'
 
-        assert subnet.external_ids['name'] == 'subnet_name'
-        assert subnet.external_ids['network_id'] == str(ID11)
+        assert subnet.external_ids[SubnetMapper.NAME] == 'subnet_name'
+        assert subnet.external_ids[SubnetMapper.NETWORK_ID] == str(ID11)
 
     def test_add_second_subnet_to_network_fails(self, mock_idl):
         self.setup_db(mock_idl)
@@ -142,12 +143,12 @@ class TestOvnDbSubnets():
                            message='Unable to create more than one subnet '
                            ' for network {}'.format(ID10)):
             ovndb.update_subnet({
-                'name': 'subnet_name',
+                SubnetMapper.REST_NAME: 'subnet_name',
                 'cidr': '10.10.10.0/24',
                 'server_mac': 'ma:ca:ad:dr:es',
                 'gateway_ip': '10.10.10.255',
                 'dns_nameservers': ['1.1.1.1'],
-                'network_id': str(ID10),
+                SubnetMapper.REST_NETWORK_ID: str(ID10),
             })
 
     def test_add_subnet_to_non_existing_network_fails(self, mock_idl):
@@ -158,12 +159,12 @@ class TestOvnDbSubnets():
                            message='Subnet can not be created, network {}'
                            ' does not exist'.format(ID19)):
             ovndb.update_subnet({
-                'name': 'subnet_name',
+                SubnetMapper.REST_NAME: 'subnet_name',
                 'cidr': '10.10.10.0/24',
                 'server_mac': 'ma:ca:ad:dr:es',
                 'gateway_ip': '10.10.10.255',
                 'dns_nameservers': ['1.1.1.1'],
-                'network_id': str(ID19),
+                SubnetMapper.REST_NETWORK_ID: str(ID19),
             })
 
     def test_delete_unknown_subnet_fails(self, mock_idl):

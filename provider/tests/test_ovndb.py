@@ -52,8 +52,8 @@ class TestOvnNbDb(object):
 
     @staticmethod
     def setup_db(mock_idl):
-        port_1 = OvnPortRow(ID01, options={PortMapper.NIC_NAME: 'port1'})
-        port_2 = OvnPortRow(ID02, options={PortMapper.NIC_NAME: 'port2'})
+        port_1 = OvnPortRow(ID01, external_ids={PortMapper.NIC_NAME: 'port1'})
+        port_2 = OvnPortRow(ID02, external_ids={PortMapper.NIC_NAME: 'port2'})
         port_3 = OvnPortRow(ID03)
         ports = {
             1: port_1,
@@ -172,8 +172,8 @@ class TestOvnNbDb(object):
         assert port.uuid == ID02
         assert port.name == str(ID02)
         assert port.addresses == [MAC_ADDRESS]
-        assert port.options[PortMapper.DEVICE_ID] == DEVICE_ID
-        assert port.options[PortMapper.NIC_NAME] == NIC_NAME
+        assert port.external_ids[PortMapper.DEVICE_ID] == DEVICE_ID
+        assert port.external_ids[PortMapper.NIC_NAME] == NIC_NAME
 
         assert netport.network.uuid == ID11
 

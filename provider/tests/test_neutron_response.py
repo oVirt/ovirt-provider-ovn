@@ -53,7 +53,7 @@ class PortRow(object):
         self.uuid = uuid
         self.name = name
         self.addresses = [mac]
-        self.options = {PortMapper.DEVICE_ID: device_id}
+        self.external_ids = {PortMapper.DEVICE_ID: device_id}
 
 
 class TestNeutronResponse(object):

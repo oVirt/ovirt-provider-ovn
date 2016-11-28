@@ -20,6 +20,9 @@ from __future__ import absolute_import
 from ovndb.ovsdb_api import RestToDbRowMapper
 
 
+EXTERNAL_IDS = 'external_ids'
+
+
 class NetworkMapper(RestToDbRowMapper):
 
     SUBNET = 'subnet'
@@ -43,10 +46,11 @@ class NetworkMapper(RestToDbRowMapper):
 class PortMapper(RestToDbRowMapper):
 
     DEVICE_OWNER_OVIRT = 'oVirt'
-    DEVICE_ID = 'device_id'
-    NIC_NAME = 'nic_name'
-    NAME = 'name'
-    NETWORK_ID = 'network_id'
+    DEVICE_ID = 'ovirt_device_id'
+    REST_DEVICE_ID = 'device_id'
+    NIC_NAME = 'ovirt_nic_name'
+    REST_NAME = 'name'
+    REST_NETWORK_ID = 'network_id'
 
     @staticmethod
     def rest2row(rest_data, port_row):
@@ -62,14 +66,13 @@ class PortMapper(RestToDbRowMapper):
         if 'enabled' in rest_data:
             port_row.enabled = rest_data['enabled']
 
-        # For a new row 'options' will be None
-        options = getattr(port_row, 'options', {})
-
-        if PortMapper.DEVICE_ID in rest_data:
-            options[PortMapper.DEVICE_ID] = rest_data[PortMapper.DEVICE_ID]
-        if PortMapper.NAME in rest_data:
-            options[PortMapper.NIC_NAME] = rest_data[PortMapper.NAME]
-        setattr(port_row, 'options', options)
+        external_ids = getattr(port_row, EXTERNAL_IDS, {})
+        if PortMapper.REST_DEVICE_ID in rest_data:
+            rest_device_id = rest_data[PortMapper.REST_DEVICE_ID]
+            external_ids[PortMapper.DEVICE_ID] = rest_device_id
+        if PortMapper.REST_NAME in rest_data:
+            external_ids[PortMapper.NIC_NAME] = rest_data[PortMapper.REST_NAME]
+        setattr(port_row, EXTERNAL_IDS, external_ids)
 
     @staticmethod
     def row2rest(row):
@@ -79,7 +82,7 @@ class PortMapper(RestToDbRowMapper):
         rest_port_data = {
             'id': str(port.uuid),
             'name': port.name,
-            'device_id': str(port.options[PortMapper.DEVICE_ID]),
+            'device_id': str(port.external_ids[PortMapper.DEVICE_ID]),
             'device_owner': PortMapper.DEVICE_OWNER_OVIRT,
             'network_id': str(network.uuid)
         }
@@ -93,6 +96,11 @@ class SubnetMapper(RestToDbRowMapper):
     GATEWAY_IP = 'gateway_ip'
     CIDR = 'cidr'
     DNS = 'dns_nameservers'
+
+    NAME = 'ovirt_name'
+    NETWORK_ID = 'ovirt_network_id'
+    REST_NAME = 'name'
+    REST_NETWORK_ID = 'network_id'
 
     @staticmethod
     def rest2row(rest_subnet_data, row):
@@ -108,8 +116,9 @@ class SubnetMapper(RestToDbRowMapper):
                 options['dns_server'] = dns_servers[0]
 
         external_ids = {
-            'name': rest_subnet_data['name'],
-            'network_id': rest_subnet_data['network_id']
+            SubnetMapper.NAME: rest_subnet_data[SubnetMapper.REST_NAME],
+            SubnetMapper.NETWORK_ID:
+                rest_subnet_data[SubnetMapper.REST_NETWORK_ID]
         }
 
         row.cidr = rest_subnet_data['cidr']
@@ -130,9 +139,10 @@ class SubnetMapper(RestToDbRowMapper):
         result = {
             'id': str(row.uuid),
             'cidr': row.cidr,
-            'network_id': external_ids['network_id'],
+            SubnetMapper.REST_NETWORK_ID:
+                external_ids[SubnetMapper.NETWORK_ID],
             'enable_dhcp': 'true',
-            'name': external_ids['name'],
+            SubnetMapper.REST_NAME: external_ids[SubnetMapper.NAME],
             'ip_version': 4,
             'gateway_ip': options['router']
         }

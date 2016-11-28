@@ -86,8 +86,8 @@ class OvnNbDb(OvsDb):
                                                transaction)
 
     def update_port(self, port_rest_data):
-        assert PortMapper.NETWORK_ID in port_rest_data, ('network_id is a'
-                                                         ' required parameter')
+        if PortMapper.REST_NETWORK_ID not in port_rest_data:
+            raise ValueError('Network_id is a required parameter')
         network_id = port_rest_data['network_id']
         transaction = self.create_transaction()
         row = self.set_row(self.PORTS_TABLE, port_rest_data, PortMapper,
@@ -116,11 +116,12 @@ class OvnNbDb(OvsDb):
         self.commit(transaction)
 
     def _delete_subnet_for_network(self, network_id):
-        subnet_row = self.row_lookup(self.DHCP_TABLE,
-                                     lambda row: row.external_ids.
-                                     get('network_id') == network_id)
-        if subnet_row:
-            self._delete_subnet_row(subnet_row)
+        subnet = self.row_lookup(self.DHCP_TABLE,
+                                 lambda row: str(row.external_ids.
+                                                 get(SubnetMapper.NETWORK_ID)
+                                                 == network_id))
+        if subnet:
+            self._delete_subnet_row(subnet)
 
     def delete_port(self, port_id):
         transaction = self.create_transaction()
@@ -133,7 +134,7 @@ class OvnNbDb(OvsDb):
         self.commit(transaction)
 
     def update_subnet(self, subnet):
-        network_row = self.get_network(subnet['network_id'])
+        network_row = self.get_network(subnet[SubnetMapper.REST_NETWORK_ID])
         self._validate_subnet(subnet, network_row)
         transaction = self.create_transaction()
         row = self.set_row(self.DHCP_TABLE, subnet, SubnetMapper, transaction)
@@ -148,7 +149,7 @@ class OvnNbDb(OvsDb):
     def get_subnets(self):
         return [row for row in six.itervalues(
                 self._ovsdb_connection.tables[self.DHCP_TABLE].rows)
-                if 'network_id' in row.external_ids]
+                if SubnetMapper.NETWORK_ID in row.external_ids]
 
     def get_subnet(self, id):
         return self.row_lookup_by_id(self.DHCP_TABLE, id)
@@ -166,8 +167,9 @@ class OvnNbDb(OvsDb):
         # This will be known once the OVS IPAM patch is finished.
 
     def _delete_subnet_references(self, subnet_row):
-        if 'network_id' in subnet_row.options:
-            network_row = self.get_network(subnet_row.options['network_id'])
+        if SubnetMapper.NETWORK_ID in subnet_row.external_ids:
+            network_id = subnet_row.external_ids[SubnetMapper.NETWORK_ID]
+            network_row = self.get_network(network_id)
             if network_row:
                 port_rows = network_row.ports
                 network_row.delvalue('other_config', NetworkMapper.SUBNET)
@@ -210,24 +212,24 @@ class OvnNbDb(OvsDb):
         self.commit(transaction)
 
     def _is_port_ovirt_controlled(self, port_row):
-        return PortMapper.NIC_NAME in port_row.options
+        return PortMapper.NIC_NAME in port_row.external_ids
 
     def _set_port_subnet(self, port_row, network_id):
         subnet = self.row_lookup(self.DHCP_TABLE, lambda row:
-                                 str(row.external_ids.get('network_id')) ==
-                                 network_id)
+                                 str(row.external_ids.get(
+                                    SubnetMapper.NETWORK_ID)) == network_id)
         if subnet:
             port_row.dhcpv4_options = subnet
             port_row.addresses = [port_row.addresses[0] + ' dynamic']
 
     def _validate_subnet(self, subnet_values, network_row):
-        id = subnet_values['network_id']
+        id = subnet_values[SubnetMapper.REST_NETWORK_ID]
         if not network_row:
             raise SubnetConfigError('Subnet can not be created, network {}'
                                     ' does not exist'.format(id))
 
         subnet = self.row_lookup(self.DHCP_TABLE, lambda row: row.external_ids.
-                                 get('network_id') == id)
+                                 get(SubnetMapper.NETWORK_ID) == id)
         if subnet is not None:
             raise SubnetConfigError('Unable to create more than one subnet'
                                     ' for network {}'.format(id))
