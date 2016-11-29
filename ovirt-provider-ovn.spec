@@ -91,7 +91,8 @@ The driver handles the connection of NICs provisioned on oVirt hosts to OVN.
 %{_libexecdir}/vdsm/hooks/before_nic_hotplug/*
 %{_libexecdir}/vdsm/hooks/before_device_create/*
 %{_libexecdir}/vdsm/hooks/ovirt-provider-ovn/setup_ovn_controller.sh
-%{python_sitelib}/vdsm/tool/ovn_config.py
+# TODO use %{python_sitelib} here and in `make install`
+/usr/lib/python2.7/site-packages/vdsm/tool/ovn_config.py
 
 
 %changelog
