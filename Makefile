@@ -17,7 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 
 NAME=ovirt-provider-ovn
-VERSION=0.1
+VERSION=1.0
 DIST_DIR=$(NAME)-$(VERSION)
 DIST_FILE=$(NAME)-$(VERSION).tar.gz
 PYTHON ?= $(shell which python)

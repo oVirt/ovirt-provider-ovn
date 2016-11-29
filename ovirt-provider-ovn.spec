@@ -21,7 +21,7 @@
 %define        __os_install_post %{_dbpath}/brp-compress
 
 Name:           ovirt-provider-ovn
-Version:        0.1
+Version:        1.0
 Release:        1%{?dist}
 Summary:        The oVirt external network provider for OVN
 License:        GPLv2+
