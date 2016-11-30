@@ -3,5 +3,6 @@ python-mock
 python-openvswitch
 python-pytest
 python-setuptools
+python-six
 python2-pytest
 python2-setuptools
