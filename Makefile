@@ -23,18 +23,19 @@ DIST_FILE=$(NAME)-$(VERSION).tar.gz
 PYTHON ?= $(shell which python)
 
 install:
+	python -O -m compileall .
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/neutron/
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/
 	install -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/logger.conf
 	install -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/ovirt-provider-ovn.conf
-	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ provider/*py
-	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/ provider/ovndb/*py
+	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ provider/*.py*
+	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/ provider/ovndb/*.py*
 	install -D provider/scripts/ovirt-provider-ovn.service $(DESTDIR)/usr/lib/systemd/system/ovirt-provider-ovn.service
 
 	install -D provider/scripts/ovirt-provider-ovn.xml $(DESTDIR)/etc/firewalld/services/ovirt-provider-ovn.xml
-	install -m 777 -D driver/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_device_create/ovirt_provider_ovn_hook.py
-	install -m 777 -D driver/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_nic_hotplug/ovirt_provider_ovn_hook.py
+	install -m 777 -D driver/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_device_create/ovirt_provider_ovn_hook
+	install -m 777 -D driver/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_nic_hotplug/ovirt_provider_ovn_hook
 	install -m 744 -D driver/scripts/setup_ovn_controller.sh $(DESTDIR)/usr/libexec/vdsm/hooks/ovirt-provider-ovn/setup_ovn_controller.sh
 	install -D driver/vdsm_tool/ovn_config.py $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/ovn_config.py
 
