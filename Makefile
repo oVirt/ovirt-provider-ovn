@@ -24,7 +24,6 @@ PYTHON ?= $(shell which python)
 
 install:
 	python -O -m compileall .
-	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/neutron/
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/
 	install -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/logger.conf
@@ -42,9 +41,11 @@ install:
 distcheck: check dist
 
 dist:
-	mkdir -p build/$(DIST_DIR)
-	cp -r provider build/$(DIST_DIR)/
-	cp -r driver build/$(DIST_DIR)/
+	mkdir -p build/$(DIST_DIR)/
+
+	find ./provider \( -name "*py" -o -name "*conf" -o -name "*xml" -o -name "*service" \)   -exec cp --parents \{\} build/$(DIST_DIR)/ \;
+	find ./driver \( -name "*py" -o -name "*conf" -o -name "*sh" \)   -exec cp --parents \{\} build/$(DIST_DIR)/ \;
+
 	cp Makefile build/$(DIST_DIR)/
 	cp ovirt-provider-ovn.spec build/$(DIST_DIR)/
 	tar -zcf $(DIST_FILE) -C build $(DIST_DIR)
