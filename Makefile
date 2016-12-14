@@ -23,6 +23,7 @@ DIST_FILE=$(NAME)-$(VERSION).tar.gz
 PYTHON ?= $(shell which python)
 
 install:
+	python -m compileall .
 	python -O -m compileall .
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/
@@ -36,7 +37,8 @@ install:
 	install -m 555 -D driver/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_device_create/ovirt_provider_ovn_hook
 	install -m 555 -D driver/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_nic_hotplug/ovirt_provider_ovn_hook
 	install -m 544 -D driver/scripts/setup_ovn_controller.sh $(DESTDIR)/usr/libexec/vdsm/hooks/ovirt-provider-ovn/setup_ovn_controller.sh
-	install -D driver/vdsm_tool/ovn_config.py $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/ovn_config.py
+	install -d $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/
+	install -t $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/ driver/vdsm_tool/ovn_config.py*
 
 distcheck: check dist
 
