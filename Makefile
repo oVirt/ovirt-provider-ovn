@@ -19,7 +19,11 @@
 NAME=ovirt-provider-ovn
 VERSION=1.0
 DIST_DIR=$(NAME)-$(VERSION)
-DIST_FILE=$(NAME)-$(VERSION).tar.gz
+GITHASH=$(shell git rev-parse --short HEAD)
+TIMESTAMP=$(shell date +'%Y%m%d%H%M%S')
+RELEASE_SUFFIX=1.$(TIMESTAMP).git$(GITHASH)
+
+DIST_FILE=$(NAME)-$(VERSION)-${RELEASE_SUFFIX}.tar.gz
 PYTHON ?= $(shell which python)
 
 install:
@@ -49,13 +53,14 @@ dist:
 	find ./driver \( -name "*py" -o -name "*conf" -o -name "*sh" \)   -exec cp --parents \{\} build/$(DIST_DIR)/ \;
 
 	cp Makefile build/$(DIST_DIR)/
-	cp ovirt-provider-ovn.spec build/$(DIST_DIR)/
+	cp ovirt-provider-ovn.spec.in build/$(DIST_DIR)/ovirt-provider-ovn.spec
+	sed -i s/%{release_suffix}/$(RELEASE_SUFFIX)/ build/$(DIST_DIR)/ovirt-provider-ovn.spec
 	tar -zcf $(DIST_FILE) -C build $(DIST_DIR)
 	rm -rf build
 
 rpm: dist
 	cp $(DIST_FILE) `rpm --eval %_sourcedir`
-	rpmbuild -ba ovirt-provider-ovn.spec
+	rpmbuild -ta $(DIST_FILE)
 
 check: flake8
 
