@@ -62,6 +62,10 @@ oVirt engine and OVN northd.
 %systemd_preun ovirt-provider-ovn.service
 
 
+%postun
+%systemd_postun_with_restart ovirt-provider-ovn.service
+
+
 %package driver
 Summary: The virtual interface driver for oVirt external network provider for OVN
 License: GPLv2+
