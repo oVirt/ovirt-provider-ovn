@@ -34,6 +34,7 @@ Requires: kernel >= 3.10.0-512
 Requires: openvswitch-ovn-central >= 2.6
 Requires: python-openvswitch >= 2.6
 
+BuildRequires: python
 BuildRequires: systemd
 
 %prep
