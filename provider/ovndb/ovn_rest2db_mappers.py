@@ -42,6 +42,10 @@ class NetworkMapper(RestToDbRowMapper):
             'name': str(network_row.name)
         }
 
+    @staticmethod
+    def validate_rest_input(rest_data):
+        pass
+
 
 class PortMapper(RestToDbRowMapper):
 
@@ -90,6 +94,11 @@ class PortMapper(RestToDbRowMapper):
             rest_port_data['mac_address'] = port.addresses[0]
         return rest_port_data
 
+    @staticmethod
+    def validate_rest_input(rest_data):
+        if not rest_data.get(PortMapper.REST_NETWORK_ID):
+            raise NetworkIdRequiredForPortDataError()
+
 
 class SubnetMapper(RestToDbRowMapper):
 
@@ -104,8 +113,6 @@ class SubnetMapper(RestToDbRowMapper):
 
     @staticmethod
     def rest2row(rest_subnet_data, row):
-        SubnetMapper._validate_rest_input(rest_subnet_data)
-
         options = {
             'server_id': rest_subnet_data[SubnetMapper.CIDR].split('/', 1)[0],
             'router': rest_subnet_data[SubnetMapper.GATEWAY_IP],
@@ -151,7 +158,7 @@ class SubnetMapper(RestToDbRowMapper):
         return result
 
     @staticmethod
-    def _validate_rest_input(rest_data):
+    def validate_rest_input(rest_data):
         if SubnetMapper.GATEWAY_IP not in rest_data:
             raise RestDataError('Default gateway must be specified to create'
                                 ' a subnet')
@@ -166,3 +173,11 @@ class SubnetMapper(RestToDbRowMapper):
 
 class RestDataError(Exception):
     pass
+
+
+class NetworkIdRequiredForPortDataError(RestDataError):
+    message = 'Network_id is a required parameter'
+
+    def __init__(self):
+        super(NetworkIdRequiredForPortDataError, self).__init__(self,
+                                                                self.message)

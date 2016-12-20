@@ -50,12 +50,25 @@ def _block_on_ovsdb_connect(f):
 
 @six.add_metaclass(abc.ABCMeta)
 class RestToDbRowMapper(object):
+
+    @classmethod
+    def validate(cls, f):
+        @wraps(f)
+        def wrapper(self, rest_data):
+            cls.validate_rest_input(rest_data)
+            return f(self, rest_data)
+        return wrapper
+
     @staticmethod
     def rest2row(rest_data, row):
         raise NotImplementedError()
 
     @staticmethod
     def row2rest(row, rest_data):
+        raise NotImplementedError()
+
+    @staticmethod
+    def validate_rest_input(rest_data):
         raise NotImplementedError()
 
 

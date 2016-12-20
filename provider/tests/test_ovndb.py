@@ -24,6 +24,7 @@ import pytest
 from ovndb.ovn_rest2db_mappers import PortMapper
 from ovndb.ndb_api import DeletedRowDoesNotExistError
 from ovndb.ndb_api import OvnNbDb
+from ovndb.ovn_rest2db_mappers import NetworkIdRequiredForPortDataError
 
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
@@ -208,6 +209,29 @@ class TestOvnNbDb(object):
         assert new_port.network.uuid == ID11
 
         transaction.get_insert_uuid.assert_called_with(ID07)
+
+    def test_add_port_fails_due_to_no_network_id(self, mock_idl):
+        port_rest_data = {
+            'name': NIC_NAME,
+            'device_id': DEVICE_ID
+        }
+        self._update_port_fails(mock_idl, port_rest_data,
+                                NetworkIdRequiredForPortDataError)
+
+    def test_add_port_fails_due_to_empty_network_id(self, mock_idl):
+        port_rest_data = {
+            'name': NIC_NAME,
+            'network_id': '',
+            'device_id': DEVICE_ID
+        }
+        self._update_port_fails(mock_idl, port_rest_data,
+                                NetworkIdRequiredForPortDataError)
+
+    def _update_port_fails(self, mock_idl, port_rest_data, e):
+        TestOvnNbDb.setup_db(mock_idl)
+        with pytest.raises(e):
+            ovndb = OvnNbDb(OVN_REMOTE)
+            ovndb.update_port(port_rest_data)
 
     def test_delete_unknown_network_fails(self, mock_idl):
         TestOvnNbDb.setup_db(mock_idl)

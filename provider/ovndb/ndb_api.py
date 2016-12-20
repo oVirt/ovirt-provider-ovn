@@ -77,6 +77,7 @@ class OvnNbDb(OvsDb):
         network = self._get_port_network(port_row)
         return NetworkPort(port_row, network)
 
+    @NetworkMapper.validate
     def update_network(self, network_rest_data):
         transaction = self.create_transaction()
         row = self.set_row(self.NETWORK_TABLE, network_rest_data,
@@ -85,9 +86,8 @@ class OvnNbDb(OvsDb):
         return self.get_real_row_from_inserted(self.NETWORK_TABLE, row,
                                                transaction)
 
+    @PortMapper.validate
     def update_port(self, port_rest_data):
-        if PortMapper.REST_NETWORK_ID not in port_rest_data:
-            raise ValueError('Network_id is a required parameter')
         network_id = port_rest_data['network_id']
         transaction = self.create_transaction()
         row = self.set_row(self.PORTS_TABLE, port_rest_data, PortMapper,
@@ -133,6 +133,7 @@ class OvnNbDb(OvsDb):
         port_row.delete()
         self.commit(transaction)
 
+    @SubnetMapper.validate
     def update_subnet(self, subnet):
         network_row = self.get_network(subnet[SubnetMapper.REST_NETWORK_ID])
         self._validate_subnet(subnet, network_row)
