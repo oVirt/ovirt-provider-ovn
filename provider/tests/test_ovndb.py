@@ -46,7 +46,11 @@ ID07 = UUID(int=7)
 ID10 = UUID(int=10)
 ID11 = UUID(int=11)
 ID12 = UUID(int=12)
+ID13 = UUID(int=13)
+ID14 = UUID(int=14)
+ID20 = UUID(int=20)
 ID21 = UUID(int=21)
+ID22 = UUID(int=22)
 
 
 @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
@@ -69,7 +73,9 @@ class TestOvnNbDb(object):
 
         }
         subnets = {
-            21: OvnSubnetRow(ID21, network_id=str(ID12))
+            20: OvnSubnetRow(ID20, network_id=str(ID13)),
+            21: OvnSubnetRow(ID21, network_id=str(ID12)),
+            22: OvnSubnetRow(ID22, network_id=str(ID14))
         }
         tables = {
             OvnNbDb.NETWORK_TABLE: OvnTable(networks),
@@ -273,6 +279,9 @@ class TestOvnNbDb(object):
 
         assert ovndb.get_network(str(ID12)).deleted
         assert ovndb.get_subnet(str(ID21)).deleted
+
+        assert not hasattr(ovndb.get_subnet(str(ID20)), 'deleted')
+        assert not hasattr(ovndb.get_subnet(str(ID22)), 'deleted')
 
     def _assert_netport(self, netport,  expected_port_id,
                         expected_network_id):

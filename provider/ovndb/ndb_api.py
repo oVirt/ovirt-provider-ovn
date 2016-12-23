@@ -116,10 +116,11 @@ class OvnNbDb(OvsDb):
         self.commit(transaction)
 
     def _delete_subnet_for_network(self, network_id):
-        subnet = self.row_lookup(self.DHCP_TABLE,
-                                 lambda row: str(row.external_ids.
-                                                 get(SubnetMapper.NETWORK_ID)
-                                                 == network_id))
+
+        def _is_subnet_of_net(row):
+            return row.external_ids.get(SubnetMapper.NETWORK_ID) == network_id
+
+        subnet = self.row_lookup(self.DHCP_TABLE, _is_subnet_of_net)
         if subnet:
             self._delete_subnet_row(subnet)
 
