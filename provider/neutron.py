@@ -66,10 +66,10 @@ class NeutronHandler(BaseHTTPRequestHandler):
         self._handle_request(DELETE, code=204)
 
     def _handle_request(self, method, code=200, content=None):
+        logging.debug('Request: {} : {}'.format(method, self.path))
+        if content:
+            logging.debug('Request body:\n{}'.format(content))
         try:
-            logging.debug('Request: {} : {}'.format(method, self.path))
-            if content:
-                logging.debug('Request body:\n{}'.format(content))
 
             key, id = self._parse_request_path(self.path)
             response = self.response_handler.handle_request(method, key, id,
