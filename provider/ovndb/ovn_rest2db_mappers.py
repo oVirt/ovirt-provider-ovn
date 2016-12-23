@@ -96,6 +96,8 @@ class PortMapper(RestToDbRowMapper):
 
     @staticmethod
     def validate_rest_input(rest_data):
+        if not rest_data.get(PortMapper.REST_DEVICE_ID):
+            raise PortDeviceIdRequiredDataError()
         if not rest_data.get(PortMapper.REST_NETWORK_ID):
             raise NetworkIdRequiredForPortDataError()
 
@@ -181,3 +183,10 @@ class NetworkIdRequiredForPortDataError(RestDataError):
     def __init__(self):
         super(NetworkIdRequiredForPortDataError, self).__init__(self,
                                                                 self.message)
+
+
+class PortDeviceIdRequiredDataError(RestDataError):
+    message = 'Port device id must be specified to create a port'
+
+    def __init__(self):
+        super(PortDeviceIdRequiredDataError, self).__init__(self, self.message)

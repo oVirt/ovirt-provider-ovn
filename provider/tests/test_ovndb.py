@@ -25,6 +25,7 @@ from ovndb.ovn_rest2db_mappers import PortMapper
 from ovndb.ndb_api import DeletedRowDoesNotExistError
 from ovndb.ndb_api import OvnNbDb
 from ovndb.ovn_rest2db_mappers import NetworkIdRequiredForPortDataError
+from ovndb.ovn_rest2db_mappers import PortDeviceIdRequiredDataError
 
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
@@ -209,6 +210,23 @@ class TestOvnNbDb(object):
         assert new_port.network.uuid == ID11
 
         transaction.get_insert_uuid.assert_called_with(ID07)
+
+    def test_add_port_fails_due_to_no_device_id(self, mock_idl):
+        port_rest_data = {
+            'name': NIC_NAME,
+            'network_id': str(ID11)
+        }
+        self._update_port_fails(mock_idl, port_rest_data,
+                                PortDeviceIdRequiredDataError)
+
+    def test_add_port_fails_due_to_empty_device_id(self, mock_idl):
+        port_rest_data = {
+            'name': NIC_NAME,
+            'network_id': str(ID11),
+            'device_id': ''
+        }
+        self._update_port_fails(mock_idl, port_rest_data,
+                                PortDeviceIdRequiredDataError)
 
     def test_add_port_fails_due_to_no_network_id(self, mock_idl):
         port_rest_data = {
