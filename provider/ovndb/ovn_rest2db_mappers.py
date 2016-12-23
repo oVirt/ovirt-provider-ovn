@@ -56,7 +56,7 @@ class PortMapper(RestToDbRowMapper):
     def rest2row(rest_data, port_row):
 
         # Temporary value, will be set to the same value as uuid later
-        port_row.name = rest_data.get(PortMapper.DEVICE_ID)
+        port_row.name = rest_data.get(PortMapper.REST_DEVICE_ID)
         up = rest_data.get('up')
         port_row.up = up if up is not None else True
 
