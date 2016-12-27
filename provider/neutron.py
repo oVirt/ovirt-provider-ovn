@@ -101,10 +101,7 @@ class NeutronHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def _handle_response_exception(self, e, message=None, response_code=500):
-        if message:
-            logging.error(message)
-        else:
-            logging.exception(e)
+        logging.exception(message if message else e)
         self.send_error(response_code)
         self.end_headers()
         self.wfile.write('Error:\n{}'.format(message if message else e))
