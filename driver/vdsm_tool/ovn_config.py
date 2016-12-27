@@ -24,7 +24,7 @@ from .. import commands
 from . import expose, ExtraArgsError
 
 OVN_CONFIG_SCRIPT = \
-    '/usr/libexec/vdsm/hooks/ovirt-provider-ovn/setup_ovn_controller.sh'
+    '/usr/libexec/ovirt-provider-ovn/setup_ovn_controller.sh'
 
 
 @expose('ovn-config')

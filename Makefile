@@ -40,7 +40,9 @@ install:
 	install -D provider/scripts/ovirt-provider-ovn.xml $(DESTDIR)/etc/firewalld/services/ovirt-provider-ovn.xml
 	install -m 555 -D driver/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_device_create/ovirt_provider_ovn_hook
 	install -m 555 -D driver/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_nic_hotplug/ovirt_provider_ovn_hook
-	install -m 544 -D driver/scripts/setup_ovn_controller.sh $(DESTDIR)/usr/libexec/vdsm/hooks/ovirt-provider-ovn/setup_ovn_controller.sh
+	
+	install -d $(DESTDIR)/usr/libexec/ovirt-provider-ovn
+	install -m 544 -D driver/scripts/setup_ovn_controller.sh $(DESTDIR)/usr/libexec/ovirt-provider-ovn/setup_ovn_controller.sh
 	install -d $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/
 	install -t $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/ driver/vdsm_tool/ovn_config.py*
 
