@@ -39,18 +39,20 @@ DEVICE_ID = 'device-id-123456'
 NIC_NAME = 'port_name'
 NETWORK_NAME = 'test_net'
 
-ID01 = UUID(int=1)
-ID02 = UUID(int=2)
-ID03 = UUID(int=3)
-ID07 = UUID(int=7)
-ID10 = UUID(int=10)
-ID11 = UUID(int=11)
-ID12 = UUID(int=12)
-ID13 = UUID(int=13)
-ID14 = UUID(int=14)
-ID20 = UUID(int=20)
-ID21 = UUID(int=21)
-ID22 = UUID(int=22)
+PORT_ID01 = UUID(int=1)
+PORT_ID02 = UUID(int=2)
+PORT_ID03 = UUID(int=3)
+NEW_PORT_ID07 = UUID(int=7)
+NETWORK_ID10 = UUID(int=10)
+NETWORK_ID11 = UUID(int=11)
+NETWORK_ID12 = UUID(int=12)
+NETWORK_ID13 = UUID(int=13)
+NETWORK_ID14 = UUID(int=14)
+NEW_NETWORK_ID17 = UUID(int=17)
+
+SUBNET_ID20 = UUID(int=20)
+SUBNET_ID21 = UUID(int=21)
+SUBNET_ID22 = UUID(int=22)
 
 
 @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
@@ -58,24 +60,26 @@ class TestOvnNbDb(object):
 
     @staticmethod
     def setup_db(mock_idl):
-        port_1 = OvnPortRow(ID01, external_ids={PortMapper.NIC_NAME: 'port1'})
-        port_2 = OvnPortRow(ID02, external_ids={PortMapper.NIC_NAME: 'port2'})
-        port_3 = OvnPortRow(ID03)
+        port_1 = OvnPortRow(PORT_ID01, external_ids={PortMapper.NIC_NAME:
+                                                     'port1'})
+        port_2 = OvnPortRow(PORT_ID02, external_ids={PortMapper.NIC_NAME:
+                                                     'port2'})
+        port_3 = OvnPortRow(PORT_ID03)
         ports = {
             1: port_1,
             2: port_2,
             3: port_3
         }
         networks = {
-            10: OvnNetworkRow(ID10, ports=[port_1, port_2]),
-            11: OvnNetworkRow(ID11),
-            12: OvnNetworkRow(ID12)
+            10: OvnNetworkRow(NETWORK_ID10, ports=[port_1, port_2]),
+            11: OvnNetworkRow(NETWORK_ID11),
+            12: OvnNetworkRow(NETWORK_ID12)
 
         }
         subnets = {
-            20: OvnSubnetRow(ID20, network_id=str(ID13)),
-            21: OvnSubnetRow(ID21, network_id=str(ID12)),
-            22: OvnSubnetRow(ID22, network_id=str(ID14))
+            20: OvnSubnetRow(SUBNET_ID20, network_id=str(NETWORK_ID13)),
+            21: OvnSubnetRow(SUBNET_ID21, network_id=str(NETWORK_ID12)),
+            22: OvnSubnetRow(SUBNET_ID22, network_id=str(NETWORK_ID14))
         }
         tables = {
             OvnNbDb.NETWORK_TABLE: OvnTable(networks),
@@ -92,9 +96,9 @@ class TestOvnNbDb(object):
 
         assert len(networks) == 3
         networks = sorted(networks, key=lambda row: row.uuid)
-        assert networks[0].uuid == ID10
-        assert networks[1].uuid == ID11
-        assert networks[2].uuid == ID12
+        assert networks[0].uuid == NETWORK_ID10
+        assert networks[1].uuid == NETWORK_ID11
+        assert networks[2].uuid == NETWORK_ID12
 
     def test_get_multiple_ports(self, mock_idl):
         TestOvnNbDb.setup_db(mock_idl)
@@ -105,24 +109,24 @@ class TestOvnNbDb(object):
         assert len(netports) == 2
         netports = sorted(netports, key=lambda netport: netport.port.uuid)
 
-        self._assert_netport(netports[0], ID01, ID10)
-        self._assert_netport(netports[1], ID02, ID10)
+        self._assert_netport(netports[0], PORT_ID01, NETWORK_ID10)
+        self._assert_netport(netports[1], PORT_ID02, NETWORK_ID10)
 
     def test_get_single_network(self, mock_idl):
         TestOvnNbDb.setup_db(mock_idl)
 
         ovndb = OvnNbDb(OVN_REMOTE)
-        network = ovndb.get_network(str(ID10))
+        network = ovndb.get_network(str(NETWORK_ID10))
 
-        assert network.uuid == ID10
+        assert network.uuid == NETWORK_ID10
 
     def test_get_single_port(self, mock_idl):
         TestOvnNbDb.setup_db(mock_idl)
 
         ovndb = OvnNbDb(OVN_REMOTE)
-        netport = ovndb.get_port(str(ID01))
+        netport = ovndb.get_port(str(PORT_ID01))
 
-        self._assert_netport(netport, ID01, ID10)
+        self._assert_netport(netport, PORT_ID01, NETWORK_ID10)
 
     def test_modify_network(self, mock_idl):
         TestOvnNbDb.setup_db(mock_idl)
@@ -130,97 +134,97 @@ class TestOvnNbDb(object):
 
         ovndb = OvnNbDb(OVN_REMOTE)
         updated_network = ovndb.update_network({
-            'id': str(ID11),
+            'id': str(NETWORK_ID11),
             'name': NETWORK_NAME
         })
 
         networks = ovndb.networks
 
-        assert updated_network.uuid == ID11
+        assert updated_network.uuid == NETWORK_ID11
         assert len(networks) == 3
         networks = sorted(networks, key=lambda row: row.uuid)
-        assert networks[0].uuid == ID10
-        assert networks[1].uuid == ID11
+        assert networks[0].uuid == NETWORK_ID10
+        assert networks[1].uuid == NETWORK_ID11
         assert networks[1].name == NETWORK_NAME
 
     def test_add_network(self, mock_idl):
         TestOvnNbDb.setup_db(mock_idl)
 
         transaction = mock_idl.Transaction.return_value
-        temp_row = OvnNetworkRow(ID07)
+        temp_row = OvnNetworkRow(NEW_NETWORK_ID17)
         transaction.insert.return_value = temp_row
-        transaction.get_insert_uuid.return_value = ID10
+        transaction.get_insert_uuid.return_value = NETWORK_ID10
 
         ovndb = OvnNbDb(OVN_REMOTE)
         new_network = ovndb.update_network({'name': NETWORK_NAME})
 
-        assert new_network.uuid == ID10
+        assert new_network.uuid == NETWORK_ID10
 
         # This is implementation dependent
-        transaction.get_insert_uuid.assert_called_with(ID07)
+        transaction.get_insert_uuid.assert_called_with(NEW_NETWORK_ID17)
 
     def test_modify_port(self, mock_idl):
         TestOvnNbDb.setup_db(mock_idl)
         mock_idl.Transaction.return_value.get_insert_uuid.return_value = None
 
         port_rest_data = {
-            'id': str(ID02),
+            'id': str(PORT_ID02),
             'name': NIC_NAME,
             'device_id': DEVICE_ID,
             'mac_address': MAC_ADDRESS,
-            'network_id': str(ID11)
+            'network_id': str(NETWORK_ID11)
         }
 
         ovndb = OvnNbDb(OVN_REMOTE)
         ovndb.update_port(port_rest_data)
-        netport = ovndb.get_port(str(ID02))
+        netport = ovndb.get_port(str(PORT_ID02))
         networks = ovndb.networks
 
         port = netport.port
-        assert port.uuid == ID02
-        assert port.name == str(ID02)
+        assert port.uuid == PORT_ID02
+        assert port.name == str(PORT_ID02)
         assert port.addresses == [MAC_ADDRESS]
         assert port.external_ids[PortMapper.DEVICE_ID] == DEVICE_ID
         assert port.external_ids[PortMapper.NIC_NAME] == NIC_NAME
 
-        assert netport.network.uuid == ID11
+        assert netport.network.uuid == NETWORK_ID11
 
         networks = sorted(networks, key=lambda row: row.uuid)
-        assert networks[0].uuid == ID10
+        assert networks[0].uuid == NETWORK_ID10
         assert len(networks[0].ports) == 1
-        assert networks[0].ports[0].uuid == ID01
+        assert networks[0].ports[0].uuid == PORT_ID01
 
-        assert networks[1].uuid == ID11
+        assert networks[1].uuid == NETWORK_ID11
         assert len(networks[1].ports) == 1
-        assert networks[1].ports[0].uuid == ID02
+        assert networks[1].ports[0].uuid == PORT_ID02
 
     def test_add_port(self, mock_idl):
         TestOvnNbDb.setup_db(mock_idl)
 
         transaction = mock_idl.Transaction.return_value
-        temp_row = OvnNetworkRow(ID07)
+        temp_row = OvnNetworkRow(NEW_PORT_ID07)
         transaction.insert.return_value = temp_row
-        transaction.get_insert_uuid.return_value = ID03
+        transaction.get_insert_uuid.return_value = PORT_ID03
 
         port_rest_data = {
             'name': NIC_NAME,
             'device_id': DEVICE_ID,
             'mac_address': MAC_ADDRESS,
-            'network_id': str(ID11)
+            'network_id': str(NETWORK_ID11)
         }
 
         ovndb = OvnNbDb(OVN_REMOTE)
         new_port = ovndb.update_port(port_rest_data)
 
-        assert new_port.port.uuid == ID03
-        assert new_port.network.uuid == ID11
+        assert new_port.port.uuid == PORT_ID03
+        assert new_port.network.uuid == NETWORK_ID11
 
-        transaction.get_insert_uuid.assert_called_with(ID07)
+        transaction.get_insert_uuid.assert_called_with(NEW_PORT_ID07)
 
     def test_add_port_fails_due_to_no_device_id(self, mock_idl):
         port_rest_data = {
             'name': NIC_NAME,
-            'network_id': str(ID11)
+            'network_id': str(NETWORK_ID11)
         }
         self._update_port_fails(mock_idl, port_rest_data,
                                 PortDeviceIdRequiredDataError)
@@ -228,7 +232,7 @@ class TestOvnNbDb(object):
     def test_add_port_fails_due_to_empty_device_id(self, mock_idl):
         port_rest_data = {
             'name': NIC_NAME,
-            'network_id': str(ID11),
+            'network_id': str(NETWORK_ID11),
             'device_id': ''
         }
         self._update_port_fails(mock_idl, port_rest_data,
@@ -262,26 +266,26 @@ class TestOvnNbDb(object):
 
         with pytest.raises(DeletedRowDoesNotExistError):
             ovndb = OvnNbDb(OVN_REMOTE)
-            ovndb.delete_network(str(ID01))
+            ovndb.delete_network(str(PORT_ID01))
 
     def test_delete_unknown_port_fails(self, mock_idl):
         TestOvnNbDb.setup_db(mock_idl)
 
         with pytest.raises(DeletedRowDoesNotExistError):
             ovndb = OvnNbDb(OVN_REMOTE)
-            ovndb.delete_port(str(ID10))
+            ovndb.delete_port(str(NETWORK_ID10))
 
     def test_delete_network(self, mock_idl):
         TestOvnNbDb.setup_db(mock_idl)
 
         ovndb = OvnNbDb(OVN_REMOTE)
-        ovndb.delete_network(str(ID12))
+        ovndb.delete_network(str(NETWORK_ID12))
 
-        assert ovndb.get_network(str(ID12)).deleted
-        assert ovndb.get_subnet(str(ID21)).deleted
+        assert ovndb.get_network(str(NETWORK_ID12)).deleted
+        assert ovndb.get_subnet(str(SUBNET_ID21)).deleted
 
-        assert not hasattr(ovndb.get_subnet(str(ID20)), 'deleted')
-        assert not hasattr(ovndb.get_subnet(str(ID22)), 'deleted')
+        assert not hasattr(ovndb.get_subnet(str(SUBNET_ID20)), 'deleted')
+        assert not hasattr(ovndb.get_subnet(str(SUBNET_ID22)), 'deleted')
 
     def _assert_netport(self, netport,  expected_port_id,
                         expected_network_id):
