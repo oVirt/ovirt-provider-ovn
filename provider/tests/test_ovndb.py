@@ -42,6 +42,8 @@ NETWORK_NAME = 'test_net'
 PORT_ID01 = UUID(int=1)
 PORT_ID02 = UUID(int=2)
 PORT_ID03 = UUID(int=3)
+PORT_ID04 = UUID(int=4)
+
 NEW_PORT_ID07 = UUID(int=7)
 NETWORK_ID10 = UUID(int=10)
 NETWORK_ID11 = UUID(int=11)
@@ -60,20 +62,22 @@ class TestOvnNbDb(object):
 
     @staticmethod
     def setup_db(mock_idl):
-        port_1 = OvnPortRow(PORT_ID01, external_ids={PortMapper.NIC_NAME:
-                                                     'port1'})
-        port_2 = OvnPortRow(PORT_ID02, external_ids={PortMapper.NIC_NAME:
-                                                     'port2'})
+        port_1 = OvnPortRow(PORT_ID01, addresses=MAC_ADDRESS,
+                            external_ids={PortMapper.NIC_NAME: 'port1'})
+        port_2 = OvnPortRow(PORT_ID02, addresses=MAC_ADDRESS,
+                            external_ids={PortMapper.NIC_NAME: 'port2'})
         port_3 = OvnPortRow(PORT_ID03)
+        port_4_with_subnet = OvnPortRow(PORT_ID04, addresses=MAC_ADDRESS)
         ports = {
             1: port_1,
             2: port_2,
-            3: port_3
+            3: port_3,
+            4: port_4_with_subnet
         }
         networks = {
             10: OvnNetworkRow(NETWORK_ID10, ports=[port_1, port_2]),
             11: OvnNetworkRow(NETWORK_ID11),
-            12: OvnNetworkRow(NETWORK_ID12)
+            12: OvnNetworkRow(NETWORK_ID12, ports=[port_4_with_subnet])
 
         }
         subnets = {
@@ -286,6 +290,26 @@ class TestOvnNbDb(object):
 
         assert not hasattr(ovndb.get_subnet(str(SUBNET_ID20)), 'deleted')
         assert not hasattr(ovndb.get_subnet(str(SUBNET_ID22)), 'deleted')
+
+    def test_modify_port_macaddress(self, mock_idl):
+        TestOvnNbDb.setup_db(mock_idl)
+        MODIFIED_MAC = '00:00:00:00:00:76'
+
+        ovndb = OvnNbDb(OVN_REMOTE)
+        ovndb.update_port_mac(str(PORT_ID02), MODIFIED_MAC)
+
+        port, network = ovndb.get_port(str(PORT_ID02))
+        assert port.addresses[0] == MODIFIED_MAC
+
+    def test_modify_port_macaddress_when_subnet_present(self, mock_idl):
+        TestOvnNbDb.setup_db(mock_idl)
+        MODIFIED_MAC = '00:00:00:00:00:76'
+
+        ovndb = OvnNbDb(OVN_REMOTE)
+        ovndb.update_port_mac(str(PORT_ID04), MODIFIED_MAC)
+
+        port, network = ovndb.get_port(str(PORT_ID04))
+        assert port.addresses[0] == MODIFIED_MAC + ' dynamic'
 
     def _assert_netport(self, netport,  expected_port_id,
                         expected_network_id):

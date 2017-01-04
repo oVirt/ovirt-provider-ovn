@@ -105,6 +105,13 @@ class OvnNbDb(OvsDb):
             raise
         return NetworkPort(row, self.get_network(network_id))
 
+    def update_port_mac(self, port_id, macaddress):
+        transaction = self.create_transaction()
+        port, network = self.get_port(port_id)
+        port.addresses = [macaddress]
+        self._set_port_subnet(port, str(network.uuid))
+        self.commit(transaction)
+
     def delete_network(self, network_id):
         transaction = self.create_transaction()
         network_row = self.get_network(network_id)

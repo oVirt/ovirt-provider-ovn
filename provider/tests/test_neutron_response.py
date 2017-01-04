@@ -171,3 +171,20 @@ class TestNeutronResponse(object):
 
         rest_json = json.loads(rest_input)
         nb_db.update_port.assert_called_once_with(rest_json['port'])
+
+    def test_put_port(self):
+        MODIFIED_MAC = '01:00:00:00:11:11'
+
+        nb_db = Mock()
+        netport = NetworkPort(PortRow(ID07, 'port_name', 'mac', 'device_id'),
+                              NetworkRow(ID01, 'network_name'))
+        nb_db.get_port.return_value = netport
+        rest_input = ('{"port" :{"binding:host_id" : "192.168.120.43",'
+                      '"mac_address" : "' + MODIFIED_MAC + '",'
+                      '"security_groups" : null}}')
+
+        response = responses()[PUT][PORTS](nb_db, rest_input, str(ID07))
+
+        response_json = json.loads(response)
+        assert response_json['port']['id'] == str(ID07)
+        nb_db.update_port_mac.assert_called_once_with(str(ID07), MODIFIED_MAC)

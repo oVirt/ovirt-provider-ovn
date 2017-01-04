@@ -55,12 +55,13 @@ class OvnNetworkRow(OvnRow):
 
 
 class OvnPortRow(OvnRow):
-    def __init__(self, uuid, name=None, external_ids=None, device_id=None):
+    def __init__(self, uuid, name=None, external_ids=None, device_id=None,
+                 addresses=None):
         self.uuid = uuid
         self.name = name
         self.external_ids = external_ids or {PortMapper.DEVICE_ID: device_id}
         self.dhcpv4_options = None
-        self.addresses = None
+        self.addresses = addresses
 
 
 class OvnSubnetRow(OvnRow):
