@@ -150,8 +150,12 @@ def post_subnets(nb_db, content, id):
 def put_ports(nb_db, content, id):
     if not id:
         raise Exception('No port id in POST request')
-    # For now, the PUT ports request does not update any relevant values
-    # TODO: check if the PUT request changes are relevant later on
+
+    # REQUIRED_FOR Engine < 4.1
+    # older Engine does not pass mac_address here
+    mac = json.loads(content)['port'].get('mac_address')
+    if mac:
+        nb_db.update_port_mac(id, mac)
     result = nb_db.get_port(id)
     return json.dumps({'port': PortMapper.row2rest(result)})
 
