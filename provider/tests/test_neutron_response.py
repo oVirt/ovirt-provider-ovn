@@ -38,8 +38,8 @@ from ovndb.ndb_api import NetworkPort
 
 NOT_RELEVANT = None
 
-ID01 = UUID(int=1)
-ID07 = UUID(int=7)
+NETWORK_ID01 = UUID(int=1)
+PORT_ID07 = UUID(int=7)
 
 
 class NetworkRow(object):
@@ -80,72 +80,77 @@ class TestNeutronResponse(object):
 
     def test_show_network(self):
         nb_db = Mock()
-        nb_db.get_network.return_value = NetworkRow(ID01, 'network_name')
+        nb_db.get_network.return_value = NetworkRow(NETWORK_ID01,
+                                                    'network_name')
 
-        response = responses()[SHOW][NETWORKS](nb_db, NOT_RELEVANT, ID01)
+        response = responses()[SHOW][NETWORKS](nb_db, NOT_RELEVANT,
+                                               NETWORK_ID01)
 
         response_json = json.loads(response)
-        assert response_json['network']['id'] == str(ID01)
+        assert response_json['network']['id'] == str(NETWORK_ID01)
         assert response_json['network']['name'] == 'network_name'
 
     def test_show_port(self):
         nb_db = Mock()
-        netport = NetworkPort(PortRow(ID07, 'port_name', 'mac', 'device_id'),
-                              NetworkRow(ID01, 'network_name'))
+        netport = NetworkPort(PortRow(PORT_ID07, 'port_name', 'mac',
+                                      'device_id'),
+                              NetworkRow(NETWORK_ID01, 'network_name'))
         nb_db.get_port.return_value = netport
 
-        response = responses()[SHOW][PORTS](nb_db, NOT_RELEVANT, ID07)
+        response = responses()[SHOW][PORTS](nb_db, NOT_RELEVANT, PORT_ID07)
 
         response_json = json.loads(response)
-        assert response_json['port']['id'] == str(ID07)
+        assert response_json['port']['id'] == str(PORT_ID07)
         assert response_json['port']['name'] == 'port_name'
 
     def test_get_networks(self):
         nb_db = Mock()
-        nb_db.networks = [NetworkRow(ID01, 'network_name')]
+        nb_db.networks = [NetworkRow(NETWORK_ID01, 'network_name')]
 
         response = responses()[GET][NETWORKS](nb_db, NOT_RELEVANT,
                                               NOT_RELEVANT)
 
         response_json = json.loads(response)
-        assert response_json['networks'][0]['id'] == str(ID01)
+        assert response_json['networks'][0]['id'] == str(NETWORK_ID01)
         assert response_json['networks'][0]['name'] == 'network_name'
 
     def test_get_ports(self):
         nb_db = Mock()
-        netport = NetworkPort(PortRow(ID07, 'port_name', 'mac', 'device_id'),
-                              NetworkRow(ID01, 'network_name'))
+        netport = NetworkPort(PortRow(PORT_ID07, 'port_name', 'mac',
+                                      'device_id'),
+                              NetworkRow(NETWORK_ID01, 'network_name'))
         nb_db.ports = [netport]
 
         response = responses()[GET][PORTS](nb_db, NOT_RELEVANT, NOT_RELEVANT)
 
         response_json = json.loads(response)
-        assert response_json['ports'][0]['id'] == str(ID07)
+        assert response_json['ports'][0]['id'] == str(PORT_ID07)
         assert response_json['ports'][0]['name'] == 'port_name'
 
     def test_delete_network(self):
         nb_db = Mock()
 
-        responses()[DELETE][NETWORKS](nb_db, NOT_RELEVANT, ID07)
+        responses()[DELETE][NETWORKS](nb_db, NOT_RELEVANT, PORT_ID07)
 
-        nb_db.delete_network.assert_called_once_with(ID07)
+        nb_db.delete_network.assert_called_once_with(PORT_ID07)
 
     def test_delete_port(self):
         nb_db = Mock()
 
-        responses()[DELETE][PORTS](nb_db, NOT_RELEVANT, ID07)
+        responses()[DELETE][PORTS](nb_db, NOT_RELEVANT, PORT_ID07)
 
-        nb_db.delete_port.assert_called_once_with(ID07)
+        nb_db.delete_port.assert_called_once_with(PORT_ID07)
 
     def test_post_network(self):
         nb_db = Mock()
-        nb_db.update_network.return_value = NetworkRow(ID01, 'network_name')
+        nb_db.update_network.return_value = NetworkRow(NETWORK_ID01,
+                                                       'network_name')
         rest_input = '{"network":{"name":"network_name"}}'
 
         response = responses()[POST][NETWORKS](nb_db, rest_input, NOT_RELEVANT)
 
         response_json = json.loads(response)
-        assert response_json['network']['id'] == str(ID01)
+        assert response_json['network']['id'] == str(NETWORK_ID01)
         assert response_json['network']['name'] == 'network_name'
 
         rest_json = json.loads(rest_input)
@@ -153,8 +158,9 @@ class TestNeutronResponse(object):
 
     def test_post_port(self):
         nb_db = Mock()
-        netport = NetworkPort(PortRow(ID07, 'port_name', 'mac', 'device_id'),
-                              NetworkRow(ID01, 'network_name'))
+        netport = NetworkPort(PortRow(PORT_ID07, 'port_name', 'mac',
+                                      'device_id'),
+                              NetworkRow(NETWORK_ID01, 'network_name'))
         nb_db.update_port.return_value = netport
         rest_input = ('{"port":{"name":"port_name", "mac_address":"mac",'
                       '"device_id":"device_id"}}')
@@ -162,12 +168,12 @@ class TestNeutronResponse(object):
         response = responses()[POST][PORTS](nb_db, rest_input, NOT_RELEVANT)
 
         response_json = json.loads(response)
-        assert response_json['port']['id'] == str(ID07)
+        assert response_json['port']['id'] == str(PORT_ID07)
         assert response_json['port']['name'] == 'port_name'
         assert response_json['port']['mac_address'] == 'mac'
         assert response_json['port']['device_id'] == 'device_id'
         assert response_json['port']['device_owner'] == 'oVirt'
-        assert response_json['port']['network_id'] == str(ID01)
+        assert response_json['port']['network_id'] == str(NETWORK_ID01)
 
         rest_json = json.loads(rest_input)
         nb_db.update_port.assert_called_once_with(rest_json['port'])
@@ -176,15 +182,17 @@ class TestNeutronResponse(object):
         MODIFIED_MAC = '01:00:00:00:11:11'
 
         nb_db = Mock()
-        netport = NetworkPort(PortRow(ID07, 'port_name', 'mac', 'device_id'),
-                              NetworkRow(ID01, 'network_name'))
+        netport = NetworkPort(PortRow(PORT_ID07, 'port_name', 'mac',
+                                      'device_id'),
+                              NetworkRow(NETWORK_ID01, 'network_name'))
         nb_db.get_port.return_value = netport
         rest_input = ('{"port" :{"binding:host_id" : "192.168.120.43",'
                       '"mac_address" : "' + MODIFIED_MAC + '",'
                       '"security_groups" : null}}')
 
-        response = responses()[PUT][PORTS](nb_db, rest_input, str(ID07))
+        response = responses()[PUT][PORTS](nb_db, rest_input, str(PORT_ID07))
 
         response_json = json.loads(response)
-        assert response_json['port']['id'] == str(ID07)
-        nb_db.update_port_mac.assert_called_once_with(str(ID07), MODIFIED_MAC)
+        assert response_json['port']['id'] == str(PORT_ID07)
+        nb_db.update_port_mac.assert_called_once_with(str(PORT_ID07),
+                                                      MODIFIED_MAC)
