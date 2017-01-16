@@ -32,12 +32,31 @@ from ovirt_provider_ovn_hook import VNIC_ID_KEY
 import ovirt_provider_ovn_hook
 
 
-INPUT_XML = """<?xml version="1.0" encoding="utf-8"?>
+INPUT_XML_1 = """<?xml version="1.0" encoding="utf-8"?>
 <interface type="bridge">
   <model type="virtio"/>
   <source bridge="net1"/>
 </interface>"""
-EXPECTED_XML = """<?xml version="1.0" encoding="utf-8"?>
+EXPECTED_XML_1 = """<?xml version="1.0" encoding="utf-8"?>
+<interface type="bridge">
+<model type="virtio"/>
+<source bridge="br-int"/>
+<virtualport type="openvswitch">
+<parameters interfaceid="7"/>
+</virtualport>
+</interface>"""
+
+INPUT_XML_2 = """<?xml version="1.0" encoding="utf-8"?>
+<interface type="bridge">
+  <model type="virtio"/>
+  <source bridge="net1"/>
+  <virtualport type="openvswitch">
+    <garbage/>
+  </virtualport>
+  <virtualport type="another_provider1"/>
+
+</interface>"""
+EXPECTED_XML_2 = """<?xml version="1.0" encoding="utf-8"?>
 <interface type="bridge">
 <model type="virtio"/>
 <source bridge="br-int"/>
@@ -51,6 +70,10 @@ class TestOvirtProviderOvnHook(object):
 
     @mock.patch.object(os, 'environ', {VNIC_ID_KEY: '7'})
     def test_ovs_device(self):
+        self._test_ovs_device(INPUT_XML_1, EXPECTED_XML_1)
+        self._test_ovs_device(INPUT_XML_2, EXPECTED_XML_2)
+
+    def _test_ovs_device(self, INPUT_XML, EXPECTED_XML):
         domxml = minidom.parseString(INPUT_XML)
         ovirt_provider_ovn_hook.ovs_device(domxml)
 

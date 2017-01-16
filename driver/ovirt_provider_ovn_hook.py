@@ -37,6 +37,9 @@ def ovs_device(domxml):
         return  # skip if not an interface
     source = iface.getElementsByTagName('source')[0]
 
+    for child in iface.getElementsByTagName('virtualport'):
+        iface.removeChild(child)
+
     virtualport = domxml.createElement('virtualport')
     virtualport.setAttribute('type', 'openvswitch')
     iface.appendChild(virtualport)
