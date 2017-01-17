@@ -39,6 +39,7 @@ from ovndb.ndb_api import NetworkPort
 NOT_RELEVANT = None
 
 NETWORK_ID01 = UUID(int=1)
+NETWORK_NAME1 = 'network_name_1'
 PORT_ID07 = UUID(int=7)
 
 
@@ -80,21 +81,21 @@ class TestNeutronResponse(object):
 
     def test_show_network(self):
         nb_db = Mock()
-        nb_db.get_network.return_value = NetworkRow(NETWORK_ID01,
-                                                    'network_name')
+        nb_db.get_network.return_value = NetworkRow(
+            NETWORK_ID01, NETWORK_NAME1)
 
-        response = responses()[SHOW][NETWORKS](nb_db, NOT_RELEVANT,
-                                               NETWORK_ID01)
+        response = responses()[SHOW][NETWORKS](
+            nb_db, NOT_RELEVANT, NETWORK_ID01)
 
         response_json = json.loads(response)
         assert response_json['network']['id'] == str(NETWORK_ID01)
-        assert response_json['network']['name'] == 'network_name'
+        assert response_json['network']['name'] == NETWORK_NAME1
 
     def test_show_port(self):
         nb_db = Mock()
-        netport = NetworkPort(PortRow(PORT_ID07, 'port_name', 'mac',
-                                      'device_id'),
-                              NetworkRow(NETWORK_ID01, 'network_name'))
+        netport = NetworkPort(
+            PortRow(PORT_ID07, 'port_name', 'mac', 'device_id'),
+            NetworkRow(NETWORK_ID01, NETWORK_NAME1))
         nb_db.get_port.return_value = netport
 
         response = responses()[SHOW][PORTS](nb_db, NOT_RELEVANT, PORT_ID07)
@@ -105,20 +106,20 @@ class TestNeutronResponse(object):
 
     def test_get_networks(self):
         nb_db = Mock()
-        nb_db.networks = [NetworkRow(NETWORK_ID01, 'network_name')]
+        nb_db.networks = [NetworkRow(NETWORK_ID01, NETWORK_NAME1)]
 
-        response = responses()[GET][NETWORKS](nb_db, NOT_RELEVANT,
-                                              NOT_RELEVANT)
+        response = responses()[GET][NETWORKS](
+            nb_db, NOT_RELEVANT, NOT_RELEVANT)
 
         response_json = json.loads(response)
         assert response_json['networks'][0]['id'] == str(NETWORK_ID01)
-        assert response_json['networks'][0]['name'] == 'network_name'
+        assert response_json['networks'][0]['name'] == NETWORK_NAME1
 
     def test_get_ports(self):
         nb_db = Mock()
-        netport = NetworkPort(PortRow(PORT_ID07, 'port_name', 'mac',
-                                      'device_id'),
-                              NetworkRow(NETWORK_ID01, 'network_name'))
+        netport = NetworkPort(
+            PortRow(PORT_ID07, 'port_name', 'mac', 'device_id'),
+            NetworkRow(NETWORK_ID01, NETWORK_NAME1))
         nb_db.ports = [netport]
 
         response = responses()[GET][PORTS](nb_db, NOT_RELEVANT, NOT_RELEVANT)
@@ -144,23 +145,23 @@ class TestNeutronResponse(object):
     def test_post_network(self):
         nb_db = Mock()
         nb_db.update_network.return_value = NetworkRow(NETWORK_ID01,
-                                                       'network_name')
+                                                       NETWORK_NAME1)
         rest_input = '{"network":{"name":"network_name"}}'
 
         response = responses()[POST][NETWORKS](nb_db, rest_input, NOT_RELEVANT)
 
         response_json = json.loads(response)
         assert response_json['network']['id'] == str(NETWORK_ID01)
-        assert response_json['network']['name'] == 'network_name'
+        assert response_json['network']['name'] == NETWORK_NAME1
 
         rest_json = json.loads(rest_input)
         nb_db.update_network.assert_called_once_with(rest_json['network'])
 
     def test_post_port(self):
         nb_db = Mock()
-        netport = NetworkPort(PortRow(PORT_ID07, 'port_name', 'mac',
-                                      'device_id'),
-                              NetworkRow(NETWORK_ID01, 'network_name'))
+        netport = NetworkPort(
+            PortRow(PORT_ID07, 'port_name', 'mac', 'device_id'),
+            NetworkRow(NETWORK_ID01, NETWORK_NAME1))
         nb_db.update_port.return_value = netport
         rest_input = ('{"port":{"name":"port_name", "mac_address":"mac",'
                       '"device_id":"device_id"}}')
@@ -182,9 +183,9 @@ class TestNeutronResponse(object):
         MODIFIED_MAC = '01:00:00:00:11:11'
 
         nb_db = Mock()
-        netport = NetworkPort(PortRow(PORT_ID07, 'port_name', 'mac',
-                                      'device_id'),
-                              NetworkRow(NETWORK_ID01, 'network_name'))
+        netport = NetworkPort(
+            PortRow(PORT_ID07, 'port_name', 'mac', 'device_id'),
+            NetworkRow(NETWORK_ID01, NETWORK_NAME1))
         nb_db.get_port.return_value = netport
         rest_input = ('{"port" :{"binding:host_id" : "192.168.120.43",'
                       '"mac_address" : "' + MODIFIED_MAC + '",'
