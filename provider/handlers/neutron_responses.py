@@ -19,15 +19,17 @@ from __future__ import absolute_import
 
 import json
 
+from handlers.base_handler import GET
+from handlers.base_handler import SHOW
+from handlers.base_handler import DELETE
+from handlers.base_handler import POST
+from handlers.base_handler import PUT
+
+from handlers.base_handler import rest
 from ovndb.ovn_rest2db_mappers import NetworkMapper
 from ovndb.ovn_rest2db_mappers import PortMapper
 from ovndb.ovn_rest2db_mappers import SubnetMapper
 
-GET = 'GET'  # list of entities
-SHOW = 'SHOW'  # concrete entity
-DELETE = 'DELETE'
-POST = 'POST'
-PUT = 'PUT'
 
 NETWORKS = 'networks'
 PORTS = 'ports'
@@ -37,51 +39,33 @@ SUBNETS = 'subnets'
 _responses = {}
 
 
-def rest(method, path):
-    """
-    Decorator for adding rest request handling methods.
-    method -- rest method of the arriving request: GET/POST/DELETE/PUT
-    path -- the path of the arriving request
-    For example the function handling the following request:
-    GET: http://<host>/../networks
-    would have to be decorated with:
-    rest('GET', 'networks')
-    """
-    def assign_response(funct):
-        if method not in _responses:
-            _responses[method] = {}
-        _responses[method][path] = funct
-        return funct
-    return assign_response
-
-
-@rest(SHOW, NETWORKS)
+@rest(SHOW, NETWORKS, _responses)
 def show_network(nb_db, content, id=None):
     return json.dumps({
         'network': NetworkMapper.row2rest(nb_db.get_network(id))
     })
 
 
-@rest(SHOW, PORTS)
+@rest(SHOW, PORTS, _responses)
 def show_port(nb_db, content, id=None):
     return json.dumps({
         'port': PortMapper.row2rest(nb_db.get_port(id))
     })
 
 
-@rest(SHOW, SUBNETS)
+@rest(SHOW, SUBNETS, _responses)
 def show_subnet(nb_db, content, id):
     return json.dumps({
         'subnet': SubnetMapper.row2rest(nb_db.get_subnet(id) if id else None)
     })
 
 
-@rest(GET, '')
+@rest(GET, '', _responses)
 def get_default(nb_db, content, id):
     return json.dumps({})
 
 
-@rest(GET, NETWORKS)
+@rest(GET, NETWORKS, _responses)
 def get_networks(nb_db, conten, id):
     networks = nb_db.networks
     return json.dumps({
@@ -89,7 +73,7 @@ def get_networks(nb_db, conten, id):
     })
 
 
-@rest(GET, PORTS)
+@rest(GET, PORTS, _responses)
 def get_ports(nb_db, content, id):
     ports = nb_db.ports
     return json.dumps({
@@ -97,7 +81,7 @@ def get_ports(nb_db, content, id):
     })
 
 
-@rest(GET, SUBNETS)
+@rest(GET, SUBNETS, _responses)
 def get_subnets(nb_db, content, id):
     return json.dumps({
         'subnets': [SubnetMapper.row2rest(subnet)
@@ -105,25 +89,25 @@ def get_subnets(nb_db, content, id):
     })
 
 
-@rest(DELETE, NETWORKS)
+@rest(DELETE, NETWORKS, _responses)
 def delete_network(nb_db, content=None, id=None):
     if id is not None:
         nb_db.delete_network(id)
 
 
-@rest(DELETE, PORTS)
+@rest(DELETE, PORTS, _responses)
 def delete_port(nb_db, content=None, id=None):
     if id is not None:
         nb_db.delete_port(id)
 
 
-@rest(DELETE, SUBNETS)
+@rest(DELETE, SUBNETS, _responses)
 def delete_subnet(nb_db, content, id):
     if id is not None:
         nb_db.delete_subnet(id)
 
 
-@rest(POST, NETWORKS)
+@rest(POST, NETWORKS, _responses)
 def post_networks(nb_db, content, id):
     content_json = json.loads(content)
     received_network = content_json['network']
@@ -131,7 +115,7 @@ def post_networks(nb_db, content, id):
     return json.dumps({'network': NetworkMapper.row2rest(network)})
 
 
-@rest(POST, PORTS)
+@rest(POST, PORTS, _responses)
 def post_ports(nb_db, content, id):
     content_json = json.loads(content)
     received_port = content_json['port']
@@ -139,14 +123,14 @@ def post_ports(nb_db, content, id):
     return json.dumps({'port': PortMapper.row2rest(port)})
 
 
-@rest(POST, SUBNETS)
+@rest(POST, SUBNETS, _responses)
 def post_subnets(nb_db, content, id):
     received_subnet = json.loads(content)['subnet']
     subnet = nb_db.update_subnet(received_subnet)
     return json.dumps({'subnet': SubnetMapper.row2rest(subnet)})
 
 
-@rest(PUT, PORTS)
+@rest(PUT, PORTS, _responses)
 def put_ports(nb_db, content, id):
     if not id:
         raise Exception('No port id in POST request')
@@ -160,7 +144,7 @@ def put_ports(nb_db, content, id):
     return json.dumps({'port': PortMapper.row2rest(result)})
 
 
-@rest(GET, 'tech')
+@rest(GET, 'tech', _responses)
 def get_debug(nb_db, content, id):
     networks = nb_db.networks
     ports = nb_db.ports

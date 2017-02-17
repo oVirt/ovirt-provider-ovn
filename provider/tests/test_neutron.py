@@ -23,7 +23,7 @@ import pytest
 
 from handlers.neutron import NeutronHandler
 
-from handlers.neutron_responses import rest
+from handlers.base_handler import rest
 
 
 REST_RESPONSE_GET = 'REST_RESPONSE_GET'
@@ -31,27 +31,31 @@ REST_RESPONSE_SHOW = 'REST_RESPONSE_SHOW'
 REST_RESPONSE_POST = 'REST_RESPONSE_POST'
 
 
-@rest('GET', 'testports')
+response_handlers = {}
+
+
+@rest('GET', 'testports', response_handlers)
 def get_handler(nb_db, content, id):
     return REST_RESPONSE_GET
 
 
-@rest('SHOW', 'testports')
+@rest('SHOW', 'testports', response_handlers)
 def show_handler(nb_db, content, id):
     return REST_RESPONSE_SHOW + id
 
 
-@rest('DELETE', 'testports')
+@rest('DELETE', 'testports', response_handlers)
 def delete_handler(nb_db, content, id):
     return None
 
 
-@rest('POST', 'testports')
+@rest('POST', 'testports', response_handlers)
 def post_handler(nb_db, content, id):
     return REST_RESPONSE_POST + content
 
 
 @mock.patch('handlers.neutron.NeutronHandler._run_server', lambda *args: None)
+@mock.patch('handlers.neutron_responses._responses', response_handlers)
 class TestNeutronHandler(object):
 
     @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)

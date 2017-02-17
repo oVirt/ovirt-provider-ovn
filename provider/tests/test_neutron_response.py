@@ -21,7 +21,7 @@ from mock import Mock
 from uuid import UUID
 import json
 
-from handlers.neutron_responses import responses, rest
+from handlers.neutron_responses import responses
 from handlers.neutron_responses import GET
 from handlers.neutron_responses import SHOW
 from handlers.neutron_responses import DELETE
@@ -58,19 +58,6 @@ class PortRow(object):
 
 
 class TestNeutronResponse(object):
-    def test_assign_responses(self):
-
-        @rest('TEST1', 'test1')
-        def decorated_method1():
-            return 1
-
-        @rest('TEST2', 'test2')
-        def decorated_method2():
-            return 2
-
-        assert responses()['TEST1']['test1']() == 1
-        assert responses()['TEST2']['test2']() == 2
-
     def test_check_neutron_responses_required_by_engine_are_present(self):
         for method in [GET, SHOW, DELETE, POST]:
             for path in [NETWORKS, PORTS, SUBNETS]:
