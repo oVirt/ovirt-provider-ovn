@@ -21,16 +21,16 @@ from mock import Mock
 from uuid import UUID
 import json
 
-from neutron_responses import responses, rest
-from neutron_responses import GET
-from neutron_responses import SHOW
-from neutron_responses import DELETE
-from neutron_responses import POST
-from neutron_responses import PUT
+from handlers.neutron_responses import responses, rest
+from handlers.neutron_responses import GET
+from handlers.neutron_responses import SHOW
+from handlers.neutron_responses import DELETE
+from handlers.neutron_responses import POST
+from handlers.neutron_responses import PUT
 
-from neutron_responses import NETWORKS
-from neutron_responses import PORTS
-from neutron_responses import SUBNETS
+from handlers.neutron_responses import NETWORKS
+from handlers.neutron_responses import PORTS
+from handlers.neutron_responses import SUBNETS
 
 from ovndb.ovn_rest2db_mappers import PortMapper
 from ovndb.ndb_api import NetworkPort

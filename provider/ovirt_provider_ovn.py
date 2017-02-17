@@ -25,8 +25,8 @@ import logging
 import logging.config
 
 import ovirt_provider_config
-from keystone import TokenHandler
-from neutron import NeutronHandler
+from handlers.keystone import TokenHandler
+from handlers.neutron import NeutronHandler
 
 
 LOG_CONFIG_FILE = '/etc/ovirt-provider-ovn/logger.conf'

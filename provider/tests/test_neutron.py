@@ -21,9 +21,9 @@ from mock import MagicMock
 import mock
 import pytest
 
-from neutron import NeutronHandler
+from handlers.neutron import NeutronHandler
 
-from neutron_responses import rest
+from handlers.neutron_responses import rest
 
 
 REST_RESPONSE_GET = 'REST_RESPONSE_GET'
@@ -51,13 +51,13 @@ def post_handler(nb_db, content, id):
     return REST_RESPONSE_POST + content
 
 
-@mock.patch('neutron.NeutronHandler._run_server', lambda *args: None)
+@mock.patch('handlers.neutron.NeutronHandler._run_server', lambda *args: None)
 class TestNeutronHandler(object):
 
     @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
-    @mock.patch('neutron.NeutronHandler.end_headers')
-    @mock.patch('neutron.NeutronHandler.send_header')
-    @mock.patch('neutron.NeutronHandler.send_response', autospec=True)
+    @mock.patch('handlers.neutron.NeutronHandler.end_headers')
+    @mock.patch('handlers.neutron.NeutronHandler.send_header')
+    @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
     def test_handle_get_request(self, mock_send_response, mock_send_header,
                                 mock_end_headers, mock_ndb_api):
 
@@ -72,9 +72,9 @@ class TestNeutronHandler(object):
         assert mock_send_response.call_count == 1
 
     @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
-    @mock.patch('neutron.NeutronHandler.end_headers')
-    @mock.patch('neutron.NeutronHandler.send_header')
-    @mock.patch('neutron.NeutronHandler.send_response', autospec=True)
+    @mock.patch('handlers.neutron.NeutronHandler.end_headers')
+    @mock.patch('handlers.neutron.NeutronHandler.send_header')
+    @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
     def test_handle_get_request_with_id(self, mock_send_response,
                                         mock_send_header, mock_end_headers,
                                         mock_ndb_api):
@@ -91,9 +91,9 @@ class TestNeutronHandler(object):
         assert mock_send_response.call_count == 1
 
     @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
-    @mock.patch('neutron.NeutronHandler.end_headers')
-    @mock.patch('neutron.NeutronHandler.send_header')
-    @mock.patch('neutron.NeutronHandler.send_response', autospec=True)
+    @mock.patch('handlers.neutron.NeutronHandler.end_headers')
+    @mock.patch('handlers.neutron.NeutronHandler.send_header')
+    @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
     def test_handle_delete_request(self, mock_send_response, mock_send_header,
                                    mock_end_headers, mock_ndb_api):
 
@@ -109,9 +109,9 @@ class TestNeutronHandler(object):
         assert mock_send_response.call_count == 1
 
     @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
-    @mock.patch('neutron.NeutronHandler.end_headers')
-    @mock.patch('neutron.NeutronHandler.send_header')
-    @mock.patch('neutron.NeutronHandler.send_response', autospec=True)
+    @mock.patch('handlers.neutron.NeutronHandler.end_headers')
+    @mock.patch('handlers.neutron.NeutronHandler.send_header')
+    @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
     def test_handle_delete_with_no_id(self, mock_send_response,
                                       mock_send_header, mock_end_headers,
                                       mock_ndb_api):
@@ -124,9 +124,9 @@ class TestNeutronHandler(object):
             handler.do_DELETE()
 
     @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
-    @mock.patch('neutron.NeutronHandler.end_headers')
-    @mock.patch('neutron.NeutronHandler.send_header')
-    @mock.patch('neutron.NeutronHandler.send_response', autospec=True)
+    @mock.patch('handlers.neutron.NeutronHandler.end_headers')
+    @mock.patch('handlers.neutron.NeutronHandler.send_header')
+    @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
     def test_handle_post_request(self, mock_send_response, mock_send_header,
                                  mock_end_headers, mock_ndb_api):
 

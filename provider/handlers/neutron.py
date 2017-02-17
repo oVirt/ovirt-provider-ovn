@@ -23,12 +23,12 @@ from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
 import logging
 
 import ovirt_provider_config
-from neutron_responses import DELETE
-from neutron_responses import GET
-from neutron_responses import POST
-from neutron_responses import PUT
-from neutron_responses import SHOW
-from neutron_responses import responses
+from handlers.neutron_responses import DELETE
+from handlers.neutron_responses import GET
+from handlers.neutron_responses import POST
+from handlers.neutron_responses import PUT
+from handlers.neutron_responses import SHOW
+from handlers.neutron_responses import responses
 from ovndb.ndb_api import OvnNbDb
 
 
