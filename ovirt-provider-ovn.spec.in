@@ -104,5 +104,5 @@ The driver handles the connection of NICs provisioned on oVirt hosts to OVN.
 
 
 %changelog
-* Fri Aug  26 2016 Marcin Mirecki
--
+* Mon Feb  27 2016 Marcin Mirecki
+- open firewalld holes for OVN databases.
