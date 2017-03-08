@@ -38,8 +38,8 @@ install:
 	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/ provider/ovndb/*.py*
 	install -D provider/scripts/ovirt-provider-ovn.service $(DESTDIR)/usr/lib/systemd/system/ovirt-provider-ovn.service
 
-	install -D provider/scripts/ovirt-provider-ovn.xml $(DESTDIR)/etc/firewalld/services/ovirt-provider-ovn.xml
-	install -D provider/scripts/ovirt-provider-ovn-central.xml $(DESTDIR)/etc/firewalld/services/ovirt-provider-ovn-central.xml
+	install -m 644 -D provider/scripts/ovirt-provider-ovn.xml $(DESTDIR)/etc/firewalld/services/ovirt-provider-ovn.xml
+	install -m 644 -D provider/scripts/ovirt-provider-ovn-central.xml $(DESTDIR)/etc/firewalld/services/ovirt-provider-ovn-central.xml
 	install -m 555 -D driver/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_device_create/ovirt_provider_ovn_hook
 	install -m 555 -D driver/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_nic_hotplug/ovirt_provider_ovn_hook
 
