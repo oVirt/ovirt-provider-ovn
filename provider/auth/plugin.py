@@ -27,7 +27,7 @@ import six
 class Plugin(object):
 
     @abc.abstractmethod
-    def create_token(user_at_domain, user_password):
+    def create_token(self, user_at_domain, user_password):
         """Create a new token and return it."""
         return
 

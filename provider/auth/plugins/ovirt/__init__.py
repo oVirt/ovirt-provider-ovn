@@ -18,12 +18,4 @@
 #
 from __future__ import absolute_import
 
-from auth.plugin import Plugin
-
-STATIC_TOKEN = '00000000000000000000000000000001'
-
-
-class StaticTokenPlugin(Plugin):
-
-    def create_token(self, user_at_domain, user_password):
-        return STATIC_TOKEN
+from .plugin import OVirtPlugin as Plugin  # noqa: F401

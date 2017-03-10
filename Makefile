@@ -17,7 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 
 NAME=ovirt-provider-ovn
-VERSION=1.0
+VERSION=1.1
 DIST_DIR=$(NAME)-$(VERSION)
 GITHASH=$(shell git rev-parse --short HEAD)
 TIMESTAMP=$(shell date +'%Y%m%d%H%M%S')
@@ -42,6 +42,8 @@ install:
 	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins provider/auth/plugins/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/static_token/
 	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/static_token provider/auth/plugins/static_token/*.py*
+	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/ovirt/
+	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/ovirt provider/auth/plugins/ovirt/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/handlers/
 	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/handlers provider/handlers/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/

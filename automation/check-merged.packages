@@ -2,6 +2,7 @@ pytest
 python-mock
 python-openvswitch
 python-pytest
+python-requests
 python-setuptools
 python-six
 python2-pytest

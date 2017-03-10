@@ -21,7 +21,7 @@
 %define        __os_install_post %{_dbpath}/brp-compress
 
 Name:           ovirt-provider-ovn
-Version:        1.0
+Version:        1.1
 Release:        %{release_suffix}%{?dist}
 Summary:        The oVirt external network provider for OVN
 License:        GPLv2+
@@ -33,6 +33,7 @@ Requires: firewalld-filesystem
 Requires: kernel >= 3.10.0-512
 Requires: openvswitch-ovn-central >= 2.6
 Requires: python-openvswitch >= 2.6
+Requires: python-requests
 
 BuildRequires: python
 BuildRequires: systemd
@@ -100,5 +101,8 @@ The driver handles the connection of NICs provisioned on oVirt hosts to OVN.
 
 
 %changelog
+* Mon Mar 13 2017 Dominik Holler <dholler@redhat.com> - 1.1
+- add dependecy python-requests
+
 * Fri Aug  26 2016 Marcin Mirecki
 -
