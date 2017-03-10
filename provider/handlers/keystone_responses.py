@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,27 +15,24 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
-#
 from __future__ import absolute_import
 
-from handlers.base_handler import BaseHandler
-from handlers.keystone_responses import responses
+from handlers.base_handler import POST
+
+from handlers.selecting_handler import rest
+
+TOKENS = 'tokens'
+
+_responses = {}
 
 
-# TODO: authentication to be implemented
-# This is just a placeholder
-class TokenHandler(BaseHandler):
+@rest(POST, TOKENS, _responses)
+def post_tokens(content, id):
+    # TODO: any token to make engine happy
+    response_string = """{"access":{"token":{
+        "id": "00000000000000000000000000000001"} }}"""
+    return response_string
 
-    def handle_request(self, method, key, id, content):
-        response_handler = self._get_response_handler(method, key)
-        return response_handler(content, id)
 
-    @staticmethod
-    def _get_response_handler(method, key):
-        keystone_responses_for_method = responses().get(method)
-        if not keystone_responses_for_method:
-            raise BaseHandler.IncorrectRequestError()
-        response_handler = keystone_responses_for_method.get(key)
-        if not response_handler:
-            raise BaseHandler.IncorrectRequestError()
-        return response_handler
+def responses():
+    return _responses
