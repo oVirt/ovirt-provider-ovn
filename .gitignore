@@ -1,0 +1,11 @@
+*.iml
+*.pyc
+*.swp
+*.tmp
+*~
+.idea
+.project
+.pydevproject
+.tox
+provider/.cache
+provider/tests/.cache
