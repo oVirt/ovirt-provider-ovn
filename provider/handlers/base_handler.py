@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 import abc
+import httplib
 import logging
 
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
@@ -57,9 +58,9 @@ class BaseHandler(BaseHTTPRequestHandler):
     def do_DELETE(self):
         assert self._parse_request_path(self.path)[1], ('Delete request must'
                                                         'specify an id')
-        self._handle_request(DELETE, code=204)
+        self._handle_request(DELETE, code=httplib.NO_CONTENT)
 
-    def _handle_request(self, method, code=200, content=None):
+    def _handle_request(self, method, code=httplib.OK, content=None):
         logging.debug('Request: {} : {}'.format(method, self.path))
         if content:
             logging.debug('Request body:\n{}'.format(content))
@@ -71,7 +72,7 @@ class BaseHandler(BaseHTTPRequestHandler):
         except IncorrectRequestError as e:
             message = 'Incorrect path: {}: {}'.format(self.path)
             self._handle_response_exception(e, message=message,
-                                            response_code=404)
+                                            response_code=httplib.NOT_FOUND)
         except Exception as e:
             self._handle_response_exception(e)
 
@@ -93,7 +94,9 @@ class BaseHandler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
         self.end_headers()
 
-    def _handle_response_exception(self, e, message=None, response_code=500):
+    def _handle_response_exception(
+            self, e, message=None,
+            response_code=httplib.INTERNAL_SERVER_ERROR):
         logging.exception(message if message else e)
         self.send_error(response_code)
         self.end_headers()
