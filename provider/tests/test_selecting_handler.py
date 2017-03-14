@@ -17,10 +17,10 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
-from handlers.base_handler import rest
+from handlers.selecting_handler import rest
 
 
-class TestBaseResponse(object):
+class TestSelectingHandler(object):
     def test_assign_responses(self):
         response_handlers = {}
 

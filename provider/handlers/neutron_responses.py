@@ -25,7 +25,7 @@ from handlers.base_handler import DELETE
 from handlers.base_handler import POST
 from handlers.base_handler import PUT
 
-from handlers.base_handler import rest
+from handlers.selecting_handler import rest
 from ovndb.ovn_rest2db_mappers import NetworkMapper
 from ovndb.ovn_rest2db_mappers import PortMapper
 from ovndb.ovn_rest2db_mappers import SubnetMapper

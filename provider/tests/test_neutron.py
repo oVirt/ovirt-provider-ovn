@@ -23,7 +23,7 @@ import pytest
 
 from handlers.neutron import NeutronHandler
 
-from handlers.base_handler import rest
+from handlers.selecting_handler import rest
 
 
 REST_RESPONSE_GET = 'REST_RESPONSE_GET'

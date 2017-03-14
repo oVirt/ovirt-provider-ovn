@@ -18,7 +18,7 @@
 #
 from __future__ import absolute_import
 
-from handlers.base_handler import BaseHandler
+from handlers.selecting_handler import SelectingHandler
 from handlers.neutron_responses import responses
 import ovirt_provider_config
 from ovndb.ndb_api import OvnNbDb
@@ -27,33 +27,19 @@ from ovndb.ndb_api import OvnNbDb
 OVN_REMOTE_AT_LOCALHOST = 'tcp:127.0.0.1:6641'
 
 
-class IncorrectRequestError(AttributeError):
-    pass
-
-
-class NeutronHandler(BaseHandler):
+class NeutronHandler(SelectingHandler):
 
     # TODO: this is made configurable in a later patch
 
-    def __init__(self, request, client_address, server):
-        BaseHandler.__init__(self, request, client_address, server)
-
-    def handle_request(self, method, key, id, content):
-        response_handler = self._get_response_handler(method, key)
+    def call_response_handler(self, response_handler, content, id):
         with OvnNbDb(self. _remote()) as nb_db:
             return response_handler(nb_db, content, id)
-
-    @staticmethod
-    def _get_response_handler(method, key):
-        neutron_responses_for_method = responses().get(method)
-        if not neutron_responses_for_method:
-            raise IncorrectRequestError()
-        response_handler = neutron_responses_for_method.get(key)
-        if not response_handler:
-            raise IncorrectRequestError()
-        return response_handler
 
     @staticmethod
     def _remote():
         return ovirt_provider_config.get('OVN REMOTE', 'ovn-remote',
                                          OVN_REMOTE_AT_LOCALHOST)
+
+    @staticmethod
+    def get_responses():
+        return responses()

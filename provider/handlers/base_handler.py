@@ -30,24 +30,6 @@ POST = 'POST'
 PUT = 'PUT'
 
 
-def rest(method, path, response_handlers):
-    """
-    Decorator for adding rest request handling methods.
-    method -- rest method of the arriving request: GET/POST/DELETE/PUT
-    path -- the path of the arriving request
-    For example the function handling the following request:
-    GET: http://<host>/../networks
-    would have to be decorated with:
-    rest('GET', 'networks')
-    """
-    def assign_response(funct):
-        if method not in response_handlers:
-            response_handlers[method] = {}
-        response_handlers[method][path] = funct
-        return funct
-    return assign_response
-
-
 class IncorrectRequestError(AttributeError):
     pass
 
