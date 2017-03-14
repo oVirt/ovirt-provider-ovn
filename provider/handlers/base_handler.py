@@ -30,12 +30,29 @@ DELETE = 'DELETE'
 POST = 'POST'
 PUT = 'PUT'
 
+ERROR_MESSAGE = """\
+{{
+  "error": {{
+    "message": "{}",
+    "code": {},
+    "title": "{}"
+  }}
+}}
+"""
+
+ERROR_CONTENT_TYPE = 'application/json'
+
 
 class IncorrectRequestError(AttributeError):
     pass
 
 
 class BaseHandler(BaseHTTPRequestHandler):
+
+    # Suppress static error message of BaseHTTPRequestHandler, because a
+    # the individual error message ERROR_MESSAGE is sent.
+    error_message_format = ''
+    error_content_type = ERROR_CONTENT_TYPE
 
     # TODO: this is made configurable in a later patch
 
@@ -70,7 +87,7 @@ class BaseHandler(BaseHTTPRequestHandler):
             response = self.handle_request(method, key, id, content)
             self._process_response(response, code)
         except IncorrectRequestError as e:
-            message = 'Incorrect path: {}: {}'.format(self.path)
+            message = 'Incorrect path: {}'.format(self.path)
             self._handle_response_exception(e, message=message,
                                             response_code=httplib.NOT_FOUND)
         except Exception as e:
@@ -97,10 +114,13 @@ class BaseHandler(BaseHTTPRequestHandler):
     def _handle_response_exception(
             self, e, message=None,
             response_code=httplib.INTERNAL_SERVER_ERROR):
-        logging.exception(message if message else e)
+        error_message = message if message else e
+        logging.exception(error_message)
         self.send_error(response_code)
-        self.end_headers()
-        self.wfile.write('Error:\n{}'.format(message if message else e))
+        self.wfile.write(ERROR_MESSAGE.format(
+            error_message,
+            response_code,
+            httplib.responses[response_code]))
 
     @staticmethod
     def _parse_request_path(full_path):
