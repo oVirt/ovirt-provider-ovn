@@ -15,31 +15,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
+#
 from __future__ import absolute_import
 
-from handlers.base_handler import POST
-from handlers.selecting_handler import rest
-
-import auth
-
-TOKENS = 'tokens'
-_responses = {}
+STATIC_TOKEN = '00000000000000000000000000000001'
 
 
-@rest(POST, TOKENS, _responses)
-def post_tokens(content, id):
-    password_credentials = content['auth']['passwordCredentials']
-    token = auth.create_token(
-        user_at_domain=password_credentials['username'],
-        user_password=password_credentials['password'])
-    return {
-        'access': {
-            'token': {
-                'id': token
-            }
-        }
-    }
+class StaticTokenPlugin(object):
 
-
-def responses():
-    return _responses
+    @staticmethod
+    def create_token(user_at_domain, user_password):
+        return STATIC_TOKEN

@@ -24,6 +24,8 @@ import logging
 
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
 
+from auth.errors import AuthenticationError
+
 GET = 'GET'  # list of entities
 SHOW = 'SHOW'  # concrete entity
 DELETE = 'DELETE'
@@ -90,6 +92,9 @@ class BaseHandler(BaseHTTPRequestHandler):
             message = 'Incorrect path: {}'.format(self.path)
             self._handle_response_exception(e, message=message,
                                             response_code=httplib.NOT_FOUND)
+        except AuthenticationError as e:
+            self._handle_response_exception(e,
+                                            response_code=httplib.UNAUTHORIZED)
         except Exception as e:
             self._handle_response_exception(e)
 

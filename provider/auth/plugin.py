@@ -15,31 +15,23 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
+#
 from __future__ import absolute_import
 
-from handlers.base_handler import POST
-from handlers.selecting_handler import rest
+import abc
 
-import auth
-
-TOKENS = 'tokens'
-_responses = {}
+import six
 
 
-@rest(POST, TOKENS, _responses)
-def post_tokens(content, id):
-    password_credentials = content['auth']['passwordCredentials']
-    token = auth.create_token(
-        user_at_domain=password_credentials['username'],
-        user_password=password_credentials['password'])
-    return {
-        'access': {
-            'token': {
-                'id': token
-            }
-        }
-    }
+@six.add_metaclass(abc.ABCMeta)
+class Plugin():
 
+    @abc.abstractmethod
+    def create_token(user_at_domain, user_password):
+        """Create a new token and return it."""
+        return
 
-def responses():
-    return _responses
+    # @abc.abstractmethod
+    # def validate_token(token):
+    #    """Validates if the token is authorized to use the neutron API"""
+    #    return

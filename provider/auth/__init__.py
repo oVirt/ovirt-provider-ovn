@@ -15,31 +15,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
+#
 from __future__ import absolute_import
 
-from handlers.base_handler import POST
-from handlers.selecting_handler import rest
-
-import auth
-
-TOKENS = 'tokens'
-_responses = {}
-
-
-@rest(POST, TOKENS, _responses)
-def post_tokens(content, id):
-    password_credentials = content['auth']['passwordCredentials']
-    token = auth.create_token(
-        user_at_domain=password_credentials['username'],
-        user_password=password_credentials['password'])
-    return {
-        'access': {
-            'token': {
-                'id': token
-            }
-        }
-    }
-
-
-def responses():
-    return _responses
+from .core import init  # noqa: F401
+from .plugin_facade import create_token  # noqa: F401

@@ -24,6 +24,7 @@ import atexit
 import logging
 import logging.config
 
+import auth
 import ovirt_provider_config
 from handlers.keystone import TokenHandler
 from handlers.neutron import NeutronHandler
@@ -41,6 +42,7 @@ def main():
     logging.info('Starting server')
 
     ovirt_provider_config.load()
+    auth.init()
 
     server_keystone = HTTPServer(('', 35357), TokenHandler)
     Thread(target=server_keystone.serve_forever).start()
