@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 from handlers.base_handler import BaseHandler
+from handlers.base_handler import IncorrectRequestError
 from handlers.keystone_responses import responses
 
 
@@ -34,8 +35,8 @@ class TokenHandler(BaseHandler):
     def _get_response_handler(method, key):
         keystone_responses_for_method = responses().get(method)
         if not keystone_responses_for_method:
-            raise BaseHandler.IncorrectRequestError()
+            raise IncorrectRequestError()
         response_handler = keystone_responses_for_method.get(key)
         if not response_handler:
-            raise BaseHandler.IncorrectRequestError()
+            raise IncorrectRequestError()
         return response_handler
