@@ -17,26 +17,25 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
+from handlers.keystone_responses import responses
+from handlers.keystone_responses import TOKENS
 from handlers.base_handler import POST
 
-from handlers.selecting_handler import rest
-
-TOKENS = 'tokens'
-
-_responses = {}
-
-
-@rest(POST, TOKENS, _responses)
-def post_tokens(content, id):
-    # TODO: any token to make engine happy
-    return {
-        'access': {
-            'token': {
-                'id': '00000000000000000000000000000001'
-            }
+TOKEN = '00000000000000000000000000000001'
+TOKEN_REQUEST = {
+    'auth': {
+        'tenantName': 'customer-x',
+        'passwordCredentials': {
+            'username': 'joeuser',
+            'password': 'secret'
         }
     }
+}
 
 
-def responses():
-    return _responses
+def test_post_tokens():
+    post_response_handlers = responses()[POST]
+    post_tokens_response_handler = post_response_handlers[TOKENS]
+    response = post_tokens_response_handler(content=TOKEN_REQUEST,
+                                            id=None)
+    assert response['access']['token']['id'] == TOKEN

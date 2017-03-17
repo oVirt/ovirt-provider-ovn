@@ -18,25 +18,17 @@
 #
 from __future__ import absolute_import
 
-from handlers.base_handler import BaseHandler
-from handlers.base_handler import IncorrectRequestError
+import json
+
+from handlers.selecting_handler import SelectingHandler
 from handlers.keystone_responses import responses
 
 
-# TODO: authentication to be implemented
-# This is just a placeholder
-class TokenHandler(BaseHandler):
+class TokenHandler(SelectingHandler):
 
-    def handle_request(self, method, key, id, content):
-        response_handler = self._get_response_handler(method, key)
-        return response_handler(content, id)
+    def call_response_handler(self, response_handler, content, id):
+        return json.dumps(response_handler(json.loads(content), id))
 
     @staticmethod
-    def _get_response_handler(method, key):
-        keystone_responses_for_method = responses().get(method)
-        if not keystone_responses_for_method:
-            raise IncorrectRequestError()
-        response_handler = keystone_responses_for_method.get(key)
-        if not response_handler:
-            raise IncorrectRequestError()
-        return response_handler
+    def get_responses():
+        return responses()
