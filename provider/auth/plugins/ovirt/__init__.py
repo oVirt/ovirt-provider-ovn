@@ -20,3 +20,4 @@ from __future__ import absolute_import
 
 from .authorization_by_role import AuthorizationByRole  # noqa: F401
 from .authorization_by_username import AuthorizationByUserName  # noqa: F401
+from .authorization_by_group import AuthorizationByGroup  # noqa: F401

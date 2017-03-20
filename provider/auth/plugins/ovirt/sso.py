@@ -123,6 +123,11 @@ def get_principal_id(token_info):
     return token_info['ovirt'][1]['principal_id']
 
 
+def extract_groups(token_info):
+    return [group_container[1]
+            for group_container in token_info['ovirt'][1]['group_ids'][1]]
+
+
 def _token_url(engine_url):
     return engine_url + AUTH_PATH + TOKEN_PATH
 
