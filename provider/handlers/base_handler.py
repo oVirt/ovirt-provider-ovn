@@ -45,7 +45,11 @@ ERROR_MESSAGE = """\
 ERROR_CONTENT_TYPE = 'application/json'
 
 
-class IncorrectRequestError(AttributeError):
+class NotFoundError(AttributeError):
+    pass
+
+
+class BadRequestError(AttributeError):
     pass
 
 
@@ -88,10 +92,13 @@ class BaseHandler(BaseHTTPRequestHandler):
             key, id = self._parse_request_path(self.path)
             response = self.handle_request(method, key, id, content)
             self._process_response(response, code)
-        except IncorrectRequestError as e:
+        except NotFoundError as e:
             message = 'Incorrect path: {}'.format(self.path)
             self._handle_response_exception(e, message=message,
                                             response_code=httplib.NOT_FOUND)
+        except BadRequestError as e:
+            self._handle_response_exception(e,
+                                            response_code=httplib.BAD_REQUEST)
         except AuthenticationError as e:
             self._handle_response_exception(e,
                                             response_code=httplib.UNAUTHORIZED)

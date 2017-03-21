@@ -21,7 +21,7 @@ from __future__ import absolute_import
 import abc
 
 from handlers.base_handler import BaseHandler
-from handlers.base_handler import IncorrectRequestError
+from handlers.base_handler import NotFoundError
 
 
 def rest(method, path, response_handlers):
@@ -54,10 +54,10 @@ class SelectingHandler(BaseHandler):
     def _get_response_handler(cls, method, key):
         responses_for_method = cls.get_responses().get(method)
         if not responses_for_method:
-            raise IncorrectRequestError()
+            raise NotFoundError()
         response_handler = responses_for_method.get(key)
         if not response_handler:
-            raise IncorrectRequestError()
+            raise NotFoundError()
         return response_handler
 
     @abc.abstractmethod

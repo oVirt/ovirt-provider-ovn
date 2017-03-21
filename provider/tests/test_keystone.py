@@ -20,8 +20,8 @@ from __future__ import absolute_import
 import json
 from mock import MagicMock, ANY
 import mock
-import pytest
 
+from handlers.base_handler import BadRequestError
 from handlers.keystone import TokenHandler
 
 from handlers.selecting_handler import rest
@@ -41,6 +41,11 @@ def domains_handler(content, id):
     return {'value': id + content['key']}
 
 
+@rest('POST', 'bad_req', response_handlers)
+def bad_req_handler(content, id):
+    raise BadRequestError
+
+
 @mock.patch('handlers.keystone.TokenHandler._run_server', lambda *args: None)
 @mock.patch('handlers.keystone_responses._responses', response_handlers)
 @mock.patch('handlers.keystone.TokenHandler.end_headers')
@@ -48,35 +53,35 @@ def domains_handler(content, id):
 @mock.patch('handlers.keystone.TokenHandler.send_response', autospec=True)
 class TestKeystoneHandler(object):
 
-    def _test_handle_post_request(self, mock_send_response, path,
-                                  expected_string):
+    def _test_handle_post_request_ok(self, mock_send_response, path,
+                                     expected_string):
+        handler = self._test_handle_post_request(path)
+        mock_send_response.assert_called_once_with(handler, 200)
+        handler.wfile.write.assert_called_once_with(json.dumps(
+            {'value': expected_string + 'value'}))
 
+    def _test_handle_post_request(self, path):
         handler = TokenHandler(None, None, None)
         handler.wfile = MagicMock()
         handler.rfile = MagicMock()
         input_data = json.dumps({'key': 'value'})
         handler.rfile.read.return_value = input_data
         handler.headers = {'Content-Length': len(input_data)}
-
         handler.path = path
-
         handler.do_POST()
-
-        mock_send_response.assert_called_once_with(handler, 200)
-        handler.wfile.write.assert_called_once_with(json.dumps(
-            {'value': expected_string + 'value'}))
+        return handler
 
     def test_handle_post_request(self, mock_send_response, mock_send_header,
                                  mock_end_headers):
-        self._test_handle_post_request(mock_send_response, '/v2.0/tokens',
-                                       REST_RESPONSE_POST)
+        self._test_handle_post_request_ok(mock_send_response, '/v2.0/tokens',
+                                          REST_RESPONSE_POST)
 
     def test_handle_post_request_double_slashes(self, mock_send_response,
                                                 mock_send_header,
                                                 mock_end_headers):
 
-        self._test_handle_post_request(mock_send_response, '/v2.0//tokens',
-                                       REST_RESPONSE_POST)
+        self._test_handle_post_request_ok(mock_send_response, '/v2.0//tokens',
+                                          REST_RESPONSE_POST)
 
     def test_handle_post_request_long(self, mock_send_response,
                                       mock_send_header, mock_end_headers):
@@ -84,14 +89,20 @@ class TestKeystoneHandler(object):
         id = 'domain_id/config/group/option'
         path = '/v3/{}/{}'.format(key, id)
 
-        self._test_handle_post_request(mock_send_response, path, id)
+        self._test_handle_post_request_ok(mock_send_response, path, id)
 
     @mock.patch('handlers.keystone.TokenHandler.send_error', autospec=True)
-    def test_handle_post_request_invalid(self, mock_send_error,
+    def test_handle_post_request_not_found(self, mock_send_error,
+                                           mock_send_response,
+                                           mock_send_header,
+                                           mock_end_headers):
+        self._test_handle_post_request('/v2/garbage')
+        mock_send_error.assert_called_once_with(ANY, 404)
+
+    @mock.patch('handlers.keystone.TokenHandler.send_error', autospec=True)
+    def test_handle_post_request_bad_req(self, mock_send_error,
                                          mock_send_response,
                                          mock_send_header,
                                          mock_end_headers):
-        with pytest.raises(Exception):
-            self._test_handle_post_request(mock_send_response, '/v2/garbage',
-                                           REST_RESPONSE_POST)
-        mock_send_error.assert_called_once_with(ANY, 404)
+        self._test_handle_post_request('/v2/bad_req')
+        mock_send_error.assert_called_once_with(ANY, 400)

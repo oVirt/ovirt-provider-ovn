@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
+from handlers.base_handler import BadRequestError
 from handlers.base_handler import POST
 from handlers.selecting_handler import rest
 
@@ -28,10 +29,15 @@ _responses = {}
 
 @rest(POST, TOKENS, _responses)
 def post_tokens(content, id):
-    password_credentials = content['auth']['passwordCredentials']
+    try:
+        password_credentials = content['auth']['passwordCredentials']
+        user_at_domain = password_credentials['username']
+        user_password = password_credentials['password']
+    except KeyError as e:
+        raise BadRequestError(e)
     token = auth.create_token(
-        user_at_domain=password_credentials['username'],
-        user_password=password_credentials['password'])
+        user_at_domain=user_at_domain,
+        user_password=user_password)
     return {
         'access': {
             'token': {
