@@ -125,11 +125,14 @@ class BaseHandler(BaseHTTPRequestHandler):
     @staticmethod
     def _parse_request_path(full_path):
         """
-        The request path looks like: "/v2.0/*" example: "/v2.0/networks".
-        We are only interested in the * part
+        The request path is split into the tree parts:
+        /{version}/{key}/{id} .
+        The {id} may be empty and is allowed to contain multiple slashes.
+        Several subsequent slashes are subsumed to a single one.
         """
-        path = full_path[6:] if len(full_path) >= 6 else None
-        key, id = path.split('/', 1) if '/' in path else (path, None)
+        elements = filter(None, full_path.split('/'))
+        key = elements[1] if len(elements) > 1 else None
+        id = '/'.join(elements[2:]) if len(elements) > 2 else None
         return key, id
 
     @abc.abstractmethod
