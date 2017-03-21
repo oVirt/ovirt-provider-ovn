@@ -26,6 +26,6 @@ def create_token(user_at_domain, user_password):
     return auth.core.plugin.create_token(user_at_domain, user_password)
 
 
-# def validate_token(token):
-#    auth.core.plugin_loaded()
-#    return auth.core.plugin.validate_token(token)
+def validate_token(token):
+    auth.core.plugin_loaded()
+    return auth.core.plugin.validate_token(token)

@@ -62,11 +62,14 @@ class TestNeutronHandler(object):
     @mock.patch('handlers.neutron.NeutronHandler.end_headers')
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
-    def test_handle_get_request(self, mock_send_response, mock_send_header,
-                                mock_end_headers, mock_ndb_api):
+    @mock.patch('handlers.neutron.validate_token', return_value=True)
+    def test_handle_get_request(self, mock_validate_token, mock_send_response,
+                                mock_send_header, mock_end_headers,
+                                mock_ndb_api):
 
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
+        handler.headers = {}
         handler.path = '/v2.0/testports'
 
         handler.do_GET()
@@ -74,18 +77,38 @@ class TestNeutronHandler(object):
         assert mock_send_response.call_args[0][1] == 200
         assert handler.wfile.write.call_args[0][0] == REST_RESPONSE_GET
         assert mock_send_response.call_count == 1
+        assert mock_validate_token.call_count == 1
+
+    @mock.patch('handlers.neutron.validate_token', return_value=False)
+    @mock.patch('handlers.neutron.NeutronHandler.log_error')
+    @mock.patch('handlers.neutron.NeutronHandler.send_error')
+    def test_handle_get_request_auth_fail(self, mock_send_error,
+                                          mock_log_error, mock_validate_token):
+
+        handler = NeutronHandler(None, None, None)
+        handler.wfile = MagicMock()
+        handler.headers = {}
+        handler.path = '/v2.0/testports'
+
+        handler.do_GET()
+
+        assert mock_validate_token.call_count == 1
+        assert mock_send_error.call_args[0][0] == 403
 
     @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
     @mock.patch('handlers.neutron.NeutronHandler.end_headers')
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
-    def test_handle_get_request_with_id(self, mock_send_response,
-                                        mock_send_header, mock_end_headers,
+    @mock.patch('handlers.neutron.validate_token', return_value=True)
+    def test_handle_get_request_with_id(self, mock_validate_token,
+                                        mock_send_response, mock_send_header,
+                                        mock_end_headers,
                                         mock_ndb_api):
 
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
         id = '123456'
+        handler.headers = {}
         handler.path = '/v2.0/testports/' + id
 
         handler.do_GET()
@@ -93,17 +116,21 @@ class TestNeutronHandler(object):
         assert mock_send_response.call_args[0][1] == 200
         assert handler.wfile.write.call_args[0][0] == REST_RESPONSE_SHOW + id
         assert mock_send_response.call_count == 1
+        assert mock_validate_token.call_count == 1
 
     @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
     @mock.patch('handlers.neutron.NeutronHandler.end_headers')
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
-    def test_handle_delete_request(self, mock_send_response, mock_send_header,
+    @mock.patch('handlers.neutron.validate_token', return_value=True)
+    def test_handle_delete_request(self, mock_validate_token,
+                                   mock_send_response, mock_send_header,
                                    mock_end_headers, mock_ndb_api):
 
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
         id = '123456'
+        handler.headers = {}
         handler.path = '/v2.0/testports/' + id
 
         handler.do_DELETE()
@@ -111,6 +138,7 @@ class TestNeutronHandler(object):
         assert mock_send_response.call_args[0][1] == 204
         assert handler.wfile.write.call_count == 0
         assert mock_send_response.call_count == 1
+        assert mock_validate_token.call_count == 1
 
     @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
     @mock.patch('handlers.neutron.NeutronHandler.end_headers')
@@ -131,8 +159,10 @@ class TestNeutronHandler(object):
     @mock.patch('handlers.neutron.NeutronHandler.end_headers')
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
-    def test_handle_post_request(self, mock_send_response, mock_send_header,
-                                 mock_end_headers, mock_ndb_api):
+    @mock.patch('handlers.neutron.validate_token', return_value=True)
+    def test_handle_post_request(self, mock_validate_token, mock_send_response,
+                                 mock_send_header, mock_end_headers,
+                                 mock_ndb_api):
 
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
@@ -148,3 +178,4 @@ class TestNeutronHandler(object):
         expected_response = REST_RESPONSE_POST + 'content'
         assert handler.wfile.write.call_args[0][0] == expected_response
         assert mock_send_response.call_count == 1
+        assert mock_validate_token.call_count == 1

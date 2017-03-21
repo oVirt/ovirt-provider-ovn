@@ -20,10 +20,22 @@ from __future__ import absolute_import
 
 from auth.plugin import Plugin
 
-STATIC_TOKEN = '00000000000000000000000000000001'
+MAGIC_TOKEN = '00000000000000000000000000000001'
 
 
 class StaticTokenPlugin(Plugin):
 
     def create_token(self, user_at_domain, user_password):
-        return STATIC_TOKEN
+        return MAGIC_TOKEN
+
+
+class MagicTokenPlugin(StaticTokenPlugin):
+
+    def validate_token(self, token):
+        return token == MAGIC_TOKEN
+
+
+class NoAuthPlugin(StaticTokenPlugin):
+
+    def validate_token(self, token):
+        return True

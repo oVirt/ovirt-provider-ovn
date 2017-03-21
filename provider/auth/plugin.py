@@ -31,7 +31,7 @@ class Plugin(object):
         """Create a new token and return it."""
         return
 
-    # @abc.abstractmethod
-    # def validate_token(token):
-    #    """Validates if the token is authorized to use the neutron API"""
-    #    return
+    @abc.abstractmethod
+    def validate_token(self, token):
+        """Validates if the token is authorized to use the neutron API"""
+        return

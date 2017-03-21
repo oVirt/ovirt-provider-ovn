@@ -40,8 +40,7 @@ TOKEN_REQUEST = {
 def test_post_tokens(mock_create_token):
     post_response_handlers = responses()[POST]
     post_tokens_response_handler = post_response_handlers[TOKENS]
-    response = post_tokens_response_handler(content=TOKEN_REQUEST,
-                                            id=None)
+    response = post_tokens_response_handler(content=TOKEN_REQUEST, id=None)
     mock_create_token.assert_called_once_with(
         user_at_domain='joeuser',
         user_password='secret')

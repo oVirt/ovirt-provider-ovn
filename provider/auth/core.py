@@ -26,7 +26,8 @@ import ovirt_provider_config
 from .plugin import Plugin
 
 CONFIG_SECTION = 'AUTH'
-AUTH_PLUGIN = 'auth.plugins.static_token:Plugin'
+AUTH_PLUGIN = 'auth.plugins.static_token:MagicTokenPlugin'
+TOKEN_HTTP_HEADER_FIELD_NAME = 'X-Auth-Token'
 
 plugin = None
 

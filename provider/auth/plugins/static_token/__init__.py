@@ -18,4 +18,5 @@
 #
 from __future__ import absolute_import
 
-from .plugin import StaticTokenPlugin as Plugin  # noqa: F401
+from .plugin import MagicTokenPlugin  # noqa: F401
+from .plugin import NoAuthPlugin  # noqa: F401

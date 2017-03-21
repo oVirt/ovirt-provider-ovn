@@ -25,8 +25,10 @@ from auth.plugin import Plugin
 
 
 class ValidPlugin(Plugin):
-    @staticmethod
-    def create_token(user_at_domain, user_password):
+    def create_token(self, user_at_domain, user_password):
+        pass
+
+    def validate_token(self, token):
         pass
 
 
@@ -35,8 +37,10 @@ class IncompletePlugin(Plugin):
 
 
 class NoPlugin(object):
-    @staticmethod
-    def create_token(user_at_domain, user_password):
+    def create_token(self, user_at_domain, user_password):
+        pass
+
+    def validate_token(self, token):
         pass
 
 
