@@ -63,12 +63,71 @@ def _get_sso_token(username, password, engine_url, ca_file):
                          verify=ca_file)
 
 
+def get_profiles(token, engine_url, ca_file, client_id, client_secret):
+    profiles = _profile_list(token, engine_url,
+                             ca_file=ca_file,
+                             client_id=client_id,
+                             client_secret=client_secret)['result'][1][0]
+    # first element of container is corresponding data type in java
+    profiles.pop(0)
+    return profiles
+
+
+@_inspect_response
+def _profile_list(token, engine_url, ca_file, client_id, client_secret):
+    return requests.post(_token_info_url(engine_url),
+                         headers=AUTH_HEADERS,
+                         data={
+                             'token': token,
+                             'query_type': 'profile-list',
+                             'scope': PUBLIC_AUTHZ_SEARCH_SCOPE
+                             },
+                         auth=(client_id, client_secret),
+                         verify=ca_file)
+
+
+@_inspect_response
+def get_token_info(token, engine_url, ca_file, client_id, client_secret):
+    return requests.post(_token_info_url(engine_url),
+                         headers=AUTH_HEADERS,
+                         data={'token': token},
+                         auth=(client_id, client_secret),
+                         verify=ca_file)
+
+
+def _get_token_url(engine_url):
+    return engine_url + AUTH_PATH + TOKEN_PATH
+
+
+def _token_info_url(engine_url):
+    return engine_url + AUTH_PATH + TOKEN_INFO_PATH
+
+
+def is_active(token_info):
+    return token_info['active']
+
+
+def get_user_id(token_info):
+    user_id = token_info['user_id'].split('@')
+    return user_id[0], user_id[-1]
+
+
+def extract_authz_name(profiles, authn_name):
+    for profile in profiles:
+        if profile['authn_name'] == authn_name:
+            return profile['authz_name']
+    raise KeyError('{}'.format(authn_name))
+
+
+def get_principal_id(token_info):
+    return token_info['ovirt'][1]['principal_id']
+
+
 def _token_url(engine_url):
     return engine_url + AUTH_PATH + TOKEN_PATH
 
 
 def _check_for_error(response):
     if 'error' in response:
-        raise Unauthorized(
-            'Error during SSO authentication {} : {}'.format(
-                response['error_code'], response['error']))
+        raise Unauthorized('Error during SSO authentication {} : {}'.format(
+            response['error_code'], response['error']))

@@ -18,4 +18,4 @@
 #
 from __future__ import absolute_import
 
-from .plugin import OVirtPlugin as Plugin  # noqa: F401
+from .authorization_by_role import AuthorizationByRole  # noqa: F401
