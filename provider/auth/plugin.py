@@ -24,7 +24,7 @@ import six
 
 
 @six.add_metaclass(abc.ABCMeta)
-class Plugin():
+class Plugin(object):
 
     @abc.abstractmethod
     def create_token(user_at_domain, user_password):

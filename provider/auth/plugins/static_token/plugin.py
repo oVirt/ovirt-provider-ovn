@@ -18,10 +18,12 @@
 #
 from __future__ import absolute_import
 
+from auth.plugin import Plugin
+
 STATIC_TOKEN = '00000000000000000000000000000001'
 
 
-class StaticTokenPlugin(object):
+class StaticTokenPlugin(Plugin):
 
     @staticmethod
     def create_token(user_at_domain, user_password):

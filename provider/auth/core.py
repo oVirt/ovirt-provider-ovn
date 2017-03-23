@@ -42,13 +42,13 @@ def _load_plugin(plugin_name):
         plugin_class = getattr(importlib.import_module(module_name),
                                class_name)
         try:
-            isinstance(plugin_class, Plugin)
+            assert issubclass(plugin_class, Plugin)
+            return plugin_class()
         except TypeError as e:
             logging.error(
                 "Auth plugin '%s' is of wrong type: %s",
                 plugin_class.__name__, e)
             raise e
-        return plugin_class()
     except Exception as e:
         logging.error(
             "Unable to load auth plugin '%s'", plugin_name)
