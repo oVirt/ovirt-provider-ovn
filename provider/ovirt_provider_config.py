@@ -39,3 +39,11 @@ def get(section, key, default=None):
         return _config.get(section, key) if _config else default
     except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
         return default
+
+
+def getboolean(section, key, default=None):
+    global _config
+    try:
+        return _config.getboolean(section, key) if _config else default
+    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+        return default

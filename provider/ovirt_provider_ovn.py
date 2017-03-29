@@ -23,6 +23,7 @@ from threading import Thread
 import atexit
 import logging
 import logging.config
+import ssl
 
 import auth
 import ovirt_provider_config
@@ -31,6 +32,10 @@ from handlers.neutron import NeutronHandler
 
 
 LOG_CONFIG_FILE = '/etc/ovirt-provider-ovn/logger.conf'
+SSL_CONFIG_SECTION = 'SSL'
+SSL_KEY_FILE = '/etc/pki/ovirt-engine/keys/ovirt-provider-ovn.pem'
+SSL_CERT_FILE = '/etc/pki/ovirt-engine/certs/ovirt-provider-ovn.cer'
+SSL_ENABLED = False
 
 
 def _init_logging():
@@ -45,9 +50,11 @@ def main():
     auth.init()
 
     server_keystone = HTTPServer(('', 35357), TokenHandler)
+    _ssl_wrap(server_keystone)
     Thread(target=server_keystone.serve_forever).start()
 
     server_neutron = HTTPServer(('', 9696), NeutronHandler)
+    _ssl_wrap(server_neutron)
     Thread(target=server_neutron.serve_forever).start()
 
     def kill_handler(signal, frame):
@@ -58,6 +65,29 @@ def main():
         logging.shutdown()
 
     atexit.register(kill_handler)
+
+
+def _ssl_wrap(server):
+    if _ssl_enabled():
+        server.socket = ssl.wrap_socket(server.socket,
+                                        keyfile=_ssl_key_file(),
+                                        certfile=_ssl_cert_file(),
+                                        server_side=True)
+
+
+def _ssl_enabled():
+    return ovirt_provider_config.getboolean(SSL_CONFIG_SECTION, 'enabled',
+                                            SSL_ENABLED)
+
+
+def _ssl_key_file():
+    return ovirt_provider_config.get(SSL_CONFIG_SECTION, 'key-file',
+                                     SSL_KEY_FILE)
+
+
+def _ssl_cert_file():
+    return ovirt_provider_config.get(SSL_CONFIG_SECTION, 'cert-file',
+                                     SSL_CERT_FILE)
 
 
 if __name__ == '__main__':
