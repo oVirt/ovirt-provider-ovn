@@ -136,8 +136,8 @@ class BaseHandler(BaseHTTPRequestHandler):
         Several subsequent slashes are subsumed to a single one.
         """
         elements = filter(None, full_path.split('/'))
-        key = elements[1] if len(elements) > 1 else None
-        id = '/'.join(elements[2:]) if len(elements) > 2 else None
+        key = elements[1] if len(elements) > 1 else ''
+        id = '/'.join(elements[2:]) if len(elements) > 2 else ''
         return key, id
 
     @abc.abstractmethod
