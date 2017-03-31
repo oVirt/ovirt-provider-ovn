@@ -29,11 +29,20 @@ PYTHON ?= $(shell which python)
 install:
 	python -m compileall .
 	python -O -m compileall .
-	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/
 	install -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/logger.conf
 	install -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/ovirt-provider-ovn.conf
+	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/
 	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ provider/*.py*
+	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/
+	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/ provider/auth/*.py*
+	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/
+	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins provider/auth/plugins/*.py*
+	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/static_token/
+	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/static_token provider/auth/plugins/static_token/*.py*
+	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/handlers/
+	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/handlers provider/handlers/*.py*
+	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/
 	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/ provider/ovndb/*.py*
 	install -D provider/scripts/ovirt-provider-ovn.service $(DESTDIR)/usr/lib/systemd/system/ovirt-provider-ovn.service
 
