@@ -25,6 +25,8 @@ RELEASE_SUFFIX=2.$(TIMESTAMP).git$(GITHASH)
 
 DIST_FILE=$(NAME)-$(VERSION)-${RELEASE_SUFFIX}.tar.gz
 PYTHON ?= $(shell which python)
+MKDIR=mkdir -p
+RPM_SOURCE_DIR=$(shell rpm --eval %_sourcedir)
 
 install:
 	python -m compileall .
@@ -71,7 +73,8 @@ dist:
 	rm -rf build
 
 rpm: dist
-	cp $(DIST_FILE) `rpm --eval %_sourcedir`
+	$(MKDIR) $(RPM_SOURCE_DIR)
+	cp $(DIST_FILE) $(RPM_SOURCE_DIR)
 	rpmbuild -ta $(DIST_FILE)
 
 check: flake8
