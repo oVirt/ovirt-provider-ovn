@@ -35,4 +35,7 @@ def load():
 
 def get(section, key, default=None):
     global _config
-    return _config.get(section, key) if _config else default
+    try:
+        return _config.get(section, key) if _config else default
+    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+        return default
