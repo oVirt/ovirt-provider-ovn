@@ -20,6 +20,15 @@
 %define          debug_package %{nil}
 %define        __os_install_post %{_dbpath}/brp-compress
 
+# define the python package prefix based on distribution version
+# this is needed to require a correct python-openvswitch package:
+# python-openvswitch or python2-openvswitch for fedora >=25
+%if 0%{?fedora} >= 25
+%define _py2 python2
+%else
+%define _py2 python
+%endif
+
 Name:           ovirt-provider-ovn
 Version:        1.1
 Release:        %{release_suffix}%{?dist}
@@ -32,7 +41,7 @@ Source0:        %{name}-%{version}-%{release_suffix}.tar.gz
 Requires: firewalld-filesystem
 Requires: kernel >= 3.10.0-512
 Requires: openvswitch-ovn-central >= 2.6
-Requires: python-openvswitch >= 2.6
+Requires: %{_py2}-openvswitch >= 2.6
 Requires: python-requests
 
 BuildRequires: python
@@ -75,7 +84,7 @@ Requires: firewalld-filesystem
 Requires: kernel >= 3.10.0-512
 Requires: openvswitch >= 2.6
 Requires: openvswitch-ovn-host >= 2.6
-Requires: python-openvswitch  >= 2.6
+Requires: %{_py2}-openvswitch  >= 2.6
 Requires: vdsm
 Requires(post): firewalld-filesystem
 
