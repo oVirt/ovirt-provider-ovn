@@ -19,4 +19,6 @@
 from __future__ import absolute_import
 
 from .core import init  # noqa: F401
+from .errors import Forbidden  # noqa: F401
+from .errors import Unauthorized  # noqa: F401
 from .plugin_facade import create_token  # noqa: F401

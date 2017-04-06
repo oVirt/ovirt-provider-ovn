@@ -24,7 +24,8 @@ import logging
 
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
 
-from auth.errors import AuthenticationError
+from auth import Forbidden
+from auth import Unauthorized
 
 GET = 'GET'  # list of entities
 SHOW = 'SHOW'  # concrete entity
@@ -99,9 +100,11 @@ class BaseHandler(BaseHTTPRequestHandler):
         except BadRequestError as e:
             self._handle_response_exception(e,
                                             response_code=httplib.BAD_REQUEST)
-        except AuthenticationError as e:
+        except Unauthorized as e:
             self._handle_response_exception(e,
                                             response_code=httplib.UNAUTHORIZED)
+        except Forbidden as e:
+            self._handle_response_exception(e, response_code=httplib.FORBIDDEN)
         except Exception as e:
             self._handle_response_exception(e)
 

@@ -55,7 +55,7 @@ class TestOvirtSso(object):
     def test_create_token_fail(self, mock_requests):
         mock_requests.register_uri('POST', TOKEN_URL,
                                    text=TOKEN_RESPONSE_AUTH_FAILED)
-        with pytest.raises(sso.AuthenticationError):
+        with pytest.raises(sso.Unauthorized):
             sso.create_token(username=NOT_RELEVANT,
                              password=NOT_RELEVANT,
                              engine_url=ENGINE_URL,

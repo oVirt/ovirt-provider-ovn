@@ -19,5 +19,9 @@
 from __future__ import absolute_import
 
 
-class AuthenticationError(Exception):
+class Unauthorized(Exception):
+    pass
+
+
+class Forbidden(Exception):
     pass

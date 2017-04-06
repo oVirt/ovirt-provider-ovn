@@ -20,7 +20,7 @@ from functools import wraps
 
 import requests
 
-from auth.errors import AuthenticationError
+from auth import Unauthorized
 
 AUTH_PATH = '/sso/oauth'
 TOKEN_PATH = '/token'
@@ -69,6 +69,6 @@ def _token_url(engine_url):
 
 def _check_for_error(response):
     if 'error' in response:
-        raise AuthenticationError(
+        raise Unauthorized(
             'Error during SSO authentication {} : {}'.format(
                 response['error_code'], response['error']))
