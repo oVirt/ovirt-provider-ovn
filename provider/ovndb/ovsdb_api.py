@@ -23,26 +23,43 @@ from functools import wraps
 
 import abc
 import logging
+import os
 import time
 
 import six
 
 import ovs.db.idl
+import ovs.stream
 
-SLEEP_BETWEEN_CONNECTION_RETRY_TIME = 0.1
+import ovirt_provider_config as config
+
+
+SSL_CONFIG_SECTION = 'SSL'
+CONNECTION_TIMEOUT = 3
+SLEEP_BETWEEN_CONNECTION_RETRY_TIME = 0.01
+DEFAULT_KEY_FILE = '/etc/pki/ovirt-engine/keys/ovirt-provider-ovn.pem'
+DEFAULT_CERT_FILE = '/etc/pki/ovirt-engine/certs/ovirt-provider-ovn.cer'
+DEFAULT_CACERT_FILE = '/etc/pki/ovirt-engine/ca.pem'
+PROTOCOL_SSL = 'ssl'
+
+
+def _monotonic_time():
+    return os.times()[4]
 
 
 def _block_on_ovsdb_connect(f):
     @wraps(f)
     def block(connection):
-        CONNECT_RETRIES = 30
-
-        for n in range(CONNECT_RETRIES):
+        i = 0
+        start = _monotonic_time()
+        while (_monotonic_time() - start) < CONNECTION_TIMEOUT:
+            logging.debug('Connection retry: %s', i)
             f(connection)
             if connection.has_ever_connected():
-                logging.debug('Connected (number of retries: {})'.format(n))
+                logging.debug('Connected (number of retries: %s)', i)
                 return
             time.sleep(SLEEP_BETWEEN_CONNECTION_RETRY_TIME)
+            i += 1
         logging.debug('Failed to connect!')
         raise OvsDBConnectionFailed('Failed to connect!')
     return block
@@ -85,6 +102,31 @@ class OvsDb(object):
     def __init__(self):
         self._ovsdb_connection = None
 
+    def _is_ssl_connection(self, remote):
+        protocol = remote.split(':')[0]
+        return protocol == PROTOCOL_SSL
+
+    def _setup_pki(self):
+        key_file = config.get(
+            SSL_CONFIG_SECTION,
+            'key-file',
+            DEFAULT_KEY_FILE
+        )
+        cert_file = config.get(
+            SSL_CONFIG_SECTION,
+            'cert-file',
+            DEFAULT_CERT_FILE
+        )
+        cacert_file = config.get(
+            SSL_CONFIG_SECTION,
+            'cacert-file',
+            DEFAULT_CACERT_FILE
+        )
+
+        ovs.stream.Stream.ssl_set_private_key_file(key_file)
+        ovs.stream.Stream.ssl_set_certificate_file(cert_file)
+        ovs.stream.Stream.ssl_set_ca_cert_file(cacert_file)
+
     def connect(self, tables, remote, schema_file):
         """
         Connect to a database defined by the passed socked
@@ -105,8 +147,9 @@ class OvsDb(object):
         schema_helper = ovs.db.idl.SchemaHelper(schema_file)
         for table in tables:
             schema_helper.register_columns(table[0], table[1])
-
         self._ovsdb_connection = ovs.db.idl.Idl(remote, schema_helper)
+        if self._is_ssl_connection(remote):
+            self._setup_pki()
         OvsDb._connect(self._ovsdb_connection)
 
     @staticmethod
