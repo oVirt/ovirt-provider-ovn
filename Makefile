@@ -23,7 +23,7 @@ GITHASH=$(shell git rev-parse --short HEAD)
 TIMESTAMP:=$(shell date +'%Y%m%d%H%M%S')
 RELEASE_SUFFIX=2.$(TIMESTAMP).git$(GITHASH)
 
-DIST_FILE=$(NAME)-$(VERSION)-${RELEASE_SUFFIX}.tar.gz
+DIST_FILE=$(NAME)-$(VERSION)-$(RELEASE_SUFFIX).tar.gz
 PYTHON ?= $(shell which python)
 MKDIR=mkdir -p
 RPM_SOURCE_DIR=$(shell rpm --eval %_sourcedir)
