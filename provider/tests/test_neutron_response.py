@@ -61,17 +61,17 @@ class TestNeutronResponse(object):
     def test_check_neutron_responses_required_by_engine_are_present(self):
         for method in [GET, SHOW, DELETE, POST]:
             for path in [NETWORKS, PORTS, SUBNETS]:
-                assert responses()[method][path] is not None
-        assert responses()[PUT][PORTS] is not None
+                assert responses()[path][method] is not None
+        assert responses()[PORTS][PUT] is not None
         # This is a test call engine makes to check if provider is alive
-        assert responses()[GET][''] is not None
+        assert responses()[''][GET] is not None
 
     def test_show_network(self):
         nb_db = Mock()
         nb_db.get_network.return_value = NetworkRow(
             NETWORK_ID01, NETWORK_NAME1)
 
-        response = responses()[SHOW][NETWORKS](
+        response = responses()[NETWORKS][SHOW](
             nb_db, NOT_RELEVANT, NETWORK_ID01)
 
         response_json = json.loads(response)
@@ -85,7 +85,7 @@ class TestNeutronResponse(object):
             NetworkRow(NETWORK_ID01, NETWORK_NAME1))
         nb_db.get_port.return_value = netport
 
-        response = responses()[SHOW][PORTS](nb_db, NOT_RELEVANT, PORT_ID07)
+        response = responses()[PORTS][SHOW](nb_db, NOT_RELEVANT, PORT_ID07)
 
         response_json = json.loads(response)
         assert response_json['port']['id'] == str(PORT_ID07)
@@ -95,7 +95,7 @@ class TestNeutronResponse(object):
         nb_db = Mock()
         nb_db.networks = [NetworkRow(NETWORK_ID01, NETWORK_NAME1)]
 
-        response = responses()[GET][NETWORKS](
+        response = responses()[NETWORKS][GET](
             nb_db, NOT_RELEVANT, NOT_RELEVANT)
 
         response_json = json.loads(response)
@@ -109,7 +109,7 @@ class TestNeutronResponse(object):
             NetworkRow(NETWORK_ID01, NETWORK_NAME1))
         nb_db.ports = [netport]
 
-        response = responses()[GET][PORTS](nb_db, NOT_RELEVANT, NOT_RELEVANT)
+        response = responses()[PORTS][GET](nb_db, NOT_RELEVANT, NOT_RELEVANT)
 
         response_json = json.loads(response)
         assert response_json['ports'][0]['id'] == str(PORT_ID07)
@@ -118,14 +118,14 @@ class TestNeutronResponse(object):
     def test_delete_network(self):
         nb_db = Mock()
 
-        responses()[DELETE][NETWORKS](nb_db, NOT_RELEVANT, PORT_ID07)
+        responses()[NETWORKS][DELETE](nb_db, NOT_RELEVANT, PORT_ID07)
 
         nb_db.delete_network.assert_called_once_with(PORT_ID07)
 
     def test_delete_port(self):
         nb_db = Mock()
 
-        responses()[DELETE][PORTS](nb_db, NOT_RELEVANT, PORT_ID07)
+        responses()[PORTS][DELETE](nb_db, NOT_RELEVANT, PORT_ID07)
 
         nb_db.delete_port.assert_called_once_with(PORT_ID07)
 
@@ -135,7 +135,7 @@ class TestNeutronResponse(object):
                                                        NETWORK_NAME1)
         rest_input = '{"network":{"name":"network_name"}}'
 
-        response = responses()[POST][NETWORKS](nb_db, rest_input, NOT_RELEVANT)
+        response = responses()[NETWORKS][POST](nb_db, rest_input, NOT_RELEVANT)
 
         response_json = json.loads(response)
         assert response_json['network']['id'] == str(NETWORK_ID01)
@@ -153,7 +153,7 @@ class TestNeutronResponse(object):
         rest_input = ('{"port":{"name":"port_name", "mac_address":"mac",'
                       '"device_id":"device_id"}}')
 
-        response = responses()[POST][PORTS](nb_db, rest_input, NOT_RELEVANT)
+        response = responses()[PORTS][POST](nb_db, rest_input, NOT_RELEVANT)
 
         response_json = json.loads(response)
         assert response_json['port']['id'] == str(PORT_ID07)
@@ -178,7 +178,7 @@ class TestNeutronResponse(object):
                       '"mac_address" : "' + MODIFIED_MAC + '",'
                       '"security_groups" : null}}')
 
-        response = responses()[PUT][PORTS](nb_db, rest_input, str(PORT_ID07))
+        response = responses()[PORTS][PUT](nb_db, rest_input, str(PORT_ID07))
 
         response_json = json.loads(response)
         assert response_json['port']['id'] == str(PORT_ID07)

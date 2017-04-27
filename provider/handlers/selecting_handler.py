@@ -22,6 +22,7 @@ import abc
 
 from handlers.base_handler import BaseHandler
 from handlers.base_handler import NotFoundError
+from handlers.base_handler import MethodNotAllowedError
 
 
 def rest(method, path, response_handlers):
@@ -35,9 +36,9 @@ def rest(method, path, response_handlers):
     rest('GET', 'networks')
     """
     def assign_response(funct):
-        if method not in response_handlers:
-            response_handlers[method] = {}
-        response_handlers[method][path] = funct
+        if path not in response_handlers:
+            response_handlers[path] = {}
+        response_handlers[path][method] = funct
         return funct
     return assign_response
 
@@ -52,12 +53,12 @@ class SelectingHandler(BaseHandler):
 
     @classmethod
     def _get_response_handler(cls, method, key):
-        responses_for_method = cls.get_responses().get(method)
-        if not responses_for_method:
+        responses_for_key = cls.get_responses().get(key)
+        if not responses_for_key:
             raise NotFoundError()
-        response_handler = responses_for_method.get(key)
+        response_handler = responses_for_key.get(method)
         if not response_handler:
-            raise NotFoundError()
+            raise MethodNotAllowedError()
         return response_handler
 
     @abc.abstractmethod

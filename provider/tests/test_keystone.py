@@ -68,6 +68,11 @@ class TestKeystoneHandler(object):
         handler.do_POST()
         return handler
 
+    def _test_handle_get_request(self, path):
+        handler = self._create_tokenhandler(path)
+        handler.do_GET()
+        return handler
+
     @staticmethod
     def _create_tokenhandler(path):
         handler = TokenHandler(None, None, None)
@@ -95,6 +100,14 @@ class TestKeystoneHandler(object):
         path = '/v3/{}/{}'.format(key, id)
 
         self._test_handle_post_request_ok(mock_send_response, path, id)
+
+    @mock.patch('handlers.keystone.TokenHandler.send_error', autospec=True)
+    def test_handle_get_request_not_allowed(self, mock_send_error,
+                                            mock_send_response,
+                                            mock_send_header,
+                                            mock_end_headers):
+        self._test_handle_get_request('/v2.0/tokens')
+        mock_send_error.assert_called_once_with(ANY, 405)
 
     @mock.patch('handlers.keystone.TokenHandler.send_error', autospec=True)
     def test_handle_post_request_not_found(self, mock_send_error,

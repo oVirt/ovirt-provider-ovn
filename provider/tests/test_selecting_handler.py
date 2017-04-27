@@ -32,5 +32,5 @@ class TestSelectingHandler(object):
         def decorated_method2():
             return 2
 
-        assert response_handlers['TEST1']['test1']() == 1
-        assert response_handlers['TEST2']['test2']() == 2
+        assert response_handlers['test1']['TEST1']() == 1
+        assert response_handlers['test2']['TEST2']() == 2

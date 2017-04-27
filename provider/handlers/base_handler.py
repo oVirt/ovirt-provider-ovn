@@ -54,6 +54,10 @@ class BadRequestError(AttributeError):
     pass
 
 
+class MethodNotAllowedError(AttributeError):
+    pass
+
+
 class BaseHandler(BaseHTTPRequestHandler):
 
     # Suppress static error message of BaseHTTPRequestHandler, because a
@@ -97,6 +101,10 @@ class BaseHandler(BaseHTTPRequestHandler):
             message = 'Incorrect path: {}'.format(self.path)
             self._handle_response_exception(e, message=message,
                                             response_code=httplib.NOT_FOUND)
+        except MethodNotAllowedError as e:
+            message = 'Method not allowed: {}'.format(method)
+            self._handle_response_exception(
+                e, message=message, response_code=httplib.METHOD_NOT_ALLOWED)
         except BadRequestError as e:
             self._handle_response_exception(e,
                                             response_code=httplib.BAD_REQUEST)
