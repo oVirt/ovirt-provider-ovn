@@ -76,7 +76,7 @@ def _ssl_wrap(server):
 
 
 def _ssl_enabled():
-    return ovirt_provider_config.getboolean(SSL_CONFIG_SECTION, 'enabled',
+    return ovirt_provider_config.getboolean(SSL_CONFIG_SECTION, 'ssl_enabled',
                                             SSL_ENABLED)
 
 
