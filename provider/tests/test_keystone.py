@@ -61,14 +61,19 @@ class TestKeystoneHandler(object):
             {'value': expected_string + 'value'}))
 
     def _test_handle_post_request(self, path):
-        handler = TokenHandler(None, None, None)
-        handler.wfile = MagicMock()
-        handler.rfile = MagicMock()
+        handler = self._create_tokenhandler(path)
         input_data = json.dumps({'key': 'value'})
         handler.rfile.read.return_value = input_data
         handler.headers = {'Content-Length': len(input_data)}
-        handler.path = path
         handler.do_POST()
+        return handler
+
+    @staticmethod
+    def _create_tokenhandler(path):
+        handler = TokenHandler(None, None, None)
+        handler.wfile = MagicMock()
+        handler.rfile = MagicMock()
+        handler.path = path
         return handler
 
     def test_handle_post_request(self, mock_send_response, mock_send_header,
