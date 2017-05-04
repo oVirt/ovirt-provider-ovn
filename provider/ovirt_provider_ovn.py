@@ -72,7 +72,8 @@ def _ssl_wrap(server):
         server.socket = ssl.wrap_socket(server.socket,
                                         keyfile=_ssl_key_file(),
                                         certfile=_ssl_cert_file(),
-                                        server_side=True)
+                                        server_side=True,
+                                        ssl_version=ssl.PROTOCOL_TLSv1_2)
 
 
 def _ssl_enabled():
