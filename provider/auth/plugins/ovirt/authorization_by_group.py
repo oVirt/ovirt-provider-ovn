@@ -48,6 +48,7 @@ class AuthorizationByGroup(OVirtPlugin):
             token=token,
             engine_url=AuthorizationByGroup._engine_url(),
             ca_file=AuthorizationByGroup._engine_ca_file(),
+            timeout=AuthorizationByGroup._timeout(),
             client_id=AuthorizationByGroup._sso_client_id(),
             client_secret=AuthorizationByGroup._sso_client_secret())
 

@@ -79,10 +79,10 @@ def test_validate_token_success(mock_follow_link, mock_search,
     mock_search.assert_called_once_with(rel_path='users',
                                         query=query,
                                         ca_file=ANY, engine_url=ANY,
-                                        token=TOKEN)
+                                        token=TOKEN, timeout=ANY)
     mock_follow_link.assert_called_once_with(obj=USER, rel='roles',
                                              ca_file=ANY, engine_host=ANY,
-                                             token=TOKEN)
+                                             token=TOKEN, timeout=ANY)
 
 
 @mock.patch('auth.plugins.ovirt.authorization_by_role.get_token_info',

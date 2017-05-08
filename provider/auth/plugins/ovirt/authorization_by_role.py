@@ -49,6 +49,7 @@ class AuthorizationByRole(OVirtPlugin):
             token=token,
             engine_url=AuthorizationByRole._engine_url(),
             ca_file=AuthorizationByRole._engine_ca_file(),
+            timeout=AuthorizationByRole._timeout(),
             client_id=AuthorizationByRole._sso_client_id(),
             client_secret=AuthorizationByRole._sso_client_secret())
 
@@ -56,6 +57,7 @@ class AuthorizationByRole(OVirtPlugin):
             token=token,
             engine_url=AuthorizationByRole._engine_url(),
             ca_file=AuthorizationByRole._engine_ca_file(),
+            timeout=AuthorizationByRole._timeout(),
             client_id=AuthorizationByRole._sso_client_id(),
             client_secret=AuthorizationByRole._sso_client_secret())
 
@@ -72,6 +74,7 @@ class AuthorizationByRole(OVirtPlugin):
                                                             authz_name),
                                engine_url=AuthorizationByRole._engine_url(),
                                ca_file=AuthorizationByRole._engine_ca_file(),
+                               timeout=AuthorizationByRole._timeout(),
                                token=token)
 
         for user in users:
@@ -81,6 +84,7 @@ class AuthorizationByRole(OVirtPlugin):
                     rel='roles',
                     engine_host=AuthorizationByRole._engine_host(),
                     ca_file=AuthorizationByRole._engine_ca_file(),
+                    timeout=AuthorizationByRole._timeout(),
                     token=token)
                 for role in roles:
                     if role['id'] == role_id:

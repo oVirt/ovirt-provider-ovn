@@ -43,7 +43,8 @@ class AuthorizationByUserName(OVirtPlugin):
             engine_url=AuthorizationByUserName._engine_url(),
             ca_file=AuthorizationByUserName._engine_ca_file(),
             client_id=AuthorizationByUserName._sso_client_id(),
-            client_secret=AuthorizationByUserName._sso_client_secret())
+            client_secret=AuthorizationByUserName._sso_client_secret(),
+            timeout=AuthorizationByUserName._timeout())
 
         if not is_active(token_info):
             raise Unauthorized('Token is not active.')

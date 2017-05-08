@@ -21,6 +21,7 @@ import json
 
 import pytest
 import requests_mock
+from requests.exceptions import ConnectTimeout
 
 from auth.plugins.ovirt import sso
 
@@ -76,7 +77,8 @@ class TestOvirtSso(object):
         token = sso.create_token(username=NOT_RELEVANT,
                                  password=NOT_RELEVANT,
                                  engine_url=ENGINE_URL,
-                                 ca_file=NOT_RELEVANT)
+                                 ca_file=NOT_RELEVANT,
+                                 timeout=NOT_RELEVANT)
         assert token == TOKEN
 
     def test_create_token_fail(self, mock_requests):
@@ -86,7 +88,17 @@ class TestOvirtSso(object):
             sso.create_token(username=NOT_RELEVANT,
                              password=NOT_RELEVANT,
                              engine_url=ENGINE_URL,
-                             ca_file=NOT_RELEVANT)
+                             ca_file=NOT_RELEVANT,
+                             timeout=NOT_RELEVANT)
+
+    def test_create_token_timeout(self, mock_requests):
+        mock_requests.register_uri('POST', TOKEN_URL, exc=ConnectTimeout)
+        with pytest.raises(sso.Timeout):
+            sso.create_token(username=NOT_RELEVANT,
+                             password=NOT_RELEVANT,
+                             engine_url=ENGINE_URL,
+                             ca_file=NOT_RELEVANT,
+                             timeout=NOT_RELEVANT)
 
     def test_get_profiles(self, mock_requests):
         mock_requests.register_uri('POST', TOKEN_INFO_URL,
@@ -94,6 +106,7 @@ class TestOvirtSso(object):
         profiles = sso.get_profiles(token=TOKEN,
                                     engine_url=ENGINE_URL,
                                     ca_file=NOT_RELEVANT,
+                                    timeout=NOT_RELEVANT,
                                     client_id=NOT_RELEVANT,
                                     client_secret=NOT_RELEVANT)
         assert profiles == PROFILES
@@ -104,6 +117,7 @@ class TestOvirtSso(object):
         info = sso.get_token_info(token=TOKEN,
                                   engine_url=ENGINE_URL,
                                   ca_file=NOT_RELEVANT,
+                                  timeout=NOT_RELEVANT,
                                   client_id=NOT_RELEVANT,
                                   client_secret=NOT_RELEVANT)
         assert info == INFO

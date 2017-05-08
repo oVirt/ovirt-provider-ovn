@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import requests
 
 from auth import Forbidden
+from auth import Timeout
 
 API_PATH = '/api'
 HEADERS = {
@@ -28,25 +29,30 @@ HEADERS = {
     'Content-Type': 'application/json'}
 
 
-def search_request(rel_path, query, engine_url, token, ca_file=None):
+def search_request(rel_path, query, engine_url, token, ca_file, timeout):
     return _http_get(url='{}/{}'.format(_get_api_url(engine_url), rel_path),
                      token=token,
                      ca_file=ca_file,
+                     timeout=timeout,
                      params={'search': query})
 
 
-def follow_link(obj, rel, engine_host, token, ca_file=None):
+def follow_link(obj, rel, engine_host, token, ca_file, timeout):
     link = next((link for link in obj['link'] if link['rel'] == rel), None)
     assert link is not None
     url = engine_host + link['href']
-    return _http_get(url, token, ca_file)
+    return _http_get(url, token, ca_file, timeout)
 
 
-def _http_get(url, token, ca_file, params=None):
-    response = requests.get(url,
-                            headers=_get_headers(token),
-                            verify=ca_file,
-                            params=params)
+def _http_get(url, token, ca_file, timeout, params=None):
+    try:
+        response = requests.get(url,
+                                headers=_get_headers(token),
+                                verify=ca_file,
+                                timeout=timeout,
+                                params=params)
+    except requests.exceptions.Timeout as e:
+        raise Timeout(e)
 
     if response.ok:
         data = response.json()

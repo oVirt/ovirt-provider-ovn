@@ -44,7 +44,8 @@ def test_validate_token_success(mock_get_token_info):
     assert authorizationByUserName.validate_token(TOKEN)
     mock_get_token_info.assert_called_once_with(ca_file=ANY, client_id=ANY,
                                                 client_secret=ANY,
-                                                engine_url=ANY, token=TOKEN)
+                                                engine_url=ANY, token=TOKEN,
+                                                timeout=ANY)
 
 
 @mock.patch('auth.plugins.ovirt.authorization_by_username.get_token_info',
@@ -54,4 +55,5 @@ def test_validate_token_fail(mock_get_token_info):
     assert not authorizationByUserName.validate_token(TOKEN)
     mock_get_token_info.assert_called_once_with(ca_file=ANY, client_id=ANY,
                                                 client_secret=ANY,
-                                                engine_url=ANY, token=TOKEN)
+                                                engine_url=ANY, token=TOKEN,
+                                                timeout=ANY)

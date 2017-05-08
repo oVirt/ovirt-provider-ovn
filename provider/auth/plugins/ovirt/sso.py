@@ -21,6 +21,7 @@ from functools import wraps
 import requests
 
 from auth import Unauthorized
+from auth import Timeout
 
 AUTH_PATH = '/sso/oauth'
 TOKEN_PATH = '/token'
@@ -31,6 +32,16 @@ AUTH_HEADERS = {
     'Content-type': 'application/x-www-form-urlencoded'}
 PUBLIC_AUTHZ_SEARCH_SCOPE = 'ovirt-ext=token-info:public-authz-search'
 TOKEN_SCOPE = 'ovirt-app-api ovirt-ext=token-info:validate'
+
+
+def _translate_timeout_exception(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except requests.exceptions.Timeout as e:
+            raise Timeout(e)
+    return wrapper
 
 
 def _inspect_response(func):
@@ -44,13 +55,15 @@ def _inspect_response(func):
     return wrapper
 
 
-def create_token(username, password, engine_url, ca_file):
-    sso_response = _get_sso_token(username, password, engine_url, ca_file)
+def create_token(username, password, engine_url, ca_file, timeout):
+    sso_response = _get_sso_token(
+        username, password, engine_url, ca_file, timeout)
     return sso_response[TOKEN_NAME]
 
 
 @_inspect_response
-def _get_sso_token(username, password, engine_url, ca_file):
+@_translate_timeout_exception
+def _get_sso_token(username, password, engine_url, ca_file, timeout):
     post_data = {
         'grant_type': 'password',
         'scope': TOKEN_SCOPE,
@@ -60,12 +73,15 @@ def _get_sso_token(username, password, engine_url, ca_file):
     return requests.post(_token_url(engine_url),
                          headers=AUTH_HEADERS,
                          data=post_data,
-                         verify=ca_file)
+                         verify=ca_file,
+                         timeout=timeout)
 
 
-def get_profiles(token, engine_url, ca_file, client_id, client_secret):
+def get_profiles(
+        token, engine_url, ca_file, timeout, client_id, client_secret):
     profiles = _profile_list(token, engine_url,
                              ca_file=ca_file,
+                             timeout=timeout,
                              client_id=client_id,
                              client_secret=client_secret)['result'][1][0]
     # first element of container is corresponding data type in java
@@ -74,7 +90,9 @@ def get_profiles(token, engine_url, ca_file, client_id, client_secret):
 
 
 @_inspect_response
-def _profile_list(token, engine_url, ca_file, client_id, client_secret):
+@_translate_timeout_exception
+def _profile_list(
+        token, engine_url, ca_file, timeout, client_id, client_secret):
     return requests.post(_token_info_url(engine_url),
                          headers=AUTH_HEADERS,
                          data={
@@ -83,16 +101,20 @@ def _profile_list(token, engine_url, ca_file, client_id, client_secret):
                              'scope': PUBLIC_AUTHZ_SEARCH_SCOPE
                              },
                          auth=(client_id, client_secret),
-                         verify=ca_file)
+                         verify=ca_file,
+                         timeout=timeout)
 
 
 @_inspect_response
-def get_token_info(token, engine_url, ca_file, client_id, client_secret):
+@_translate_timeout_exception
+def get_token_info(
+        token, engine_url, ca_file, timeout, client_id, client_secret):
     return requests.post(_token_info_url(engine_url),
                          headers=AUTH_HEADERS,
                          data={'token': token},
                          auth=(client_id, client_secret),
-                         verify=ca_file)
+                         verify=ca_file,
+                         timeout=timeout)
 
 
 def _get_token_url(engine_url):
