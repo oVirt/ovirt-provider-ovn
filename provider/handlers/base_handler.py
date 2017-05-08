@@ -26,6 +26,7 @@ from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
 
 from auth import Forbidden
 from auth import Unauthorized
+from auth import Timeout
 
 GET = 'GET'  # list of entities
 SHOW = 'SHOW'  # concrete entity
@@ -113,6 +114,9 @@ class BaseHandler(BaseHTTPRequestHandler):
                                             response_code=httplib.UNAUTHORIZED)
         except Forbidden as e:
             self._handle_response_exception(e, response_code=httplib.FORBIDDEN)
+        except Timeout as e:
+            self._handle_response_exception(
+                e, response_code=httplib.GATEWAY_TIMEOUT)
         except Exception as e:
             self._handle_response_exception(e)
 

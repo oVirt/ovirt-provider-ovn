@@ -22,6 +22,7 @@ from mock import MagicMock, ANY
 import mock
 
 from handlers.base_handler import BadRequestError
+from handlers.base_handler import Timeout
 from handlers.keystone import TokenHandler
 
 from handlers.selecting_handler import rest
@@ -44,6 +45,11 @@ def domains_handler(content, id):
 @rest('POST', 'bad_req', response_handlers)
 def bad_req_handler(content, id):
     raise BadRequestError
+
+
+@rest('POST', 'timeout', response_handlers)
+def timeout_producer(content, id):
+    raise Timeout()
 
 
 @mock.patch('handlers.keystone.TokenHandler._run_server', lambda *args: None)
@@ -100,6 +106,14 @@ class TestKeystoneHandler(object):
         path = '/v3/{}/{}'.format(key, id)
 
         self._test_handle_post_request_ok(mock_send_response, path, id)
+
+    @mock.patch('handlers.keystone.TokenHandler.send_error', autospec=True)
+    def test_handle_post_request_timeout(self, mock_send_error,
+                                         mock_send_response,
+                                         mock_send_header,
+                                         mock_end_headers):
+        self._test_handle_post_request('/v2.0/timeout')
+        mock_send_error.assert_called_once_with(ANY, 504)
 
     @mock.patch('handlers.keystone.TokenHandler.send_error', autospec=True)
     def test_handle_get_request_not_allowed(self, mock_send_error,

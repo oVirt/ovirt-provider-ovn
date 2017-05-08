@@ -25,3 +25,7 @@ class Unauthorized(Exception):
 
 class Forbidden(Exception):
     pass
+
+
+class Timeout(Exception):
+    pass
