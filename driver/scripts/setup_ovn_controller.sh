@@ -17,6 +17,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 
+set -e
+
 ovs-vsctl set open . external-ids:ovn-remote=ssl:$1:6642
 ovs-vsctl set open . external-ids:ovn-encap-type=geneve
 ovs-vsctl set open . external-ids:ovn-encap-ip=$2
