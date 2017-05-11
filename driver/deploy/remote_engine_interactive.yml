@@ -1,0 +1,15 @@
+---
+- name: Gather hosts in cluster
+  hosts: localhost
+  vars_prompt:
+      - name: ovirt_password
+        prompt: "Password for oVirt"
+  roles:
+    - gather-hosts
+
+- name: Deploy ovirt-provider-ovn-driver to hosts in cluster
+  hosts: hosts_to_deploy
+  remote_user: "{{ hosts_remote_user }}"
+  roles:
+      - ovn-provider-deploy-driver
+

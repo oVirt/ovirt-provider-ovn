@@ -1,0 +1,24 @@
+---
+- block:
+  - name: Obtain SSO token
+    ovirt_auth:
+      url: "{{ ovirt_url }}"
+      ca_file: "{{ ovirt_ca_file }}"
+      username: "{{ ovirt_username }}"
+      password: "{{ ovirt_password }}"
+  - name: Get hosts for pattern "{{ ovirt_host_pattern }}"
+    ovirt_hosts_facts:
+      auth: "{{ ovirt_auth }}"
+      pattern: "{{ ovirt_host_pattern }}"
+  - name: Gather hosts
+    add_host:
+      name: "{{ item.address }}"
+      groups: hosts_to_deploy
+      instance_name: "{{ item.name }}"
+    with_items:
+      - "{{ ovirt_hosts }}"
+  always:
+  - name: Revoke the SSO token
+    ovirt_auth:
+      state: absent
+      ovirt_auth: "{{ ovirt_auth }}"

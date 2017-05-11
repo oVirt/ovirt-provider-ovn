@@ -1,0 +1,7 @@
+---
+# default cluster config
+ovirt_url: https://{{ ansible_fqdn }}/ovirt-engine/api
+ovirt_ca_file: /etc/pki/ovirt-engine/ca.pem
+ovirt_username: admin@internal
+ovirt_host_pattern: cluster=Default
+

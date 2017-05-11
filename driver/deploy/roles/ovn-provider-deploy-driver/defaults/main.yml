@@ -1,0 +1,6 @@
+---
+# default host config
+hosts_remote_user: root
+ovn_central: "{{ hostvars['localhost']['ansible_default_ipv4']['address'] }}"
+ovn_tunneling_network: ovirtmgmt
+

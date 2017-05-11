@@ -1,0 +1,12 @@
+---
+- name: Gather hosts in cluster
+  hosts: localhost
+  roles:
+    - gather-hosts
+
+- name: Deploy ovirt-provider-ovn-driver to hosts
+  hosts: hosts_to_deploy
+  remote_user: "{{ hosts_remote_user }}"
+  roles:
+      - ovn-provider-deploy-driver
+

@@ -1,0 +1,9 @@
+---
+# cluster config
+# place password here for non interactive use
+# ovirt_password: 123456
+#ovirt_url: https://{{ ansible_fqdn }}/ovirt-engine/api
+#ovirt_ca_file: /etc/pki/ovirt-engine/ca.pem
+#ovirt_username: admin@internal
+#ovirt_host_pattern: name=deploytest
+#ovirt_host_pattern: cluster=Default

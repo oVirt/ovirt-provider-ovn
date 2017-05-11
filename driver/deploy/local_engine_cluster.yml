@@ -1,0 +1,11 @@
+---
+- name: Gather facts about localhost
+  hosts: localhost
+
+- name: Deploy ovirt-provider-ovn-driver to hosts in oVirt cluster {{ovirt_cluster_name}}
+  vars:
+    ovirt_cluster_name: Default
+  hosts: ovirt_cluster_{{ovirt_cluster_name}}
+  roles:
+      - ovn-provider-deploy-driver
+

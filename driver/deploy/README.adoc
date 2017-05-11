@@ -1,0 +1,58 @@
+Deployment of the virtual interface driver
+==========================================
+The virtual interface driver for oVirt external network provider for OVN has to
+be deployed to all oVirt hosts, which may host a VM connected by OVN.
+The OVN networks connected to VMs are overlay networks, which transports their
+data via virtual tunnels over a physical network, called tunneling network.
+The meta date required to configure the tunnels is provided by the OVN
+Southbound DB on a machine called OVN central.
+
+To prepare the deployment of OVN in a cluster, you have to:
+
+1. Optionally add a new tunneling network in engine, which transports OVN's
+   data,
+
+2. Add the hosts to the cluster in engine and
+
+3. Configure the network, which transport OVN's data, on each of the hosts in
+   engine.
+
+4. Deploy the virtual interface driver to the hosts.
+
+This directory gives some examples, how the last step can implemented by
+ansible.
+
+The deployment has to be configured by customizing variables in
+`roles/ovn-provider-deploy-driver/vars/main.yml` or on command line, like in
+`local_engine_cluster.sh`.
+The variable `ovn_central` is the IP address of the OVN Central with OVN
+Southbound DB and the variable `ovn_tunneling_network` defines the name of the
+physical logical network in engine, which will be used to create the OVN
+tunnels.
+
+All playbooks requires ssh access to the affected hosts. The value of the
+ansible variable `hosts_remote_user` is used as username.
+
+Deployment to a single host
+---------------------------
+If a new host is added to a cluster having an OVN network, the virtual
+interface driver as to be deployed to this host. The ansible playbook
+`single_host.yml` shows how this can be done. `single_host.sh` shows, how the
+host name could be passed to the playbook.
+
+Deployment to all host in a cluster
+-----------------------------------
+The playbook `local_engine_cluster.yml` started via `local_engine_cluster.sh`
+shows, how the virtual interface driver can be deployed to all hosts in a
+cluster if permissions to access engine's data base are available.
+`local_engine_cluster.sh` utilizes the script `dynamic_ovirt_hosts` of the
+package `ovirt-engine-metrics`.
+
+Deployment to a list of host queried from engine's API
+------------------------------------------------------
+Engine's REST API can be queried to generate a list of host.
+The this query is configured in `roles/gather-hosts/vars/main.yml`.
+This file can be used to provide the password to access engine's REST API
+in a non-interactive manner like show in `remote_engine.yml`.
+The playbook `remote_engine_interactive.yml` will prompt for this password.
+

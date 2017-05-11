@@ -1,0 +1,10 @@
+---
+- name: Gather facts about localhost
+  hosts: localhost
+
+- name: Deploy ovirt-provider-ovn-driver to single host
+  hosts: all
+  remote_user: "{{ hosts_remote_user }}"
+  roles:
+      - ovn-provider-deploy-driver
+

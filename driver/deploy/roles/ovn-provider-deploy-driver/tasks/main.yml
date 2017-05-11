@@ -1,0 +1,20 @@
+---
+- name: Install ovirt-provider-ovn-driver
+  yum:
+      name: ovirt-provider-ovn-driver
+      state: latest
+      update_cache: true
+- name: Ensure ovn-controller is started
+  service:
+      name: ovn-controller
+      state: started
+      enabled: yes
+- name: Ensure Open vSwitch is started
+  service:
+      name: openvswitch
+      state: started
+      enabled: yes
+- name: Configure OVN for oVirt
+  command: >
+      vdsm-tool ovn-config {{ ovn_central }} {{ ovn_tunneling_network }}
+
