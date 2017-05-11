@@ -5,5 +5,5 @@
    until OVN will take care of handling the opening of the firewall
    ports itself.</description>
   <port protocol="tcp" port="6641"/>
-  <port protocol="tcp" port="6442"/>
+  <port protocol="tcp" port="6642"/>
 </service>
