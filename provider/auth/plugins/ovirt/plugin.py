@@ -39,7 +39,7 @@ KEY_SSO_CLIENT_ID = 'sso-client-id'
 DEFAULT_SSO_CLIENT_SECRET = 'secret'
 KEY_SSO_CLIENT_SECRET = 'sso-client-secret'
 
-DEFAULT_NETWORK_TIMEOUT = 110
+DEFAULT_NETWORK_TIMEOUT = 110.0
 KEY_NETWORK_TIMEOUT = 'timeout'
 
 OVIRT_CONFIG_SECTION = 'OVIRT'
@@ -75,9 +75,9 @@ class OVirtPlugin(Plugin):
 
     @staticmethod
     def _timeout():
-        return ovirt_provider_config.get(OVIRT_CONFIG_SECTION,
-                                         KEY_NETWORK_TIMEOUT,
-                                         DEFAULT_NETWORK_TIMEOUT)
+        return ovirt_provider_config.getfloat(OVIRT_CONFIG_SECTION,
+                                              KEY_NETWORK_TIMEOUT,
+                                              DEFAULT_NETWORK_TIMEOUT)
 
     @staticmethod
     def _sso_client_id():
