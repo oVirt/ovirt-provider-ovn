@@ -31,6 +31,11 @@ from ovndb.ovn_rest2db_mappers import NetworkMapper, PortMapper, SubnetMapper
 DHCP_SERVER_MAC = '02:00:00:00:00:00'
 # Make the lease time
 DHCP_LEASE_TIME = '86400'
+# MTU of tunneld network should be smaller than the MTU of the tunneling net
+DHCP_MTU = '1442'
+# Setting MTU by DHCP is enabled by default, until there is a better way to
+# set the MTU
+DHCP_ENABLE_MTU = True
 
 
 NetworkPort = namedtuple('NetworkPort', ['port', 'network'])
@@ -149,6 +154,8 @@ class OvnNbDb(OvsDb):
         row = self.set_row(self.DHCP_TABLE, subnet, SubnetMapper, transaction)
         row.setkey('options', 'server_mac', OvnNbDb._dhcp_server_mac())
         row.setkey('options', 'lease_time', OvnNbDb._dhcp_lease_time())
+        if OvnNbDb._dhcp_enable_mtu():
+            row.setkey('options', 'mtu', OvnNbDb._dhcp_mtu())
         network_row.setkey('other_config', NetworkMapper.SUBNET,
                            subnet['cidr'])
         self.commit(transaction)
@@ -252,6 +259,15 @@ class OvnNbDb(OvsDb):
     def _dhcp_server_mac():
         return ovirt_provider_config.get('DHCP', 'dhcp-server-mac',
                                          DHCP_SERVER_MAC)
+
+    @staticmethod
+    def _dhcp_enable_mtu():
+        return ovirt_provider_config.getboolean('DHCP', 'dhcp-enable-mtu',
+                                                DHCP_ENABLE_MTU)
+
+    @staticmethod
+    def _dhcp_mtu():
+        return ovirt_provider_config.get('DHCP', 'dhcp-mtu', DHCP_MTU)
 
 
 class DeletedRowDoesNotExistError(Exception):
