@@ -53,5 +53,5 @@ class AuthorizationByUserName(OVirtPlugin):
 
 
 def _admin_user_name():
-    return ovirt_provider_config.get(CONFIG_SECTION, 'admin-user-name',
+    return ovirt_provider_config.get(CONFIG_SECTION, 'ovirt-admin-user-name',
                                      ENGINE_NETWORK_ADMIN_USER_NAME)

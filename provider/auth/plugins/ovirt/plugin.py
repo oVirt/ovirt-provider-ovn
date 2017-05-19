@@ -25,22 +25,22 @@ from auth.plugin import Plugin
 from . import sso
 
 DEFAULT_HOST = 'https://localhost'
-KEY_HOST = 'host'
+KEY_HOST = 'ovirt-host'
 
 DEFAULT_BASE = '/ovirt-engine'
-KEY_BASE = 'base'
+KEY_BASE = 'ovirt-base'
 
 DEFAULT_CA_FILE = '/etc/pki/ovirt-engine/ca.pem'
-KEY_CA_FILE = 'ca-file'
+KEY_CA_FILE = 'ovirt-ca-file'
 
 DEFAULT_SSO_CLIENT_ID = 'ovirt-engine-core'
-KEY_SSO_CLIENT_ID = 'sso-client-id'
+KEY_SSO_CLIENT_ID = 'ovirt-sso-client-id'
 
 DEFAULT_SSO_CLIENT_SECRET = 'secret'
-KEY_SSO_CLIENT_SECRET = 'sso-client-secret'
+KEY_SSO_CLIENT_SECRET = 'ovirt-sso-client-secret'
 
 DEFAULT_NETWORK_TIMEOUT = 110.0
-KEY_NETWORK_TIMEOUT = 'timeout'
+KEY_NETWORK_TIMEOUT = 'ovirt-auth-timeout'
 
 OVIRT_CONFIG_SECTION = 'OVIRT'
 

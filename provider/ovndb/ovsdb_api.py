@@ -109,17 +109,17 @@ class OvsDb(object):
     def _setup_pki(self):
         key_file = config.get(
             SSL_CONFIG_SECTION,
-            'key-file',
+            'ssl-key-file',
             DEFAULT_KEY_FILE
         )
         cert_file = config.get(
             SSL_CONFIG_SECTION,
-            'cert-file',
+            'ssl-cert-file',
             DEFAULT_CERT_FILE
         )
         cacert_file = config.get(
             SSL_CONFIG_SECTION,
-            'cacert-file',
+            'ssl-cacert-file',
             DEFAULT_CACERT_FILE
         )
 

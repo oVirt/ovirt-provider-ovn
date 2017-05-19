@@ -77,18 +77,27 @@ def _ssl_wrap(server):
 
 
 def _ssl_enabled():
-    return ovirt_provider_config.getboolean(SSL_CONFIG_SECTION, 'ssl_enabled',
-                                            SSL_ENABLED)
+    return ovirt_provider_config.getboolean(
+        SSL_CONFIG_SECTION,
+        'https-enabled',
+        SSL_ENABLED
+    )
 
 
 def _ssl_key_file():
-    return ovirt_provider_config.get(SSL_CONFIG_SECTION, 'key-file',
-                                     SSL_KEY_FILE)
+    return ovirt_provider_config.get(
+        SSL_CONFIG_SECTION,
+        'ssl-key-file',
+        SSL_KEY_FILE
+    )
 
 
 def _ssl_cert_file():
-    return ovirt_provider_config.get(SSL_CONFIG_SECTION, 'cert-file',
-                                     SSL_CERT_FILE)
+    return ovirt_provider_config.get(
+        SSL_CONFIG_SECTION,
+        'ssl-cert-file',
+        SSL_CERT_FILE
+    )
 
 
 if __name__ == '__main__':

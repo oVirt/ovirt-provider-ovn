@@ -97,5 +97,5 @@ def _encode(string):
 
 
 def _admin_role_id():
-    return ovirt_provider_config.get(CONFIG_SECTION, 'admin-role-id',
+    return ovirt_provider_config.get(CONFIG_SECTION, 'ovirt-admin-role-id',
                                      ENGINE_NETWORK_ADMIN_ROLE_ID)

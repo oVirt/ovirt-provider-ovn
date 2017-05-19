@@ -56,9 +56,9 @@ INFO_INVALID = {
 
 
 def provider_config_get(section, key, default):
-    if key == 'admin-group-atrribute-name':
+    if key == 'ovirt-admin-group-atrribute-name':
         return ENGINE_ADMIN_GROUP_ATTRIBUTE_NAME
-    elif key == 'admin-group-attribute-value':
+    elif key == 'ovirt-admin-group-attribute-value':
         return ENGINE_ADMIN_GROUP_ATTRIBUTE_VALUE
     else:
         return default

@@ -63,4 +63,8 @@ def plugin_loaded():
 
 
 def _auth_plugin():
-    return ovirt_provider_config.get(CONFIG_SECTION, 'plugin', AUTH_PLUGIN)
+    return ovirt_provider_config.get(
+        CONFIG_SECTION,
+        'auth-plugin',
+        AUTH_PLUGIN
+    )

@@ -65,11 +65,11 @@ def _contains(d, key, value):
 
 def _admin_group_attribute_name():
     return ovirt_provider_config.get(CONFIG_SECTION,
-                                     'admin-group-atrribute-name',
+                                     'ovirt-admin-group-atrribute-name',
                                      ENGINE_ADMIN_GROUP_ATTRIBUTE_NAME)
 
 
 def _admin_group_attribute_value():
     return ovirt_provider_config.get(CONFIG_SECTION,
-                                     'admin-group-attribute-value',
+                                     'ovirt-admin-group-attribute-value',
                                      ENGINE_ADMIN_GROUP_ATTRIBUTE_VALUE)
