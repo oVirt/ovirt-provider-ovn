@@ -22,7 +22,7 @@ DIST_DIR=$(NAME)-$(VERSION)
 GITHASH=$(shell git rev-parse --short HEAD)
 TIMESTAMP=$(shell date +'%Y%m%d%H%M%S')
 #RELEASE_SUFFIX=2.$(TIMESTAMP).git$(GITHASH)
-RELEASE_SUFFIX=7
+RELEASE_SUFFIX=8
 
 DIST_FILE=$(NAME)-$(VERSION)-${RELEASE_SUFFIX}.tar.gz
 PYTHON ?= $(shell which python)
