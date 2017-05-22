@@ -32,23 +32,23 @@ install:
 	python -m compileall .
 	python -O -m compileall .
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/
-	install -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/logger.conf
-	install -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/ovirt-provider-ovn.conf
+	install -m 644 -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/logger.conf
+	install -m 644 -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/ovirt-provider-ovn.conf
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/
-	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ provider/*.py*
+	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ provider/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/
-	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/ provider/auth/*.py*
+	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/ provider/auth/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/
-	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins provider/auth/plugins/*.py*
+	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins provider/auth/plugins/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/static_token/
-	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/static_token provider/auth/plugins/static_token/*.py*
+	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/static_token provider/auth/plugins/static_token/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/ovirt/
-	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/ovirt provider/auth/plugins/ovirt/*.py*
+	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/ovirt provider/auth/plugins/ovirt/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/handlers/
-	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/handlers provider/handlers/*.py*
+	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/handlers provider/handlers/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/
-	install -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/ provider/ovndb/*.py*
-	install -D provider/scripts/ovirt-provider-ovn.service $(DESTDIR)/usr/lib/systemd/system/ovirt-provider-ovn.service
+	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/ provider/ovndb/*.py*
+	install -m 644 -D provider/scripts/ovirt-provider-ovn.service $(DESTDIR)/usr/lib/systemd/system/ovirt-provider-ovn.service
 
 	install -m 644 -D provider/scripts/ovirt-provider-ovn.xml $(DESTDIR)/usr/lib/firewalld/services/ovirt-provider-ovn.xml
 	install -m 644 -D provider/scripts/ovirt-provider-ovn-central.xml $(DESTDIR)/usr/lib/firewalld/services/ovirt-provider-ovn-central.xml
@@ -58,7 +58,7 @@ install:
 	install -d $(DESTDIR)/usr/libexec/ovirt-provider-ovn
 	install -m 544 -D driver/scripts/setup_ovn_controller.sh $(DESTDIR)/usr/libexec/ovirt-provider-ovn/setup_ovn_controller.sh
 	install -d $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/
-	install -t $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/ driver/vdsm_tool/ovn_config.py*
+	install -m 644 -t $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/ driver/vdsm_tool/ovn_config.py*
 
 distcheck: check dist
 
