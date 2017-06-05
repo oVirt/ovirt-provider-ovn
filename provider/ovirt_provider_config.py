@@ -19,10 +19,13 @@
 from __future__ import absolute_import
 
 import ConfigParser
+import glob
+import os
 
 
 CONFIG_FILE = '/etc/ovirt-provider-ovn/ovirt-provider-ovn.conf'
-
+CONFD_DIR = '/etc/ovirt-provider-ovn/conf.d'
+CONFD_FILES = '*.conf'
 
 _config = None
 
@@ -31,6 +34,13 @@ def load():
     global _config
     _config = ConfigParser.ConfigParser()
     _config.read(CONFIG_FILE)
+    _config.read(
+        sorted(
+            glob.glob(
+                os.path.join(CONFD_DIR, CONFD_FILES)
+            )
+        )
+    )
 
 
 def get(section, key, default=None):

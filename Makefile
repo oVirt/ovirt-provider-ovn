@@ -32,6 +32,8 @@ install:
 	python -m compileall .
 	python -O -m compileall .
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/
+	install -d $(DESTDIR)/etc/ovirt-provider-ovn/conf.d
+	install -m 644 -D provider/readme.conf $(DESTDIR)/etc/ovirt-provider-ovn/conf.d/README
 	install -m 644 -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/logger.conf
 	install -m 644 -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/ovirt-provider-ovn.conf
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/
