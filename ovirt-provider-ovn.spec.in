@@ -62,7 +62,7 @@ The oVirt external network provider for OVN allows to integrate oVirt with the
 Open vSwitch Open Virtual Network (OVN) solution. OVN is a Software Defined
 Networking extension to Open vSwitch. OVN is integrated into oVirt using the
 external network API. The oVirt provider for OVN serves as a proxy between
-oVirt engine and OVN northd.
+oVirt engine and OVN Northbound DB.
 
 %post
 %systemd_post ovirt-provider-ovn.service
