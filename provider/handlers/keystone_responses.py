@@ -17,14 +17,85 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
+import ovirt_provider_config
+
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import POST
 from handlers.selecting_handler import rest
 
+from ovirt_provider_config import CONFIG_SECTION_PROVIDER
+from ovirt_provider_config import KEY_KEYSTONE_PORT
+from ovirt_provider_config import KEY_NEUTRON_PORT
+from ovirt_provider_config import KEY_PROVIDER_HOST
+from ovirt_provider_config import KEY_OPENSTACK_REGION
+from ovirt_provider_config import KEY_OPENSTACK_NEUTRON_ID
+from ovirt_provider_config import KEY_OPENSTACK_KEYSTONE_ID
+
+from ovirt_provider_config import DEFAULT_NEUTRON_PORT
+from ovirt_provider_config import DEFAULT_KEYSTONE_PORT
+from ovirt_provider_config import DEFAULT_PROVIDER_HOST
+from ovirt_provider_config import DEFAULT_OPENSTACK_REGION
+from ovirt_provider_config import DEFAULT_OPENSTACK_NEUTRON_ID
+from ovirt_provider_config import DEFAULT_OPENSTACK_KEYSTONE_ID
+
 import auth
+# import ovirt_provider_config
+
+SSL_CONFIG_SECTION = 'SSL'
+
+NEUTRON_URL = 'http://{host}:{neutron_port}/v2.0/networks'
+KEYSTONE_URL = 'http://{host}:{keystone_port}/v2.0/tokens'
 
 TOKENS = 'tokens'
 _responses = {}
+
+
+def _neturon_port():
+    return ovirt_provider_config.getint(
+        CONFIG_SECTION_PROVIDER,
+        KEY_NEUTRON_PORT,
+        DEFAULT_NEUTRON_PORT
+    )
+
+
+def _keystone_port():
+    return ovirt_provider_config.getint(
+        CONFIG_SECTION_PROVIDER,
+        KEY_KEYSTONE_PORT,
+        DEFAULT_KEYSTONE_PORT
+    )
+
+
+def _provider_host():
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_PROVIDER,
+        KEY_PROVIDER_HOST,
+        DEFAULT_PROVIDER_HOST
+    )
+
+
+def _openstack_region():
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_PROVIDER,
+        KEY_OPENSTACK_REGION,
+        DEFAULT_OPENSTACK_REGION
+    )
+
+
+def _openstack_neutron_id():
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_PROVIDER,
+        KEY_OPENSTACK_NEUTRON_ID,
+        DEFAULT_OPENSTACK_NEUTRON_ID
+    )
+
+
+def _openstack_keystone_id():
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_PROVIDER,
+        KEY_OPENSTACK_KEYSTONE_ID,
+        DEFAULT_OPENSTACK_KEYSTONE_ID
+    )
 
 
 @rest(POST, TOKENS, _responses)
@@ -38,12 +109,53 @@ def post_tokens(content, id):
     token = auth.create_token(
         user_at_domain=user_at_domain,
         user_password=user_password)
+
+    host = _provider_host()
+    neutron_port = _neturon_port()
+    keystone_port = _keystone_port()
+
+    neutron_url = NEUTRON_URL.format(host=host, neutron_port=neutron_port)
+    keystone_url = KEYSTONE_URL.format(host=host, keystone_port=keystone_port)
+    openstack_region = _openstack_region()
+    openstack_neutron_id = _openstack_neutron_id()
+    openstack_keystone_id = _openstack_keystone_id()
+
     return {
         'access': {
             'token': {
                 'id': token
             }
-        }
+        },
+        'serviceCatalog': [
+            {
+                'endpoints': [
+                    {
+                        'adminURL': neutron_url,
+                        'internalURL': neutron_url,
+                        'publicURL': neutron_url,
+                        'region': openstack_region,
+                        'id': openstack_neutron_id,
+                    }
+                ],
+                'endpoints_links': [],
+                'type': 'network',
+                'name': 'neutron',
+            },
+            {
+                'endpoints': [
+                    {
+                        'adminURL': keystone_url,
+                        'region': openstack_region,
+                        'internalURL': keystone_url,
+                        'id': openstack_keystone_id,
+                        'publicURL': keystone_url
+                    }
+                ],
+                'endpoints_links': [],
+                'type': 'identity',
+                'name': 'keystone'
+            }
+        ]
     }
 
 
