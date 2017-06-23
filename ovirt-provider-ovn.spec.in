@@ -91,7 +91,8 @@ Requires(post): firewalld-filesystem
 
 %description driver
 The virtual interface driver for oVirt external network provider for OVN.
-The driver handles the connection of NICs provisioned on oVirt hosts to OVN.
+The driver handles the connection of virtual NICs provisioned on oVirt hosts
+to OVN.
 
 
 %files
