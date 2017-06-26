@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import abc
 import httplib
 import logging
+import urlparse
 
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
 
@@ -165,6 +166,7 @@ class BaseHandler(BaseHTTPRequestHandler):
         The {id} may be empty and is allowed to contain multiple slashes.
         Several subsequent slashes are subsumed to a single one.
         """
+        full_path = urlparse.urlparse(full_path).path
         elements = filter(None, full_path.split('/'))
         key = elements[1] if len(elements) > 1 else ''
         id = '/'.join(elements[2:]) if len(elements) > 2 else ''

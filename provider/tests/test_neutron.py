@@ -80,7 +80,7 @@ class TestNeutronHandler(object):
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
         handler.headers = {}
-        handler.path = '/v2.0/testports'
+        handler.path = '/v2.0/testports?t=1'
 
         handler.do_GET()
 
