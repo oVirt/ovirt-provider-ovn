@@ -33,6 +33,7 @@ from handlers.neutron import NeutronHandler
 
 LOG_CONFIG_FILE = '/etc/ovirt-provider-ovn/logger.conf'
 SSL_CONFIG_SECTION = 'SSL'
+PROVIDER_CONFIG_SECTION = 'PROVIDER'
 SSL_KEY_FILE = '/etc/pki/ovirt-engine/keys/ovirt-provider-ovn.pem'
 SSL_CERT_FILE = '/etc/pki/ovirt-engine/certs/ovirt-provider-ovn.cer'
 SSL_ENABLED = False
@@ -49,11 +50,11 @@ def main():
     ovirt_provider_config.load()
     auth.init()
 
-    server_keystone = HTTPServer(('', 35357), TokenHandler)
+    server_keystone = HTTPServer(('', _keystone_port()), TokenHandler)
     _ssl_wrap(server_keystone)
     Thread(target=server_keystone.serve_forever).start()
 
-    server_neutron = HTTPServer(('', 9696), NeutronHandler)
+    server_neutron = HTTPServer(('', _neturon_port()), NeutronHandler)
     _ssl_wrap(server_neutron)
     Thread(target=server_neutron.serve_forever).start()
 
@@ -97,6 +98,22 @@ def _ssl_cert_file():
         SSL_CONFIG_SECTION,
         'ssl-cert-file',
         SSL_CERT_FILE
+    )
+
+
+def _neturon_port():
+    return ovirt_provider_config.getint(
+        PROVIDER_CONFIG_SECTION,
+        'neutron-port',
+        9696
+    )
+
+
+def _keystone_port():
+    return ovirt_provider_config.getint(
+        PROVIDER_CONFIG_SECTION,
+        'keystone-port',
+        35357
     )
 
 
