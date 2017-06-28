@@ -24,9 +24,11 @@ import logging
 import ovirt_provider_config
 
 from .plugin import Plugin
+from ovirt_provider_config import CONFIG_SECTION_AUTH
+from ovirt_provider_config import KEY_AUTH_PLUGIN
+from ovirt_provider_config import DEFAULT_AUTH_PLUGIN
 
-CONFIG_SECTION = 'AUTH'
-AUTH_PLUGIN = 'auth.plugins.static_token:MagicTokenPlugin'
+
 TOKEN_HTTP_HEADER_FIELD_NAME = 'X-Auth-Token'
 
 plugin = None
@@ -64,7 +66,7 @@ def plugin_loaded():
 
 def _auth_plugin():
     return ovirt_provider_config.get(
-        CONFIG_SECTION,
-        'auth-plugin',
-        AUTH_PLUGIN
+        CONFIG_SECTION_AUTH,
+        KEY_AUTH_PLUGIN,
+        DEFAULT_AUTH_PLUGIN
     )

@@ -21,28 +21,21 @@ from __future__ import absolute_import
 import ovirt_provider_config
 
 from auth.plugin import Plugin
+from ovirt_provider_config import CONFIG_SECTION_OVIRT
+from ovirt_provider_config import KEY_OVIRT_HOST
+from ovirt_provider_config import KEY_OVIRT_BASE
+from ovirt_provider_config import KEY_OVIRT_CA_FILE
+from ovirt_provider_config import KEY_OVIRT_AUTH_TIMEOUT
+from ovirt_provider_config import KEY_OVIRT_SSO_CLIENT_ID
+from ovirt_provider_config import KEY_OVIRT_SSO_CLIENT_SECRET
+from ovirt_provider_config import DEFAULT_OVIRT_HOST
+from ovirt_provider_config import DEFAULT_OVIRT_BASE
+from ovirt_provider_config import DEFAULT_OVIRT_CA_FILE
+from ovirt_provider_config import DEFAULT_OVIRT_SSO_CLIENT_ID
+from ovirt_provider_config import DEFAULT_OVIRT_SSO_CLIENT_SECRET
+from ovirt_provider_config import DEFAULT_OVIRT_AUTH_TIMEOUT
 
 from . import sso
-
-DEFAULT_HOST = 'https://localhost'
-KEY_HOST = 'ovirt-host'
-
-DEFAULT_BASE = '/ovirt-engine'
-KEY_BASE = 'ovirt-base'
-
-DEFAULT_CA_FILE = '/etc/pki/ovirt-engine/ca.pem'
-KEY_CA_FILE = 'ovirt-ca-file'
-
-DEFAULT_SSO_CLIENT_ID = 'ovirt-engine-core'
-KEY_SSO_CLIENT_ID = 'ovirt-sso-client-id'
-
-DEFAULT_SSO_CLIENT_SECRET = 'secret'
-KEY_SSO_CLIENT_SECRET = 'ovirt-sso-client-secret'
-
-DEFAULT_NETWORK_TIMEOUT = 110.0
-KEY_NETWORK_TIMEOUT = 'ovirt-auth-timeout'
-
-OVIRT_CONFIG_SECTION = 'OVIRT'
 
 
 class OVirtPlugin(Plugin):
@@ -60,33 +53,48 @@ class OVirtPlugin(Plugin):
 
     @staticmethod
     def _engine_host():
-        return ovirt_provider_config.get(OVIRT_CONFIG_SECTION, KEY_HOST,
-                                         DEFAULT_HOST)
+        return ovirt_provider_config.get(
+            CONFIG_SECTION_OVIRT,
+            KEY_OVIRT_HOST,
+            DEFAULT_OVIRT_HOST
+        )
 
     @staticmethod
     def _engine_base():
-        return ovirt_provider_config.get(OVIRT_CONFIG_SECTION, KEY_BASE,
-                                         DEFAULT_BASE)
+        return ovirt_provider_config.get(
+            CONFIG_SECTION_OVIRT,
+            KEY_OVIRT_BASE,
+            DEFAULT_OVIRT_BASE
+        )
 
     @staticmethod
     def _engine_ca_file():
-        return ovirt_provider_config.get(OVIRT_CONFIG_SECTION, KEY_CA_FILE,
-                                         DEFAULT_CA_FILE)
+        return ovirt_provider_config.get(
+            CONFIG_SECTION_OVIRT,
+            KEY_OVIRT_CA_FILE,
+            DEFAULT_OVIRT_CA_FILE
+        )
 
     @staticmethod
     def _timeout():
-        return ovirt_provider_config.getfloat(OVIRT_CONFIG_SECTION,
-                                              KEY_NETWORK_TIMEOUT,
-                                              DEFAULT_NETWORK_TIMEOUT)
+        return ovirt_provider_config.getfloat(
+            CONFIG_SECTION_OVIRT,
+            KEY_OVIRT_AUTH_TIMEOUT,
+            DEFAULT_OVIRT_AUTH_TIMEOUT
+        )
 
     @staticmethod
     def _sso_client_id():
-        return ovirt_provider_config.get(OVIRT_CONFIG_SECTION,
-                                         KEY_SSO_CLIENT_ID,
-                                         DEFAULT_SSO_CLIENT_ID)
+        return ovirt_provider_config.get(
+            CONFIG_SECTION_OVIRT,
+            KEY_OVIRT_SSO_CLIENT_ID,
+            DEFAULT_OVIRT_SSO_CLIENT_ID
+        )
 
     @staticmethod
     def _sso_client_secret():
-        return ovirt_provider_config.get(OVIRT_CONFIG_SECTION,
-                                         KEY_SSO_CLIENT_SECRET,
-                                         DEFAULT_SSO_CLIENT_SECRET)
+        return ovirt_provider_config.get(
+            CONFIG_SECTION_OVIRT,
+            KEY_OVIRT_SSO_CLIENT_SECRET,
+            DEFAULT_OVIRT_SSO_CLIENT_SECRET
+        )

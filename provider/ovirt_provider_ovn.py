@@ -27,16 +27,23 @@ import ssl
 
 import auth
 import ovirt_provider_config
+
 from handlers.keystone import TokenHandler
 from handlers.neutron import NeutronHandler
-
+from ovirt_provider_config import CONFIG_SECTION_SSL
+from ovirt_provider_config import CONFIG_SECTION_PROVIDER
+from ovirt_provider_config import DEFAULT_SSL_KEY_FILE
+from ovirt_provider_config import DEFAULT_SSL_CERT_FILE
+from ovirt_provider_config import DEFAULT_SSL_ENABLED
+from ovirt_provider_config import KEY_HTTPS_ENABLED
+from ovirt_provider_config import KEY_SSL_KEY_FILE
+from ovirt_provider_config import KEY_SSL_CERT_FILE
+from ovirt_provider_config import KEY_KEYSTONE_PORT
+from ovirt_provider_config import KEY_NEUTRON_PORT
+from ovirt_provider_config import DEFAULT_NEUTRON_PORT
+from ovirt_provider_config import DEFAULT_KEYSTONE_PORT
 
 LOG_CONFIG_FILE = '/etc/ovirt-provider-ovn/logger.conf'
-SSL_CONFIG_SECTION = 'SSL'
-PROVIDER_CONFIG_SECTION = 'PROVIDER'
-SSL_KEY_FILE = '/etc/pki/ovirt-engine/keys/ovirt-provider-ovn.pem'
-SSL_CERT_FILE = '/etc/pki/ovirt-engine/certs/ovirt-provider-ovn.cer'
-SSL_ENABLED = False
 
 
 def _init_logging():
@@ -79,41 +86,41 @@ def _ssl_wrap(server):
 
 def _ssl_enabled():
     return ovirt_provider_config.getboolean(
-        SSL_CONFIG_SECTION,
-        'https-enabled',
-        SSL_ENABLED
+        CONFIG_SECTION_SSL,
+        KEY_HTTPS_ENABLED,
+        DEFAULT_SSL_ENABLED
     )
 
 
 def _ssl_key_file():
     return ovirt_provider_config.get(
-        SSL_CONFIG_SECTION,
-        'ssl-key-file',
-        SSL_KEY_FILE
+        CONFIG_SECTION_SSL,
+        KEY_SSL_KEY_FILE,
+        DEFAULT_SSL_KEY_FILE
     )
 
 
 def _ssl_cert_file():
     return ovirt_provider_config.get(
-        SSL_CONFIG_SECTION,
-        'ssl-cert-file',
-        SSL_CERT_FILE
+        CONFIG_SECTION_SSL,
+        KEY_SSL_CERT_FILE,
+        DEFAULT_SSL_CERT_FILE
     )
 
 
 def _neturon_port():
     return ovirt_provider_config.getint(
-        PROVIDER_CONFIG_SECTION,
-        'neutron-port',
-        9696
+        CONFIG_SECTION_PROVIDER,
+        KEY_NEUTRON_PORT,
+        DEFAULT_NEUTRON_PORT
     )
 
 
 def _keystone_port():
     return ovirt_provider_config.getint(
-        PROVIDER_CONFIG_SECTION,
-        'keystone-port',
-        35357
+        CONFIG_SECTION_PROVIDER,
+        KEY_KEYSTONE_PORT,
+        DEFAULT_KEYSTONE_PORT
     )
 
 

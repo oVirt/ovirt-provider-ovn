@@ -27,12 +27,11 @@ from .sso import extract_groups
 from .sso import get_token_info
 from .sso import is_active
 
-
-CONFIG_SECTION = 'OVIRT'
-
-ENGINE_ADMIN_GROUP_ATTRIBUTE_NAME = \
-  'AAA_AUTHZ_GROUP_NAME;java.lang.String;0eebe54f-b429-44f3-aa80-4704cbb16835'
-ENGINE_ADMIN_GROUP_ATTRIBUTE_VALUE = 'NetAdmin'
+from ovirt_provider_config import CONFIG_SECTION_OVIRT
+from ovirt_provider_config import KEY_OVIRT_ADMIN_GROUP_ATTRIBUTE_NAME
+from ovirt_provider_config import KEY_OVIRT_ADMIN_GROUP_ATTRIBUTE_VALUE
+from ovirt_provider_config import DEFAULT_ENGINE_NETWORK_ADMIN_USER_NAME
+from ovirt_provider_config import DEFAULT_ENGINE_NETWORK_ADMIN_ROLE_ID
 
 
 class AuthorizationByGroup(OVirtPlugin):
@@ -64,12 +63,16 @@ def _contains(d, key, value):
 
 
 def _admin_group_attribute_name():
-    return ovirt_provider_config.get(CONFIG_SECTION,
-                                     'ovirt-admin-group-attribute-name',
-                                     ENGINE_ADMIN_GROUP_ATTRIBUTE_NAME)
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_OVIRT,
+        KEY_OVIRT_ADMIN_GROUP_ATTRIBUTE_NAME,
+        DEFAULT_ENGINE_NETWORK_ADMIN_USER_NAME
+    )
 
 
 def _admin_group_attribute_value():
-    return ovirt_provider_config.get(CONFIG_SECTION,
-                                     'ovirt-admin-group-attribute-value',
-                                     ENGINE_ADMIN_GROUP_ATTRIBUTE_VALUE)
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_OVIRT,
+        KEY_OVIRT_ADMIN_GROUP_ATTRIBUTE_VALUE,
+        DEFAULT_ENGINE_NETWORK_ADMIN_ROLE_ID
+    )

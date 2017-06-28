@@ -27,6 +27,79 @@ CONFIG_FILE = '/etc/ovirt-provider-ovn/ovirt-provider-ovn.conf'
 CONFD_DIR = '/etc/ovirt-provider-ovn/conf.d'
 CONFD_FILES = '*.conf'
 
+CONFIG_SECTION_OVN_REMOTE = 'OVN REMOTE'
+KEY_OVN_REMOTE = 'ovn-remote'
+DEFAULT_OVN_REMOTE_AT_LOCALHOST = 'tcp:127.0.0.1:6641'
+
+CONFIG_SECTION_PROVIDER = 'PROVIDER'
+KEY_NEUTRON_PORT = 'neutron-port'
+KEY_KEYSTONE_PORT = 'keystone-port'
+KEY_PROVIDER_HOST = 'provider-host'
+DEFAULT_NEUTRON_PORT = 9696
+DEFAULT_KEYSTONE_PORT = 35357
+
+CONFIG_SECTION_SSL = 'SSL'
+KEY_HTTPS_ENABLED = 'https-enabled'
+KEY_SSL_KEY_FILE = 'ssl-key-file'
+KEY_SSL_CERT_FILE = 'ssl-cert-file'
+KEY_SSL_CACERT_FILE = 'ssl-cacert-file'
+
+DEFAULT_SSL_KEY_FILE = '/etc/pki/ovirt-engine/keys/ovirt-provider-ovn.pem'
+DEFAULT_SSL_CERT_FILE = '/etc/pki/ovirt-engine/certs/ovirt-provider-ovn.cer'
+DEFAULT_SSL_CACERT_FILE = '/etc/pki/ovirt-engine/ca.pem'
+DEFAULT_SSL_ENABLED = False
+
+CONFIG_SECTION_DHCP = 'DHCP'
+KEY_DHCP_SERVER_MAC = 'dhcp-server-mac'
+KEY_DHCP_LEASE_TIME = 'dhcp-lease-time'
+KEY_DHCP_ENABLE_MTU = 'dhcp-enable-mtu'
+KEY_DHCP_MTU = 'dhcp-mtu'
+
+# Locally administered mac for use by OVN to assign to dhcp server
+DEFAULT_DHCP_SERVER_MAC = '02:00:00:00:00:00'
+# Make the lease time
+DEFAULT_DHCP_LEASE_TIME = '86400'
+# MTU of tunneld network should be smaller than the MTU of the tunneling net
+DEFAULT_DHCP_MTU = '1442'
+# Setting MTU by DHCP is enabled by default, until there is a better way to
+# set the MTU
+DEFAULT_DHCP_ENABLE_MTU = True
+
+CONFIG_SECTION_AUTH = 'AUTH'
+KEY_AUTH_PLUGIN = 'auth-plugin'
+DEFAULT_AUTH_PLUGIN = 'auth.plugins.static_token:MagicTokenPlugin'
+
+CONFIG_SECTION_OVIRT = 'OVIRT'
+KEY_OVIRT_HOST = 'ovirt-host'
+KEY_OVIRT_BASE = 'ovirt-base'
+KEY_OVIRT_CA_FILE = 'ovirt-ca-file'
+KEY_OVIRT_AUTH_TIMEOUT = 'ovirt-auth-timeout'
+KEY_OVIRT_SSO_CLIENT_ID = 'ovirt-sso-client-id'
+KEY_OVIRT_SSO_CLIENT_SECRET = 'ovirt-sso-client-secret'
+KEY_OVIRT_ADMIN_USER_NAME = 'ovirt-admin-user-name'
+KEY_OVIRT_ADMIN_ROLE_ID = 'ovirt-admin-role-id'
+KEY_OVIRT_ADMIN_GROUP_ATTRIBUTE_NAME = 'ovirt-admin-group-attribute-name'
+KEY_OVIRT_ADMIN_GROUP_ATTRIBUTE_VALUE = 'ovirt-admin-group-attribute-value'
+
+DEFAULT_OVIRT_HOST = 'https://localhost'
+DEFAULT_OVIRT_BASE = '/ovirt-engine'
+DEFAULT_OVIRT_CA_FILE = '/etc/pki/ovirt-engine/ca.pem'
+DEFAULT_OVIRT_SSO_CLIENT_ID = 'ovirt-engine-core'
+DEFAULT_OVIRT_SSO_CLIENT_SECRET = 'secret'
+DEFAULT_OVIRT_AUTH_TIMEOUT = 110.0
+DEFAULT_ENGINE_NETWORK_ADMIN_USER_NAME = 'netadmin@internal'
+DEFAULT_ENGINE_NETWORK_ADMIN_ROLE_ID = 'def00005-0000-0000-0000-def000000005'
+DEFAULT_ENGINE_ADMIN_GROUP_ATTRIBUTE_NAME = \
+  'AAA_AUTHZ_GROUP_NAME;java.lang.String;0eebe54f-b429-44f3-aa80-4704cbb16835'
+DEFAULT_ENGINE_ADMIN_GROUP_ATTRIBUTE_VALUE = 'NetAdmin'
+
+
+DEFAULT_KEY_FILE = '/etc/pki/ovirt-engine/keys/ovirt-provider-ovn.pem'
+DEFAULT_CERT_FILE = '/etc/pki/ovirt-engine/certs/ovirt-provider-ovn.cer'
+DEFAULT_CACERT_FILE = '/etc/pki/ovirt-engine/ca.pem'
+PROTOCOL_SSL = 'ssl'
+
+
 _config = None
 
 

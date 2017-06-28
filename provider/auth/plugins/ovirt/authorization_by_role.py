@@ -34,8 +34,9 @@ from .sso import get_principal_id
 from .api import search_request
 from .api import follow_link
 
-CONFIG_SECTION = 'OVIRT'
-ENGINE_NETWORK_ADMIN_ROLE_ID = 'def00005-0000-0000-0000-def000000005'
+from ovirt_provider_config import CONFIG_SECTION_OVIRT
+from ovirt_provider_config import KEY_OVIRT_ADMIN_ROLE_ID
+from ovirt_provider_config import DEFAULT_ENGINE_NETWORK_ADMIN_ROLE_ID
 
 
 class AuthorizationByRole(OVirtPlugin):
@@ -97,5 +98,7 @@ def _encode(string):
 
 
 def _admin_role_id():
-    return ovirt_provider_config.get(CONFIG_SECTION, 'ovirt-admin-role-id',
-                                     ENGINE_NETWORK_ADMIN_ROLE_ID)
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_OVIRT,
+        KEY_OVIRT_ADMIN_ROLE_ID,
+        DEFAULT_ENGINE_NETWORK_ADMIN_ROLE_ID)

@@ -25,9 +25,9 @@ from auth import Unauthorized
 from .plugin import OVirtPlugin
 from .sso import get_token_info
 from .sso import is_active
-
-CONFIG_SECTION = 'OVIRT'
-ENGINE_NETWORK_ADMIN_USER_NAME = 'netadmin@internal'
+from ovirt_provider_config import CONFIG_SECTION_OVIRT
+from ovirt_provider_config import KEY_OVIRT_ADMIN_USER_NAME
+from ovirt_provider_config import DEFAULT_ENGINE_NETWORK_ADMIN_USER_NAME
 
 
 class AuthorizationByUserName(OVirtPlugin):
@@ -53,5 +53,8 @@ class AuthorizationByUserName(OVirtPlugin):
 
 
 def _admin_user_name():
-    return ovirt_provider_config.get(CONFIG_SECTION, 'ovirt-admin-user-name',
-                                     ENGINE_NETWORK_ADMIN_USER_NAME)
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_OVIRT,
+        KEY_OVIRT_ADMIN_USER_NAME,
+        DEFAULT_ENGINE_NETWORK_ADMIN_USER_NAME
+    )

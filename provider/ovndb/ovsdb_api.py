@@ -32,14 +32,18 @@ import ovs.db.idl
 import ovs.stream
 
 import ovirt_provider_config as config
+from ovirt_provider_config import CONFIG_SECTION_SSL
+from ovirt_provider_config import KEY_SSL_KEY_FILE
+from ovirt_provider_config import KEY_SSL_CERT_FILE
+from ovirt_provider_config import KEY_SSL_CACERT_FILE
+from ovirt_provider_config import DEFAULT_SSL_KEY_FILE
+from ovirt_provider_config import DEFAULT_SSL_CERT_FILE
+from ovirt_provider_config import DEFAULT_SSL_CACERT_FILE
 
 
-SSL_CONFIG_SECTION = 'SSL'
 CONNECTION_TIMEOUT = 3
 SLEEP_BETWEEN_CONNECTION_RETRY_TIME = 0.01
-DEFAULT_KEY_FILE = '/etc/pki/ovirt-engine/keys/ovirt-provider-ovn.pem'
-DEFAULT_CERT_FILE = '/etc/pki/ovirt-engine/certs/ovirt-provider-ovn.cer'
-DEFAULT_CACERT_FILE = '/etc/pki/ovirt-engine/ca.pem'
+
 PROTOCOL_SSL = 'ssl'
 
 
@@ -108,19 +112,19 @@ class OvsDb(object):
 
     def _setup_pki(self):
         key_file = config.get(
-            SSL_CONFIG_SECTION,
-            'ssl-key-file',
-            DEFAULT_KEY_FILE
+            CONFIG_SECTION_SSL,
+            KEY_SSL_KEY_FILE,
+            DEFAULT_SSL_KEY_FILE
         )
         cert_file = config.get(
-            SSL_CONFIG_SECTION,
-            'ssl-cert-file',
-            DEFAULT_CERT_FILE
+            CONFIG_SECTION_SSL,
+            KEY_SSL_CERT_FILE,
+            DEFAULT_SSL_CERT_FILE
         )
         cacert_file = config.get(
-            SSL_CONFIG_SECTION,
-            'ssl-cacert-file',
-            DEFAULT_CACERT_FILE
+            CONFIG_SECTION_SSL,
+            KEY_SSL_CACERT_FILE,
+            DEFAULT_SSL_CACERT_FILE
         )
 
         ovs.stream.Stream.ssl_set_private_key_file(key_file)

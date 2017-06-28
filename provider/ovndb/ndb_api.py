@@ -25,17 +25,15 @@ import six
 import ovirt_provider_config
 from .ovsdb_api import OvsDb
 from ovndb.ovn_rest2db_mappers import NetworkMapper, PortMapper, SubnetMapper
-
-
-# Locally administered mac for use by OVN to assign to dhcp server
-DHCP_SERVER_MAC = '02:00:00:00:00:00'
-# Make the lease time
-DHCP_LEASE_TIME = '86400'
-# MTU of tunneld network should be smaller than the MTU of the tunneling net
-DHCP_MTU = '1442'
-# Setting MTU by DHCP is enabled by default, until there is a better way to
-# set the MTU
-DHCP_ENABLE_MTU = True
+from ovirt_provider_config import CONFIG_SECTION_DHCP
+from ovirt_provider_config import DEFAULT_DHCP_SERVER_MAC
+from ovirt_provider_config import DEFAULT_DHCP_LEASE_TIME
+from ovirt_provider_config import DEFAULT_DHCP_MTU
+from ovirt_provider_config import DEFAULT_DHCP_ENABLE_MTU
+from ovirt_provider_config import KEY_DHCP_SERVER_MAC
+from ovirt_provider_config import KEY_DHCP_LEASE_TIME
+from ovirt_provider_config import KEY_DHCP_ENABLE_MTU
+from ovirt_provider_config import KEY_DHCP_MTU
 
 
 NetworkPort = namedtuple('NetworkPort', ['port', 'network'])
@@ -252,22 +250,35 @@ class OvnNbDb(OvsDb):
 
     @staticmethod
     def _dhcp_lease_time():
-        return ovirt_provider_config.get('DHCP', 'dhcp-lease-time',
-                                         DHCP_LEASE_TIME)
+        return ovirt_provider_config.get(
+            CONFIG_SECTION_DHCP,
+            KEY_DHCP_LEASE_TIME,
+            DEFAULT_DHCP_LEASE_TIME
+        )
 
     @staticmethod
     def _dhcp_server_mac():
-        return ovirt_provider_config.get('DHCP', 'dhcp-server-mac',
-                                         DHCP_SERVER_MAC)
+        return ovirt_provider_config.get(
+            CONFIG_SECTION_DHCP,
+            KEY_DHCP_SERVER_MAC,
+            DEFAULT_DHCP_SERVER_MAC
+        )
 
     @staticmethod
     def _dhcp_enable_mtu():
-        return ovirt_provider_config.getboolean('DHCP', 'dhcp-enable-mtu',
-                                                DHCP_ENABLE_MTU)
+        return ovirt_provider_config.getboolean(
+            CONFIG_SECTION_DHCP,
+            KEY_DHCP_ENABLE_MTU,
+            DEFAULT_DHCP_ENABLE_MTU
+        )
 
     @staticmethod
     def _dhcp_mtu():
-        return ovirt_provider_config.get('DHCP', 'dhcp-mtu', DHCP_MTU)
+        return ovirt_provider_config.get(
+            CONFIG_SECTION_DHCP,
+            KEY_DHCP_MTU,
+            DEFAULT_DHCP_MTU
+        )
 
 
 class DeletedRowDoesNotExistError(Exception):

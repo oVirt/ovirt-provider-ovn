@@ -25,9 +25,9 @@ from handlers.selecting_handler import SelectingHandler
 from handlers.neutron_responses import responses
 import ovirt_provider_config
 from ovndb.ndb_api import OvnNbDb
-
-
-OVN_REMOTE_AT_LOCALHOST = 'tcp:127.0.0.1:6641'
+from ovirt_provider_config import CONFIG_SECTION_OVN_REMOTE
+from ovirt_provider_config import KEY_OVN_REMOTE
+from ovirt_provider_config import DEFAULT_OVN_REMOTE_AT_LOCALHOST
 
 
 class NeutronHandler(SelectingHandler):
@@ -43,8 +43,10 @@ class NeutronHandler(SelectingHandler):
 
     @staticmethod
     def _remote():
-        return ovirt_provider_config.get('OVN REMOTE', 'ovn-remote',
-                                         OVN_REMOTE_AT_LOCALHOST)
+        return ovirt_provider_config.get(
+            CONFIG_SECTION_OVN_REMOTE,
+            KEY_OVN_REMOTE,
+            DEFAULT_OVN_REMOTE_AT_LOCALHOST)
 
     @staticmethod
     def get_responses():
