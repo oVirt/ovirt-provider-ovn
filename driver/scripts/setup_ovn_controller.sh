@@ -52,5 +52,8 @@ cat > /etc/sysconfig/ovn-controller << EOF
 OVN_CONTROLLER_OPTS="--ovn-controller-ssl-key=${key_file} --ovn-controller-ssl-cert=${cert_file} --ovn-controller-ssl-ca-cert=${ca_file}"
 EOF
 
+systemctl enable openvswitch
+systemctl enable ovn-controller
+
 systemctl restart openvswitch
 systemctl restart ovn-controller
