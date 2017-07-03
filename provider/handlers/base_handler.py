@@ -47,6 +47,13 @@ ERROR_MESSAGE = """\
 ERROR_CONTENT_TYPE = 'application/json'
 
 
+class Response(object):
+    def __init__(self, body=None, code=None, headers=None):
+        self.body = body
+        self.code = code
+        self.headers = headers
+
+
 class NotFoundError(AttributeError):
     pass
 
@@ -96,8 +103,9 @@ class BaseHandler(BaseHTTPRequestHandler):
         try:
 
             key, id = self._parse_request_path(self.path)
-            response = self.handle_request(method, key, id, content)
-            self._process_response(response, code)
+            response = self.handle_request(
+                method, key, id, content)
+            self._process_response(response.body, response.code or code)
         except NotFoundError as e:
             message = 'Incorrect path: {}'.format(self.path)
             self._handle_response_exception(e, message=message,
@@ -164,4 +172,7 @@ class BaseHandler(BaseHTTPRequestHandler):
 
     @abc.abstractmethod
     def handle_request(self, method, key, id, content):
+        """
+        :return: An instance of Response
+        """
         pass

@@ -137,7 +137,7 @@ class TestNeutronResponse(object):
 
         response = responses()[NETWORKS][POST](nb_db, rest_input, NOT_RELEVANT)
 
-        response_json = json.loads(response)
+        response_json = json.loads(response.body)
         assert response_json['network']['id'] == str(NETWORK_ID01)
         assert response_json['network']['name'] == NETWORK_NAME1
 
@@ -155,7 +155,7 @@ class TestNeutronResponse(object):
 
         response = responses()[PORTS][POST](nb_db, rest_input, NOT_RELEVANT)
 
-        response_json = json.loads(response)
+        response_json = json.loads(response.body)
         assert response_json['port']['id'] == str(PORT_ID07)
         assert response_json['port']['name'] == 'port_name'
         assert response_json['port']['mac_address'] == 'mac'

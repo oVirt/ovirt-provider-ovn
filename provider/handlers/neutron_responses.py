@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
+import httplib
 import json
 
 from handlers.base_handler import GET
@@ -24,6 +25,7 @@ from handlers.base_handler import SHOW
 from handlers.base_handler import DELETE
 from handlers.base_handler import POST
 from handlers.base_handler import PUT
+from handlers.base_handler import Response
 
 from handlers.selecting_handler import rest
 from ovndb.ovn_rest2db_mappers import NetworkMapper
@@ -112,7 +114,10 @@ def post_networks(nb_db, content, id):
     content_json = json.loads(content)
     received_network = content_json['network']
     network = nb_db.update_network(received_network)
-    return json.dumps({'network': NetworkMapper.row2rest(network)})
+    return Response(
+        body=json.dumps({'network': NetworkMapper.row2rest(network)}),
+        code=httplib.CREATED
+    )
 
 
 @rest(POST, PORTS, _responses)
@@ -120,14 +125,20 @@ def post_ports(nb_db, content, id):
     content_json = json.loads(content)
     received_port = content_json['port']
     port = nb_db.update_port(received_port)
-    return json.dumps({'port': PortMapper.row2rest(port)})
+    return Response(
+        body=json.dumps({'port': PortMapper.row2rest(port)}),
+        code=httplib.CREATED
+    )
 
 
 @rest(POST, SUBNETS, _responses)
 def post_subnets(nb_db, content, id):
     received_subnet = json.loads(content)['subnet']
     subnet = nb_db.update_subnet(received_subnet)
-    return json.dumps({'subnet': SubnetMapper.row2rest(subnet)})
+    return Response(
+        body=json.dumps({'subnet': SubnetMapper.row2rest(subnet)}),
+        code=httplib.CREATED
+    )
 
 
 @rest(PUT, PORTS, _responses)

@@ -18,9 +18,11 @@
 from __future__ import absolute_import
 
 from mock import MagicMock
+import httplib
 import mock
 import pytest
 
+from handlers.base_handler import Response
 from handlers.neutron import NeutronHandler
 
 from handlers.selecting_handler import rest
@@ -52,6 +54,14 @@ def delete_handler(nb_db, content, id):
 @rest('POST', 'testports', response_handlers)
 def post_handler(nb_db, content, id):
     return REST_RESPONSE_POST + content
+
+
+@rest('POST', 'response_code_201', response_handlers)
+def response_code_201(nb_db, content, id):
+    return Response(
+        REST_RESPONSE_POST + content,
+        httplib.CREATED
+    )
 
 
 @mock.patch('handlers.neutron.NeutronHandler._run_server', lambda *args: None)
@@ -175,6 +185,31 @@ class TestNeutronHandler(object):
         handler.do_POST()
 
         assert mock_send_response.call_args[0][1] == 200
+        expected_response = REST_RESPONSE_POST + 'content'
+        assert handler.wfile.write.call_args[0][0] == expected_response
+        assert mock_send_response.call_count == 1
+        assert mock_validate_token.call_count == 1
+
+    @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
+    @mock.patch('handlers.neutron.NeutronHandler.end_headers')
+    @mock.patch('handlers.neutron.NeutronHandler.send_header')
+    @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
+    @mock.patch('handlers.neutron.validate_token', return_value=True)
+    def test_response_code_201(self, mock_validate_token, mock_send_response,
+                               mock_send_header, mock_end_headers,
+                               mock_ndb_api):
+
+        handler = NeutronHandler(None, None, None)
+        handler.wfile = MagicMock()
+        handler.rfile = MagicMock()
+        handler.rfile.read.return_value = 'content'
+        handler.headers = {'Content-Length': 7}
+
+        handler.path = '/v2.0/response_code_201'
+
+        handler.do_POST()
+
+        assert mock_send_response.call_args[0][1] == httplib.CREATED
         expected_response = REST_RESPONSE_POST + 'content'
         assert handler.wfile.write.call_args[0][0] == expected_response
         assert mock_send_response.call_count == 1

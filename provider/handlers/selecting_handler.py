@@ -23,6 +23,7 @@ import abc
 from handlers.base_handler import BaseHandler
 from handlers.base_handler import NotFoundError
 from handlers.base_handler import MethodNotAllowedError
+from handlers.base_handler import Response
 
 
 def rest(method, path, response_handlers):
@@ -48,8 +49,12 @@ class SelectingHandler(BaseHandler):
     # TODO: this is made configurable in a later patch
 
     def handle_request(self, method, key, id, content):
-        return self.call_response_handler(
-            self._get_response_handler(method, key), content, id)
+        response = self.call_response_handler(
+            self._get_response_handler(method, key), content, id
+        )
+        if not isinstance(response, Response):
+            return Response(body=response)
+        return response
 
     @classmethod
     def _get_response_handler(cls, method, key):
