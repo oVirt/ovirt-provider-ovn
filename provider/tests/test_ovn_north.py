@@ -53,3 +53,24 @@ class TestOvnNorth(object):
         assert result[0]['name'] == TestOvnNorth.NETWORK_NAME10
         assert mock_ls_list.call_count == 1
         assert mock_ls_list.return_value.execute.call_count == 1
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand',
+        autospec=False
+    )
+    def test_get_network(self, mock_ls_get, mock_connection):
+        mock_ls_get.return_value.execute.return_value = (
+            OvnNetworkRow(
+                TestOvnNorth.NETWORK_ID10,
+                TestOvnNorth.NETWORK_NAME10
+            )
+        )
+
+        ovn_north = OvnNorth()
+        result = ovn_north.get_network(str(self.NETWORK_ID10))
+        assert result['id'] == str(self.NETWORK_ID10)
+        assert result['name'] == self.NETWORK_NAME10
+        assert mock_ls_get.call_count == 1
+        assert mock_ls_get.return_value.execute.call_count == 1
+        expected_ls_get_call = mock.call(ovn_north.idl, str(self.NETWORK_ID10))
+        assert mock_ls_get.mock_calls[0] == expected_ls_get_call

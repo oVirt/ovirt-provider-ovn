@@ -43,8 +43,9 @@ class OvnNorth(object):
     def list_networks(self):
         return self.idl.ls_list().execute()
 
+    @NetworkMapper.map_to_rest
     def get_network(self, network_id):
-        return None
+        return self.idl.ls_get(network_id).execute()
 
     def add_network(self, name):
         return None
