@@ -124,38 +124,38 @@ def post_tokens(content, id):
         'access': {
             'token': {
                 'id': token
-            }
-        },
-        'serviceCatalog': [
-            {
-                'endpoints': [
-                    {
-                        'adminURL': neutron_url,
-                        'internalURL': neutron_url,
-                        'publicURL': neutron_url,
-                        'region': openstack_region,
-                        'id': openstack_neutron_id,
-                    }
-                ],
-                'endpoints_links': [],
-                'type': 'network',
-                'name': 'neutron',
             },
-            {
-                'endpoints': [
-                    {
-                        'adminURL': keystone_url,
-                        'region': openstack_region,
-                        'internalURL': keystone_url,
-                        'id': openstack_keystone_id,
-                        'publicURL': keystone_url
-                    }
-                ],
-                'endpoints_links': [],
-                'type': 'identity',
-                'name': 'keystone'
-            }
-        ]
+            'serviceCatalog': [
+                {
+                    'endpoints': [
+                        {
+                            'adminURL': neutron_url,
+                            'internalURL': neutron_url,
+                            'publicURL': neutron_url,
+                            'region': openstack_region,
+                            'id': openstack_neutron_id,
+                        }
+                    ],
+                    'endpoints_links': [],
+                    'type': 'network',
+                    'name': 'neutron',
+                },
+                {
+                    'endpoints': [
+                        {
+                            'adminURL': keystone_url,
+                            'region': openstack_region,
+                            'internalURL': keystone_url,
+                            'id': openstack_keystone_id,
+                            'publicURL': keystone_url
+                        }
+                    ],
+                    'endpoints_links': [],
+                    'type': 'identity',
+                    'name': 'keystone'
+                }
+            ]
+        },
     }
 
 
