@@ -16,28 +16,32 @@
 #
 # Refer to the README and COPYING files for full details of the license
 
-from ovsdbapp.backend.ovs_idl import connection
+import ovsdbapp.backend.ovs_idl.connection
 from ovsdbapp.schema.ovn_northbound.impl_idl import OvnNbApiIdlImpl
 
 import ovirt_provider_config
 from ovirt_provider_config import CONFIG_SECTION_OVN_REMOTE
 from ovirt_provider_config import DEFAULT_OVN_REMOTE_AT_LOCALHOST
 from ovirt_provider_config import KEY_OVN_REMOTE
+from ovndb.ovn_north_mappers import NetworkMapper
 
 
 class OvnNorth(object):
 
+    OVN_NORTHBOUND = 'OVN_Northbound'
+
     def __init__(self):
-        ovsdb_connection = connection.Connection(
-            idl=connection.OvsdbIdl.from_server(
+        ovsdb_connection = ovsdbapp.backend.ovs_idl.connection.Connection(
+            idl=ovsdbapp.backend.ovs_idl.connection.OvsdbIdl.from_server(
                 self._ovn_remote(),
-                'OVN_Northbound'
+                OvnNorth.OVN_NORTHBOUND
             ),
             timeout=100)
         self.idl = OvnNbApiIdlImpl(ovsdb_connection)
 
+    @NetworkMapper.map_to_rest
     def list_networks(self):
-        return []
+        return self.idl.ls_list().execute()
 
     def get_network(self, network_id):
         return None
