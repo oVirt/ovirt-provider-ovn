@@ -24,6 +24,7 @@ from ovirt_provider_config import CONFIG_SECTION_OVN_REMOTE
 from ovirt_provider_config import DEFAULT_OVN_REMOTE_AT_LOCALHOST
 from ovirt_provider_config import KEY_OVN_REMOTE
 from ovndb.ovn_north_mappers import NetworkMapper
+from ovndb.ovn_north_mappers import RestDataError
 
 
 class OvnNorth(object):
@@ -68,7 +69,23 @@ class OvnNorth(object):
         return self.get_network(network_id)
 
     def delete_network(self, network_id):
-        pass
+        network = self.idl.ls_get(network_id).execute()
+        if not network:
+            raise RestDataError('Network %s does not exist' % network_id)
+        if network.ports:
+            raise RestDataError(
+                'Unable to delete network %s. Ports exist for the network'
+                % network_id
+            )
+
+        # TODO: once subnets are added we need to do:
+        # subnets = self.idl.dhcp_options_list(ids_only=False).execute()
+        # for subnet in subnets:
+        #    if subnet.external_ids.get('ovirt_network_id'):
+        #        if id == str(subnet.uuid):
+        #            self.idl.dhcp_options_del(subnet.uuid).execute()
+
+        self.idl.ls_del(network_id).execute()
 
     def list_ports(self):
         return []

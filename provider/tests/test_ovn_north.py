@@ -129,3 +129,25 @@ class TestOvnNorth(object):
             (NetworkMapper.REST_NETWORK_NAME, TestOvnNorth.NETWORK_NAME10)
         )
         assert mock_set_command.mock_calls[0] == expected_set_call
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
+        lambda x: OvnNetworkRow(
+            TestOvnNorth.NETWORK_ID10,
+            TestOvnNorth.NETWORK_NAME10
+        )
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsDelCommand',
+        autospec=False
+    )
+    def test_delete_network(self, mock_del_command, mock_connection):
+        ovn_north = OvnNorth()
+        ovn_north.delete_network(TestOvnNorth.NETWORK_ID10)
+        assert mock_del_command.call_count == 1
+        expected_del_call = mock.call(
+            ovn_north.idl,
+            TestOvnNorth.NETWORK_ID10,
+            False
+        )
+        assert mock_del_command.mock_calls[0] == expected_del_call
