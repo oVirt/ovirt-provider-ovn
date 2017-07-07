@@ -29,6 +29,8 @@ from ovndb.ovn_north_mappers import NetworkMapper
 class OvnNorth(object):
 
     OVN_NORTHBOUND = 'OVN_Northbound'
+    TABLE_LS = 'Logical_Switch'
+    ROW_LS_NAME = 'name'
 
     def __init__(self):
         ovsdb_connection = ovsdbapp.backend.ovs_idl.connection.Connection(
@@ -47,11 +49,23 @@ class OvnNorth(object):
     def get_network(self, network_id):
         return self.idl.ls_get(network_id).execute()
 
+    @NetworkMapper.validate_add
+    @NetworkMapper.map_from_rest
+    @NetworkMapper.map_to_rest
     def add_network(self, name):
-        return None
+        # TODO: ovirt allows multiple networks with the same name
+        # in oVirt, but OVS does not (may_exist=False will cause early fail)
+        return self.idl.ls_add(switch=name, may_exist=False).execute()
 
+    @NetworkMapper.validate_update
+    @NetworkMapper.map_from_rest
     def update_network(self, network_id, name):
-        return None
+        self.idl.db_set(
+            self.TABLE_LS,
+            network_id,
+            (self.ROW_LS_NAME, name),
+        ).execute()
+        return self.get_network(network_id)
 
     def delete_network(self, network_id):
         pass

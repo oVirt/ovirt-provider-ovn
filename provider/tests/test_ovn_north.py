@@ -21,6 +21,7 @@ from uuid import UUID
 import mock
 
 from ovndb.ovn_north import OvnNorth
+from ovndb.ovn_north_mappers import NetworkMapper
 
 from ovntestlib import OvnNetworkRow
 
@@ -74,3 +75,57 @@ class TestOvnNorth(object):
         assert mock_ls_get.return_value.execute.call_count == 1
         expected_ls_get_call = mock.call(ovn_north.idl, str(self.NETWORK_ID10))
         assert mock_ls_get.mock_calls[0] == expected_ls_get_call
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsAddCommand',
+        autospec=False
+    )
+    def test_add_network(self, mock_add_command, mock_connection):
+        mock_add_command.return_value.execute.return_value = (
+            OvnNetworkRow(
+                TestOvnNorth.NETWORK_ID10,
+                TestOvnNorth.NETWORK_NAME10
+            )
+        )
+        ovn_north = OvnNorth()
+        rest_data = {
+            NetworkMapper.REST_NETWORK_NAME: TestOvnNorth.NETWORK_NAME10
+        }
+        result = ovn_north.add_network(rest_data)
+        assert result['id'] == str(TestOvnNorth.NETWORK_ID10)
+        assert result['name'] == TestOvnNorth.NETWORK_NAME10
+        assert mock_add_command.call_count == 1
+        expected_add_call = mock.call(
+            ovn_north.idl,
+            TestOvnNorth.NETWORK_NAME10,
+            False
+        )
+        assert mock_add_command.mock_calls[0] == expected_add_call
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
+        lambda x: OvnNetworkRow(
+            TestOvnNorth.NETWORK_ID10,
+            TestOvnNorth.NETWORK_NAME10
+        )
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
+        autospec=False
+    )
+    def test_update_network(self, mock_set_command, mock_connection):
+        ovn_north = OvnNorth()
+        rest_data = {
+            NetworkMapper.REST_NETWORK_NAME: TestOvnNorth.NETWORK_NAME10
+        }
+        result = ovn_north.update_network(rest_data, TestOvnNorth.NETWORK_ID10)
+        assert result['id'] == str(TestOvnNorth.NETWORK_ID10)
+        assert result['name'] == TestOvnNorth.NETWORK_NAME10
+        assert mock_set_command.call_count == 1
+        expected_set_call = mock.call(
+            ovn_north.idl,
+            OvnNorth.TABLE_LS,
+            TestOvnNorth.NETWORK_ID10,
+            (NetworkMapper.REST_NETWORK_NAME, TestOvnNorth.NETWORK_NAME10)
+        )
+        assert mock_set_command.mock_calls[0] == expected_set_call
