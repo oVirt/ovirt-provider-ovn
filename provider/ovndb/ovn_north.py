@@ -24,6 +24,8 @@ from ovirt_provider_config import CONFIG_SECTION_OVN_REMOTE
 from ovirt_provider_config import DEFAULT_OVN_REMOTE_AT_LOCALHOST
 from ovirt_provider_config import KEY_OVN_REMOTE
 from ovndb.ovn_north_mappers import NetworkMapper
+from ovndb.ovn_north_mappers import NetworkPort
+from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import RestDataError
 
 
@@ -41,6 +43,14 @@ class OvnNorth(object):
             ),
             timeout=100)
         self.idl = OvnNbApiIdlImpl(ovsdb_connection)
+
+    # TODO: could this be moved to ovsdbapp?
+    def _get_port_network(self, port):
+        networks = self.idl.ls_list().execute()
+        return next(network for network in networks if port in network.ports)
+
+    def _is_port_ovirt_controlled(self, port_row):
+        return PortMapper.OVN_NIC_NAME in port_row.external_ids
 
     @NetworkMapper.map_to_rest
     def list_networks(self):
@@ -87,8 +97,12 @@ class OvnNorth(object):
 
         self.idl.ls_del(network_id).execute()
 
+    @PortMapper.map_to_rest
     def list_ports(self):
-        return []
+        ports_rows = self.idl.lsp_list().execute()
+        return [NetworkPort(port_row, self._get_port_network(port_row))
+                for port_row in ports_rows
+                if self._is_port_ovirt_controlled(port_row)]
 
     def get_port(self, port_id):
         return None

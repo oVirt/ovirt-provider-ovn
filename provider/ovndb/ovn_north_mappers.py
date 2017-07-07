@@ -138,7 +138,7 @@ class PortMapper(Mapper):
 
     OVN_DEVICE_ID = 'ovirt_device_id'
     OVN_NIC_NAME = 'ovirt_nic_name'
-
+    OVN_DEVICE_OWNER = 'ovirt_device_owner'
     DEVICE_OWNER_OVIRT = 'oVirt'
 
     @staticmethod
@@ -182,7 +182,8 @@ class PortMapper(Mapper):
         port, network = row
         rest_data = {
             PortMapper.REST_PORT_ID: str(port.uuid),
-            PortMapper.REST_PORT_NAME: port.name,
+            PortMapper.REST_PORT_NAME:
+                port.external_ids[PortMapper.OVN_NIC_NAME],
             PortMapper.REST_PORT_DEVICE_ID:
                 str(port.external_ids[PortMapper.OVN_DEVICE_ID]),
             PortMapper.REST_PORT_DEVICE_OWNER:
