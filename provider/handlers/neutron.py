@@ -23,20 +23,17 @@ from auth import Forbidden
 from auth import TOKEN_HTTP_HEADER_FIELD_NAME
 from handlers.selecting_handler import SelectingHandler
 from handlers.neutron_responses import responses
-from ovirt_provider_config_common import ovn_remote
-from ovndb.ndb_api import OvnNbDb
+from ovndb.ovn_north import OvnNorth
 
 
 class NeutronHandler(SelectingHandler):
-
-    # TODO: this is made configurable in a later patch
 
     def call_response_handler(self, response_handler, content, id):
         if not validate_token(self.headers.get(
                 TOKEN_HTTP_HEADER_FIELD_NAME, '')):
             raise Forbidden()
-        with OvnNbDb(ovn_remote()) as nb_db:
-            return response_handler(nb_db, content, id)
+        with OvnNorth() as ovn_north:
+            return response_handler(ovn_north, content, id)
 
     @staticmethod
     def get_responses():

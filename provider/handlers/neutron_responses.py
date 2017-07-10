@@ -28,9 +28,6 @@ from handlers.base_handler import PUT
 from handlers.base_handler import Response
 
 from handlers.selecting_handler import rest
-from ovndb.ovn_rest2db_mappers import NetworkMapper
-from ovndb.ovn_rest2db_mappers import PortMapper
-from ovndb.ovn_rest2db_mappers import SubnetMapper
 from ovirt_provider_config_common import neutron_url
 
 
@@ -45,21 +42,21 @@ _responses = {}
 @rest(SHOW, NETWORKS, _responses)
 def show_network(nb_db, content, id=None):
     return json.dumps({
-        'network': NetworkMapper.row2rest(nb_db.get_network(id))
+        'network': nb_db.get_network(id)
     })
 
 
 @rest(SHOW, PORTS, _responses)
 def show_port(nb_db, content, id=None):
     return json.dumps({
-        'port': PortMapper.row2rest(nb_db.get_port(id))
+        'port': nb_db.get_port(id)
     })
 
 
 @rest(SHOW, SUBNETS, _responses)
 def show_subnet(nb_db, content, id):
     return json.dumps({
-        'subnet': SubnetMapper.row2rest(nb_db.get_subnet(id) if id else None)
+        'subnet': nb_db.get_subnet(id) if id else None
     })
 
 
@@ -79,25 +76,24 @@ def get_default(nb_db, content, id):
 
 @rest(GET, NETWORKS, _responses)
 def get_networks(nb_db, conten, id):
-    networks = nb_db.networks
+    networks = nb_db.list_networks()
     return json.dumps({
-        'networks': [NetworkMapper.row2rest(network) for network in networks]
+        'networks': networks
     })
 
 
 @rest(GET, PORTS, _responses)
 def get_ports(nb_db, content, id):
-    ports = nb_db.ports
+    ports = nb_db.list_ports()
     return json.dumps({
-        'ports': [PortMapper.row2rest(port) for port in ports]
+        'ports': ports
     })
 
 
 @rest(GET, SUBNETS, _responses)
 def get_subnets(nb_db, content, id):
     return json.dumps({
-        'subnets': [SubnetMapper.row2rest(subnet)
-                    for subnet in nb_db.get_subnets()]
+        'subnets': nb_db.list_subnets()
     })
 
 
@@ -123,9 +119,9 @@ def delete_subnet(nb_db, content, id):
 def post_networks(nb_db, content, id):
     content_json = json.loads(content)
     received_network = content_json['network']
-    network = nb_db.update_network(received_network)
+    network = nb_db.add_network(received_network)
     return Response(
-        body=json.dumps({'network': NetworkMapper.row2rest(network)}),
+        body=json.dumps({'network': network}),
         code=httplib.CREATED
     )
 
@@ -134,9 +130,9 @@ def post_networks(nb_db, content, id):
 def post_ports(nb_db, content, id):
     content_json = json.loads(content)
     received_port = content_json['port']
-    port = nb_db.update_port(received_port)
+    port = nb_db.add_port(received_port)
     return Response(
-        body=json.dumps({'port': PortMapper.row2rest(port)}),
+        body=json.dumps({'port': port}),
         code=httplib.CREATED
     )
 
@@ -144,34 +140,64 @@ def post_ports(nb_db, content, id):
 @rest(POST, SUBNETS, _responses)
 def post_subnets(nb_db, content, id):
     received_subnet = json.loads(content)['subnet']
-    subnet = nb_db.update_subnet(received_subnet)
+    subnet = nb_db.add_subnet(received_subnet)
     return Response(
-        body=json.dumps({'subnet': SubnetMapper.row2rest(subnet)}),
+        body=json.dumps({'subnet': subnet}),
         code=httplib.CREATED
+    )
+
+
+@rest(PUT, NETWORKS, _responses)
+def put_network(nb_db, content, id):
+    content_json = json.loads(content)
+    received_network = content_json['network']
+    network = nb_db.update_network(received_network, id)
+    return Response(
+        body=json.dumps({'network': network}),
+        code=httplib.OK
     )
 
 
 @rest(PUT, PORTS, _responses)
 def put_ports(nb_db, content, id):
-    if not id:
-        raise Exception('No port id in POST request')
+
+    content_json = json.loads(content)
+    received_port = content_json['port']
+    port = nb_db.update_port(received_port, id)
+    return Response(
+        body=json.dumps({'port': port}),
+        code=httplib.OK
+    )
+
+    # if not id:
+    #    raise Exception('No port id in POST request')
 
     # REQUIRED_FOR Engine < 4.1
     # older Engine does not pass mac_address here
-    mac = json.loads(content)['port'].get('mac_address')
-    if mac:
-        nb_db.update_port_mac(id, mac)
-    result = nb_db.get_port(id)
-    return json.dumps({'port': PortMapper.row2rest(result)})
+    # mac = json.loads(content)['port'].get('mac_address')
+    # if mac:
+    #    nb_db.update_port_mac(id, mac)
+    # result = nb_db.get_port(id)
+    # return json.dumps({'port': result})
+
+
+@rest(PUT, SUBNETS, _responses)
+def put_subnets(nb_db, content, id):
+    received_subnet = json.loads(content)['subnet']
+    subnet = nb_db.update_subnet(received_subnet, id)
+    return Response(
+        body=json.dumps({'subnet': subnet}),
+        code=httplib.OK
+    )
 
 
 @rest(GET, 'tech', _responses)
 def get_debug(nb_db, content, id):
-    networks = nb_db.networks
-    ports = nb_db.ports
+    networks = nb_db.list_networks()
+    ports = nb_db.list_ports()
     response = json.dumps({
-        'networks': [NetworkMapper.row2rest(network) for network in networks],
-        'ports': [PortMapper.row2rest(port) for port in ports]
+        'networks': [network for network in networks],
+        'ports': [port for port in ports]
     })
     return response
 

@@ -78,13 +78,20 @@ class OvnNorth(object):
     ROW_DHCP_CIDR = 'cidr'
 
     def __init__(self):
+        self._connect()
+
+    def _connect(self):
+        self.ovsidl = ovsdbapp.backend.ovs_idl.connection.OvsdbIdl.from_server(
+            ovn_remote(),
+            OvnNorth.OVN_NORTHBOUND
+        )
         ovsdb_connection = ovsdbapp.backend.ovs_idl.connection.Connection(
-            idl=ovsdbapp.backend.ovs_idl.connection.OvsdbIdl.from_server(
-                ovn_remote(),
-                OvnNorth.OVN_NORTHBOUND
-            ),
+            idl=self.ovsidl,
             timeout=100)
         self.idl = OvnNbApiIdlImpl(ovsdb_connection)
+
+    def close(self):
+        self.ovsidl.close()
 
     # TODO: could this be moved to ovsdbapp?
     def _get_port_network(self, port):
@@ -417,3 +424,9 @@ class OvnNorth(object):
 
     def delete_subnet(self, subnet_id):
         self.idl.dhcp_options_del(subnet_id).execute()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, tb):
+        self.close()
