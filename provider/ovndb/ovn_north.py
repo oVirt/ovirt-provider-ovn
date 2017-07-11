@@ -27,6 +27,7 @@ from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import NetworkPort
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import RestDataError
+from ovndb.ovn_north_mappers import SubnetMapper
 
 
 class OvnNorth(object):
@@ -34,6 +35,13 @@ class OvnNorth(object):
     OVN_NORTHBOUND = 'OVN_Northbound'
     TABLE_LS = 'Logical_Switch'
     ROW_LS_NAME = 'name'
+
+    TABLE_LSP = 'Logical_Switch_Port'
+    ROW_LSP_NAME = 'name'
+    ROW_LSP_ADDRESSES = 'addresses'
+    ROW_LSP_EXTERNAL_IDS = 'external_ids'
+    ROW_LSP_ENABLED = 'enabled'
+    ROW_LSP_DHCPV4_OPTIONS = 'dhcpv4_options'
 
     def __init__(self):
         ovsdb_connection = ovsdbapp.backend.ovs_idl.connection.Connection(
@@ -107,6 +115,14 @@ class OvnNorth(object):
     def get_port(self, port_id):
         return None
 
+    def _get_port(self, port_id):
+        port = self.idl.lsp_get(port_id).execute()
+        if not self._is_port_ovirt_controlled(port):
+            raise ValueError('Not an ovirt controller port')
+        return NetworkPort(port, self._get_port_network(port))
+
+    @PortMapper.validate_add
+    @PortMapper.map_from_rest
     def add_port(
         self,
         network_id,
@@ -114,11 +130,17 @@ class OvnNorth(object):
         mac=None,
         is_enabled=None,
         is_up=None,
-        external_device_id=None,
-        external_owner=None,
+        device_id=None,
+        device_owner=None,
     ):
-        return None
+        port = self._create_port(name, network_id)
+        port_id = port.uuid
+        self._update_port_values(port, port_id, network_id, name, mac,
+                                 is_enabled, is_up, device_id, device_owner)
+        return self.get_port(port_id)
 
+    @PortMapper.validate_update
+    @PortMapper.map_from_rest
     def update_port(
         self,
         port_id,
@@ -127,10 +149,93 @@ class OvnNorth(object):
         mac=None,
         is_enabled=None,
         is_up=None,
-        external_device_id=None,
-        external_owner=None,
+        device_id=None,
+        device_owner=None,
     ):
-        return None
+        port = self._get_port(port_id).port
+        network_id = self._get_validated_port_network_id(port, network_id)
+        self._update_port_values(port, port_id, network_id, name, mac,
+                                 is_enabled, is_up, device_id, device_owner)
+        return self.get_port(port_id)
+
+    def _update_port_values(self, port, port_id, network_id, name, mac,
+                            is_enabled, is_up, device_id, device_owner):
+        # TODO(add transaction): setting of the individual values should
+        # one day be done in a transaction:
+        #   txn = Transaction(self.idl, self.ovsdb_connection)
+        #   txn.add(<command>)
+        #   ...
+        #   txn.commit()
+        # The ovsdbapp transactions seem to have synchronization issues at the
+        # moment, hence we'll be using individual transactions for now.
+        if not mac and port.addresses:
+            mac = port.addresses[0].split()[0]
+        subnet_row = self._get_dhcp_by_network_id(network_id)
+
+        if mac:
+            if subnet_row:
+                mac += ' dynamic'
+            self._lsp_set_command(
+                port_id, self.ROW_LSP_ADDRESSES, [mac]).execute()
+        self._lsp_set(device_id, port_id, self.ROW_LSP_EXTERNAL_IDS,
+                      {PortMapper.OVN_DEVICE_ID: device_id})
+        self._lsp_set(name, port_id, self.ROW_LSP_EXTERNAL_IDS,
+                      {PortMapper.OVN_NIC_NAME: name})
+        self._lsp_set(device_owner, port_id, self.ROW_LSP_EXTERNAL_IDS,
+                      {PortMapper.OVN_DEVICE_OWNER: device_owner})
+        self._lsp_set(is_enabled is not None, port_id,
+                      self.ROW_LSP_ENABLED, is_enabled)
+        self._lsp_set(subnet_row, port_id, self.ROW_LSP_DHCPV4_OPTIONS,
+                      [subnet_row])
+
+    def _get_validated_port_network_id(self, port, network_id):
+        """
+        Validates that the network_id proposed for the port is valid,
+        or if no network_id is given, retrieves the port to which
+        the port currently belongs.
+        If network_id is not None, it has to match the network to which
+        the port already belongs. Moving a port from one network to another
+        is not supported
+        :param port: the port to be checked
+        :param network_id: the network_id received for the port, None if not
+        specified
+        :return: the port's network_id
+        :raises ValueError if new network_id does not match the existing one
+        """
+        old_network_id = self._get_port_network(port).uuid
+        if network_id and not str(old_network_id) == network_id:
+            raise ValueError('Unable to change network of existing port')
+        return network_id or old_network_id
+
+    def _create_port(self, name, network_id):
+        port = self.idl.lsp_add(
+            network_id,
+            name,
+            may_exist=False
+        ).execute()
+        port_id = str(port.uuid)
+        self._lsp_set_command(port_id, self.ROW_LSP_NAME,
+                              str(port_id)).execute()
+        return port
+
+    def _get_dhcp_by_network_id(self, network_id):
+        dhcps = self.idl.dhcp_options_list().execute()
+        for row in dhcps:
+            if str(row.external_ids.get(
+                SubnetMapper.OVN_NETWORK_ID
+            )) == network_id:
+                return row
+
+    def _lsp_set(self, _lsp_set_if, port_id, column, value):
+        if _lsp_set_if:
+            self._lsp_set_command(port_id, column, value).execute()
+
+    def _lsp_set_command(self, port_id, column, value):
+        return self.idl.db_set(
+            self.TABLE_LSP,
+            port_id,
+            (column, value),
+        )
 
     def update_port_mac(self, port_id, macaddress):
         pass

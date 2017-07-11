@@ -189,6 +189,113 @@ class TestOvnNorth(object):
         lambda x: TestOvnNorth.networks
     )
     @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LspGetCommand.execute',
+        lambda x: TestOvnNorth.PORT_1
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
+        'execute',
+        lambda x: []
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LspAddCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
+        autospec=False
+    )
+    def test_add_port(self, mock_db_set, mock_add_command, mock_connection):
+        mock_add_command.return_value.execute.return_value = (
+            OvnPortRow(
+                TestOvnNorth.PORT_ID01,
+                external_ids={
+                    PortMapper.OVN_NIC_NAME: TestOvnNorth.PORT_NAME01,
+                    PortMapper.OVN_DEVICE_ID: str(TestOvnNorth.PORT_ID01),
+                    PortMapper.OVN_DEVICE_OWNER: PortMapper.DEVICE_OWNER_OVIRT,
+                }
+            )
+        )
+        ovn_north = OvnNorth()
+        rest_data = {
+            PortMapper.REST_PORT_NAME: TestOvnNorth.PORT_NAME01,
+            PortMapper.REST_PORT_NETWORK_ID: str(TestOvnNorth.NETWORK_ID10),
+            PortMapper.REST_PORT_DEVICE_ID: TestOvnNorth.DEVICE_ID,
+            PortMapper.REST_PORT_DEVICE_OWNER: PortMapper.DEVICE_OWNER_OVIRT,
+            PortMapper.REST_PORT_ADMIN_STATE_UP: True,
+            PortMapper.REST_PORT_MAC_ADDRESS: TestOvnNorth.MAC_ADDRESS
+        }
+        ovn_north.add_port(rest_data)
+        assert mock_add_command.call_count == 1
+        mock_add_command.assert_called_with(
+            ovn_north.idl,
+            str(TestOvnNorth.NETWORK_ID10),
+            TestOvnNorth.PORT_NAME01,
+            None,
+            None,
+            False
+        )
+
+        assert mock_db_set.call_count == 6
+
+        # mock_db_set.mock_calls[1, 3, 5, ...] is for execute() - no parameters
+        assert mock_db_set.mock_calls[0] == mock.call(
+            ovn_north.idl,
+            OvnNorth.TABLE_LSP,
+            str(TestOvnNorth.PORT_ID01),
+            (
+                OvnNorth.ROW_LSP_NAME,
+                str(TestOvnNorth.PORT_ID01)
+            )
+        )
+        assert mock_db_set.mock_calls[2] == mock.call(
+            ovn_north.idl,
+            OvnNorth.TABLE_LSP,
+            TestOvnNorth.PORT_ID01,
+            (
+                OvnNorth.ROW_LSP_ADDRESSES,
+                [TestOvnNorth.MAC_ADDRESS]
+            )
+        )
+        assert mock_db_set.mock_calls[4] == mock.call(
+            ovn_north.idl,
+            OvnNorth.TABLE_LSP,
+            TestOvnNorth.PORT_ID01,
+            (
+                OvnNorth.ROW_LSP_EXTERNAL_IDS,
+                {PortMapper.OVN_DEVICE_ID: TestOvnNorth.DEVICE_ID}
+            )
+        )
+        assert mock_db_set.mock_calls[6] == mock.call(
+            ovn_north.idl,
+            OvnNorth.TABLE_LSP,
+            TestOvnNorth.PORT_ID01,
+            (
+                OvnNorth.ROW_LSP_EXTERNAL_IDS,
+                {PortMapper.OVN_NIC_NAME: TestOvnNorth.PORT_NAME01}
+            )
+        )
+        assert mock_db_set.mock_calls[8] == mock.call(
+            ovn_north.idl,
+            OvnNorth.TABLE_LSP,
+            TestOvnNorth.PORT_ID01,
+            (
+                OvnNorth.ROW_LSP_EXTERNAL_IDS,
+                {PortMapper.OVN_DEVICE_OWNER: PortMapper.DEVICE_OWNER_OVIRT}
+            )
+        )
+        assert mock_db_set.mock_calls[10] == mock.call(
+            ovn_north.idl,
+            OvnNorth.TABLE_LSP,
+            TestOvnNorth.PORT_ID01,
+            (OvnNorth.ROW_LSP_ENABLED, True)
+        )
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsListCommand.execute',
+        lambda x: TestOvnNorth.networks
+    )
+    @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LspListCommand.execute',
         lambda x: TestOvnNorth.ports
     )
