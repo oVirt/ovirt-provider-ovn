@@ -28,6 +28,7 @@ from handlers.keystone import TokenHandler
 from handlers.selecting_handler import rest
 
 REST_RESPONSE_POST = 'REST_RESPONSE_POST'
+EMPTY = 'EMPTY'
 
 response_handlers = {}
 
@@ -35,6 +36,11 @@ response_handlers = {}
 @rest('POST', 'tokens', response_handlers)
 def tokens_handler(content, id):
     return {'value': REST_RESPONSE_POST + content['key']}
+
+
+@rest('POST', 'empty', response_handlers)
+def empty_handler(content, id):
+    return EMPTY
 
 
 @rest('POST', 'domains', response_handlers)
@@ -138,3 +144,15 @@ class TestKeystoneHandler(object):
                                          mock_end_headers):
         self._test_handle_post_request('/v2/bad_req')
         mock_send_error.assert_called_once_with(ANY, 400)
+
+    def test_empty_content(
+        self,
+        mock_send_response,
+        mock_send_header,
+        mock_end_headers
+    ):
+        handler = self._create_tokenhandler('/v2.0/empty')
+        handler.rfile.read.return_value = None
+        handler.headers = {'Content-Length': 0}
+        handler.do_POST()
+        handler.wfile.write.assert_called_once_with(json.dumps(EMPTY))
