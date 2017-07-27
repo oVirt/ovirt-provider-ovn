@@ -112,8 +112,9 @@ class OvnNorth(object):
                 for port_row in ports_rows
                 if self._is_port_ovirt_controlled(port_row)]
 
+    @PortMapper.map_to_rest
     def get_port(self, port_id):
-        return None
+        return self._get_port(port_id)
 
     def _get_port(self, port_id):
         port = self.idl.lsp_get(port_id).execute()
