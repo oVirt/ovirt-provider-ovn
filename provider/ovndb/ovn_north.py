@@ -273,7 +273,7 @@ class OvnNorth(object):
         return None
 
     def delete_subnet(self, subnet_id):
-        pass
+        self.idl.dhcp_options_del(subnet_id).execute()
 
     @staticmethod
     def _ovn_remote():

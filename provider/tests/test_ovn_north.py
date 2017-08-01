@@ -359,3 +359,17 @@ class TestOvnNorth(object):
         result = ovn_north.get_subnet(TestOvnNorth.SUBNET_ID101)
         assert result['id'] == str(TestOvnNorth.SUBNET_ID101)
         assert result['network_id'] == str(TestOvnNorth.NETWORK_ID10)
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsDelCommand',
+        autospec=False
+    )
+    def test_delete_subnet(self, mock_del_command, mock_connection):
+        ovn_north = OvnNorth()
+        ovn_north.delete_subnet(TestOvnNorth.SUBNET_ID101)
+        assert mock_del_command.call_count == 1
+        expected_del_call = mock.call(
+            ovn_north.idl,
+            TestOvnNorth.SUBNET_ID101,
+        )
+        assert mock_del_command.mock_calls[0] == expected_del_call
