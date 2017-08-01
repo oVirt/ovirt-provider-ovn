@@ -242,7 +242,7 @@ class OvnNorth(object):
         pass
 
     def delete_port(self, port_id):
-        pass
+        self.idl.lsp_del(port_id).execute()
 
     def list_subnets(self):
         return []

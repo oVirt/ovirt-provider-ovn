@@ -311,3 +311,19 @@ class TestOvnNorth(object):
         assert ports[1]['name'] == TestOvnNorth.PORT_NAME02
         assert ports[0]['device_id'] == str(TestOvnNorth.PORT_ID01)
         assert ports[1]['device_id'] == str(TestOvnNorth.PORT_ID02)
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LspDelCommand',
+        autospec=False
+    )
+    def test_delete_port(self, mock_del_command, mock_connection):
+        ovn_north = OvnNorth()
+        ovn_north.delete_port(TestOvnNorth.PORT_ID01)
+        assert mock_del_command.call_count == 1
+        expected_del_call = mock.call(
+            ovn_north.idl,
+            TestOvnNorth.PORT_ID01,
+            None,
+            False
+        )
+        assert mock_del_command.mock_calls[0] == expected_del_call
