@@ -248,8 +248,9 @@ class OvnNorth(object):
     def list_subnets(self):
         return self.idl.dhcp_options_list().execute()
 
+    @SubnetMapper.map_to_rest
     def get_subnet(self, subnet_id):
-        return None
+        return self.idl.dhcp_options_get(subnet_id).execute()
 
     def add_subnet(
         self,

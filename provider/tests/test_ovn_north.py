@@ -348,3 +348,14 @@ class TestOvnNorth(object):
         assert len(result) == 2
         assert result[0]['id'] == str(TestOvnNorth.SUBNET_ID101)
         assert result[0]['network_id'] == str(TestOvnNorth.NETWORK_ID10)
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
+        'execute',
+        lambda x: TestOvnNorth.SUBNET_101
+    )
+    def test_get_subnets(self, mock_connection):
+        ovn_north = OvnNorth()
+        result = ovn_north.get_subnet(TestOvnNorth.SUBNET_ID101)
+        assert result['id'] == str(TestOvnNorth.SUBNET_ID101)
+        assert result['network_id'] == str(TestOvnNorth.NETWORK_ID10)
