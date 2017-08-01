@@ -17,8 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
-from ovndb.ovn_rest2db_mappers import PortMapper
-from ovndb.ovn_rest2db_mappers import SubnetMapper
+from ovndb.ovn_north_mappers import PortMapper
+from ovndb.ovn_north_mappers import SubnetMapper
 
 
 TABLES = [['table0', ['column0', 'column1']]]
@@ -70,7 +70,13 @@ class OvnSubnetRow(OvnRow):
         self.uuid = uuid
         self.name = name
         self.cidr = cidr
-        self.external_ids = external_ids or {}
-        self.options = options or {}
+        self.external_ids = external_ids or {
+            SubnetMapper.OVN_NAME: 'OVN_NAME',
+            SubnetMapper.OVN_NETWORK_ID: '1'
+        }
+        self.options = options or {
+            'router': '1.1.1.1',
+            'dns_server': '8.8.8.8'
+        }
         if network_id:
-            self.external_ids[SubnetMapper.NETWORK_ID] = network_id
+            self.external_ids[SubnetMapper.OVN_NETWORK_ID] = network_id

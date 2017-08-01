@@ -26,6 +26,7 @@ from ovndb.ovn_north_mappers import PortMapper
 
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
+from ovntestlib import OvnSubnetRow
 
 
 @mock.patch('ovsdbapp.backend.ovs_idl.connection', autospec=False)
@@ -64,12 +65,20 @@ class TestOvnNorth(object):
         }
     )
 
+    SUBNET_ID101 = UUID(int=101)
+    SUBNET_ID102 = UUID(int=102)
+
+    SUBNET_101 = OvnSubnetRow(SUBNET_ID101, network_id=str(NETWORK_ID10))
+    SUBNET_102 = OvnSubnetRow(SUBNET_ID102)
+
     ports = [PORT_1, PORT_2]
 
     networks = [
         OvnNetworkRow(NETWORK_ID10, NETWORK_NAME10),
         OvnNetworkRow(NETWORK_ID11, NETWORK_NAME11, ports=[PORT_1, PORT_2]),
     ]
+
+    subnets = [SUBNET_101, SUBNET_102]
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsListCommand',
@@ -327,3 +336,15 @@ class TestOvnNorth(object):
             False
         )
         assert mock_del_command.mock_calls[0] == expected_del_call
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
+        'execute',
+        lambda x: TestOvnNorth.subnets
+    )
+    def test_list_subnets(self, mock_connection):
+        ovn_north = OvnNorth()
+        result = ovn_north.list_subnets()
+        assert len(result) == 2
+        assert result[0]['id'] == str(TestOvnNorth.SUBNET_ID101)
+        assert result[0]['network_id'] == str(TestOvnNorth.NETWORK_ID10)

@@ -244,8 +244,9 @@ class OvnNorth(object):
     def delete_port(self, port_id):
         self.idl.lsp_del(port_id).execute()
 
+    @SubnetMapper.map_to_rest
     def list_subnets(self):
-        return []
+        return self.idl.dhcp_options_list().execute()
 
     def get_subnet(self, subnet_id):
         return None
