@@ -107,8 +107,11 @@ Currently two authentication plugins are supported:
    authorization to it's members. The default configuration is to authorize
    members of the group `NetAdmin` in the default extension
    `ovirt-engine-extension-aaa-jdbc`. If oVirt engine uses an external LDAP
-   provider, the two options have to be adopted in the ovn-provider's
-   configuration.
+   provider for authentification, `ovirt-admin-group-attribute-value` has to be
+   adopted in the ovn-provider's configuration.
+
+<<user-names-for-authentication>> gives more details about the expected format of
+the user name.
 
 Other plugins exists, but they are not supported:
 
@@ -170,6 +173,8 @@ ovirt-sso-client-secret:: The password required to connect using the client-id
 
 ovirt-admin-user-name:: The name of the user allowed to access the external
   network API by the AuthorizationByUserName plugin. +
+  <<user-names-for-authentication>> gives more details about the expected format of
+the user name. +
   _default:_ `admin@internal`
 
 ovirt-admin-role-id:: Users having this role, are allowed to access the
@@ -184,10 +189,21 @@ ovirt-admin-group-attribute-name:: The AuthorizationByGroup plugin allows
   ovirt-engine-extension-aaa-jdbc is used. +
   _default:_ `AAA_AUTHZ_GROUP_NAME;java.lang.String;0eebe54f-b429-44f3-aa80-4704cbb16835`
 
-
 ovirt-admin-group-attribute-value:: The name of the group allowed to access the
   external network API. +
   _default:_ `NetAdmin`
+
+:idprefix:
+:idseparator: -
+### User Names for Authentication
+The three plugins for authorization and authentication by oVirt
+(AuthorizationByUserName, AuthorizationByGroup and AuthorizationByRole)
+require a user name to access the oVirt external network provider for
+OVN from a Cloud Management System (e.g. as an external
+network provider in oVirt). The name has to match the following format:
+`<admin_username>[@<fqdn>]@<ovirt_profile>`, while the optional `<fqdn>` is
+the Active Directory or LDAP domain. Please find more details in
+http://ovirt.github.io/ovirt-engine-api-model/master/#types/user/attributes/user_name[oVirt's REST API documentation about `user_name`]
 
 Virtual interface driver for oVirt external network provider for OVN
 --------------------------------------------------------------------
