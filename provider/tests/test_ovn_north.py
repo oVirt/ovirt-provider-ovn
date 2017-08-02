@@ -23,6 +23,7 @@ import mock
 from ovndb.ovn_north import OvnNorth
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import PortMapper
+from ovndb.ovn_north_mappers import SubnetMapper
 
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
@@ -373,3 +374,71 @@ class TestOvnNorth(object):
             TestOvnNorth.SUBNET_ID101,
         )
         assert mock_del_command.mock_calls[0] == expected_del_call
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
+        'execute',
+        lambda x: TestOvnNorth.SUBNET_102
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsAddCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsSetOptionsCommand',
+        autospec=False
+    )
+    def test_add_subnet(self, mock_setoptions_command, mock_add_command,
+                        mock_dbset_command, mock_connection):
+        new_subnet_id = 7
+        mock_add_command.return_value.execute.return_value = new_subnet_id
+        subnet_cidr = '1.1.1.0/24'
+        ovn_north = OvnNorth()
+        input = {
+            SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
+            SubnetMapper.REST_SUBNET_CIDR: subnet_cidr,
+            SubnetMapper.REST_SUBNET_NETWORK_ID:
+                str(TestOvnNorth.NETWORK_ID10),
+            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
+            SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
+        }
+        result = ovn_north.add_subnet(input)
+        assert result['id'] == str(TestOvnNorth.SUBNET_ID102)
+        assert mock_dbset_command.call_count == 1
+        assert mock_add_command.call_count == 1
+        assert mock_setoptions_command.call_count == 1
+
+        expected_dbset_call = mock.call(
+            ovn_north.idl,
+            OvnNorth.TABLE_LS,
+            str(TestOvnNorth.NETWORK_ID10),
+            (
+                OvnNorth.ROW_LS_OTHER_CONFIG,
+                {NetworkMapper.OVN_SUBNET: subnet_cidr}
+            ),
+        )
+        assert mock_dbset_command.mock_calls[0] == expected_dbset_call
+
+        expected_add_call = mock.call(
+            ovn_north.idl,
+            subnet_cidr,
+            ovirt_name='subnet_name',
+            ovirt_network_id=str(TestOvnNorth.NETWORK_ID10)
+        )
+        assert mock_add_command.mock_calls[0] == expected_add_call
+
+        expected_options_call = mock.call(
+            ovn_north.idl,
+            new_subnet_id,
+            dns_server='1.1.1.1',
+            lease_time=OvnNorth._dhcp_lease_time(),
+            router='1.1.1.0',
+            server_id='1.1.1.0',
+            server_mac=OvnNorth._dhcp_server_mac(),
+            mtu=OvnNorth._dhcp_mtu()
+        )
+        assert mock_setoptions_command.mock_calls[0] == expected_options_call

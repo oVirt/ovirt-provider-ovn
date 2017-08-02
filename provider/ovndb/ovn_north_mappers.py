@@ -88,6 +88,8 @@ class NetworkMapper(Mapper):
     REST_NETWORK_ID = 'id'
     REST_NETWORK_NAME = 'name'
 
+    OVN_SUBNET = 'subnet'
+
     @staticmethod
     def rest2row(wrapped_self, func, rest_network_data, network_id):
         name = rest_network_data.get(NetworkMapper.REST_NETWORK_NAME)
@@ -220,6 +222,10 @@ class SubnetMapper(Mapper):
     OVN_NETWORK_ID = 'ovirt_network_id'
     OVN_DNS_SERVER = 'dns_server'
     OVN_GATEWAY = 'router'
+    OVN_DHCP_SERVER_ID = 'server_id'
+    OVN_DHCP_SERVER_MAC = 'server_mac'
+    OVN_DHCP_LEASE_TIME = 'lease_time'
+    OVN_DHCP_MTU = 'mtu'
 
     IP_VERSION = 4
 
@@ -242,8 +248,8 @@ class SubnetMapper(Mapper):
                 name=name,
                 cidr=cidr,
                 network_id=network_id,
+                gateway=gateway,
                 dns=dns,
-                gateway=gateway
             )
         else:
             return func(
@@ -251,8 +257,8 @@ class SubnetMapper(Mapper):
                 name=name,
                 cidr=cidr,
                 network_id=network_id,
+                gateway=gateway,
                 dns=dns,
-                gateway=gateway
             )
 
     @staticmethod
