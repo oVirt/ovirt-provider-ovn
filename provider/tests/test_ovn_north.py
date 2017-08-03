@@ -321,6 +321,7 @@ class TestOvnNorth(object):
         assert ports[1]['name'] == TestOvnNorth.PORT_NAME02
         assert ports[0]['device_id'] == str(TestOvnNorth.PORT_ID01)
         assert ports[1]['device_id'] == str(TestOvnNorth.PORT_ID02)
+        assert ports[0]['security_groups'] == []
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LspDelCommand',
