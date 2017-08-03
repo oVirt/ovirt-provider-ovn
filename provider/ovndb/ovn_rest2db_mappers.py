@@ -88,7 +88,8 @@ class PortMapper(RestToDbRowMapper):
             'name': port.name,
             'device_id': str(port.external_ids[PortMapper.DEVICE_ID]),
             'device_owner': PortMapper.DEVICE_OWNER_OVIRT,
-            'network_id': str(network.uuid)
+            'network_id': str(network.uuid),
+            'security_groups': [],
         }
         if port.addresses:
             rest_port_data['mac_address'] = port.addresses[0]

@@ -90,6 +90,7 @@ class TestNeutronResponse(object):
         response_json = json.loads(response)
         assert response_json['port']['id'] == str(PORT_ID07)
         assert response_json['port']['name'] == 'port_name'
+        assert response_json['port']['security_groups'] == []
 
     def test_get_networks(self):
         nb_db = Mock()
@@ -114,6 +115,7 @@ class TestNeutronResponse(object):
         response_json = json.loads(response)
         assert response_json['ports'][0]['id'] == str(PORT_ID07)
         assert response_json['ports'][0]['name'] == 'port_name'
+        assert response_json['ports'][0]['security_groups'] == []
 
     def test_delete_network(self):
         nb_db = Mock()
