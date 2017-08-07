@@ -39,6 +39,29 @@ from ovndb.ovn_north_mappers import RestDataError
 from ovndb.ovn_north_mappers import SubnetMapper
 
 
+class DbSetCommand(object):
+
+    def __init__(self, idl, table, entity_id):
+        self.idl = idl
+        self.table = table
+        self.entity_id = entity_id
+        self.values = list()
+
+    def execute(self):
+        if not self.values:
+            return
+        x = self.idl.db_set(
+            self.table,
+            self.entity_id,
+            *self.values
+        )
+        x.execute()
+
+    def add(self, column, value, add_condition=True):
+        if add_condition:
+            self.values.append((column, value))
+
+
 class OvnNorth(object):
 
     OVN_NORTHBOUND = 'OVN_Northbound'
@@ -54,6 +77,9 @@ class OvnNorth(object):
     ROW_LSP_DHCPV4_OPTIONS = 'dhcpv4_options'
 
     TABLE_DHCP_Options = 'DHCP_Options'
+    ROW_DHCP_EXTERNAL_IDS = 'external_ids'
+    ROW_DHCP_OPTIONS = 'options'
+    ROW_DHCP_CIDR = 'cidr'
 
     def __init__(self):
         ovsdb_connection = ovsdbapp.backend.ovs_idl.connection.Connection(
@@ -302,15 +328,64 @@ class OvnNorth(object):
         self.idl.dhcp_options_set_options(subnet_id, **options).execute()
         return self.get_subnet(subnet_id)
 
+    @SubnetMapper.validate_update
+    @SubnetMapper.map_from_rest
     def update_subnet(
         self,
         subnet_id,
         name=None,
         cidr=None,
+        network_id=None,
+        gateway=None,
         dns=None,
-        gateway=None
     ):
-        return None
+        db_set_command = DbSetCommand(
+            self.idl, self.TABLE_DHCP_Options, subnet_id)
+
+        if cidr:
+            dhcp_server_ip = cidr.split('/', 1)[0]
+            db_set_command.add(
+                OvnNorth.ROW_DHCP_OPTIONS,
+                {SubnetMapper.OVN_DHCP_SERVER_ID: dhcp_server_ip}
+            )
+            db_set_command.add(self.ROW_DHCP_CIDR, cidr)
+            self.idl.db_set(
+                self.TABLE_LS,
+                network_id,
+                (self.ROW_LS_OTHER_CONFIG, {NetworkMapper.OVN_SUBNET: cidr}),
+            ).execute()
+
+        db_set_command.add(
+            self.ROW_DHCP_EXTERNAL_IDS,
+            {SubnetMapper.OVN_NAME: name},
+            name
+        )
+        db_set_command.add(
+            self.ROW_DHCP_EXTERNAL_IDS,
+            {SubnetMapper.OVN_NETWORK_ID: network_id},
+            network_id
+        )
+        db_set_command.add(
+            self.ROW_DHCP_OPTIONS,
+            {SubnetMapper.OVN_GATEWAY: gateway},
+            gateway
+        )
+        db_set_command.add(
+            self.ROW_DHCP_OPTIONS,
+            {SubnetMapper.OVN_DNS_SERVER: dns},
+            dns
+        )
+        db_set_command.add(
+            self.ROW_DHCP_OPTIONS,
+            {SubnetMapper.OVN_DHCP_LEASE_TIME: self._dhcp_lease_time()}
+        )
+        db_set_command.add(
+            self.ROW_DHCP_OPTIONS,
+            {SubnetMapper.OVN_DHCP_SERVER_MAC: self._dhcp_server_mac()}
+        )
+        db_set_command.execute()
+
+        return self.get_subnet(subnet_id)
 
     def delete_subnet(self, subnet_id):
         self.idl.dhcp_options_del(subnet_id).execute()

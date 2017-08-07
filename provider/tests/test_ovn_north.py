@@ -442,3 +442,90 @@ class TestOvnNorth(object):
             mtu=OvnNorth._dhcp_mtu()
         )
         assert mock_setoptions_command.mock_calls[0] == expected_options_call
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsListCommand.execute',
+        lambda x: TestOvnNorth.networks
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LspGetCommand.execute',
+        lambda x: TestOvnNorth.PORT_1
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
+        'execute',
+        lambda x: []
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
+        autospec=False
+    )
+    def test_update_subnet(self, mock_db_set, mock_connection):
+
+        ovn_north = OvnNorth()
+        rest_data = {
+           SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
+           SubnetMapper.REST_SUBNET_ENABLE_DHCP: True,
+           SubnetMapper.REST_SUBNET_NETWORK_ID: TestOvnNorth.NETWORK_ID10,
+           SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['8.8.8.8'],
+           SubnetMapper.REST_SUBNET_GATEWAY_IP: '172.16.0.254',
+           SubnetMapper.REST_SUBNET_IP_VERSION: 4,
+           SubnetMapper.REST_SUBNET_CIDR: '172.16.0.0/24'
+        }
+        ovn_north.update_subnet(rest_data, TestOvnNorth.SUBNET_ID101)
+
+        assert mock_db_set.call_count == 2
+
+        assert mock_db_set.mock_calls[0] == mock.call(
+            ovn_north.idl,
+            OvnNorth.TABLE_LS,
+            TestOvnNorth.NETWORK_ID10,
+            (
+                OvnNorth.ROW_LS_OTHER_CONFIG,
+                {NetworkMapper.OVN_SUBNET:
+                    rest_data[SubnetMapper.REST_SUBNET_CIDR]}
+            )
+        )
+
+        assert mock_db_set.mock_calls[2] == mock.call(
+            ovn_north.idl,
+            OvnNorth.TABLE_DHCP_Options,
+            TestOvnNorth.SUBNET_ID101,
+            (
+                OvnNorth.ROW_DHCP_OPTIONS,
+                {SubnetMapper.OVN_DHCP_SERVER_ID:
+                    rest_data[SubnetMapper.REST_SUBNET_CIDR].split('/', 1)[0]}
+            ),
+            (
+                OvnNorth.ROW_DHCP_CIDR,
+                rest_data[SubnetMapper.REST_SUBNET_CIDR]
+            ),
+            (
+                OvnNorth.ROW_DHCP_EXTERNAL_IDS,
+                {SubnetMapper.OVN_NAME:
+                    rest_data[SubnetMapper.REST_SUBNET_NAME]}
+            ),
+            (
+                OvnNorth.ROW_DHCP_EXTERNAL_IDS,
+                {SubnetMapper.OVN_NETWORK_ID:
+                    rest_data[SubnetMapper.REST_SUBNET_NETWORK_ID]}
+            ),
+            (
+                OvnNorth.ROW_DHCP_OPTIONS,
+                {SubnetMapper.OVN_GATEWAY:
+                    rest_data[SubnetMapper.REST_SUBNET_GATEWAY_IP]}
+            ),
+            (
+                OvnNorth.ROW_DHCP_OPTIONS,
+                {SubnetMapper.OVN_DNS_SERVER:
+                    rest_data[SubnetMapper.REST_SUBNET_DNS_NAMESERVERS][0]}
+            ),
+            (
+                OvnNorth.ROW_DHCP_OPTIONS,
+                {SubnetMapper.OVN_DHCP_LEASE_TIME: OvnNorth._dhcp_lease_time()}
+            ),
+            (
+                OvnNorth.ROW_DHCP_OPTIONS,
+                {SubnetMapper.OVN_DHCP_SERVER_MAC: OvnNorth._dhcp_server_mac()}
+            )
+        )
