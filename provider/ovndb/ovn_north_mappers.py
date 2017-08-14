@@ -138,6 +138,7 @@ class PortMapper(Mapper):
     REST_PORT_DEVICE_ID = 'device_id'
     REST_PORT_DEVICE_OWNER = 'device_owner'
     REST_PORT_SECURITY_GROUPS = 'security_groups'
+    REST_PORT_SECURITY_ENABLED = 'port_security_enabled'
 
     OVN_DEVICE_ID = 'ovirt_device_id'
     OVN_NIC_NAME = 'ovirt_nic_name'
@@ -192,7 +193,8 @@ class PortMapper(Mapper):
             PortMapper.REST_PORT_DEVICE_OWNER:
                 port.external_ids[PortMapper.OVN_DEVICE_OWNER],
             PortMapper.REST_PORT_NETWORK_ID: str(network.uuid),
-            PortMapper.REST_PORT_SECURITY_GROUPS: []
+            PortMapper.REST_PORT_SECURITY_GROUPS: [],
+            PortMapper.REST_PORT_SECURITY_ENABLED: False
         }
         if port.addresses:
             rest_data[PortMapper.REST_PORT_MAC_ADDRESS] = port.addresses[0]
