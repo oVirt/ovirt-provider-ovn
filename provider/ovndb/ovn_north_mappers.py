@@ -206,10 +206,22 @@ class PortMapper(Mapper):
             raise PortDeviceIdRequiredDataError()
         if PortMapper.REST_PORT_NETWORK_ID not in rest_data:
             raise NetworkIdRequiredForPortDataError()
+        PortMapper._validate_common(rest_data)
 
     @staticmethod
     def validate_update_rest_input(rest_data):
-        pass
+        PortMapper._validate_common(rest_data)
+
+    @staticmethod
+    def _validate_common(rest_data):
+
+        sec_groups = rest_data.get(PortMapper.REST_PORT_SECURITY_GROUPS)
+        if sec_groups and sec_groups != []:
+            raise SecurityGroupsNotSupportedDataError()
+
+        sec_enabled = rest_data.get(PortMapper.REST_PORT_SECURITY_ENABLED)
+        if sec_enabled:
+            raise PortSecurityNotSupportedDataError()
 
 
 class SubnetMapper(Mapper):
@@ -323,3 +335,17 @@ class PortDeviceIdRequiredDataError(RestDataError):
 
     def __init__(self):
         super(PortDeviceIdRequiredDataError, self).__init__(self.message)
+
+
+class SecurityGroupsNotSupportedDataError(RestDataError):
+    message = 'Port security_groups are not supported'
+
+    def __init__(self):
+        super(SecurityGroupsNotSupportedDataError, self).__init__(self.message)
+
+
+class PortSecurityNotSupportedDataError(RestDataError):
+    message = 'Port port_security_enabled is not supported'
+
+    def __init__(self):
+        super(PortSecurityNotSupportedDataError, self).__init__(self.message)
