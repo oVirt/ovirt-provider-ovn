@@ -30,6 +30,7 @@ from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import SubnetConfigError
 from ovndb.ovn_north_mappers import SubnetMapper
+from ovndb.ovn_north_mappers import UnsupportedDataValueError
 
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
@@ -576,16 +577,28 @@ class TestOvnNorth(object):
     )
     def test_subnet_add_duplicate_network(self, mock_connection):
         ovn_north = OvnNorth()
-        input = {
+        rest_data = {
             SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
             SubnetMapper.REST_SUBNET_CIDR: '1.1.1.0/24',
             SubnetMapper.REST_SUBNET_NETWORK_ID:
                 str(TestOvnNorth.NETWORK_ID10),
-            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
             SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
         }
         with pytest.raises(SubnetConfigError):
-            ovn_north.add_subnet(input)
+            ovn_north.add_subnet(rest_data)
+
+    def test_subnet_dhcp_enabled_false(self, mock_connection):
+        ovn_north = OvnNorth()
+        rest_data = {
+            SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
+            SubnetMapper.REST_SUBNET_CIDR: '1.1.1.0/24',
+            SubnetMapper.REST_SUBNET_NETWORK_ID: '',
+            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
+            SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
+            SubnetMapper.REST_SUBNET_ENABLE_DHCP: False
+        }
+        with pytest.raises(UnsupportedDataValueError):
+            ovn_north.add_subnet(rest_data)
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
@@ -593,7 +606,7 @@ class TestOvnNorth(object):
     )
     def test_subnet_add_invalid_network(self, mock_connection):
         ovn_north = OvnNorth()
-        input = {
+        rest_data = {
             SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
             SubnetMapper.REST_SUBNET_CIDR: '1.1.1.0/24',
             SubnetMapper.REST_SUBNET_NETWORK_ID: 7,
@@ -601,4 +614,4 @@ class TestOvnNorth(object):
             SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
         }
         with pytest.raises(SubnetConfigError):
-            ovn_north.add_subnet(input)
+            ovn_north.add_subnet(rest_data)

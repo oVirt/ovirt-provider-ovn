@@ -312,11 +312,20 @@ class SubnetMapper(Mapper):
 
     @staticmethod
     def validate_add_rest_input(rest_data):
-        pass
+        SubnetMapper._validate_common(rest_data)
 
     @staticmethod
     def validate_update_rest_input(rest_data):
-        pass
+        SubnetMapper._validate_common(rest_data)
+
+    @staticmethod
+    def _validate_common(rest_data):
+        if (SubnetMapper.REST_SUBNET_ENABLE_DHCP in rest_data and
+           not rest_data[SubnetMapper.REST_SUBNET_ENABLE_DHCP]):
+            raise UnsupportedDataValueError(
+                SubnetMapper.REST_SUBNET_ENABLE_DHCP,
+                False
+            )
 
 
 class RestDataError(BadRequestError):
@@ -361,3 +370,11 @@ class PortSecurityNotSupportedDataError(RestDataError):
 
 class SubnetConfigError(BadRequestError):
     pass
+
+
+class UnsupportedDataValueError(RestDataError):
+    message = 'Setting {key} value to {value} is not supported'
+
+    def __init__(self, key, value):
+        error_message = self.message.format(key=key, value=value)
+        super(UnsupportedDataValueError, self).__init__(error_message)
