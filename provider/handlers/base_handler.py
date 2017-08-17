@@ -150,7 +150,7 @@ class BaseHandler(BaseHTTPRequestHandler):
     def _handle_response_exception(
             self, e, message=None,
             response_code=httplib.INTERNAL_SERVER_ERROR):
-        error_message = message if message else e
+        error_message = message if message else e.message
         logging.exception(error_message)
         self.send_error(response_code)
         self.wfile.write(ERROR_MESSAGE.format(
