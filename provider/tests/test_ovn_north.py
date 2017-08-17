@@ -19,6 +19,7 @@ from __future__ import absolute_import
 
 from uuid import UUID
 import mock
+import pytest
 
 from ovirt_provider_config_common import dhcp_lease_time
 from ovirt_provider_config_common import dhcp_mtu
@@ -27,6 +28,7 @@ from ovirt_provider_config_common import tenant_id
 from ovndb.ovn_north import OvnNorth
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import PortMapper
+from ovndb.ovn_north_mappers import SubnetConfigError
 from ovndb.ovn_north_mappers import SubnetMapper
 
 from ovntestlib import OvnNetworkRow
@@ -389,6 +391,18 @@ class TestOvnNorth(object):
         assert mock_del_command.mock_calls[0] == expected_del_call
 
     @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
+        'execute',
+        lambda x: []
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
+        lambda x: OvnNetworkRow(
+            TestOvnNorth.NETWORK_ID10,
+            TestOvnNorth.NETWORK_NAME10
+        )
+    )
+    @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
         'execute',
         lambda x: TestOvnNorth.SUBNET_102
@@ -547,3 +561,44 @@ class TestOvnNorth(object):
             )
         )
     """
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
+        lambda x: OvnNetworkRow(
+            TestOvnNorth.NETWORK_ID10,
+            TestOvnNorth.NETWORK_NAME10
+        )
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
+        'execute',
+        lambda x: TestOvnNorth.subnets
+    )
+    def test_subnet_add_duplicate_network(self, mock_connection):
+        ovn_north = OvnNorth()
+        input = {
+            SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
+            SubnetMapper.REST_SUBNET_CIDR: '1.1.1.0/24',
+            SubnetMapper.REST_SUBNET_NETWORK_ID:
+                str(TestOvnNorth.NETWORK_ID10),
+            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
+            SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
+        }
+        with pytest.raises(SubnetConfigError):
+            ovn_north.add_subnet(input)
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
+        lambda x: None
+    )
+    def test_subnet_add_invalid_network(self, mock_connection):
+        ovn_north = OvnNorth()
+        input = {
+            SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
+            SubnetMapper.REST_SUBNET_CIDR: '1.1.1.0/24',
+            SubnetMapper.REST_SUBNET_NETWORK_ID: 7,
+            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
+            SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
+        }
+        with pytest.raises(SubnetConfigError):
+            ovn_north.add_subnet(input)

@@ -29,6 +29,7 @@ from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import NetworkPort
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import RestDataError
+from ovndb.ovn_north_mappers import SubnetConfigError
 from ovndb.ovn_north_mappers import SubnetMapper
 
 
@@ -293,6 +294,14 @@ class OvnNorth(object):
         gateway,
         dns=None,
     ):
+        if not self.idl.ls_get(network_id).execute():
+            raise SubnetConfigError('Subnet can not be created, network {}'
+                                    ' does not exist'.format(network_id))
+
+        if self._get_dhcp_by_network_id(network_id):
+            raise SubnetConfigError('Unable to create more than one subnet'
+                                    ' for network {}'.format(network_id))
+
         external_ids = {
             SubnetMapper.OVN_NAME: name,
             SubnetMapper.OVN_NETWORK_ID: network_id
@@ -332,6 +341,13 @@ class OvnNorth(object):
         gateway=None,
         dns=None,
     ):
+        subnet_by_network = self._get_dhcp_by_network_id(network_id)
+        if subnet_by_network and str(subnet_by_network.uuid) != subnet_id:
+            raise SubnetConfigError(
+                'Unable to move subnet to network {network_id}. The network'
+                ' already has a subnet assigned'.format(network_id=network_id)
+            )
+
         db_set_command = DbSetCommand(
             self.idl, self.TABLE_DHCP_Options, subnet_id)
 

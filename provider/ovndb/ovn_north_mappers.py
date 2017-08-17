@@ -357,3 +357,7 @@ class PortSecurityNotSupportedDataError(RestDataError):
 
     def __init__(self):
         super(PortSecurityNotSupportedDataError, self).__init__(self.message)
+
+
+class SubnetConfigError(BadRequestError):
+    pass
