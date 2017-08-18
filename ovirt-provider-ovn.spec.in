@@ -100,6 +100,7 @@ to OVN.
 %{_datadir}/ovirt-provider-ovn
 %{_unitdir}/ovirt-provider-ovn.service
 /usr/lib/firewalld/services/ovirt-provider-ovn.xml
+%doc README.adoc
 
 %files driver
 %{_libexecdir}/vdsm/hooks/before_nic_hotplug/*

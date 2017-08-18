@@ -60,6 +60,7 @@ install:
 	install -m 544 -D driver/scripts/setup_ovn_controller.sh $(DESTDIR)/usr/libexec/ovirt-provider-ovn/setup_ovn_controller.sh
 	install -d $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/
 	install -m 644 -t $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/ driver/vdsm_tool/ovn_config.py*
+	install -m 644 -D README.adoc $(DESTDIR)/usr/share/doc/ovirt-provider-ovn/README.adoc
 
 distcheck: check dist
 
@@ -71,6 +72,7 @@ dist:
 
 	cp Makefile build/$(DIST_DIR)/
 	cp ovirt-provider-ovn.spec.in build/$(DIST_DIR)/ovirt-provider-ovn.spec
+	cp README.adoc build/$(DIST_DIR)/
 	sed -i s/%{release_suffix}/$(RELEASE_SUFFIX)/ build/$(DIST_DIR)/ovirt-provider-ovn.spec
 	tar -zcf $(DIST_FILE) -C build $(DIST_DIR)
 	rm -rf build
