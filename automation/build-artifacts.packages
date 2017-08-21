@@ -3,3 +3,4 @@ python
 python-openvswitch
 rpm-build
 systemd
+python2-ovsdbapp
