@@ -20,6 +20,7 @@ from __future__ import absolute_import
 import ovirt_provider_config
 
 from handlers.base_handler import BadRequestError
+from handlers.base_handler import GET
 from handlers.base_handler import POST
 from handlers.selecting_handler import rest
 
@@ -30,13 +31,18 @@ from ovirt_provider_config import KEY_PROVIDER_HOST
 from ovirt_provider_config import KEY_OPENSTACK_REGION
 from ovirt_provider_config import KEY_OPENSTACK_NEUTRON_ID
 from ovirt_provider_config import KEY_OPENSTACK_KEYSTONE_ID
-
+from ovirt_provider_config import KEY_OPENSTACK_TENANT_ID
+from ovirt_provider_config import KEY_OPENSTACK_TENANT_NAME
+from ovirt_provider_config import KEY_OPENSTACK_TENANT_DESCRIPTION
 from ovirt_provider_config import DEFAULT_NEUTRON_PORT
 from ovirt_provider_config import DEFAULT_KEYSTONE_PORT
 from ovirt_provider_config import DEFAULT_PROVIDER_HOST
 from ovirt_provider_config import DEFAULT_OPENSTACK_REGION
 from ovirt_provider_config import DEFAULT_OPENSTACK_NEUTRON_ID
 from ovirt_provider_config import DEFAULT_OPENSTACK_KEYSTONE_ID
+from ovirt_provider_config import DEFAULT_OPENSTACK_TENANT_ID
+from ovirt_provider_config import DEFAULT_OPENSTACK_TENANT_NAME
+from ovirt_provider_config import DEFAULT_OPENSTACK_TENANT_DESCRIPTION
 
 import auth
 # import ovirt_provider_config
@@ -46,6 +52,7 @@ SSL_CONFIG_SECTION = 'SSL'
 NEUTRON_URL = 'http://{host}:{neutron_port}/v2.0/networks'
 KEYSTONE_URL = 'http://{host}:{keystone_port}/v2.0/tokens'
 
+TENANTS = 'tenants'
 TOKENS = 'tokens'
 _responses = {}
 
@@ -159,5 +166,39 @@ def post_tokens(content, id):
     }
 
 
+@rest(GET, TENANTS, _responses)
+def get_tenants(content, id):
+    return {
+        'tenants': [{
+            'description': _tenant_description(),
+            'name': _tenant_name(),
+            'id': _tenant_id()}]
+    }
+
+
 def responses():
     return _responses
+
+
+def _tenant_id():
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_PROVIDER,
+        KEY_OPENSTACK_TENANT_ID,
+        DEFAULT_OPENSTACK_TENANT_ID
+    )
+
+
+def _tenant_name():
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_PROVIDER,
+        KEY_OPENSTACK_TENANT_NAME,
+        DEFAULT_OPENSTACK_TENANT_NAME
+    )
+
+
+def _tenant_description():
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_PROVIDER,
+        KEY_OPENSTACK_TENANT_DESCRIPTION,
+        DEFAULT_OPENSTACK_TENANT_DESCRIPTION
+    )
