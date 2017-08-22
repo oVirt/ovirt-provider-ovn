@@ -31,6 +31,7 @@ from handlers.selecting_handler import rest
 from ovndb.ovn_rest2db_mappers import NetworkMapper
 from ovndb.ovn_rest2db_mappers import PortMapper
 from ovndb.ovn_rest2db_mappers import SubnetMapper
+from ovirt_provider_config_common import neutron_url
 
 
 NETWORKS = 'networks'
@@ -64,7 +65,16 @@ def show_subnet(nb_db, content, id):
 
 @rest(GET, '', _responses)
 def get_default(nb_db, content, id):
-    return json.dumps({})
+    return json.dumps({
+        'versions': [{
+            'status': 'CURRENT',
+            'id': 'v2.0',
+            'links': [{
+                'href': neutron_url(),
+                'rel': 'self'
+            }]
+        }]
+    })
 
 
 @rest(GET, NETWORKS, _responses)
