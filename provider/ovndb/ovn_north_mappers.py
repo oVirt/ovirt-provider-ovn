@@ -22,6 +22,10 @@ from functools import wraps
 
 import six
 
+import ovirt_provider_config
+from ovirt_provider_config import CONFIG_SECTION_PROVIDER
+from ovirt_provider_config import KEY_OPENSTACK_TENANT_ID
+from ovirt_provider_config import DEFAULT_OPENSTACK_TENANT_ID
 from handlers.base_handler import BadRequestError
 
 
@@ -30,6 +34,8 @@ NetworkPort = namedtuple('NetworkPort', ['port', 'network'])
 
 @six.add_metaclass(abc.ABCMeta)
 class Mapper(object):
+
+    REST_TENANT_ID = 'tenant_id'
 
     @classmethod
     def map_from_rest(cls, f):
@@ -111,7 +117,8 @@ class NetworkMapper(Mapper):
             return {}
         return {
             NetworkMapper.REST_NETWORK_ID: str(network_row.uuid),
-            NetworkMapper.REST_NETWORK_NAME: network_row.name
+            NetworkMapper.REST_NETWORK_NAME: network_row.name,
+            NetworkMapper.REST_TENANT_ID: _tenant_id()
         }
 
     @staticmethod
@@ -194,7 +201,8 @@ class PortMapper(Mapper):
                 port.external_ids[PortMapper.OVN_DEVICE_OWNER],
             PortMapper.REST_PORT_NETWORK_ID: str(network.uuid),
             PortMapper.REST_PORT_SECURITY_GROUPS: [],
-            PortMapper.REST_PORT_SECURITY_ENABLED: False
+            PortMapper.REST_PORT_SECURITY_ENABLED: False,
+            PortMapper.REST_TENANT_ID: _tenant_id()
         }
         if port.addresses:
             rest_data[PortMapper.REST_PORT_MAC_ADDRESS] = port.addresses[0]
@@ -292,7 +300,8 @@ class SubnetMapper(Mapper):
                 external_ids[SubnetMapper.OVN_NETWORK_ID],
             SubnetMapper.REST_SUBNET_GATEWAY_IP:
                 options[SubnetMapper.OVN_GATEWAY],
-            SubnetMapper.REST_SUBNET_IP_VERSION: SubnetMapper.IP_VERSION
+            SubnetMapper.REST_SUBNET_IP_VERSION: SubnetMapper.IP_VERSION,
+            SubnetMapper.REST_TENANT_ID: _tenant_id()
 
         }
         if SubnetMapper.REST_SUBNET_DNS_NAMESERVERS in options:
@@ -309,6 +318,14 @@ class SubnetMapper(Mapper):
     @staticmethod
     def validate_update_rest_input(rest_data):
         pass
+
+
+def _tenant_id():
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_PROVIDER,
+        KEY_OPENSTACK_TENANT_ID,
+        DEFAULT_OPENSTACK_TENANT_ID
+    )
 
 
 class RestDataError(BadRequestError):
