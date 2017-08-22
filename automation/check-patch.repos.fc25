@@ -1,2 +1,1 @@
-centos-ovirt40-candidate,http://cbs.centos.org/repos/virt7-ovirt-40-candidate/x86_64/os/
 ovirt-snapshot-static,http://resources.ovirt.org/pub/ovirt-master-snapshot-static/rpm/$distro
