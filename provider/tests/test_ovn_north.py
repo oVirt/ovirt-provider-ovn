@@ -20,10 +20,10 @@ from __future__ import absolute_import
 from uuid import UUID
 import mock
 
-import ovirt_provider_config
-from ovirt_provider_config import CONFIG_SECTION_PROVIDER
-from ovirt_provider_config import KEY_OPENSTACK_TENANT_ID
-from ovirt_provider_config import DEFAULT_OPENSTACK_TENANT_ID
+from ovirt_provider_config_common import dhcp_lease_time
+from ovirt_provider_config_common import dhcp_mtu
+from ovirt_provider_config_common import dhcp_server_mac
+from ovirt_provider_config_common import tenant_id
 from ovndb.ovn_north import OvnNorth
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import PortMapper
@@ -32,14 +32,6 @@ from ovndb.ovn_north_mappers import SubnetMapper
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
 from ovntestlib import OvnSubnetRow
-
-
-def _tenant_id():
-    return ovirt_provider_config.get(
-        CONFIG_SECTION_PROVIDER,
-        KEY_OPENSTACK_TENANT_ID,
-        DEFAULT_OPENSTACK_TENANT_ID
-    )
 
 
 @mock.patch('ovsdbapp.backend.ovs_idl.connection', autospec=False)
@@ -106,7 +98,7 @@ class TestOvnNorth(object):
         assert len(result) == 2
         assert result[0]['id'] == str(TestOvnNorth.NETWORK_ID10)
         assert result[0]['name'] == TestOvnNorth.NETWORK_NAME10
-        assert result[0]['tenant_id'] == _tenant_id()
+        assert result[0]['tenant_id'] == tenant_id()
         assert mock_ls_list.call_count == 1
         assert mock_ls_list.return_value.execute.call_count == 1
 
@@ -126,7 +118,7 @@ class TestOvnNorth(object):
         result = ovn_north.get_network(str(self.NETWORK_ID10))
         assert result['id'] == str(self.NETWORK_ID10)
         assert result['name'] == self.NETWORK_NAME10
-        assert result['tenant_id'] == _tenant_id()
+        assert result['tenant_id'] == tenant_id()
         assert mock_ls_get.call_count == 1
         assert mock_ls_get.return_value.execute.call_count == 1
         expected_ls_get_call = mock.call(ovn_north.idl, str(self.NETWORK_ID10))
@@ -337,8 +329,8 @@ class TestOvnNorth(object):
         assert ports[1]['device_id'] == str(TestOvnNorth.PORT_ID02)
         assert ports[0]['security_groups'] == []
         assert ports[1]['port_security_enabled'] is False
-        assert ports[0]['tenant_id'] == _tenant_id()
-        assert ports[1]['tenant_id'] == _tenant_id()
+        assert ports[0]['tenant_id'] == tenant_id()
+        assert ports[1]['tenant_id'] == tenant_id()
         assert ports[0]['fixed_ips'] == []
         assert ports[1]['fixed_ips'] == []
 
@@ -369,7 +361,7 @@ class TestOvnNorth(object):
         assert len(result) == 2
         assert result[0]['id'] == str(TestOvnNorth.SUBNET_ID101)
         assert result[0]['network_id'] == str(TestOvnNorth.NETWORK_ID10)
-        assert result[0]['tenant_id'] == _tenant_id()
+        assert result[0]['tenant_id'] == tenant_id()
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
@@ -456,11 +448,11 @@ class TestOvnNorth(object):
             ovn_north.idl,
             new_subnet_id,
             dns_server='1.1.1.1',
-            lease_time=OvnNorth._dhcp_lease_time(),
+            lease_time=dhcp_lease_time(),
             router='1.1.1.0',
             server_id='1.1.1.0',
-            server_mac=OvnNorth._dhcp_server_mac(),
-            mtu=OvnNorth._dhcp_mtu()
+            server_mac=dhcp_server_mac(),
+            mtu=dhcp_mtu()
         )
         assert mock_setoptions_command.mock_calls[0] == expected_options_call
 
@@ -547,11 +539,11 @@ class TestOvnNorth(object):
             ),
             (
                 OvnNorth.ROW_DHCP_OPTIONS,
-                {SubnetMapper.OVN_DHCP_LEASE_TIME: OvnNorth._dhcp_lease_time()}
+                {SubnetMapper.OVN_DHCP_LEASE_TIME: dhcp_lease_time()}
             ),
             (
                 OvnNorth.ROW_DHCP_OPTIONS,
-                {SubnetMapper.OVN_DHCP_SERVER_MAC: OvnNorth._dhcp_server_mac()}
+                {SubnetMapper.OVN_DHCP_SERVER_MAC: dhcp_server_mac()}
             )
         )
     """

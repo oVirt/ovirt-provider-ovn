@@ -21,12 +21,8 @@ from __future__ import absolute_import
 import importlib
 import logging
 
-import ovirt_provider_config
-
+from ovirt_provider_config_common import auth_plugin
 from .plugin import Plugin
-from ovirt_provider_config import CONFIG_SECTION_AUTH
-from ovirt_provider_config import KEY_AUTH_PLUGIN
-from ovirt_provider_config import DEFAULT_AUTH_PLUGIN
 
 
 TOKEN_HTTP_HEADER_FIELD_NAME = 'X-Auth-Token'
@@ -36,7 +32,7 @@ plugin = None
 
 def init():
     global plugin
-    plugin = _load_plugin(_auth_plugin())
+    plugin = _load_plugin(auth_plugin())
 
 
 def _load_plugin(plugin_name):
@@ -62,11 +58,3 @@ def plugin_loaded():
     global plugin
     if not plugin:
         raise AttributeError('No auth plugin loaded')
-
-
-def _auth_plugin():
-    return ovirt_provider_config.get(
-        CONFIG_SECTION_AUTH,
-        KEY_AUTH_PLUGIN,
-        DEFAULT_AUTH_PLUGIN
-    )

@@ -30,18 +30,12 @@ import ovirt_provider_config
 
 from handlers.keystone import TokenHandler
 from handlers.neutron import NeutronHandler
-from ovirt_provider_config import CONFIG_SECTION_SSL
-from ovirt_provider_config import CONFIG_SECTION_PROVIDER
-from ovirt_provider_config import DEFAULT_SSL_KEY_FILE
-from ovirt_provider_config import DEFAULT_SSL_CERT_FILE
-from ovirt_provider_config import DEFAULT_SSL_ENABLED
-from ovirt_provider_config import KEY_HTTPS_ENABLED
-from ovirt_provider_config import KEY_SSL_KEY_FILE
-from ovirt_provider_config import KEY_SSL_CERT_FILE
-from ovirt_provider_config import KEY_KEYSTONE_PORT
-from ovirt_provider_config import KEY_NEUTRON_PORT
-from ovirt_provider_config import DEFAULT_NEUTRON_PORT
-from ovirt_provider_config import DEFAULT_KEYSTONE_PORT
+from ovirt_provider_config_common import ssl_enabled
+from ovirt_provider_config_common import ssl_key_file
+from ovirt_provider_config_common import ssl_cert_file
+from ovirt_provider_config_common import neturon_port
+from ovirt_provider_config_common import keystone_port
+
 
 LOG_CONFIG_FILE = '/etc/ovirt-provider-ovn/logger.conf'
 
@@ -57,11 +51,11 @@ def main():
     ovirt_provider_config.load()
     auth.init()
 
-    server_keystone = HTTPServer(('', _keystone_port()), TokenHandler)
+    server_keystone = HTTPServer(('', keystone_port()), TokenHandler)
     _ssl_wrap(server_keystone)
     Thread(target=server_keystone.serve_forever).start()
 
-    server_neutron = HTTPServer(('', _neturon_port()), NeutronHandler)
+    server_neutron = HTTPServer(('', neturon_port()), NeutronHandler)
     _ssl_wrap(server_neutron)
     Thread(target=server_neutron.serve_forever).start()
 
@@ -76,52 +70,12 @@ def main():
 
 
 def _ssl_wrap(server):
-    if _ssl_enabled():
+    if ssl_enabled():
         server.socket = ssl.wrap_socket(server.socket,
-                                        keyfile=_ssl_key_file(),
-                                        certfile=_ssl_cert_file(),
+                                        keyfile=ssl_key_file(),
+                                        certfile=ssl_cert_file(),
                                         server_side=True,
                                         ssl_version=ssl.PROTOCOL_TLSv1_2)
-
-
-def _ssl_enabled():
-    return ovirt_provider_config.getboolean(
-        CONFIG_SECTION_SSL,
-        KEY_HTTPS_ENABLED,
-        DEFAULT_SSL_ENABLED
-    )
-
-
-def _ssl_key_file():
-    return ovirt_provider_config.get(
-        CONFIG_SECTION_SSL,
-        KEY_SSL_KEY_FILE,
-        DEFAULT_SSL_KEY_FILE
-    )
-
-
-def _ssl_cert_file():
-    return ovirt_provider_config.get(
-        CONFIG_SECTION_SSL,
-        KEY_SSL_CERT_FILE,
-        DEFAULT_SSL_CERT_FILE
-    )
-
-
-def _neturon_port():
-    return ovirt_provider_config.getint(
-        CONFIG_SECTION_PROVIDER,
-        KEY_NEUTRON_PORT,
-        DEFAULT_NEUTRON_PORT
-    )
-
-
-def _keystone_port():
-    return ovirt_provider_config.getint(
-        CONFIG_SECTION_PROVIDER,
-        KEY_KEYSTONE_PORT,
-        DEFAULT_KEYSTONE_PORT
-    )
 
 
 if __name__ == '__main__':

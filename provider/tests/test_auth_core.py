@@ -49,20 +49,20 @@ INCOMPLETE_PLUGIN_NAME = '{}:{}'.format(__name__, IncompletePlugin.__name__)
 NO_PLUGIN_NAME = '{}:{}'.format(__name__, NoPlugin.__name__)
 
 
-@mock.patch('auth.core.ovirt_provider_config.get',
+@mock.patch('auth.core.auth_plugin',
             return_value=VALID_PLUGIN_NAME)
 def test_auth_core_init_valid(mock_get):
     init()
 
 
-@mock.patch('auth.core.ovirt_provider_config.get',
+@mock.patch('auth.core.auth_plugin',
             return_value=INCOMPLETE_PLUGIN_NAME)
 def test_auth_core_init_incomplete(mock_get):
     with pytest.raises(TypeError):
         init()
 
 
-@mock.patch('auth.core.ovirt_provider_config.get',
+@mock.patch('auth.core.auth_plugin',
             return_value=NO_PLUGIN_NAME)
 def test_auth_core_init_no_plugin(mock_get):
     with pytest.raises(AssertionError):

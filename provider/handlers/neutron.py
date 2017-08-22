@@ -23,11 +23,8 @@ from auth import Forbidden
 from auth import TOKEN_HTTP_HEADER_FIELD_NAME
 from handlers.selecting_handler import SelectingHandler
 from handlers.neutron_responses import responses
-import ovirt_provider_config
+from ovirt_provider_config_common import ovn_remote
 from ovndb.ndb_api import OvnNbDb
-from ovirt_provider_config import CONFIG_SECTION_OVN_REMOTE
-from ovirt_provider_config import KEY_OVN_REMOTE
-from ovirt_provider_config import DEFAULT_OVN_REMOTE_AT_LOCALHOST
 
 
 class NeutronHandler(SelectingHandler):
@@ -38,15 +35,8 @@ class NeutronHandler(SelectingHandler):
         if not validate_token(self.headers.get(
                 TOKEN_HTTP_HEADER_FIELD_NAME, '')):
             raise Forbidden()
-        with OvnNbDb(self. _remote()) as nb_db:
+        with OvnNbDb(ovn_remote()) as nb_db:
             return response_handler(nb_db, content, id)
-
-    @staticmethod
-    def _remote():
-        return ovirt_provider_config.get(
-            CONFIG_SECTION_OVN_REMOTE,
-            KEY_OVN_REMOTE,
-            DEFAULT_OVN_REMOTE_AT_LOCALHOST)
 
     @staticmethod
     def get_responses():

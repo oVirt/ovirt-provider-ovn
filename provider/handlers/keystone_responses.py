@@ -17,92 +17,28 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
-import ovirt_provider_config
+from ovirt_provider_config_common import openstack_region
+from ovirt_provider_config_common import openstack_neutron_id
+from ovirt_provider_config_common import openstack_keystone_id
+from ovirt_provider_config_common import tenant_description
+from ovirt_provider_config_common import tenant_name
+from ovirt_provider_config_common import tenant_id
+from ovirt_provider_config_common import keystone_url
+from ovirt_provider_config_common import neutron_url
 
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import GET
 from handlers.base_handler import POST
 from handlers.selecting_handler import rest
 
-from ovirt_provider_config import CONFIG_SECTION_PROVIDER
-from ovirt_provider_config import KEY_KEYSTONE_PORT
-from ovirt_provider_config import KEY_NEUTRON_PORT
-from ovirt_provider_config import KEY_PROVIDER_HOST
-from ovirt_provider_config import KEY_OPENSTACK_REGION
-from ovirt_provider_config import KEY_OPENSTACK_NEUTRON_ID
-from ovirt_provider_config import KEY_OPENSTACK_KEYSTONE_ID
-from ovirt_provider_config import KEY_OPENSTACK_TENANT_ID
-from ovirt_provider_config import KEY_OPENSTACK_TENANT_NAME
-from ovirt_provider_config import KEY_OPENSTACK_TENANT_DESCRIPTION
-from ovirt_provider_config import DEFAULT_NEUTRON_PORT
-from ovirt_provider_config import DEFAULT_KEYSTONE_PORT
-from ovirt_provider_config import DEFAULT_PROVIDER_HOST
-from ovirt_provider_config import DEFAULT_OPENSTACK_REGION
-from ovirt_provider_config import DEFAULT_OPENSTACK_NEUTRON_ID
-from ovirt_provider_config import DEFAULT_OPENSTACK_KEYSTONE_ID
-from ovirt_provider_config import DEFAULT_OPENSTACK_TENANT_ID
-from ovirt_provider_config import DEFAULT_OPENSTACK_TENANT_NAME
-from ovirt_provider_config import DEFAULT_OPENSTACK_TENANT_DESCRIPTION
-
 import auth
-# import ovirt_provider_config
+
 
 SSL_CONFIG_SECTION = 'SSL'
-
-NEUTRON_URL = 'http://{host}:{neutron_port}/v2.0/networks'
-KEYSTONE_URL = 'http://{host}:{keystone_port}/v2.0/tokens'
 
 TENANTS = 'tenants'
 TOKENS = 'tokens'
 _responses = {}
-
-
-def _neturon_port():
-    return ovirt_provider_config.getint(
-        CONFIG_SECTION_PROVIDER,
-        KEY_NEUTRON_PORT,
-        DEFAULT_NEUTRON_PORT
-    )
-
-
-def _keystone_port():
-    return ovirt_provider_config.getint(
-        CONFIG_SECTION_PROVIDER,
-        KEY_KEYSTONE_PORT,
-        DEFAULT_KEYSTONE_PORT
-    )
-
-
-def _provider_host():
-    return ovirt_provider_config.get(
-        CONFIG_SECTION_PROVIDER,
-        KEY_PROVIDER_HOST,
-        DEFAULT_PROVIDER_HOST
-    )
-
-
-def _openstack_region():
-    return ovirt_provider_config.get(
-        CONFIG_SECTION_PROVIDER,
-        KEY_OPENSTACK_REGION,
-        DEFAULT_OPENSTACK_REGION
-    )
-
-
-def _openstack_neutron_id():
-    return ovirt_provider_config.get(
-        CONFIG_SECTION_PROVIDER,
-        KEY_OPENSTACK_NEUTRON_ID,
-        DEFAULT_OPENSTACK_NEUTRON_ID
-    )
-
-
-def _openstack_keystone_id():
-    return ovirt_provider_config.get(
-        CONFIG_SECTION_PROVIDER,
-        KEY_OPENSTACK_KEYSTONE_ID,
-        DEFAULT_OPENSTACK_KEYSTONE_ID
-    )
 
 
 @rest(POST, TOKENS, _responses)
@@ -117,15 +53,11 @@ def post_tokens(content, id):
         user_at_domain=user_at_domain,
         user_password=user_password)
 
-    host = _provider_host()
-    neutron_port = _neturon_port()
-    keystone_port = _keystone_port()
-
-    neutron_url = NEUTRON_URL.format(host=host, neutron_port=neutron_port)
-    keystone_url = KEYSTONE_URL.format(host=host, keystone_port=keystone_port)
-    openstack_region = _openstack_region()
-    openstack_neutron_id = _openstack_neutron_id()
-    openstack_keystone_id = _openstack_keystone_id()
+    neutronurl = neutron_url()
+    keystoneurl = keystone_url()
+    region = openstack_region()
+    neutron_id = openstack_neutron_id()
+    keystone_id = openstack_keystone_id()
 
     return {
         'access': {
@@ -136,11 +68,11 @@ def post_tokens(content, id):
                 {
                     'endpoints': [
                         {
-                            'adminURL': neutron_url,
-                            'internalURL': neutron_url,
-                            'publicURL': neutron_url,
-                            'region': openstack_region,
-                            'id': openstack_neutron_id,
+                            'adminURL': neutronurl,
+                            'internalURL': neutronurl,
+                            'publicURL': neutronurl,
+                            'region': region,
+                            'id': neutron_id,
                         }
                     ],
                     'endpoints_links': [],
@@ -150,11 +82,11 @@ def post_tokens(content, id):
                 {
                     'endpoints': [
                         {
-                            'adminURL': keystone_url,
-                            'region': openstack_region,
-                            'internalURL': keystone_url,
-                            'id': openstack_keystone_id,
-                            'publicURL': keystone_url
+                            'adminURL': keystoneurl,
+                            'region': region,
+                            'internalURL': keystoneurl,
+                            'id': keystone_id,
+                            'publicURL': keystoneurl
                         }
                     ],
                     'endpoints_links': [],
@@ -170,35 +102,11 @@ def post_tokens(content, id):
 def get_tenants(content, id):
     return {
         'tenants': [{
-            'description': _tenant_description(),
-            'name': _tenant_name(),
-            'id': _tenant_id()}]
+            'description': tenant_description(),
+            'name': tenant_name(),
+            'id': tenant_id()}]
     }
 
 
 def responses():
     return _responses
-
-
-def _tenant_id():
-    return ovirt_provider_config.get(
-        CONFIG_SECTION_PROVIDER,
-        KEY_OPENSTACK_TENANT_ID,
-        DEFAULT_OPENSTACK_TENANT_ID
-    )
-
-
-def _tenant_name():
-    return ovirt_provider_config.get(
-        CONFIG_SECTION_PROVIDER,
-        KEY_OPENSTACK_TENANT_NAME,
-        DEFAULT_OPENSTACK_TENANT_NAME
-    )
-
-
-def _tenant_description():
-    return ovirt_provider_config.get(
-        CONFIG_SECTION_PROVIDER,
-        KEY_OPENSTACK_TENANT_DESCRIPTION,
-        DEFAULT_OPENSTACK_TENANT_DESCRIPTION
-    )

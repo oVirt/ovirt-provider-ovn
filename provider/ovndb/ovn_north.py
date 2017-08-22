@@ -19,19 +19,12 @@
 import ovsdbapp.backend.ovs_idl.connection
 from ovsdbapp.schema.ovn_northbound.impl_idl import OvnNbApiIdlImpl
 
-import ovirt_provider_config
-from ovirt_provider_config import CONFIG_SECTION_OVN_REMOTE
-from ovirt_provider_config import DEFAULT_OVN_REMOTE_AT_LOCALHOST
-from ovirt_provider_config import KEY_OVN_REMOTE
-from ovirt_provider_config import CONFIG_SECTION_DHCP
-from ovirt_provider_config import DEFAULT_DHCP_SERVER_MAC
-from ovirt_provider_config import DEFAULT_DHCP_LEASE_TIME
-from ovirt_provider_config import DEFAULT_DHCP_MTU
-from ovirt_provider_config import DEFAULT_DHCP_ENABLE_MTU
-from ovirt_provider_config import KEY_DHCP_SERVER_MAC
-from ovirt_provider_config import KEY_DHCP_LEASE_TIME
-from ovirt_provider_config import KEY_DHCP_ENABLE_MTU
-from ovirt_provider_config import KEY_DHCP_MTU
+from ovirt_provider_config_common import ovn_remote
+from ovirt_provider_config_common import dhcp_lease_time
+from ovirt_provider_config_common import dhcp_server_mac
+from ovirt_provider_config_common import dhcp_enable_mtu
+from ovirt_provider_config_common import dhcp_mtu
+
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import NetworkPort
 from ovndb.ovn_north_mappers import PortMapper
@@ -84,7 +77,7 @@ class OvnNorth(object):
     def __init__(self):
         ovsdb_connection = ovsdbapp.backend.ovs_idl.connection.Connection(
             idl=ovsdbapp.backend.ovs_idl.connection.OvsdbIdl.from_server(
-                self._ovn_remote(),
+                ovn_remote(),
                 OvnNorth.OVN_NORTHBOUND
             ),
             timeout=100)
@@ -309,11 +302,11 @@ class OvnNorth(object):
         options = {
             SubnetMapper.OVN_DHCP_SERVER_ID: dhcp_server_ip,
             SubnetMapper.OVN_GATEWAY: gateway,
-            SubnetMapper.OVN_DHCP_SERVER_MAC: self._dhcp_server_mac(),
-            SubnetMapper.OVN_DHCP_LEASE_TIME: self._dhcp_lease_time(),
+            SubnetMapper.OVN_DHCP_SERVER_MAC: dhcp_server_mac(),
+            SubnetMapper.OVN_DHCP_LEASE_TIME: dhcp_lease_time(),
         }
-        if OvnNorth._dhcp_enable_mtu():
-            options[SubnetMapper.OVN_DHCP_MTU] = OvnNorth._dhcp_mtu()
+        if dhcp_enable_mtu():
+            options[SubnetMapper.OVN_DHCP_MTU] = dhcp_mtu()
 
         if dns:
             options[SubnetMapper.OVN_DNS_SERVER] = dns
@@ -377,11 +370,11 @@ class OvnNorth(object):
         )
         db_set_command.add(
             self.ROW_DHCP_OPTIONS,
-            {SubnetMapper.OVN_DHCP_LEASE_TIME: self._dhcp_lease_time()}
+            {SubnetMapper.OVN_DHCP_LEASE_TIME: dhcp_lease_time()}
         )
         db_set_command.add(
             self.ROW_DHCP_OPTIONS,
-            {SubnetMapper.OVN_DHCP_SERVER_MAC: self._dhcp_server_mac()}
+            {SubnetMapper.OVN_DHCP_SERVER_MAC: dhcp_server_mac()}
         )
         db_set_command.execute()
 
@@ -389,43 +382,3 @@ class OvnNorth(object):
 
     def delete_subnet(self, subnet_id):
         self.idl.dhcp_options_del(subnet_id).execute()
-
-    @staticmethod
-    def _ovn_remote():
-        return ovirt_provider_config.get(
-            CONFIG_SECTION_OVN_REMOTE,
-            KEY_OVN_REMOTE,
-            DEFAULT_OVN_REMOTE_AT_LOCALHOST
-        )
-
-    @staticmethod
-    def _dhcp_lease_time():
-        return ovirt_provider_config.get(
-            CONFIG_SECTION_DHCP,
-            KEY_DHCP_LEASE_TIME,
-            DEFAULT_DHCP_LEASE_TIME
-        )
-
-    @staticmethod
-    def _dhcp_server_mac():
-        return ovirt_provider_config.get(
-            CONFIG_SECTION_DHCP,
-            KEY_DHCP_SERVER_MAC,
-            DEFAULT_DHCP_SERVER_MAC
-        )
-
-    @staticmethod
-    def _dhcp_enable_mtu():
-        return ovirt_provider_config.getboolean(
-            CONFIG_SECTION_DHCP,
-            KEY_DHCP_ENABLE_MTU,
-            DEFAULT_DHCP_ENABLE_MTU
-        )
-
-    @staticmethod
-    def _dhcp_mtu():
-        return ovirt_provider_config.get(
-            CONFIG_SECTION_DHCP,
-            KEY_DHCP_MTU,
-            DEFAULT_DHCP_MTU
-        )

@@ -22,10 +22,7 @@ from functools import wraps
 
 import six
 
-import ovirt_provider_config
-from ovirt_provider_config import CONFIG_SECTION_PROVIDER
-from ovirt_provider_config import KEY_OPENSTACK_TENANT_ID
-from ovirt_provider_config import DEFAULT_OPENSTACK_TENANT_ID
+from ovirt_provider_config_common import tenant_id
 from handlers.base_handler import BadRequestError
 
 
@@ -118,7 +115,7 @@ class NetworkMapper(Mapper):
         return {
             NetworkMapper.REST_NETWORK_ID: str(network_row.uuid),
             NetworkMapper.REST_NETWORK_NAME: network_row.name,
-            NetworkMapper.REST_TENANT_ID: _tenant_id()
+            NetworkMapper.REST_TENANT_ID: tenant_id()
         }
 
     @staticmethod
@@ -203,7 +200,7 @@ class PortMapper(Mapper):
             PortMapper.REST_PORT_NETWORK_ID: str(network.uuid),
             PortMapper.REST_PORT_SECURITY_GROUPS: [],
             PortMapper.REST_PORT_SECURITY_ENABLED: False,
-            PortMapper.REST_TENANT_ID: _tenant_id(),
+            PortMapper.REST_TENANT_ID: tenant_id(),
             PortMapper.REST_PORT_FIXED_IPS: []
         }
         if port.addresses:
@@ -303,7 +300,7 @@ class SubnetMapper(Mapper):
             SubnetMapper.REST_SUBNET_GATEWAY_IP:
                 options[SubnetMapper.OVN_GATEWAY],
             SubnetMapper.REST_SUBNET_IP_VERSION: SubnetMapper.IP_VERSION,
-            SubnetMapper.REST_TENANT_ID: _tenant_id()
+            SubnetMapper.REST_TENANT_ID: tenant_id()
 
         }
         if SubnetMapper.REST_SUBNET_DNS_NAMESERVERS in options:
@@ -320,14 +317,6 @@ class SubnetMapper(Mapper):
     @staticmethod
     def validate_update_rest_input(rest_data):
         pass
-
-
-def _tenant_id():
-    return ovirt_provider_config.get(
-        CONFIG_SECTION_PROVIDER,
-        KEY_OPENSTACK_TENANT_ID,
-        DEFAULT_OPENSTACK_TENANT_ID
-    )
 
 
 class RestDataError(BadRequestError):
