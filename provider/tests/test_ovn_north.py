@@ -79,14 +79,32 @@ class TestOvnNorth(object):
     SUBNET_101 = OvnSubnetRow(SUBNET_ID101, network_id=str(NETWORK_ID10))
     SUBNET_102 = OvnSubnetRow(SUBNET_ID102)
 
+    NETWORK_10 = OvnNetworkRow(NETWORK_ID10, NETWORK_NAME10)
+    NETWORK_11 = OvnNetworkRow(
+        NETWORK_ID11, NETWORK_NAME11, ports=[PORT_1, PORT_2]
+    )
+
     ports = [PORT_1, PORT_2]
 
-    networks = [
-        OvnNetworkRow(NETWORK_ID10, NETWORK_NAME10),
-        OvnNetworkRow(NETWORK_ID11, NETWORK_NAME11, ports=[PORT_1, PORT_2]),
-    ]
+    networks = [NETWORK_10, NETWORK_11]
 
     subnets = [SUBNET_101, SUBNET_102]
+
+    def assert_networks_equal(self, actual, network_row):
+        assert actual['id'] == str(network_row.uuid)
+        assert actual['name'] == network_row.name
+        assert actual['tenant_id'] == tenant_id()
+
+    def assert_port_equal(self, actual, port_row, network_id):
+        assert actual['id'] == str(port_row.uuid)
+        assert actual['network_id'] == network_id
+        assert actual['name'] == port_row.external_ids[PortMapper.OVN_NIC_NAME]
+        device_id = port_row.external_ids[PortMapper.OVN_DEVICE_ID]
+        assert actual['device_id'] == device_id
+        assert actual['security_groups'] == []
+        assert actual['port_security_enabled'] is False
+        assert actual['tenant_id'] == tenant_id()
+        assert actual['fixed_ips'] == []
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsListCommand',
@@ -99,9 +117,8 @@ class TestOvnNorth(object):
         result = ovn_north.list_networks()
 
         assert len(result) == 2
-        assert result[0]['id'] == str(TestOvnNorth.NETWORK_ID10)
-        assert result[0]['name'] == TestOvnNorth.NETWORK_NAME10
-        assert result[0]['tenant_id'] == tenant_id()
+        self.assert_networks_equal(result[0], TestOvnNorth.NETWORK_10)
+        self.assert_networks_equal(result[1], TestOvnNorth.NETWORK_11)
         assert mock_ls_list.call_count == 1
         assert mock_ls_list.return_value.execute.call_count == 1
 
@@ -111,21 +128,17 @@ class TestOvnNorth(object):
     )
     def test_get_network(self, mock_ls_get, mock_connection):
         mock_ls_get.return_value.execute.return_value = (
-            OvnNetworkRow(
-                TestOvnNorth.NETWORK_ID10,
-                TestOvnNorth.NETWORK_NAME10
-            )
+            TestOvnNorth.NETWORK_10
         )
-
         ovn_north = OvnNorth()
-        result = ovn_north.get_network(str(self.NETWORK_ID10))
-        assert result['id'] == str(self.NETWORK_ID10)
-        assert result['name'] == self.NETWORK_NAME10
-        assert result['tenant_id'] == tenant_id()
+        result = ovn_north.get_network(str(TestOvnNorth.NETWORK_ID10))
+
+        self.assert_networks_equal(result, TestOvnNorth.NETWORK_10)
         assert mock_ls_get.call_count == 1
         assert mock_ls_get.return_value.execute.call_count == 1
-        expected_ls_get_call = mock.call(ovn_north.idl, str(self.NETWORK_ID10))
-        assert mock_ls_get.mock_calls[0] == expected_ls_get_call
+        assert mock_ls_get.mock_calls[0] == mock.call(
+            ovn_north.idl, str(TestOvnNorth.NETWORK_ID10)
+        )
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsAddCommand',
@@ -133,25 +146,21 @@ class TestOvnNorth(object):
     )
     def test_add_network(self, mock_add_command, mock_connection):
         mock_add_command.return_value.execute.return_value = (
-            OvnNetworkRow(
-                TestOvnNorth.NETWORK_ID10,
-                TestOvnNorth.NETWORK_NAME10
-            )
+            TestOvnNorth.NETWORK_10
         )
         ovn_north = OvnNorth()
         rest_data = {
             NetworkMapper.REST_NETWORK_NAME: TestOvnNorth.NETWORK_NAME10
         }
         result = ovn_north.add_network(rest_data)
-        assert result['id'] == str(TestOvnNorth.NETWORK_ID10)
-        assert result['name'] == TestOvnNorth.NETWORK_NAME10
+
+        self.assert_networks_equal(result, TestOvnNorth.NETWORK_10)
         assert mock_add_command.call_count == 1
-        expected_add_call = mock.call(
+        assert mock_add_command.mock_calls[0] == mock.call(
             ovn_north.idl,
             TestOvnNorth.NETWORK_NAME10,
             False
         )
-        assert mock_add_command.mock_calls[0] == expected_add_call
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
@@ -170,23 +179,19 @@ class TestOvnNorth(object):
             NetworkMapper.REST_NETWORK_NAME: TestOvnNorth.NETWORK_NAME10
         }
         result = ovn_north.update_network(rest_data, TestOvnNorth.NETWORK_ID10)
-        assert result['id'] == str(TestOvnNorth.NETWORK_ID10)
-        assert result['name'] == TestOvnNorth.NETWORK_NAME10
+
+        self.assert_networks_equal(result, TestOvnNorth.NETWORK_10)
         assert mock_set_command.call_count == 1
-        expected_set_call = mock.call(
+        assert mock_set_command.mock_calls[0] == mock.call(
             ovn_north.idl,
             OvnNorth.TABLE_LS,
             TestOvnNorth.NETWORK_ID10,
             (NetworkMapper.REST_NETWORK_NAME, TestOvnNorth.NETWORK_NAME10)
         )
-        assert mock_set_command.mock_calls[0] == expected_set_call
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
-        lambda x: OvnNetworkRow(
-            TestOvnNorth.NETWORK_ID10,
-            TestOvnNorth.NETWORK_NAME10
-        )
+        lambda x: TestOvnNorth.NETWORK_10
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsDelCommand',
@@ -226,14 +231,7 @@ class TestOvnNorth(object):
     )
     def test_add_port(self, mock_db_set, mock_add_command, mock_connection):
         mock_add_command.return_value.execute.return_value = (
-            OvnPortRow(
-                TestOvnNorth.PORT_ID01,
-                external_ids={
-                    PortMapper.OVN_NIC_NAME: TestOvnNorth.PORT_NAME01,
-                    PortMapper.OVN_DEVICE_ID: str(TestOvnNorth.PORT_ID01),
-                    PortMapper.OVN_DEVICE_OWNER: PortMapper.DEVICE_OWNER_OVIRT,
-                }
-            )
+            TestOvnNorth.PORT_1
         )
         ovn_north = OvnNorth()
         rest_data = {
@@ -244,7 +242,13 @@ class TestOvnNorth(object):
             PortMapper.REST_PORT_ADMIN_STATE_UP: True,
             PortMapper.REST_PORT_MAC_ADDRESS: TestOvnNorth.MAC_ADDRESS
         }
-        ovn_north.add_port(rest_data)
+        result = ovn_north.add_port(rest_data)
+
+        # ID11 because this network hass the port in TestOvnNorth.networks
+        self.assert_port_equal(
+            result, TestOvnNorth.PORT_1, str(TestOvnNorth.NETWORK_ID11)
+        )
+
         assert mock_add_command.call_count == 1
         mock_add_command.assert_called_with(
             ovn_north.idl,
@@ -305,20 +309,12 @@ class TestOvnNorth(object):
         ovn_north = OvnNorth()
         ports = ovn_north.list_ports()
         assert len(ports) == 2
-        assert ports[0]['id'] == str(TestOvnNorth.PORT_ID01)
-        assert ports[1]['id'] == str(TestOvnNorth.PORT_ID02)
-        assert ports[0]['network_id'] == str(TestOvnNorth.NETWORK_ID11)
-        assert ports[1]['network_id'] == str(TestOvnNorth.NETWORK_ID11)
-        assert ports[0]['name'] == TestOvnNorth.PORT_NAME01
-        assert ports[1]['name'] == TestOvnNorth.PORT_NAME02
-        assert ports[0]['device_id'] == str(TestOvnNorth.PORT_ID01)
-        assert ports[1]['device_id'] == str(TestOvnNorth.PORT_ID02)
-        assert ports[0]['security_groups'] == []
-        assert ports[1]['port_security_enabled'] is False
-        assert ports[0]['tenant_id'] == tenant_id()
-        assert ports[1]['tenant_id'] == tenant_id()
-        assert ports[0]['fixed_ips'] == []
-        assert ports[1]['fixed_ips'] == []
+        self.assert_port_equal(
+            ports[0], TestOvnNorth.PORT_1, str(TestOvnNorth.NETWORK_ID11)
+        )
+        self.assert_port_equal(
+            ports[1], TestOvnNorth.PORT_2, str(TestOvnNorth.NETWORK_ID11)
+        )
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LspDelCommand',
@@ -381,10 +377,7 @@ class TestOvnNorth(object):
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
-        lambda x: OvnNetworkRow(
-            TestOvnNorth.NETWORK_ID10,
-            TestOvnNorth.NETWORK_NAME10
-        )
+        lambda x: TestOvnNorth.networks
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
@@ -409,7 +402,7 @@ class TestOvnNorth(object):
         mock_add_command.return_value.execute.return_value = new_subnet_id
         subnet_cidr = '1.1.1.0/24'
         ovn_north = OvnNorth()
-        input = {
+        rest_data = {
             SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
             SubnetMapper.REST_SUBNET_CIDR: subnet_cidr,
             SubnetMapper.REST_SUBNET_NETWORK_ID:
@@ -417,7 +410,7 @@ class TestOvnNorth(object):
             SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
             SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
         }
-        result = ovn_north.add_subnet(input)
+        result = ovn_north.add_subnet(rest_data)
         assert result['id'] == str(TestOvnNorth.SUBNET_ID102)
         assert mock_dbset_command.call_count == 1
         assert mock_add_command.call_count == 1
