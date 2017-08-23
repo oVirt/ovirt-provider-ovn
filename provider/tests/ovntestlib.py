@@ -62,6 +62,8 @@ class OvnPortRow(OvnRow):
         self.external_ids = external_ids or {PortMapper.DEVICE_ID: device_id}
         self.dhcpv4_options = None
         self.addresses = addresses
+        self.up = None
+        self.enabled = None
 
 
 class OvnSubnetRow(OvnRow):

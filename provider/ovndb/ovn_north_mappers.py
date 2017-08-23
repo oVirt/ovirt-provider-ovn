@@ -155,8 +155,7 @@ class PortMapper(Mapper):
         network_id = rest_data.get(PortMapper.REST_PORT_NETWORK_ID)
         name = rest_data.get(PortMapper.REST_PORT_NAME)
         mac = rest_data.get(PortMapper.REST_PORT_MAC_ADDRESS)
-        is_enabled = True
-        is_up = rest_data.get(PortMapper.REST_PORT_ADMIN_STATE_UP)
+        is_enabled = rest_data.get(PortMapper.REST_PORT_ADMIN_STATE_UP)
         device_id = rest_data.get(PortMapper.REST_PORT_DEVICE_ID)
         device_owner = rest_data.get(PortMapper.REST_PORT_DEVICE_OWNER)
 
@@ -168,7 +167,6 @@ class PortMapper(Mapper):
                 name=name,
                 mac=mac,
                 is_enabled=is_enabled,
-                is_up=is_up,
                 device_id=device_id,
                 device_owner=device_owner
             )
@@ -179,13 +177,22 @@ class PortMapper(Mapper):
                 name=name,
                 mac=mac,
                 is_enabled=is_enabled,
-                is_up=is_up,
                 device_id=device_id,
                 device_owner=device_owner
             )
 
     @staticmethod
     def row2rest(row):
+        """
+            Maps the db rows (port, network) to a Json representation of
+            a port.
+            The 'admin_state_up' property of the port is the product
+            of two values:
+            - port.up - managed internally by OVN, True only if
+            set explicitly to [True]
+            - port.enabled - set by the user, True if empty (None) or
+            set to [True]
+        """
         if not row:
             return {}
         port, network = row
@@ -201,7 +208,10 @@ class PortMapper(Mapper):
             PortMapper.REST_PORT_SECURITY_GROUPS: [],
             PortMapper.REST_PORT_SECURITY_ENABLED: False,
             PortMapper.REST_TENANT_ID: tenant_id(),
-            PortMapper.REST_PORT_FIXED_IPS: []
+            PortMapper.REST_PORT_FIXED_IPS: [],
+            PortMapper.REST_PORT_ADMIN_STATE_UP:
+                (port.up is not None and port.up[0]) and
+                (port.enabled is None or port.enabled[0])
         }
         if port.addresses:
             rest_data[PortMapper.REST_PORT_MAC_ADDRESS] = port.addresses[0]

@@ -615,3 +615,49 @@ class TestOvnNorth(object):
         }
         with pytest.raises(SubnetConfigError):
             ovn_north.add_subnet(rest_data)
+
+    def test_port_admin_state_up_none_enabled_none(self, mock_connection):
+        self._port_admin_state(mock_connection, None, None, False)
+
+    def test_port_admin_state_up_true_enabled_none(self, mock_connection):
+        self._port_admin_state(mock_connection, [True], None, True)
+
+    def test_port_admin_state_up_false_enabled_none(self, mock_connection):
+        self._port_admin_state(mock_connection, [False], None, False)
+
+    def test_port_admin_state_up_none_enabled_true(self, mock_connection):
+        self._port_admin_state(mock_connection, None, [True], False)
+
+    def test_port_admin_state_up_true_enabled_true(self, mock_connection):
+        self._port_admin_state(mock_connection, [True], [True], True)
+
+    def test_port_admin_state_up_false_enabled_true(self, mock_connection):
+        self._port_admin_state(mock_connection, [False], [True], False)
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsListCommand',
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LspGetCommand'
+    )
+    def _port_admin_state(self, mock_connection, is_up, is_enabled, result,
+                          mock_lsp_get, mock_ls_list):
+        port_row = OvnPortRow(
+            TestOvnNorth.PORT_ID01,
+            external_ids={
+                PortMapper.OVN_NIC_NAME: TestOvnNorth.PORT_NAME01,
+                PortMapper.OVN_DEVICE_ID: str(TestOvnNorth.PORT_ID01),
+                PortMapper.OVN_DEVICE_OWNER: PortMapper.DEVICE_OWNER_OVIRT,
+            }
+        )
+        port_row.up = is_up
+        port_row.enabled = is_enabled
+
+        mock_lsp_get.return_value.execute.return_value = port_row
+        mock_ls_list.return_value.execute.return_value = [
+            OvnNetworkRow(TestOvnNorth.NETWORK_ID11, ports=[port_row])
+        ]
+
+        ovn_north = OvnNorth()
+        port = ovn_north.get_port(TestOvnNorth.PORT_ID01)
+        assert port[PortMapper.REST_PORT_ADMIN_STATE_UP] == result

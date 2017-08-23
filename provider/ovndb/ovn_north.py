@@ -162,14 +162,13 @@ class OvnNorth(object):
         name,
         mac=None,
         is_enabled=None,
-        is_up=None,
         device_id=None,
         device_owner=None,
     ):
         port = self._create_port(name, network_id)
         port_id = port.uuid
         self._update_port_values(port, port_id, network_id, name, mac,
-                                 is_enabled, is_up, device_id, device_owner)
+                                 is_enabled, device_id, device_owner)
         return self.get_port(port_id)
 
     @PortMapper.validate_update
@@ -181,18 +180,17 @@ class OvnNorth(object):
         name=None,
         mac=None,
         is_enabled=None,
-        is_up=None,
         device_id=None,
         device_owner=None,
     ):
         port = self._get_port(port_id).port
         network_id = self._get_validated_port_network_id(port, network_id)
         self._update_port_values(port, port_id, network_id, name, mac,
-                                 is_enabled, is_up, device_id, device_owner)
+                                 is_enabled, device_id, device_owner)
         return self.get_port(port_id)
 
     def _update_port_values(self, port, port_id, network_id, name, mac,
-                            is_enabled, is_up, device_id, device_owner):
+                            is_enabled, device_id, device_owner):
         # TODO(add transaction): setting of the individual values should
         # one day be done in a transaction:
         #   txn = Transaction(self.idl, self.ovsdb_connection)
