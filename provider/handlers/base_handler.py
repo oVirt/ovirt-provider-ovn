@@ -93,8 +93,6 @@ class BaseHandler(BaseHTTPRequestHandler):
         self._handle_request(PUT, content=self._get_content())
 
     def do_DELETE(self):
-        assert self._parse_request_path(self.path)[1], ('Delete request must'
-                                                        'specify an id')
         self._handle_request(DELETE, code=httplib.NO_CONTENT)
 
     def _handle_request(self, method, code=httplib.OK, content=None):
@@ -104,6 +102,7 @@ class BaseHandler(BaseHTTPRequestHandler):
         try:
 
             key, id = self._parse_request_path(self.path)
+            self._validate_request(method, id)
             response = self.handle_request(
                 method, key, id, content)
             self._process_response(response.body, response.code or code)
@@ -128,6 +127,12 @@ class BaseHandler(BaseHTTPRequestHandler):
                 e, response_code=httplib.GATEWAY_TIMEOUT)
         except Exception as e:
             self._handle_response_exception(e)
+
+    def _validate_request(self, method, id):
+        if method in [DELETE, PUT] and not id:
+            raise BadRequestError(
+                '{method} request must specify an id'.format(method=method)
+            )
 
     def _process_response(self, response, response_code):
         self._set_response_headers(response_code, response)

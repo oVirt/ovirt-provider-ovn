@@ -20,7 +20,6 @@ from __future__ import absolute_import
 from mock import MagicMock
 import httplib
 import mock
-import pytest
 
 from handlers.base_handler import Response
 from handlers.neutron import NeutronHandler
@@ -153,17 +152,19 @@ class TestNeutronHandler(object):
     @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
     @mock.patch('handlers.neutron.NeutronHandler.end_headers')
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
+    @mock.patch('handlers.neutron.NeutronHandler.send_error')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
-    def test_handle_delete_with_no_id(self, mock_send_response,
+    def test_handle_delete_with_no_id(self, mock_send_response, send_error,
                                       mock_send_header, mock_end_headers,
                                       mock_ndb_api):
 
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
         handler.path = '/v2.0/testports'
-        with pytest.raises(AssertionError,
-                           message='Delete request must specify an id'):
-            handler.do_DELETE()
+        handler.do_DELETE()
+        assert send_error.call_count == 1
+        mock_call = mock.call(httplib.BAD_REQUEST)
+        assert send_error.mock_calls[0] == mock_call
 
     @mock.patch('ovndb.ovsdb_api.ovs.db.idl', autospec=True)
     @mock.patch('handlers.neutron.NeutronHandler.end_headers')
