@@ -61,8 +61,11 @@ from ovirt_provider_config import KEY_SSL_CERT_FILE
 from ovirt_provider_config import KEY_SSL_KEY_FILE
 
 
-NEUTRON_URL = 'http://{host}:{neutron_port}/v2.0/'
-KEYSTONE_URL = 'http://{host}:{keystone_port}/v2.0/'
+PROTOCOL_HTTP = 'http'
+PROTOCOL_HTTPS = 'https'
+
+NEUTRON_URL = '{protocol}://{host}:{neutron_port}/v2.0/'
+KEYSTONE_URL = '{protocol}://{host}:{keystone_port}/v2.0/'
 
 
 def neturon_port():
@@ -131,6 +134,7 @@ def tenant_description():
 
 def keystone_url():
     return KEYSTONE_URL.format(
+        protocol=PROTOCOL_HTTPS if ssl_enabled() else PROTOCOL_HTTP,
         host=provider_host(),
         keystone_port=keystone_port()
     )
@@ -138,6 +142,7 @@ def keystone_url():
 
 def neutron_url():
     return NEUTRON_URL.format(
+        protocol=PROTOCOL_HTTPS if ssl_enabled() else PROTOCOL_HTTP,
         host=provider_host(),
         neutron_port=neturon_port()
     )
