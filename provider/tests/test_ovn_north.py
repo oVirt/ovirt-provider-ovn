@@ -255,9 +255,8 @@ class TestOvnNorth(object):
             False
         )
 
-        assert mock_db_set.call_count == 6
+        assert mock_db_set.call_count == 2
 
-        # mock_db_set.mock_calls[1, 3, 5, ...] is for execute() - no parameters
         assert mock_db_set.mock_calls[0] == mock.call(
             ovn_north.idl,
             OvnNorth.TABLE_LSP,
@@ -267,6 +266,7 @@ class TestOvnNorth(object):
                 str(TestOvnNorth.PORT_ID01)
             )
         )
+
         assert mock_db_set.mock_calls[2] == mock.call(
             ovn_north.idl,
             OvnNorth.TABLE_LSP,
@@ -274,40 +274,23 @@ class TestOvnNorth(object):
             (
                 OvnNorth.ROW_LSP_ADDRESSES,
                 [TestOvnNorth.MAC_ADDRESS]
-            )
-        )
-        assert mock_db_set.mock_calls[4] == mock.call(
-            ovn_north.idl,
-            OvnNorth.TABLE_LSP,
-            TestOvnNorth.PORT_ID01,
+            ),
             (
                 OvnNorth.ROW_LSP_EXTERNAL_IDS,
                 {PortMapper.OVN_DEVICE_ID: TestOvnNorth.DEVICE_ID}
-            )
-        )
-        assert mock_db_set.mock_calls[6] == mock.call(
-            ovn_north.idl,
-            OvnNorth.TABLE_LSP,
-            TestOvnNorth.PORT_ID01,
+            ),
             (
                 OvnNorth.ROW_LSP_EXTERNAL_IDS,
                 {PortMapper.OVN_NIC_NAME: TestOvnNorth.PORT_NAME01}
-            )
-        )
-        assert mock_db_set.mock_calls[8] == mock.call(
-            ovn_north.idl,
-            OvnNorth.TABLE_LSP,
-            TestOvnNorth.PORT_ID01,
+            ),
             (
                 OvnNorth.ROW_LSP_EXTERNAL_IDS,
                 {PortMapper.OVN_DEVICE_OWNER: PortMapper.DEVICE_OWNER_OVIRT}
+            ),
+            (
+                OvnNorth.ROW_LSP_ENABLED,
+                True
             )
-        )
-        assert mock_db_set.mock_calls[10] == mock.call(
-            ovn_north.idl,
-            OvnNorth.TABLE_LSP,
-            TestOvnNorth.PORT_ID01,
-            (OvnNorth.ROW_LSP_ENABLED, True)
         )
 
     @mock.patch(

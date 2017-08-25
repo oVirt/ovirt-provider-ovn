@@ -203,21 +203,39 @@ class OvnNorth(object):
             mac = port.addresses[0].split()[0]
         subnet_row = self._get_dhcp_by_network_id(network_id)
 
+        db_set_command = DbSetCommand(self.idl, self.TABLE_LSP, port_id)
+
         if mac:
             if subnet_row:
                 mac += ' dynamic'
-            self._lsp_set_command(
-                port_id, self.ROW_LSP_ADDRESSES, [mac]).execute()
-        self._lsp_set(device_id, port_id, self.ROW_LSP_EXTERNAL_IDS,
-                      {PortMapper.OVN_DEVICE_ID: device_id})
-        self._lsp_set(name, port_id, self.ROW_LSP_EXTERNAL_IDS,
-                      {PortMapper.OVN_NIC_NAME: name})
-        self._lsp_set(device_owner, port_id, self.ROW_LSP_EXTERNAL_IDS,
-                      {PortMapper.OVN_DEVICE_OWNER: device_owner})
-        self._lsp_set(is_enabled is not None, port_id,
-                      self.ROW_LSP_ENABLED, is_enabled)
-        self._lsp_set(subnet_row, port_id, self.ROW_LSP_DHCPV4_OPTIONS,
-                      [subnet_row])
+            db_set_command.add(self.ROW_LSP_ADDRESSES, [mac])
+
+        db_set_command.add(
+            self.ROW_LSP_DHCPV4_OPTIONS,
+            [subnet_row],
+            subnet_row
+        )
+        db_set_command.add(
+            self.ROW_LSP_EXTERNAL_IDS,
+            {PortMapper.OVN_DEVICE_ID: device_id},
+            device_id
+        )
+        db_set_command.add(
+            self.ROW_LSP_EXTERNAL_IDS,
+            {PortMapper.OVN_NIC_NAME: name},
+            name
+        )
+        db_set_command.add(
+            self.ROW_LSP_EXTERNAL_IDS,
+            {PortMapper.OVN_DEVICE_OWNER: device_owner},
+            device_owner
+        )
+        db_set_command.add(
+            self.ROW_LSP_ENABLED,
+            is_enabled,
+            is_enabled
+        )
+        db_set_command.execute()
 
     def _get_validated_port_network_id(self, port, network_id):
         """
@@ -245,8 +263,11 @@ class OvnNorth(object):
             may_exist=False
         ).execute()
         port_id = str(port.uuid)
-        self._lsp_set_command(port_id, self.ROW_LSP_NAME,
-                              str(port_id)).execute()
+        self.idl.db_set(
+            self.TABLE_LSP,
+            port_id,
+            (self.ROW_LSP_NAME, str(port_id))
+        ).execute()
         return port
 
     def _get_dhcp_by_network_id(self, network_id):
@@ -256,17 +277,6 @@ class OvnNorth(object):
                 SubnetMapper.OVN_NETWORK_ID
             )) == network_id:
                 return row
-
-    def _lsp_set(self, _lsp_set_if, port_id, column, value):
-        if _lsp_set_if:
-            self._lsp_set_command(port_id, column, value).execute()
-
-    def _lsp_set_command(self, port_id, column, value):
-        return self.idl.db_set(
-            self.TABLE_LSP,
-            port_id,
-            (column, value),
-        )
 
     def update_port_mac(self, port_id, macaddress):
         pass
