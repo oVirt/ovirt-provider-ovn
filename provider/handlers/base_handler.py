@@ -55,7 +55,11 @@ class Response(object):
         self.headers = headers
 
 
-class NotFoundError(AttributeError):
+class PathNotFoundError(AttributeError):
+    pass
+
+
+class ElementNotFoundError(AttributeError):
     pass
 
 
@@ -106,8 +110,12 @@ class BaseHandler(BaseHTTPRequestHandler):
             response = self.handle_request(
                 method, key, id, content)
             self._process_response(response.body, response.code or code)
-        except NotFoundError as e:
+        except PathNotFoundError as e:
             message = 'Incorrect path: {}'.format(self.path)
+            self._handle_response_exception(e, message=message,
+                                            response_code=httplib.NOT_FOUND)
+        except ElementNotFoundError as e:
+            message = 'The element requested has not been found.'
             self._handle_response_exception(e, message=message,
                                             response_code=httplib.NOT_FOUND)
         except MethodNotAllowedError as e:

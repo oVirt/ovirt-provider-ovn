@@ -21,7 +21,7 @@ from __future__ import absolute_import
 import abc
 
 from handlers.base_handler import BaseHandler
-from handlers.base_handler import NotFoundError
+from handlers.base_handler import PathNotFoundError
 from handlers.base_handler import MethodNotAllowedError
 from handlers.base_handler import Response
 
@@ -60,7 +60,7 @@ class SelectingHandler(BaseHandler):
     def _get_response_handler(cls, method, key):
         responses_for_key = cls.get_responses().get(key)
         if not responses_for_key:
-            raise NotFoundError()
+            raise PathNotFoundError()
         response_handler = responses_for_key.get(method)
         if not response_handler:
             raise MethodNotAllowedError()

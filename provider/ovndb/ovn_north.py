@@ -19,6 +19,8 @@
 import ovsdbapp.backend.ovs_idl.connection
 from ovsdbapp.schema.ovn_northbound.impl_idl import OvnNbApiIdlImpl
 
+from handlers.base_handler import ElementNotFoundError
+
 from ovirt_provider_config_common import ovn_remote
 from ovirt_provider_config_common import dhcp_lease_time
 from ovirt_provider_config_common import dhcp_server_mac
@@ -98,7 +100,10 @@ class OvnNorth(object):
 
     @NetworkMapper.map_to_rest
     def get_network(self, network_id):
-        return self.idl.ls_get(network_id).execute()
+        network = self.idl.ls_get(network_id).execute()
+        if not network:
+            raise ElementNotFoundError()
+        return network
 
     @NetworkMapper.validate_add
     @NetworkMapper.map_from_rest
@@ -150,6 +155,8 @@ class OvnNorth(object):
 
     def _get_port(self, port_id):
         port = self.idl.lsp_get(port_id).execute()
+        if not port:
+            raise ElementNotFoundError()
         if not self._is_port_ovirt_controlled(port):
             raise ValueError('Not an ovirt controller port')
         return NetworkPort(port, self._get_port_network(port))
@@ -290,7 +297,10 @@ class OvnNorth(object):
 
     @SubnetMapper.map_to_rest
     def get_subnet(self, subnet_id):
-        return self.idl.dhcp_options_get(subnet_id).execute()
+        subnet = self.idl.dhcp_options_get(subnet_id).execute()
+        if not subnet:
+            raise ElementNotFoundError()
+        return subnet
 
     @SubnetMapper.validate_add
     @SubnetMapper.map_from_rest
