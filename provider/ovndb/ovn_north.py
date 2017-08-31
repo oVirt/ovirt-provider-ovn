@@ -307,6 +307,14 @@ class OvnNorth(object):
         subnet = self.idl.dhcp_options_get(subnet_id).execute()
         if not subnet:
             raise ElementNotFoundError()
+
+        # TODO: this is a workaround for an ovsdbapp problem returning
+        # random value for table with no indexing column specified when
+        # no record for the given UUID was found.
+        # Remove when issue is resolved.
+        if str(subnet.uuid) != str(subnet_id):
+            raise ElementNotFoundError()
+
         return subnet
 
     @SubnetMapper.validate_add
