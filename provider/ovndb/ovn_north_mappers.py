@@ -307,12 +307,13 @@ class SubnetMapper(Mapper):
             SubnetMapper.REST_SUBNET_CIDR: row.cidr,
             SubnetMapper.REST_SUBNET_NETWORK_ID:
                 external_ids[SubnetMapper.OVN_NETWORK_ID],
-            SubnetMapper.REST_SUBNET_GATEWAY_IP:
-                options[SubnetMapper.OVN_GATEWAY],
             SubnetMapper.REST_SUBNET_IP_VERSION: SubnetMapper.IP_VERSION,
             SubnetMapper.REST_TENANT_ID: tenant_id()
-
         }
+        if SubnetMapper.OVN_GATEWAY in options:
+            result[SubnetMapper.REST_SUBNET_GATEWAY_IP] = [
+                options[SubnetMapper.OVN_GATEWAY]
+            ]
         if SubnetMapper.REST_SUBNET_DNS_NAMESERVERS in options:
             result[SubnetMapper.REST_SUBNET_DNS_NAMESERVERS] = [
                 options[SubnetMapper.OVN_DNS_SERVER]

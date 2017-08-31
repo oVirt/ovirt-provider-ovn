@@ -328,10 +328,11 @@ class OvnNorth(object):
 
         options = {
             SubnetMapper.OVN_DHCP_SERVER_ID: dhcp_server_ip,
-            SubnetMapper.OVN_GATEWAY: gateway,
             SubnetMapper.OVN_DHCP_SERVER_MAC: dhcp_server_mac(),
             SubnetMapper.OVN_DHCP_LEASE_TIME: dhcp_lease_time(),
         }
+        if gateway:
+            options[SubnetMapper.OVN_GATEWAY] = gateway
         if dhcp_enable_mtu():
             options[SubnetMapper.OVN_DHCP_MTU] = dhcp_mtu()
 
