@@ -345,9 +345,9 @@ class OvnNorth(object):
             (OvnNorth.ROW_LS_OTHER_CONFIG, {NetworkMapper.OVN_SUBNET: cidr}),
         ).execute()
 
-        subnet_id = self.idl.dhcp_options_add(cidr, **external_ids).execute()
-        self.idl.dhcp_options_set_options(subnet_id, **options).execute()
-        return self.get_subnet(subnet_id)
+        subnet = self.idl.dhcp_options_add(cidr, **external_ids).execute()
+        self.idl.dhcp_options_set_options(subnet.uuid, **options).execute()
+        return self.get_subnet(subnet.uuid)
 
     @SubnetMapper.validate_update
     @SubnetMapper.map_from_rest

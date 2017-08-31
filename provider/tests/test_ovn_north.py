@@ -398,8 +398,8 @@ class TestOvnNorth(object):
     )
     def test_add_subnet(self, mock_setoptions_command, mock_add_command,
                         mock_dbset_command, mock_connection):
-        new_subnet_id = 7
-        mock_add_command.return_value.execute.return_value = new_subnet_id
+        add_execute = mock_add_command.return_value.execute
+        add_execute.return_value = TestOvnNorth.SUBNET_102
         subnet_cidr = '1.1.1.0/24'
         ovn_north = OvnNorth()
         rest_data = {
@@ -437,7 +437,7 @@ class TestOvnNorth(object):
 
         expected_options_call = mock.call(
             ovn_north.idl,
-            new_subnet_id,
+            TestOvnNorth.SUBNET_ID102,
             dns_server='1.1.1.1',
             lease_time=dhcp_lease_time(),
             router='1.1.1.0',
