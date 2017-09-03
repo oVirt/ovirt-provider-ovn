@@ -43,6 +43,7 @@ Requires: kernel >= 3.10.0-512
 Requires: openvswitch-ovn-central >= 2.6
 Requires: %{_py2}-openvswitch >= 2.6
 Requires: python-requests
+Requires: python2-ovsdbapp
 
 BuildRequires: python
 BuildRequires: systemd
