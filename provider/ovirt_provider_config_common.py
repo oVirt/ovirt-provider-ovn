@@ -238,6 +238,6 @@ def auth_plugin():
     )
 
 
-def is_ovn_remote_ss():
+def is_ovn_remote_ssl():
     protocol = ovn_remote().split(':')[0]
     return protocol == PROTOCOL_SSL

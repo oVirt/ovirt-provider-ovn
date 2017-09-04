@@ -27,7 +27,7 @@ from ovirt_provider_config_common import dhcp_lease_time
 from ovirt_provider_config_common import dhcp_server_mac
 from ovirt_provider_config_common import dhcp_enable_mtu
 from ovirt_provider_config_common import dhcp_mtu
-from ovirt_provider_config_common import is_ovn_remote_ss
+from ovirt_provider_config_common import is_ovn_remote_ssl
 from ovirt_provider_config_common import ssl_key_file
 from ovirt_provider_config_common import ssl_cacert_file
 from ovirt_provider_config_common import ssl_cert_file
@@ -97,7 +97,7 @@ class OvnNorth(object):
         self.idl = OvnNbApiIdlImpl(ovsdb_connection)
 
     def _configure_ssl_connection(self):
-        if is_ovn_remote_ss():
+        if is_ovn_remote_ssl():
             ovs.stream.Stream.ssl_set_private_key_file(ssl_key_file())
             ovs.stream.Stream.ssl_set_certificate_file(ssl_cert_file())
             ovs.stream.Stream.ssl_set_ca_cert_file(ssl_cacert_file())
