@@ -16,6 +16,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 
+import ovs.stream
 import ovsdbapp.backend.ovs_idl.connection
 from ovsdbapp.schema.ovn_northbound.impl_idl import OvnNbApiIdlImpl
 
@@ -26,6 +27,10 @@ from ovirt_provider_config_common import dhcp_lease_time
 from ovirt_provider_config_common import dhcp_server_mac
 from ovirt_provider_config_common import dhcp_enable_mtu
 from ovirt_provider_config_common import dhcp_mtu
+from ovirt_provider_config_common import is_ovn_remote_ss
+from ovirt_provider_config_common import ssl_key_file
+from ovirt_provider_config_common import ssl_cacert_file
+from ovirt_provider_config_common import ssl_cert_file
 
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import NetworkPort
@@ -81,6 +86,7 @@ class OvnNorth(object):
         self._connect()
 
     def _connect(self):
+        self._configure_ssl_connection()
         self.ovsidl = ovsdbapp.backend.ovs_idl.connection.OvsdbIdl.from_server(
             ovn_remote(),
             OvnNorth.OVN_NORTHBOUND
@@ -89,6 +95,12 @@ class OvnNorth(object):
             idl=self.ovsidl,
             timeout=100)
         self.idl = OvnNbApiIdlImpl(ovsdb_connection)
+
+    def _configure_ssl_connection(self):
+        if is_ovn_remote_ss():
+            ovs.stream.Stream.ssl_set_private_key_file(ssl_key_file())
+            ovs.stream.Stream.ssl_set_certificate_file(ssl_cert_file())
+            ovs.stream.Stream.ssl_set_ca_cert_file(ssl_cacert_file())
 
     def close(self):
         self.ovsidl.close()

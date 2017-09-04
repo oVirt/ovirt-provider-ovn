@@ -57,12 +57,14 @@ from ovirt_provider_config import KEY_OPENSTACK_TENANT_ID
 from ovirt_provider_config import KEY_OPENSTACK_TENANT_NAME
 from ovirt_provider_config import KEY_OVN_REMOTE
 from ovirt_provider_config import KEY_PROVIDER_HOST
+from ovirt_provider_config import KEY_SSL_CACERT_FILE
 from ovirt_provider_config import KEY_SSL_CERT_FILE
 from ovirt_provider_config import KEY_SSL_KEY_FILE
 
 
 PROTOCOL_HTTP = 'http'
 PROTOCOL_HTTPS = 'https'
+PROTOCOL_SSL = 'ssl'
 
 NEUTRON_URL = '{protocol}://{host}:{neutron_port}/v2.0/'
 KEYSTONE_URL = '{protocol}://{host}:{keystone_port}/v2.0/'
@@ -180,6 +182,14 @@ def ssl_cert_file():
     )
 
 
+def ssl_cacert_file():
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_SSL,
+        KEY_SSL_CACERT_FILE,
+        DEFAULT_SSL_CERT_FILE
+    )
+
+
 def ovn_remote():
     return ovirt_provider_config.get(
         CONFIG_SECTION_OVN_REMOTE,
@@ -226,3 +236,8 @@ def auth_plugin():
         KEY_AUTH_PLUGIN,
         DEFAULT_AUTH_PLUGIN
     )
+
+
+def is_ovn_remote_ss():
+    protocol = ovn_remote().split(':')[0]
+    return protocol == PROTOCOL_SSL
