@@ -308,9 +308,9 @@ class SubnetMapper(Mapper):
             SubnetMapper.REST_TENANT_ID: tenant_id()
         }
         if SubnetMapper.OVN_GATEWAY in options:
-            result[SubnetMapper.REST_SUBNET_GATEWAY_IP] = [
+            result[SubnetMapper.REST_SUBNET_GATEWAY_IP] = (
                 options[SubnetMapper.OVN_GATEWAY]
-            ]
+            )
         if SubnetMapper.REST_SUBNET_DNS_NAMESERVERS in options:
             result[SubnetMapper.REST_SUBNET_DNS_NAMESERVERS] = [
                 options[SubnetMapper.OVN_DNS_SERVER]

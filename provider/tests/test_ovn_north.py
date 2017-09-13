@@ -355,6 +355,8 @@ class TestOvnNorth(object):
         result = ovn_north.get_subnet(TestOvnNorth.SUBNET_ID101)
         assert result['id'] == str(TestOvnNorth.SUBNET_ID101)
         assert result['network_id'] == str(TestOvnNorth.NETWORK_ID10)
+        gateway_ip = TestOvnNorth.SUBNET_101.options['router']
+        assert result['gateway_ip'] == gateway_ip
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsDelCommand',
