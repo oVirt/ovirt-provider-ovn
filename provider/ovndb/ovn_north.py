@@ -391,6 +391,11 @@ class OvnNorth(object):
         gateway=None,
         dns=None,
     ):
+        if not self.idl.ls_get(network_id).execute():
+            raise SubnetConfigError(
+                'Unable to move subnet to network {network_id}. The network'
+                ' does not exit.'.format(network_id=network_id)
+            )
         subnet_by_network = self._get_dhcp_by_network_id(network_id)
         if subnet_by_network and str(subnet_by_network.uuid) != subnet_id:
             raise SubnetConfigError(
