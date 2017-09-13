@@ -267,11 +267,8 @@ class SubnetMapper(Mapper):
         name = rest_data.get(SubnetMapper.REST_SUBNET_NAME)
         cidr = rest_data.get(SubnetMapper.REST_SUBNET_CIDR)
         network_id = rest_data.get(SubnetMapper.REST_SUBNET_NETWORK_ID)
-        dns = (
-            rest_data.get(SubnetMapper.REST_SUBNET_DNS_NAMESERVERS)[0]
-            if SubnetMapper.REST_SUBNET_DNS_NAMESERVERS in rest_data
-            else None
-        )
+        dnses = rest_data.get(SubnetMapper.REST_SUBNET_DNS_NAMESERVERS)
+        dns = dnses[0] if dnses else None
         gateway = rest_data.get(SubnetMapper.REST_SUBNET_GATEWAY_IP)
 
         if subnet_id:

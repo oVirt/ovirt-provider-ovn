@@ -350,7 +350,7 @@ class TestOvnNorth(object):
         'execute',
         lambda x: TestOvnNorth.SUBNET_101
     )
-    def test_get_subnets(self, mock_connection):
+    def test_get_subnet(self, mock_connection):
         ovn_north = OvnNorth()
         result = ovn_north.get_subnet(TestOvnNorth.SUBNET_ID101)
         assert result['id'] == str(TestOvnNorth.SUBNET_ID101)
@@ -446,6 +446,52 @@ class TestOvnNorth(object):
             mtu=dhcp_mtu()
         )
         assert mock_setoptions_command.mock_calls[0] == expected_options_call
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
+        'execute',
+        lambda x: []
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
+        lambda x: TestOvnNorth.networks
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
+        'execute',
+        lambda x: TestOvnNorth.SUBNET_102
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsAddCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsSetOptionsCommand',
+        autospec=False
+    )
+    def test_add_subnet_no_dns(self, mock_setoptions_command, mock_add_command,
+                               mock_dbset_command, mock_connection):
+        add_execute = mock_add_command.return_value.execute
+        add_execute.return_value = TestOvnNorth.SUBNET_102
+        subnet_cidr = '1.1.1.0/24'
+        ovn_north = OvnNorth()
+        rest_data = {
+            SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
+            SubnetMapper.REST_SUBNET_CIDR: subnet_cidr,
+            SubnetMapper.REST_SUBNET_NETWORK_ID:
+                str(TestOvnNorth.NETWORK_ID10),
+            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: [],
+            SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
+        }
+        result = ovn_north.add_subnet(rest_data)
+        assert result['id'] == str(TestOvnNorth.SUBNET_ID102)
+        assert mock_dbset_command.call_count == 1
+        assert mock_add_command.call_count == 1
+        assert mock_setoptions_command.call_count == 1
 
     """
     TODO: This test causes Jenkins to get stuck. Commenting out until the
