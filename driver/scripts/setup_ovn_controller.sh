@@ -17,9 +17,13 @@
 #
 # Refer to the README and COPYING files for full details of the license
 
-ovs-vsctl set open . external-ids:ovn-remote=tcp:$1:6642
-ovs-vsctl set open . external-ids:ovn-encap-type=geneve
-ovs-vsctl set open . external-ids:ovn-encap-ip=$2
+set -e
+
+systemctl start ovsdb-server
+
+ovs-vsctl --no-wait set open . external-ids:ovn-remote=tcp:$1:6642
+ovs-vsctl --no-wait set open . external-ids:ovn-encap-type=geneve
+ovs-vsctl --no-wait set open . external-ids:ovn-encap-ip=$2
 
 systemctl restart openvswitch
 systemctl restart ovn-controller
