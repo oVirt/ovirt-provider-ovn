@@ -19,9 +19,11 @@
 
 set -e
 
-ovs-vsctl set open . external-ids:ovn-remote=ssl:$1:6642
-ovs-vsctl set open . external-ids:ovn-encap-type=geneve
-ovs-vsctl set open . external-ids:ovn-encap-ip=$2
+systemctl start ovsdb-server
+
+ovs-vsctl --no-wait set open . external-ids:ovn-remote=ssl:$1:6642
+ovs-vsctl --no-wait set open . external-ids:ovn-encap-type=geneve
+ovs-vsctl --no-wait set open . external-ids:ovn-encap-ip=$2
 
 if [ $# -eq 5 ]; then
     key_file=$3
