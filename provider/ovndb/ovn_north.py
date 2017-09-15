@@ -36,6 +36,7 @@ from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import NetworkPort
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import RestDataError
+from ovndb.ovn_north_mappers import RouterMapper
 from ovndb.ovn_north_mappers import SubnetConfigError
 from ovndb.ovn_north_mappers import SubnetMapper
 
@@ -81,6 +82,10 @@ class OvnNorth(object):
     ROW_DHCP_EXTERNAL_IDS = 'external_ids'
     ROW_DHCP_OPTIONS = 'options'
     ROW_DHCP_CIDR = 'cidr'
+
+    TABLE_LR = 'Logical_Router'
+    ROW_LR_NAME = 'name'
+    ROW_LR_ENABLED = 'enabled'
 
     def __init__(self):
         self._connect()
@@ -453,6 +458,23 @@ class OvnNorth(object):
 
     def delete_subnet(self, subnet_id):
         self.idl.dhcp_options_del(subnet_id).execute()
+
+    @RouterMapper.validate_add
+    @RouterMapper.map_from_rest
+    @RouterMapper.map_to_rest
+    def add_router(self, name, enabled):
+        return self.idl.lr_add(
+            router=name, may_exist=False, enabled=enabled
+        ).execute()
+
+    @RouterMapper.validate_update
+    @RouterMapper.map_from_rest
+    def update_router(self, router_id, name, enabled):
+        db_set_command = DbSetCommand(self.idl, self.TABLE_LR, router_id)
+        db_set_command.add(self.ROW_LR_NAME, name, name)
+        db_set_command.add(self.ROW_LR_ENABLED, enabled, enabled)
+        db_set_command.execute()
+        return self.get_router(router_id)
 
     def __enter__(self):
         return self
