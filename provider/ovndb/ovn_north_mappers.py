@@ -23,6 +23,7 @@ from functools import wraps
 import six
 
 from ovirt_provider_config_common import tenant_id
+from handlers.base_handler import MethodNotAllowedError
 from handlers.base_handler import BadRequestError
 
 
@@ -339,6 +340,114 @@ class SubnetMapper(Mapper):
             raise UnsupportedDataValueError(
                 SubnetMapper.REST_SUBNET_ENABLE_DHCP,
                 False
+            )
+
+
+class RouterMapper(Mapper):
+    REST_ROUTER_ID = 'id'
+    REST_ROUTER_NAME = 'name'
+    REST_ROUTER_EXTERNAL_GATEWAY_INFO = 'external_gateway_info'
+
+    REST_ROUTER_ROUTES = 'routes'
+    REST_ROUTER_ADMIN_STATE_UP = 'admin_state_up'
+    REST_ROUTER_STATUS = 'status'
+
+    ROUTER_STATUS_ACTIVE = 'ACTIVE'
+    ROUTER_STATUS_INACTIVE = 'INACTIVE'
+
+    @staticmethod
+    def rest2row(wrapped_self, func, rest_data, router_id):
+        name = rest_data.get(RouterMapper.REST_ROUTER_NAME)
+        enabled = rest_data.get(RouterMapper.REST_ROUTER_ADMIN_STATE_UP, True)
+        if router_id:
+            return func(wrapped_self, router_id=router_id, name=name,
+                        enabled=enabled)
+        else:
+            return func(wrapped_self, name=name, enabled=enabled)
+
+    @staticmethod
+    def row2rest(row):
+        if not row:
+            return {}
+
+        return {
+            RouterMapper.REST_ROUTER_ID: str(row.uuid),
+            RouterMapper.REST_ROUTER_NAME: row.name,
+            RouterMapper.REST_ROUTER_ADMIN_STATE_UP: row.enabled,
+            RouterMapper.REST_ROUTER_STATUS:
+                RouterMapper.ROUTER_STATUS_ACTIVE
+                if row.enabled else RouterMapper.ROUTER_STATUS_INACTIVE,
+            RouterMapper.REST_ROUTER_ROUTES: [],
+            RouterMapper.REST_TENANT_ID: tenant_id(),
+
+        }
+
+    @staticmethod
+    def validate_add_rest_input(rest_data):
+        RouterMapper._validate_common(rest_data)
+
+    @staticmethod
+    def validate_update_rest_input(rest_data):
+        RouterMapper._validate_common(rest_data)
+
+    @staticmethod
+    def _validate_common(rest_data):
+        # TODO: to be implemented
+        if RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO in rest_data:
+            raise NotImplementedError(
+                '{name} is not yet implemented.'
+                .format(RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO)
+            )
+
+
+class AddRouterInterfaceMapper(Mapper):
+    REST_ADDROUTERINTERFACE_ID = 'id'
+    REST_ADDROUTERINTERFACE_SUBNET_ID = 'subnet_id'
+    REST_ADDROUTERINTERFACE_PORT_ID = 'port_id'
+    REST_ADDROUTERINTERFACE_SUBNET_IDS = 'subnet_ids'
+    REST_ADDROUTERINTERFACE_NETWORK_ID = 'network_id'
+
+    @staticmethod
+    def rest2row(wrapped_self, func, rest_data, router_id):
+        subnet = rest_data.get(RouterMapper.REST_ADDROUTERINTERFACE_SUBNET_ID)
+        port = rest_data.get(RouterMapper.REST_ADDROUTERINTERFACE_PORT_ID)
+        return func(wrapped_self, subnet_id=subnet, port_id=port)
+
+    @staticmethod
+    def row2rest(row):
+        if not row:
+            return {}
+
+        return {
+            # TODO: add the complete set once backend is done
+            AddRouterInterfaceMapper.REST_TENANT_ID: tenant_id(),
+        }
+
+    @staticmethod
+    def validate_add_rest_input(rest_data):
+        raise MethodNotAllowedError(
+            'add_router_interface POST requests are not supported'
+        )
+
+    @staticmethod
+    def validate_update_rest_input(rest_data):
+        subnet = rest_data.get(RouterMapper.REST_ADDROUTERINTERFACE_SUBNET_ID)
+        port = rest_data.get(RouterMapper.REST_ADDROUTERINTERFACE_PORT_ID)
+        if subnet and port:
+            raise RestDataError(
+                '{subnet} and {port} can not both be set at the same time'
+                .format(
+                    subnet=RouterMapper.REST_ADDROUTERINTERFACE_SUBNET_ID,
+                    port=RouterMapper.REST_ADDROUTERINTERFACE_PORT_ID
+                )
+            )
+        if not subnet and not port:
+            raise RestDataError(
+                'Either {subnet} or {port} must be specified.'
+                .format(
+                    subnet=RouterMapper.REST_ADDROUTERINTERFACE_SUBNET_ID,
+                    port=RouterMapper.REST_ADDROUTERINTERFACE_PORT_ID
+                )
             )
 
 
