@@ -61,6 +61,9 @@ def post_tokens(content, parameters):
     except KeyError as e:
         raise BadRequestError(e)
 
+    if not auth.validate_token(token):
+        raise auth.Forbidden()
+
     neutronurl = neutron_url()
     keystoneurl = keystone_url()
     novaurl = nova_url_with_version()
