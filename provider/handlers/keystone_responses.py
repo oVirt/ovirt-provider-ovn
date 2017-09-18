@@ -44,14 +44,17 @@ _responses = {}
 @rest(POST, TOKENS, _responses)
 def post_tokens(content, id):
     try:
-        password_credentials = content['auth']['passwordCredentials']
-        user_at_domain = password_credentials['username']
-        user_password = password_credentials['password']
+        if 'passwordCredentials' in content['auth']:
+            password_credentials = content['auth']['passwordCredentials']
+            user_at_domain = password_credentials['username']
+            user_password = password_credentials['password']
+            token = auth.create_token(
+                user_at_domain=user_at_domain,
+                user_password=user_password)
+        else:
+            token = content['auth']['token']['id']
     except KeyError as e:
         raise BadRequestError(e)
-    token = auth.create_token(
-        user_at_domain=user_at_domain,
-        user_password=user_password)
 
     neutronurl = neutron_url()
     keystoneurl = keystone_url()
