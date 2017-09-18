@@ -36,27 +36,27 @@ response_handlers = {}
 
 
 @rest('GET', 'testports', response_handlers)
-def get_handler(nb_db, content, id):
+def get_handler(nb_db, content, path_parts):
     return REST_RESPONSE_GET
 
 
-@rest('SHOW', 'testports', response_handlers)
-def show_handler(nb_db, content, id):
-    return REST_RESPONSE_SHOW + id
+@rest('GET', 'testports/*', response_handlers)
+def show_handler(nb_db, content, path_parts):
+    return REST_RESPONSE_SHOW
 
 
-@rest('DELETE', 'testports', response_handlers)
-def delete_handler(nb_db, content, id):
+@rest('DELETE', 'testports/*', response_handlers)
+def delete_handler(nb_db, content, path_parts):
     return None
 
 
 @rest('POST', 'testports', response_handlers)
-def post_handler(nb_db, content, id):
+def post_handler(nb_db, content, path_parts):
     return REST_RESPONSE_POST + content
 
 
 @rest('POST', 'response_code_201', response_handlers)
-def response_code_201(nb_db, content, id):
+def response_code_201(nb_db, content, path_parts):
     return Response(
         REST_RESPONSE_POST + content,
         httplib.CREATED
@@ -123,7 +123,7 @@ class TestNeutronHandler(object):
         handler.do_GET()
 
         assert mock_send_response.call_args[0][1] == 200
-        assert handler.wfile.write.call_args[0][0] == REST_RESPONSE_SHOW + id
+        assert handler.wfile.write.call_args[0][0] == REST_RESPONSE_SHOW
         assert mock_send_response.call_count == 1
         assert mock_validate_token.call_count == 1
 
@@ -163,7 +163,7 @@ class TestNeutronHandler(object):
         handler.path = '/v2.0/testports'
         handler.do_DELETE()
         assert send_error.call_count == 1
-        mock_call = mock.call(httplib.BAD_REQUEST)
+        mock_call = mock.call(httplib.METHOD_NOT_ALLOWED)
         assert send_error.mock_calls[0] == mock_call
 
     @mock.patch('handlers.neutron.OvnNorth', autospec=True)

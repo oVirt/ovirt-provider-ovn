@@ -29,8 +29,7 @@ from auth import Forbidden
 from auth import Unauthorized
 from auth import Timeout
 
-GET = 'GET'  # list of entities
-SHOW = 'SHOW'  # concrete entity
+GET = 'GET'
 DELETE = 'DELETE'
 POST = 'POST'
 PUT = 'PUT'
@@ -87,8 +86,7 @@ class BaseHandler(BaseHTTPRequestHandler):
         BaseHTTPRequestHandler.__init__(self, request, client_address, server)
 
     def do_GET(self):
-        self._handle_request(SHOW if self._parse_request_path(self.path)[1]
-                             else GET)
+        self._handle_request(GET)
 
     def do_POST(self):
         self._handle_request(POST, content=self._get_content())
@@ -105,10 +103,10 @@ class BaseHandler(BaseHTTPRequestHandler):
             logging.debug('Request body:\n{}'.format(content))
         try:
 
-            key, id = self._parse_request_path(self.path)
+            path_parts = self._parse_request_path(self.path)
             self._validate_request(method, id)
             response = self.handle_request(
-                method, key, id, content)
+                method, path_parts, content)
             self._process_response(response.body, response.code or code)
         except PathNotFoundError as e:
             message = 'Incorrect path: {}'.format(self.path)
@@ -173,20 +171,12 @@ class BaseHandler(BaseHTTPRequestHandler):
 
     @staticmethod
     def _parse_request_path(full_path):
-        """
-        The request path is split into the tree parts:
-        /{version}/{key}/{id} .
-        The {id} may be empty and is allowed to contain multiple slashes.
-        Several subsequent slashes are subsumed to a single one.
-        """
         full_path = urlparse.urlparse(full_path).path
         elements = filter(None, full_path.split('/'))
-        key = elements[1] if len(elements) > 1 else ''
-        id = '/'.join(elements[2:]) if len(elements) > 2 else ''
-        return key, id
+        return elements[1:]
 
     @abc.abstractmethod
-    def handle_request(self, method, key, id, content):
+    def handle_request(self, method, path_parts, content):
         """
         :return: An instance of Response
         """

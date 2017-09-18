@@ -21,7 +21,6 @@ import httplib
 import json
 
 from handlers.base_handler import GET
-from handlers.base_handler import SHOW
 from handlers.base_handler import DELETE
 from handlers.base_handler import POST
 from handlers.base_handler import PUT
@@ -31,37 +30,44 @@ from handlers.selecting_handler import rest
 from ovirt_provider_config_common import neutron_url
 
 
+NETWORK_ID = 'network_id'
+PORT_ID = 'port_id'
+SUBNET_ID = 'subnet_id'
+
 NETWORKS = 'networks'
+NETWORK_ENTITY = 'networks/{network_id}'
 PORTS = 'ports'
+PORT_ENTITY = 'ports/{port_id}'
 SUBNETS = 'subnets'
+SUBNET_ENTITY = 'subnets/{subnet_id}'
 
 
 _responses = {}
 
 
-@rest(SHOW, NETWORKS, _responses)
-def show_network(nb_db, content, id=None):
+@rest(GET, NETWORK_ENTITY, _responses)
+def show_network(nb_db, content, parameters):
     return json.dumps({
-        'network': nb_db.get_network(id)
+        'network': nb_db.get_network(parameters[NETWORK_ID])
     })
 
 
-@rest(SHOW, PORTS, _responses)
-def show_port(nb_db, content, id=None):
+@rest(GET, PORT_ENTITY, _responses)
+def show_port(nb_db, content, parameters):
     return json.dumps({
-        'port': nb_db.get_port(id)
+        'port': nb_db.get_port(parameters[PORT_ID])
     })
 
 
-@rest(SHOW, SUBNETS, _responses)
-def show_subnet(nb_db, content, id):
+@rest(GET, SUBNET_ENTITY, _responses)
+def show_subnet(nb_db, content, parameters):
     return json.dumps({
-        'subnet': nb_db.get_subnet(id) if id else None
+        'subnet': nb_db.get_subnet(parameters[SUBNET_ID])
     })
 
 
 @rest(GET, '', _responses)
-def get_default(nb_db, content, id):
+def get_default(nb_db, content, parameters):
     return json.dumps({
         'versions': [{
             'status': 'CURRENT',
@@ -75,7 +81,7 @@ def get_default(nb_db, content, id):
 
 
 @rest(GET, NETWORKS, _responses)
-def get_networks(nb_db, conten, id):
+def get_networks(nb_db, content, parameters):
     networks = nb_db.list_networks()
     return json.dumps({
         'networks': networks
@@ -83,7 +89,7 @@ def get_networks(nb_db, conten, id):
 
 
 @rest(GET, PORTS, _responses)
-def get_ports(nb_db, content, id):
+def get_ports(nb_db, content, parameters):
     ports = nb_db.list_ports()
     return json.dumps({
         'ports': ports
@@ -91,32 +97,29 @@ def get_ports(nb_db, content, id):
 
 
 @rest(GET, SUBNETS, _responses)
-def get_subnets(nb_db, content, id):
+def get_subnets(nb_db, content, parameters):
     return json.dumps({
         'subnets': nb_db.list_subnets()
     })
 
 
-@rest(DELETE, NETWORKS, _responses)
-def delete_network(nb_db, content=None, id=None):
-    if id is not None:
-        nb_db.delete_network(id)
+@rest(DELETE, NETWORK_ENTITY, _responses)
+def delete_network(nb_db, content, parameters):
+    nb_db.delete_network(parameters[NETWORK_ID])
 
 
-@rest(DELETE, PORTS, _responses)
-def delete_port(nb_db, content=None, id=None):
-    if id is not None:
-        nb_db.delete_port(id)
+@rest(DELETE, PORT_ENTITY, _responses)
+def delete_port(nb_db, content, parameters):
+    nb_db.delete_port(parameters[PORT_ID])
 
 
-@rest(DELETE, SUBNETS, _responses)
-def delete_subnet(nb_db, content, id):
-    if id is not None:
-        nb_db.delete_subnet(id)
+@rest(DELETE, SUBNET_ENTITY, _responses)
+def delete_subnet(nb_db, content, parameters):
+    nb_db.delete_subnet(parameters[SUBNET_ID])
 
 
 @rest(POST, NETWORKS, _responses)
-def post_networks(nb_db, content, id):
+def post_networks(nb_db, content, parameters):
     content_json = json.loads(content)
     received_network = content_json['network']
     network = nb_db.add_network(received_network)
@@ -127,7 +130,7 @@ def post_networks(nb_db, content, id):
 
 
 @rest(POST, PORTS, _responses)
-def post_ports(nb_db, content, id):
+def post_ports(nb_db, content, parameters):
     content_json = json.loads(content)
     received_port = content_json['port']
     port = nb_db.add_port(received_port)
@@ -138,7 +141,7 @@ def post_ports(nb_db, content, id):
 
 
 @rest(POST, SUBNETS, _responses)
-def post_subnets(nb_db, content, id):
+def post_subnets(nb_db, content, parameters):
     received_subnet = json.loads(content)['subnet']
     subnet = nb_db.add_subnet(received_subnet)
     return Response(
@@ -147,23 +150,23 @@ def post_subnets(nb_db, content, id):
     )
 
 
-@rest(PUT, NETWORKS, _responses)
-def put_network(nb_db, content, id):
+@rest(PUT, NETWORK_ENTITY, _responses)
+def put_network(nb_db, content, parameters):
     content_json = json.loads(content)
     received_network = content_json['network']
-    network = nb_db.update_network(received_network, id)
+    network = nb_db.update_network(received_network, parameters[NETWORK_ID])
     return Response(
         body=json.dumps({'network': network}),
         code=httplib.OK
     )
 
 
-@rest(PUT, PORTS, _responses)
-def put_ports(nb_db, content, id):
+@rest(PUT, PORT_ENTITY, _responses)
+def put_ports(nb_db, content, parameters):
 
     content_json = json.loads(content)
     received_port = content_json['port']
-    port = nb_db.update_port(received_port, id)
+    port = nb_db.update_port(received_port, parameters[PORT_ID])
     return Response(
         body=json.dumps({'port': port}),
         code=httplib.OK
@@ -181,10 +184,10 @@ def put_ports(nb_db, content, id):
     # return json.dumps({'port': result})
 
 
-@rest(PUT, SUBNETS, _responses)
-def put_subnets(nb_db, content, id):
+@rest(PUT, SUBNET_ENTITY, _responses)
+def put_subnets(nb_db, content, parameters):
     received_subnet = json.loads(content)['subnet']
-    subnet = nb_db.update_subnet(received_subnet, id)
+    subnet = nb_db.update_subnet(received_subnet, parameters[SUBNET_ID])
     return Response(
         body=json.dumps({'subnet': subnet}),
         code=httplib.OK
@@ -192,7 +195,7 @@ def put_subnets(nb_db, content, id):
 
 
 @rest(GET, 'tech', _responses)
-def get_debug(nb_db, content, id):
+def get_debug(nb_db, content, parameters):
     networks = nb_db.list_networks()
     ports = nb_db.list_ports()
     response = json.dumps({

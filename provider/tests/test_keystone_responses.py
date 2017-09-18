@@ -22,6 +22,7 @@ import mock
 from handlers.keystone_responses import responses
 from handlers.keystone_responses import TOKENS
 from handlers.base_handler import POST
+from handlers.selecting_handler import SelectingHandler
 
 TOKEN = 'the_secret_token'
 TOKEN_REQUEST = {
@@ -38,9 +39,10 @@ TOKEN_REQUEST = {
 @mock.patch('handlers.keystone_responses.auth.create_token',
             return_value=TOKEN)
 def test_post_tokens(mock_create_token):
-    tokens_response_handler = responses()[TOKENS]
-    post_tokens_response_handler = tokens_response_handler[POST]
-    response = post_tokens_response_handler(content=TOKEN_REQUEST, id=None)
+    handler, parameters = SelectingHandler.get_response_handler(
+        responses(), POST, [TOKENS]
+    )
+    response = handler(content=TOKEN_REQUEST, parameters=parameters)
     mock_create_token.assert_called_once_with(
         user_at_domain='joeuser',
         user_password='secret')

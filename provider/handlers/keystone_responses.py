@@ -42,7 +42,7 @@ _responses = {}
 
 
 @rest(POST, TOKENS, _responses)
-def post_tokens(content, id):
+def post_tokens(content, parameters):
     try:
         if 'passwordCredentials' in content['auth']:
             password_credentials = content['auth']['passwordCredentials']
@@ -102,7 +102,7 @@ def post_tokens(content, id):
 
 
 @rest(GET, TENANTS, _responses)
-def get_tenants(content, id):
+def get_tenants(content, parameters):
     return {
         'tenants': [{
             'description': tenant_description(),

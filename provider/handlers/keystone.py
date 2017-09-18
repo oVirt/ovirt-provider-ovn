@@ -26,9 +26,9 @@ from handlers.keystone_responses import responses
 
 class TokenHandler(SelectingHandler):
 
-    def call_response_handler(self, response_handler, content, id):
+    def call_response_handler(self, response_handler, content, parameters):
         return json.dumps(response_handler(
-            json.loads(content) if content else {}, id))
+            json.loads(content) if content else {}, parameters))
 
     @staticmethod
     def get_responses():

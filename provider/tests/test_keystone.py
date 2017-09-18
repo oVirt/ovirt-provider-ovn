@@ -43,9 +43,18 @@ def empty_handler(content, id):
     return EMPTY
 
 
-@rest('POST', 'domains', response_handlers)
-def domains_handler(content, id):
-    return {'value': id + content['key']}
+@rest(
+    'POST', 'domains/{domain_id}/{config}/{group}/{option}', response_handlers
+)
+def domains_handler(content, params):
+    return {
+        'value': '{domain_id}/{config}/{group}/{option}{key}'.format(
+            domain_id=params['domain_id'],
+            config=params['config'],
+            group=params['group'],
+            option=params['option'],
+            key=str(content['key'])
+        )}
 
 
 @rest('POST', 'bad_req', response_handlers)

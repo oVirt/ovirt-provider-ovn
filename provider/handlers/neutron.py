@@ -28,12 +28,12 @@ from ovndb.ovn_north import OvnNorth
 
 class NeutronHandler(SelectingHandler):
 
-    def call_response_handler(self, response_handler, content, id):
+    def call_response_handler(self, response_handler, content, parameters):
         if not validate_token(self.headers.get(
                 TOKEN_HTTP_HEADER_FIELD_NAME, '')):
             raise Forbidden()
         with OvnNorth() as ovn_north:
-            return response_handler(ovn_north, content, id)
+            return response_handler(ovn_north, content, parameters)
 
     @staticmethod
     def get_responses():
