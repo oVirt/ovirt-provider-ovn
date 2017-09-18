@@ -48,10 +48,9 @@ def _inspect_response(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         response = func(*args, **kwargs)
+        _check_for_error(response)
         response.raise_for_status()
-        result = response.json()
-        _check_for_error(result)
-        return result
+        return response.json()
     return wrapper
 
 
@@ -155,6 +154,14 @@ def _token_url(engine_url):
 
 
 def _check_for_error(response):
-    if 'error' in response:
-        raise Unauthorized('Error during SSO authentication {} : {}'.format(
-            response['error_code'], response['error']))
+    if not response.ok:
+        try:
+            result = response.json()
+            if 'error' in result:
+                details = '{}{}'.format(result.get('error_code', ''),
+                                        result.get('error_description'), '')
+                raise Unauthorized(
+                    'Error during SSO authentication {} : {}'.format(
+                        result['error'], details))
+        except ValueError:
+            pass
