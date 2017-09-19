@@ -219,7 +219,8 @@ class PortMapper(Mapper):
                 PortMapper.REST_PORT_DEVICE_OWNER
             ] = port.external_ids[PortMapper.OVN_DEVICE_OWNER]
         if port.addresses:
-            rest_data[PortMapper.REST_PORT_MAC_ADDRESS] = port.addresses[0]
+            mac = port.addresses[0].split(' ')[0]
+            rest_data[PortMapper.REST_PORT_MAC_ADDRESS] = mac
         return rest_data
 
     @staticmethod
