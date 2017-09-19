@@ -25,6 +25,8 @@ from ovirt_provider_config_common import tenant_name
 from ovirt_provider_config_common import tenant_id
 from ovirt_provider_config_common import keystone_url
 from ovirt_provider_config_common import neutron_url
+from ovirt_provider_config_common import nova_url_with_version
+
 
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import GET
@@ -58,6 +60,7 @@ def post_tokens(content, parameters):
 
     neutronurl = neutron_url()
     keystoneurl = keystone_url()
+    novaurl = nova_url_with_version()
     region = openstack_region()
     neutron_id = openstack_neutron_id()
     keystone_id = openstack_keystone_id()
@@ -67,6 +70,13 @@ def post_tokens(content, parameters):
             'token': {
                 'id': token,
                 'expires': None
+            },
+            'user': {
+                'username': 'admin',
+                'roles_links': [],
+                'id': '',
+                'roles': [{'name': 'admin'}],
+                'name': 'admin'
             },
             'serviceCatalog': [
                 {
@@ -96,6 +106,20 @@ def post_tokens(content, parameters):
                     'endpoints_links': [],
                     'type': 'identity',
                     'name': 'keystone'
+                },
+                {
+                    'endpoints': [
+                        {
+                            'adminURL': novaurl,
+                            'region': region,
+                            'internalURL': novaurl,
+                            'id': keystone_id,
+                            'publicURL': novaurl
+                        }
+                    ],
+                    'endpoints_links': [],
+                    'type': 'compute',
+                    'name': 'nova'
                 }
             ]
         },

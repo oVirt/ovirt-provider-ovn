@@ -27,7 +27,7 @@ from handlers.base_handler import PUT
 from handlers.base_handler import Response
 
 from handlers.selecting_handler import rest
-from ovirt_provider_config_common import neutron_url
+from ovirt_provider_config_common import neutron_url_with_version
 
 
 NETWORK_ID = 'network_id'
@@ -73,7 +73,7 @@ def get_default(nb_db, content, parameters):
             'status': 'CURRENT',
             'id': 'v2.0',
             'links': [{
-                'href': neutron_url(),
+                'href': neutron_url_with_version(),
                 'rel': 'self'
             }]
         }]

@@ -30,6 +30,7 @@ from ovirt_provider_config import DEFAULT_DHCP_MTU
 from ovirt_provider_config import DEFAULT_DHCP_SERVER_MAC
 from ovirt_provider_config import DEFAULT_KEYSTONE_PORT
 from ovirt_provider_config import DEFAULT_NEUTRON_PORT
+from ovirt_provider_config import DEFAULT_NOVA_PORT
 from ovirt_provider_config import DEFAULT_OPENSTACK_KEYSTONE_ID
 from ovirt_provider_config import DEFAULT_OPENSTACK_NEUTRON_ID
 from ovirt_provider_config import DEFAULT_OPENSTACK_REGION
@@ -49,6 +50,7 @@ from ovirt_provider_config import KEY_DHCP_SERVER_MAC
 from ovirt_provider_config import KEY_HTTPS_ENABLED
 from ovirt_provider_config import KEY_KEYSTONE_PORT
 from ovirt_provider_config import KEY_NEUTRON_PORT
+from ovirt_provider_config import KEY_NOVA_PORT
 from ovirt_provider_config import KEY_OPENSTACK_KEYSTONE_ID
 from ovirt_provider_config import KEY_OPENSTACK_NEUTRON_ID
 from ovirt_provider_config import KEY_OPENSTACK_REGION
@@ -66,8 +68,10 @@ PROTOCOL_HTTP = 'http'
 PROTOCOL_HTTPS = 'https'
 PROTOCOL_SSL = 'ssl'
 
-NEUTRON_URL = '{protocol}://{host}:{neutron_port}/v2.0/'
-KEYSTONE_URL = '{protocol}://{host}:{keystone_port}/v2.0/'
+SERVICE_URL = '{protocol}://{host}:{port}/'
+
+NEUTRON_VERSION = 'v2.0/'
+NOVA_VERSION = 'v2.1/'
 
 
 def neturon_port():
@@ -83,6 +87,14 @@ def keystone_port():
         CONFIG_SECTION_PROVIDER,
         KEY_KEYSTONE_PORT,
         DEFAULT_KEYSTONE_PORT
+    )
+
+
+def nova_port():
+    return ovirt_provider_config.getint(
+        CONFIG_SECTION_PROVIDER,
+        KEY_NOVA_PORT,
+        DEFAULT_NOVA_PORT
     )
 
 
@@ -135,19 +147,35 @@ def tenant_description():
 
 
 def keystone_url():
-    return KEYSTONE_URL.format(
+    return SERVICE_URL.format(
         protocol=PROTOCOL_HTTPS if ssl_enabled() else PROTOCOL_HTTP,
         host=provider_host(),
-        keystone_port=keystone_port()
+        port=keystone_port()
     )
 
 
 def neutron_url():
-    return NEUTRON_URL.format(
+    return SERVICE_URL.format(
         protocol=PROTOCOL_HTTPS if ssl_enabled() else PROTOCOL_HTTP,
         host=provider_host(),
-        neutron_port=neturon_port()
+        port=neturon_port()
     )
+
+
+def nova_url():
+    return SERVICE_URL.format(
+        protocol=PROTOCOL_HTTPS if ssl_enabled() else PROTOCOL_HTTP,
+        host=provider_host(),
+        port=nova_port()
+    )
+
+
+def neutron_url_with_version():
+    return neutron_url() + NEUTRON_VERSION
+
+
+def nova_url_with_version():
+    return nova_url() + NOVA_VERSION
 
 
 def tenant_id():
