@@ -200,10 +200,6 @@ class PortMapper(Mapper):
             PortMapper.REST_PORT_ID: str(port.uuid),
             PortMapper.REST_PORT_NAME:
                 port.external_ids[PortMapper.OVN_NIC_NAME],
-            PortMapper.REST_PORT_DEVICE_ID:
-                str(port.external_ids[PortMapper.OVN_DEVICE_ID]),
-            PortMapper.REST_PORT_DEVICE_OWNER:
-                port.external_ids[PortMapper.OVN_DEVICE_OWNER],
             PortMapper.REST_PORT_NETWORK_ID: str(network.uuid),
             PortMapper.REST_PORT_SECURITY_GROUPS: [],
             PortMapper.REST_PORT_SECURITY_ENABLED: False,
@@ -213,6 +209,14 @@ class PortMapper(Mapper):
                 (port.up is not None and port.up[0]) and
                 (port.enabled is None or port.enabled[0])
         }
+        if PortMapper.OVN_DEVICE_ID in port.external_ids:
+            rest_data[
+                PortMapper.REST_PORT_DEVICE_ID
+            ] = str(port.external_ids[PortMapper.OVN_DEVICE_ID])
+        if PortMapper.OVN_DEVICE_OWNER in port.external_ids:
+            rest_data[
+                PortMapper.REST_PORT_DEVICE_OWNER
+            ] = port.external_ids[PortMapper.OVN_DEVICE_OWNER]
         if port.addresses:
             rest_data[PortMapper.REST_PORT_MAC_ADDRESS] = port.addresses[0]
         return rest_data
