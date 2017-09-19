@@ -205,9 +205,10 @@ class PortMapper(Mapper):
             PortMapper.REST_PORT_SECURITY_ENABLED: False,
             PortMapper.REST_TENANT_ID: tenant_id(),
             PortMapper.REST_PORT_FIXED_IPS: [],
-            PortMapper.REST_PORT_ADMIN_STATE_UP:
-                (port.up is not None and port.up[0]) and
-                (port.enabled is None or port.enabled[0])
+            PortMapper.REST_PORT_ADMIN_STATE_UP: bool(
+                (port.up and port.up[0]) and
+                (not port.enabled or port.enabled[0])
+            )
         }
         if PortMapper.OVN_DEVICE_ID in port.external_ids:
             rest_data[
