@@ -82,3 +82,10 @@ class OvnSubnetRow(OvnRow):
         }
         if network_id:
             self.external_ids[SubnetMapper.OVN_NETWORK_ID] = network_id
+
+
+class OvnRouterRow(OvnRow):
+    def __init__(self, uuid, name=None):
+        self.uuid = uuid
+        self.name = name
+        self.enabled = True

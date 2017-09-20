@@ -34,6 +34,7 @@ from ovndb.ovn_north_mappers import UnsupportedDataValueError
 
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
+from ovntestlib import OvnRouterRow
 from ovntestlib import OvnSubnetRow
 
 
@@ -83,6 +84,11 @@ class TestOvnNorth(object):
     NETWORK_11 = OvnNetworkRow(
         NETWORK_ID11, NETWORK_NAME11, ports=[PORT_1, PORT_2]
     )
+
+    ROUTER_ID20 = UUID(int=20)
+    ROUTER_NAME20 = 'router20'
+
+    ROUTER_20 = OvnRouterRow(ROUTER_ID20, ROUTER_NAME20)
 
     ports = [PORT_1, PORT_2]
 
@@ -690,3 +696,18 @@ class TestOvnNorth(object):
         ovn_north = OvnNorth()
         port = ovn_north.get_port(TestOvnNorth.PORT_ID01)
         assert port[PortMapper.REST_PORT_ADMIN_STATE_UP] == result
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
+    )
+    def test_get_router(self, mock_lookup, mock_connection):
+        mock_lookup.return_value = TestOvnNorth.ROUTER_20
+        ovn_north = OvnNorth()
+        result = ovn_north.get_router(str(TestOvnNorth.ROUTER_ID20))
+
+        assert result['id'] == str(TestOvnNorth.ROUTER_ID20)
+        assert result['name'] == str(TestOvnNorth.ROUTER_NAME20)
+
+        assert mock_lookup.call_args == mock.call(
+            OvnNorth.TABLE_LR, str(TestOvnNorth.ROUTER_ID20)
+        )
