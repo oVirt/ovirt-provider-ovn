@@ -32,10 +32,14 @@ from handlers.neutron_responses import PUT
 from handlers.neutron_responses import NETWORK_ID
 from handlers.neutron_responses import PORT_ID
 
+from handlers.neutron_responses import ADD_ROUTER_INTERFACE
+from handlers.neutron_responses import DELETE_ROUTER_INTERFACE
 from handlers.neutron_responses import NETWORK_ENTITY
 from handlers.neutron_responses import NETWORKS
 from handlers.neutron_responses import PORT_ENTITY
 from handlers.neutron_responses import PORTS
+from handlers.neutron_responses import ROUTER_ENTITY
+from handlers.neutron_responses import ROUTERS
 from handlers.neutron_responses import SUBNET_ENTITY
 from handlers.neutron_responses import SUBNETS
 
@@ -69,7 +73,7 @@ class PortRow(object):
 class TestNeutronResponse(object):
     def test_check_neutron_responses_required_by_engine_are_present(self):
         for method in [GET, POST]:
-            for path in [NETWORKS, PORTS, SUBNETS]:
+            for path in [NETWORKS, PORTS, SUBNETS, ROUTERS]:
                 handler, params = SelectingHandler.get_response_handler(
                     responses(), method, path.split('/')
                 )
@@ -81,7 +85,8 @@ class TestNeutronResponse(object):
             for path in [
                 NETWORK_ENTITY.format(network_id=7),
                 PORT_ENTITY.format(port_id=7),
-                SUBNET_ENTITY.format(subnet_id=7)
+                SUBNET_ENTITY.format(subnet_id=7),
+                ROUTER_ENTITY.format(router_id=7)
             ]:
                 handler, params = SelectingHandler.get_response_handler(
                     responses(), method, path.split('/')
@@ -89,6 +94,17 @@ class TestNeutronResponse(object):
                 assert handler is not None
                 assert params is not None
                 assert params.values()[0] == '7'
+
+        for path in [
+            ADD_ROUTER_INTERFACE.format(router_id=7),
+            DELETE_ROUTER_INTERFACE.format(router_id=7)
+        ]:
+            handler, params = SelectingHandler.get_response_handler(
+                responses(), PUT, path.split('/')
+            )
+            assert handler is not None
+            assert params is not None
+            assert params['router_id'] == '7'
 
         # This is a test call engine makes to check if provider is alive
         handler, params = SelectingHandler.get_response_handler(

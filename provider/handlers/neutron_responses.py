@@ -41,6 +41,10 @@ PORTS = 'ports'
 PORT_ENTITY = 'ports/{port_id}'
 SUBNETS = 'subnets'
 SUBNET_ENTITY = 'subnets/{subnet_id}'
+ROUTERS = 'routers'
+ROUTER_ENTITY = 'routers/{router_id}'
+ADD_ROUTER_INTERFACE = 'routers/{router_id}/add_router_interface'
+DELETE_ROUTER_INTERFACE = 'routers/{router_id}/remove_router_interface'
 
 
 _responses = {}
@@ -199,6 +203,59 @@ def get_debug(nb_db, content, parameters):
         'ports': [port for port in ports]
     })
     return response
+
+
+@rest(GET, ROUTERS, _responses)
+def get_routers(nb_db, content, parameters):
+    return Response(
+        body=json.dumps({'routers': []}),
+        code=httplib.OK
+    )
+
+
+@rest(POST, ROUTERS, _responses)
+def post_routers(nb_db, content, parameters):
+    return Response(
+        body=json.dumps({'router': {}}),
+        code=httplib.OK
+    )
+
+
+@rest(GET, ROUTER_ENTITY, _responses)
+def get_router(nb_db, content, parameters):
+    return Response(
+        body=json.dumps({'router': {}}),
+        code=httplib.OK
+    )
+
+
+@rest(PUT, ROUTER_ENTITY, _responses)
+def put_router(nb_db, content, parameters):
+    return Response(
+        body=json.dumps({'router': {}}),
+        code=httplib.OK
+    )
+
+
+@rest(DELETE, ROUTER_ENTITY, _responses)
+def delete_router(nb_db, content, parameters):
+    pass
+
+
+@rest(PUT, ADD_ROUTER_INTERFACE, _responses)
+def put_add_router_inerface(nb_db, content, parameters):
+    return Response(
+        body=json.dumps({'router': {}}),
+        code=httplib.OK
+    )
+
+
+@rest(PUT, DELETE_ROUTER_INTERFACE, _responses)
+def put_remove_router_interface(nb_db, content, parameters):
+    return Response(
+        body=json.dumps({"router": {}}),
+        code=httplib.OK
+    )
 
 
 def responses():
