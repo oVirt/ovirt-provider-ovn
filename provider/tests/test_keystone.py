@@ -108,10 +108,10 @@ class TestKeystoneHandler(object):
     def test_handle_post_request_long(self, mock_send_response,
                                       mock_send_header, mock_end_headers):
         key = 'domains'
-        id = 'domain_id/config/group/option'
-        path = '/v3/{}/{}'.format(key, id)
+        values = 'domain_id/config/group/option'
+        path = '/v3/{}/{}'.format(key, values)
 
-        self._test_handle_post_request_ok(mock_send_response, path, id)
+        self._test_handle_post_request_ok(mock_send_response, path, values)
 
     @mock.patch('handlers.keystone.TokenHandler.send_error', autospec=True)
     def test_handle_post_request_timeout(self, mock_send_error,
