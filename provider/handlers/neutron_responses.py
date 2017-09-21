@@ -34,6 +34,8 @@ from ovirt_provider_config_common import neutron_url_with_version
 NETWORK_ID = 'network_id'
 PORT_ID = 'port_id'
 SUBNET_ID = 'subnet_id'
+ROUTER_ID = 'router_id'
+
 
 NETWORKS = 'networks'
 NETWORK_ENTITY = 'networks/{network_id}'
@@ -208,38 +210,46 @@ def get_debug(nb_db, content, parameters):
 @rest(GET, ROUTERS, _responses)
 def get_routers(nb_db, content, parameters):
     return Response(
-        body=json.dumps({'routers': []}),
+        body=json.dumps({'routers': nb_db.list_routers()}),
         code=httplib.OK
     )
 
 
 @rest(POST, ROUTERS, _responses)
 def post_routers(nb_db, content, parameters):
+    content_json = json.loads(content)
+    received_router = content_json['router']
+    router = nb_db.add_router(received_router)
     return Response(
-        body=json.dumps({'router': {}}),
-        code=httplib.OK
+        body=json.dumps({'router': router}),
+        code=httplib.CREATED
     )
 
 
 @rest(GET, ROUTER_ENTITY, _responses)
 def get_router(nb_db, content, parameters):
     return Response(
-        body=json.dumps({'router': {}}),
+        body=json.dumps({
+            'router': nb_db.get_router(parameters[ROUTER_ID])
+        }),
         code=httplib.OK
     )
 
 
 @rest(PUT, ROUTER_ENTITY, _responses)
 def put_router(nb_db, content, parameters):
+    content_json = json.loads(content)
+    received_router = content_json['router']
+    router = nb_db.update_router(received_router, parameters[ROUTER_ID])
     return Response(
-        body=json.dumps({'router': {}}),
+        body=json.dumps({'router': router}),
         code=httplib.OK
     )
 
 
 @rest(DELETE, ROUTER_ENTITY, _responses)
 def delete_router(nb_db, content, parameters):
-    pass
+    nb_db.delete_router(parameters[ROUTER_ID])
 
 
 @rest(PUT, ADD_ROUTER_INTERFACE, _responses)
