@@ -491,6 +491,9 @@ class OvnNorth(object):
         db_set_command.execute()
         return self.get_router(router_id)
 
+    def delete_router(self, router_id):
+        self.idl.lr_del(router_id).execute()
+
     def __enter__(self):
         return self
 
