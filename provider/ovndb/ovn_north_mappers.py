@@ -409,9 +409,15 @@ class AddRouterInterfaceMapper(Mapper):
 
     @staticmethod
     def rest2row(wrapped_self, func, rest_data, router_id):
-        subnet = rest_data.get(RouterMapper.REST_ADDROUTERINTERFACE_SUBNET_ID)
-        port = rest_data.get(RouterMapper.REST_ADDROUTERINTERFACE_PORT_ID)
-        return func(wrapped_self, subnet_id=subnet, port_id=port)
+        subnet = rest_data.get(
+            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_SUBNET_ID
+        )
+        port = rest_data.get(
+            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_PORT_ID
+        )
+        return func(
+            wrapped_self, router_id=router_id, subnet_id=subnet, port_id=port
+        )
 
     @staticmethod
     def row2rest(row):
@@ -431,15 +437,15 @@ class AddRouterInterfaceMapper(Mapper):
 
     @staticmethod
     def validate_update_rest_input(rest_data):
-        subnet = rest_data.get(RouterMapper.REST_ADDROUTERINTERFACE_SUBNET_ID)
-        port = rest_data.get(RouterMapper.REST_ADDROUTERINTERFACE_PORT_ID)
+        subnet = rest_data.get(
+            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_SUBNET_ID
+        )
+        port = rest_data.get(
+            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_PORT_ID
+        )
         if subnet and port:
             raise RestDataError(
-                '{subnet} and {port} can not both be set at the same time'
-                .format(
-                    subnet=RouterMapper.REST_ADDROUTERINTERFACE_SUBNET_ID,
-                    port=RouterMapper.REST_ADDROUTERINTERFACE_PORT_ID
-                )
+                'Subnet and port can not both be set at the same time'
             )
         if not subnet and not port:
             raise RestDataError(

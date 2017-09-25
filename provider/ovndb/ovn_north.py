@@ -20,6 +20,7 @@ import ovs.stream
 import ovsdbapp.backend.ovs_idl.connection
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 from ovsdbapp.schema.ovn_northbound.impl_idl import OvnNbApiIdlImpl
+import random
 
 from handlers.base_handler import ElementNotFoundError
 
@@ -33,6 +34,7 @@ from ovirt_provider_config_common import ssl_key_file
 from ovirt_provider_config_common import ssl_cacert_file
 from ovirt_provider_config_common import ssl_cert_file
 
+from ovndb.ovn_north_mappers import AddRouterInterfaceMapper
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import NetworkPort
 from ovndb.ovn_north_mappers import PortMapper
@@ -526,6 +528,130 @@ class OvnNorth(object):
 
     def delete_router(self, router_id):
         self.idl.lr_del(router_id).execute()
+
+    def _validate_router_exists(self, router_id):
+        try:
+            self.idl.lookup(OvnNorth.TABLE_LR, router_id)
+        except RowNotFound:
+            raise ElementNotFoundError(
+                'Router {router} does not exist'.format(subnet=router_id)
+            )
+
+    def _create_router_port_name(self, port_id):
+        # LSP will reference this LRP by name (port parameter),
+        # for convinience we will set the name to the id of the matching LSP
+        # with an 'lrp' prefix.
+        # We need the prefix due to an ovn issue in OVN lookup (bug pending)
+        return 'lrp' + str(port_id)
+
+    def _create_routing_lsp_by_subnet(self, subnet_id, router_id):
+        subnet = self._get_subnet(subnet_id)
+        network_id = subnet.external_ids.get(SubnetMapper.OVN_NETWORK_ID)
+        if not network_id:
+            raise ElementNotFoundError(
+                'Unable to add router interface. '
+                'Subnet {subnet_id} does not belong to any network'
+                .format(subnet_id=subnet_id)
+            )
+
+        lrp_ip = self._get_ip_from_subnet(subnet, network_id, router_id)
+        port = self._create_port(OvnNorth.ROUTER_PORT_NAME, network_id)
+        lrp_name = self._create_router_port_name(port.uuid)
+        self._update_port_values(
+            port=port,
+            network_id=network_id,
+            name=OvnNorth.ROUTER_PORT_NAME,
+            is_enabled=True,
+            device_id=port.uuid,
+            device_owner=PortMapper.DEVICE_OWNER_OVIRT,
+            router_port_name=lrp_name
+        )
+        return lrp_name, lrp_ip
+
+    def _update_routing_lsp_by_port(self, port_id, router_id):
+        port = self._get_port(port_id)
+        lrp_ip = self._get_ip_from_port(port, router_id)
+        lrp_name = self._create_router_port_name(port.uuid)
+        self._update_port_values(
+            port=port,
+            is_enabled=True,
+            router_port_name=lrp_name
+        )
+        return lrp_name, lrp_ip
+
+    def _create_router_port(self, router_id, lrp_name, lrp_ip):
+        self.idl.lrp_add(
+            router=router_id, port=lrp_name, mac=self._random_mac(),
+            networks=[lrp_ip],
+        ).execute()
+
+    @AddRouterInterfaceMapper.validate_update
+    @AddRouterInterfaceMapper.map_from_rest
+    def add_router_interface(self, router_id, subnet_id=None, port_id=None):
+        self._validate_router_exists(router_id)
+        if subnet_id:
+            lrp_name, lrp_ip = self._create_routing_lsp_by_subnet(
+                subnet_id, router_id
+            )
+        else:
+            lrp_name, lrp_ip = self._update_routing_lsp_by_port(
+                port_id, router_id
+            )
+        self._create_router_port(router_id, lrp_name, lrp_ip)
+
+    def _get_ip_from_subnet(self, subnet, network_id, router_id):
+        subnet_gateway = subnet.options.get('router')
+        if not subnet_gateway:
+            raise ElementNotFoundError(
+                'Unable to attach network {network_id} to router '
+                '{router_id} by subnet {subnet_id}.'
+                'Attaching by subnet requires the subnet to have '
+                'a default gateway specified.'
+                .format(
+                    network_id=network_id, subnet_id=subnet.uuid,
+                    router_id=router_id
+                )
+            )
+        subnet_netmask = subnet.cidr.split('/')[1]
+        return '{ip}/{netmask}'.format(
+            ip=subnet_gateway, netmask=subnet_netmask
+        )
+
+    def _get_port_ip(self, port, router_id):
+        port_addresses = port.dynamic_addresses
+        if not port_addresses:
+            raise ElementNotFoundError(
+                'Unable to attach port {port_id} to router '
+                '{router_id}. '
+                'Attaching by port requires the port to have '
+                'an ip from subnet assigned.'
+                .format(port_id=port.uuid, router_id=router_id)
+            )
+        return port_addresses[0].split(' ')[1]
+
+    def _get_ip_from_port(self, port, router_id):
+        port_ip = self._get_port_ip(port, router_id)
+        network = self._get_port_network(port)
+        network_cidr = network.other_config.get(NetworkMapper.OVN_SUBNET)
+        if not network_cidr:
+            raise ElementNotFoundError(
+                'Unable to attach port {port_id} to router '
+                '{router_id}. '
+                'Attaching by port requires the port\'s network '
+                'to have a subnet attached.'
+                .format(port_id=port.uuid, router_id=router_id)
+            )
+        network_netmask = network_cidr.split('/')[1]
+        return '{ip}/{netmask}'.format(
+            ip=port_ip, netmask=network_netmask)
+
+    def delete_router_interface(self, router_id, subnet_id=None, port_id=None):
+        pass
+
+    def _random_mac(self):
+        macparts = [0]
+        macparts.extend([random.randint(0x00, 0xff) for i in range(5)])
+        return ':'.join(map(lambda x: "%02x" % x, macparts))
 
     def __enter__(self):
         return self
