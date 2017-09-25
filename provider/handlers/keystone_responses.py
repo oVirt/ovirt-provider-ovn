@@ -65,7 +65,8 @@ def post_tokens(content, parameters):
     return {
         'access': {
             'token': {
-                'id': token
+                'id': token,
+                'expires': None
             },
             'serviceCatalog': [
                 {
