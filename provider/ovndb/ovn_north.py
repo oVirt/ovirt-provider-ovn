@@ -152,12 +152,12 @@ class OvnNorth(object):
                 % network_id
             )
 
-        # TODO: once subnets are added we need to do:
-        # subnets = self.idl.dhcp_options_list(ids_only=False).execute()
-        # for subnet in subnets:
-        #    if subnet.external_ids.get('ovirt_network_id'):
-        #        if id == str(subnet.uuid):
-        #            self.idl.dhcp_options_del(subnet.uuid).execute()
+        subnets = self.idl.dhcp_options_list().execute()
+        for subnet in subnets:
+            subnet_network_id = subnet.external_ids.get('ovirt_network_id')
+            if subnet_network_id:
+                if network_id == subnet_network_id:
+                    self.idl.dhcp_options_del(subnet.uuid).execute()
 
         self.idl.ls_del(network_id).execute()
 

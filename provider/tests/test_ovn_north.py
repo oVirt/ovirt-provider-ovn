@@ -197,6 +197,11 @@ class TestOvnNorth(object):
         'ovsdbapp.schema.ovn_northbound.commands.LsDelCommand',
         autospec=False
     )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
+        'execute',
+        lambda x: []
+    )
     def test_delete_network(self, mock_del_command, mock_connection):
         ovn_north = OvnNorth()
         ovn_north.delete_network(TestOvnNorth.NETWORK_ID10)
