@@ -29,3 +29,7 @@ class Forbidden(Exception):
 
 class Timeout(Exception):
     pass
+
+
+class BadGateway(Exception):
+    pass

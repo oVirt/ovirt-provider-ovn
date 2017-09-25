@@ -20,6 +20,7 @@ from functools import wraps
 
 import requests
 
+from auth import BadGateway
 from auth import Unauthorized
 from auth import Timeout
 
@@ -34,13 +35,15 @@ PUBLIC_AUTHZ_SEARCH_SCOPE = 'ovirt-ext=token-info:public-authz-search'
 TOKEN_SCOPE = 'ovirt-app-api ovirt-ext=token-info:validate'
 
 
-def _translate_timeout_exception(func):
+def _translate_request_exception(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except requests.exceptions.Timeout as e:
             raise Timeout(e)
+        except requests.exceptions.RequestException as e:
+            raise BadGateway(e)
     return wrapper
 
 
@@ -61,7 +64,7 @@ def create_token(username, password, engine_url, ca_file, timeout):
 
 
 @_inspect_response
-@_translate_timeout_exception
+@_translate_request_exception
 def _get_sso_token(username, password, engine_url, ca_file, timeout):
     post_data = {
         'grant_type': 'password',
@@ -89,7 +92,7 @@ def get_profiles(
 
 
 @_inspect_response
-@_translate_timeout_exception
+@_translate_request_exception
 def _profile_list(
         token, engine_url, ca_file, timeout, client_id, client_secret):
     return requests.post(_token_info_url(engine_url),
@@ -105,7 +108,7 @@ def _profile_list(
 
 
 @_inspect_response
-@_translate_timeout_exception
+@_translate_request_exception
 def get_token_info(
         token, engine_url, ca_file, timeout, client_id, client_secret):
     return requests.post(_token_info_url(engine_url),

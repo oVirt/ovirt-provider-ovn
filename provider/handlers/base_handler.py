@@ -25,6 +25,7 @@ import urlparse
 
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
 
+from auth import BadGateway
 from auth import Forbidden
 from auth import Unauthorized
 from auth import Timeout
@@ -131,6 +132,9 @@ class BaseHandler(BaseHTTPRequestHandler):
         except Timeout as e:
             self._handle_response_exception(
                 e, response_code=httplib.GATEWAY_TIMEOUT)
+        except BadGateway as e:
+            self._handle_response_exception(
+                e, response_code=httplib.BAD_GATEWAY)
         except Exception as e:
             self._handle_response_exception(e)
 

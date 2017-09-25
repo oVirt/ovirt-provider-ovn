@@ -21,6 +21,7 @@ from __future__ import absolute_import
 from .core import init  # noqa: F401
 from .core import TOKEN_HTTP_HEADER_FIELD_NAME  # noqa: F401
 from .errors import Forbidden  # noqa: F401
+from .errors import BadGateway  # noqa: F401
 from .errors import Unauthorized  # noqa: F401
 from .errors import Timeout  # noqa: F401
 from .plugin_facade import create_token  # noqa: F401
