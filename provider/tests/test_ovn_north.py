@@ -244,7 +244,7 @@ class TestOvnNorth(object):
         }
         result = ovn_north.add_port(rest_data)
 
-        # ID11 because this network hass the port in TestOvnNorth.networks
+        # ID11 because this network has the port in TestOvnNorth.networks
         self.assert_port_equal(
             result, TestOvnNorth.PORT_1, str(TestOvnNorth.NETWORK_ID11)
         )
