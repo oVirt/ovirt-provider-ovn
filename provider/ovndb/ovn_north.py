@@ -236,11 +236,15 @@ class OvnNorth(object):
                 mac += ' dynamic'
             db_set_command.add(self.ROW_LSP_ADDRESSES, [mac])
 
-        db_set_command.add(
-            self.ROW_LSP_DHCPV4_OPTIONS,
-            [subnet_row],
-            subnet_row
-        )
+        if subnet_row:
+            db_set_command.add(
+                self.ROW_LSP_DHCPV4_OPTIONS,
+                subnet_row.uuid
+            )
+        else:
+            self.idl.db_clear(
+                OvnNorth.TABLE_LSP, port_id, OvnNorth.ROW_LSP_DHCPV4_OPTIONS
+            ).execute()
         db_set_command.add(
             self.ROW_LSP_EXTERNAL_IDS,
             {PortMapper.OVN_DEVICE_ID: device_id},
@@ -301,7 +305,7 @@ class OvnNorth(object):
         for row in dhcps:
             if str(row.external_ids.get(
                 SubnetMapper.OVN_NETWORK_ID
-            )) == network_id:
+            )) == str(network_id):
                 return row
 
     def update_port_mac(self, port_id, macaddress):
