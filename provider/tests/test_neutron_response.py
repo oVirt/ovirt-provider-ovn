@@ -20,7 +20,9 @@ from __future__ import absolute_import
 from mock import Mock
 from uuid import UUID
 import json
+import pytest
 
+from handlers.base_handler import BadRequestError
 from handlers.neutron_responses import responses
 from handlers.neutron_responses import GET
 from handlers.neutron_responses import DELETE
@@ -93,6 +95,31 @@ class TestNeutronResponse(object):
             responses(), GET, ''.split('/')
         )
         assert handler is not None
+
+    def _test_invalid_content(self, content):
+        for path in [NETWORKS, PORTS, SUBNETS]:
+            handler, params = SelectingHandler.get_response_handler(
+                responses(), POST, path.split('/')
+            )
+            with pytest.raises(BadRequestError):
+                handler(NOT_RELEVANT, content, NOT_RELEVANT)
+
+        for path in [
+            NETWORK_ENTITY.format(network_id=7),
+            PORT_ENTITY.format(port_id=7),
+            SUBNET_ENTITY.format(subnet_id=7)
+        ]:
+            handler, params = SelectingHandler.get_response_handler(
+                responses(), PUT, path.split('/')
+            )
+            with pytest.raises(BadRequestError):
+                handler(NOT_RELEVANT, content, NOT_RELEVANT)
+
+    def test_invalid_content_structure(self):
+        self._test_invalid_content('{"invalid": null}')
+
+    def test_invalid_content_json(self):
+        self._test_invalid_content('invalid JSON')
 
     def test_show_network(self):
         nb_db = Mock()

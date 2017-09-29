@@ -31,6 +31,7 @@ from ovirt_provider_config_common import nova_url_with_version
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import GET
 from handlers.base_handler import POST
+from handlers.responses_utils import get_entity
 from handlers.selecting_handler import rest
 
 import auth
@@ -45,16 +46,17 @@ _responses = {}
 
 @rest(POST, TOKENS, _responses)
 def post_tokens(content, parameters):
+    received_auth = get_entity(content, 'auth')
     try:
-        if 'passwordCredentials' in content['auth']:
-            password_credentials = content['auth']['passwordCredentials']
+        if 'passwordCredentials' in received_auth:
+            password_credentials = received_auth['passwordCredentials']
             user_at_domain = password_credentials['username']
             user_password = password_credentials['password']
             token = auth.create_token(
                 user_at_domain=user_at_domain,
                 user_password=user_password)
         else:
-            token = content['auth']['token']['id']
+            token = received_auth['token']['id']
     except KeyError as e:
         raise BadRequestError(e)
 

@@ -17,15 +17,19 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
+import json
 import mock
+import pytest
 
+from handlers.base_handler import BadRequestError
 from handlers.keystone_responses import responses
 from handlers.keystone_responses import TOKENS
 from handlers.base_handler import POST
 from handlers.selecting_handler import SelectingHandler
 
+NOT_RELEVANT = None
 TOKEN = 'the_secret_token'
-TOKEN_REQUEST = {
+TOKEN_REQUEST = json.dumps({
     'auth': {
         'tenantName': 'customer-x',
         'passwordCredentials': {
@@ -33,7 +37,7 @@ TOKEN_REQUEST = {
             'password': 'secret'
         }
     }
-}
+})
 
 
 @mock.patch('handlers.keystone_responses.auth.create_token',
@@ -47,3 +51,19 @@ def test_post_tokens(mock_create_token):
         user_at_domain='joeuser',
         user_password='secret')
     assert response['access']['token']['id'] == TOKEN
+
+
+def _test_invalid_content(content):
+    handler, parameters = SelectingHandler.get_response_handler(
+        responses(), POST, [TOKENS]
+    )
+    with pytest.raises(BadRequestError):
+        handler(content, NOT_RELEVANT)
+
+
+def test_invalid_content_structure():
+    _test_invalid_content('{"invalid": null}')
+
+
+def test_invalid_content_json():
+    _test_invalid_content('invalid JSON')

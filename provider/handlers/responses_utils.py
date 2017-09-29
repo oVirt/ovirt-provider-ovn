@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,15 +20,12 @@ from __future__ import absolute_import
 
 import json
 
-from handlers.selecting_handler import SelectingHandler
-from handlers.keystone_responses import responses
+from handlers.base_handler import BadRequestError
 
 
-class TokenHandler(SelectingHandler):
-
-    def call_response_handler(self, response_handler, content, parameters):
-        return json.dumps(response_handler(content, parameters))
-
-    @staticmethod
-    def get_responses():
-        return responses()
+def get_entity(content, entity_name):
+    try:
+        content_json = json.loads(content)
+        return content_json[entity_name]
+    except (ValueError, KeyError) as e:
+        raise BadRequestError(e)

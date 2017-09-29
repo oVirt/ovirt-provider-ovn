@@ -26,6 +26,7 @@ from handlers.base_handler import POST
 from handlers.base_handler import PUT
 from handlers.base_handler import Response
 
+from handlers.responses_utils import get_entity
 from handlers.selecting_handler import rest
 from ovirt_provider_config_common import neutron_url_with_version
 
@@ -120,8 +121,7 @@ def delete_subnet(nb_db, content, parameters):
 
 @rest(POST, NETWORKS, _responses)
 def post_networks(nb_db, content, parameters):
-    content_json = json.loads(content)
-    received_network = content_json['network']
+    received_network = get_entity(content, 'network')
     network = nb_db.add_network(received_network)
     return Response(
         body=json.dumps({'network': network}),
@@ -131,8 +131,7 @@ def post_networks(nb_db, content, parameters):
 
 @rest(POST, PORTS, _responses)
 def post_ports(nb_db, content, parameters):
-    content_json = json.loads(content)
-    received_port = content_json['port']
+    received_port = get_entity(content, 'port')
     port = nb_db.add_port(received_port)
     return Response(
         body=json.dumps({'port': port}),
@@ -142,7 +141,7 @@ def post_ports(nb_db, content, parameters):
 
 @rest(POST, SUBNETS, _responses)
 def post_subnets(nb_db, content, parameters):
-    received_subnet = json.loads(content)['subnet']
+    received_subnet = get_entity(content, 'subnet')
     subnet = nb_db.add_subnet(received_subnet)
     return Response(
         body=json.dumps({'subnet': subnet}),
@@ -152,8 +151,7 @@ def post_subnets(nb_db, content, parameters):
 
 @rest(PUT, NETWORK_ENTITY, _responses)
 def put_network(nb_db, content, parameters):
-    content_json = json.loads(content)
-    received_network = content_json['network']
+    received_network = get_entity(content, 'network')
     network = nb_db.update_network(received_network, parameters[NETWORK_ID])
     return Response(
         body=json.dumps({'network': network}),
@@ -163,9 +161,7 @@ def put_network(nb_db, content, parameters):
 
 @rest(PUT, PORT_ENTITY, _responses)
 def put_ports(nb_db, content, parameters):
-
-    content_json = json.loads(content)
-    received_port = content_json['port']
+    received_port = get_entity(content, 'port')
     port = nb_db.update_port(received_port, parameters[PORT_ID])
     return Response(
         body=json.dumps({'port': port}),
@@ -186,7 +182,7 @@ def put_ports(nb_db, content, parameters):
 
 @rest(PUT, SUBNET_ENTITY, _responses)
 def put_subnets(nb_db, content, parameters):
-    received_subnet = json.loads(content)['subnet']
+    received_subnet = get_entity(content, 'subnet')
     subnet = nb_db.update_subnet(received_subnet, parameters[SUBNET_ID])
     return Response(
         body=json.dumps({'subnet': subnet}),

@@ -35,7 +35,7 @@ response_handlers = {}
 
 @rest('POST', 'tokens', response_handlers)
 def tokens_handler(content, id):
-    return {'value': REST_RESPONSE_POST + content['key']}
+    return {'value': REST_RESPONSE_POST + json.loads(content)['key']}
 
 
 @rest('POST', 'empty', response_handlers)
@@ -53,7 +53,7 @@ def domains_handler(content, params):
             config=params['config'],
             group=params['group'],
             option=params['option'],
-            key=str(content['key'])
+            key=str(json.loads(content)['key'])
         )}
 
 
