@@ -112,6 +112,11 @@ class TestNeutronResponse(object):
         )
         assert handler is not None
 
+    handler, params = SelectingHandler.get_response_handler(
+        responses(), GET, ['']
+    )
+    assert handler is not None
+
     def _test_invalid_content(self, content):
         for path in [NETWORKS, PORTS, SUBNETS]:
             handler, params = SelectingHandler.get_response_handler(

@@ -172,8 +172,10 @@ class BaseHandler(BaseHTTPRequestHandler):
     @staticmethod
     def _parse_request_path(full_path):
         full_path = urlparse.urlparse(full_path).path
-        elements = filter(None, full_path.split('/'))
-        return elements[1:]
+        elements = filter(None, full_path.split('/'))[1:]
+        if not elements:
+            elements.append('')
+        return elements
 
     @abc.abstractmethod
     def handle_request(self, method, path_parts, content):
