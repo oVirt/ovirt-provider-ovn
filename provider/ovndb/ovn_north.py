@@ -22,6 +22,7 @@ from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 from ovsdbapp.schema.ovn_northbound.impl_idl import OvnNbApiIdlImpl
 import random
 
+from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
 
 from ovirt_provider_config_common import ovn_remote
@@ -97,7 +98,12 @@ class OvnNorth(object):
     ROW_LR_NAME = 'name'
     ROW_LR_ENABLED = 'enabled'
 
+    TABLE_LRP = 'Logical_Router_Port'
+
     ROUTER_PORT_NAME = 'router_port'
+    UNASSIGNED_PORT_NAME = 'unassgined_port'
+
+    ROUTER_PORT_NAME_PREFIX = 'lrp'
 
     def __init__(self):
         self._connect()
@@ -559,7 +565,10 @@ class OvnNorth(object):
         # for convinience we will set the name to the id of the matching LSP
         # with an 'lrp' prefix.
         # We need the prefix due to an ovn issue in OVN lookup (bug pending)
-        return 'lrp' + str(port_id)
+        return OvnNorth.ROUTER_PORT_NAME_PREFIX + str(port_id)
+
+    def _lsp_id_by_lrp(self, lrp):
+        return lrp.name[len(OvnNorth.ROUTER_PORT_NAME_PREFIX):]
 
     def _create_routing_lsp_by_subnet(self, subnet_id, router_id):
         subnet = self._get_subnet(subnet_id)
@@ -669,7 +678,62 @@ class OvnNorth(object):
     @RemoveRouterInterfaceMapper.validate_update
     @RemoveRouterInterfaceMapper.map_from_rest
     def delete_router_interface(self, router_id, subnet_id=None, port_id=None):
-        pass
+        if subnet_id:
+            self._delete_router_interface_by_subnet(router_id, subnet_id)
+        else:
+            self._delete_router_interface_by_port(router_id, port_id)
+
+    def _delete_router_interface_by_port(self, router_id, port_id):
+        lsp = self._get_port(port_id)
+        lrp_name = lsp.options.get(OvnNorth.LSP_OPTION_ROUTER_PORT)
+        if not lrp_name:
+            raise BadRequestError(
+                'Port {port} is not connected to a router'
+                .format(port=port_id)
+            )
+        lrp = self._get_lrp(lrp_name)
+        network_id = self._get_port_network(lsp)
+        lr = self._get_router(router_id)
+        self._delete_router_interface(
+            router_id, port_id, lrp, network_id, lsp, lr
+        )
+
+    def _delete_router_interface(
+        self, router_id, port_id, lrp, network_id, lsp, lr
+    ):
+        if lrp not in lr.ports:
+            raise BadRequestError(
+                'Port {port} is not connected to router {router}'
+                .format(port=port_id, router=router_id)
+            )
+        self._update_port_values(
+            lsp, network_id=network_id, mac=lrp.mac, clear_router=True,
+            name=OvnNorth.UNASSIGNED_PORT_NAME
+        )
+        self.idl.lrp_del(str(lrp.uuid)).execute()
+
+    def _delete_router_interface_by_subnet(self, router_id, subnet_id):
+        lr = self._get_router(router_id)
+        subnet = self._get_subnet(subnet_id)
+        network_id = subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
+        network = self._get_network(network_id)
+        for lrp in lr.ports:
+            lsp_id = self._lsp_id_by_lrp(lrp)
+            lsp = self._get_port(lsp_id)
+            if lsp in network.ports:
+                self._delete_router_interface(
+                    router_id, lsp_id, lrp=lrp, network_id=network_id, lsp=lsp,
+                    lr=lr
+                )
+
+    def _get_lrp(self, lrp):
+        try:
+            return self.idl.lookup(OvnNorth.TABLE_LRP, lrp)
+        except RowNotFound:
+            raise ElementNotFoundError(
+                'Logical router port {port} does not exist'
+                .format(port=lrp)
+            )
 
     def _random_mac(self):
         macparts = [0]
