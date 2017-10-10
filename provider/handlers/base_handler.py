@@ -50,10 +50,8 @@ ERROR_CONTENT_TYPE = 'application/json'
 
 
 class Response(object):
-    def __init__(self, json=None, body=None, code=None, headers=None):
-        self.body = body
-        if not body and json is not None:
-            self.body = libjson.dumps(json)
+    def __init__(self, json=None, code=None, headers=None):
+        self.body = libjson.dumps(json) if json else None
         self.code = code
         self.headers = headers
 

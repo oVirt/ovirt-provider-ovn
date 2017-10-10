@@ -23,7 +23,6 @@ import abc
 from handlers.base_handler import BaseHandler
 from handlers.base_handler import PathNotFoundError
 from handlers.base_handler import MethodNotAllowedError
-from handlers.base_handler import Response
 
 
 PATH_SEPARATOR = '/'
@@ -173,12 +172,7 @@ class SelectingHandler(BaseHandler):
         handler, parameters = self.get_response_handler(
             self.get_responses(), method, path_parts
         )
-        response = self.call_response_handler(
-            handler, content, parameters
-        )
-        if not isinstance(response, Response):
-            return Response(body=response)
-        return response
+        return self.call_response_handler(handler, content, parameters)
 
     @classmethod
     def get_response_handler(cls, responses, method, path_parts):
