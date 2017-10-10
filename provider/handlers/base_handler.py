@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 import abc
 import httplib
+import json as libjson
 import logging
 import urlparse
 
@@ -49,8 +50,10 @@ ERROR_CONTENT_TYPE = 'application/json'
 
 
 class Response(object):
-    def __init__(self, body=None, code=None, headers=None):
+    def __init__(self, json=None, body=None, code=None, headers=None):
         self.body = body
+        if not body and json is not None:
+            self.body = libjson.dumps(json)
         self.code = code
         self.headers = headers
 

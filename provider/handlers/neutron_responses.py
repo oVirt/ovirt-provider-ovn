@@ -53,28 +53,28 @@ _responses = {}
 
 @rest(GET, NETWORK_ENTITY, _responses)
 def show_network(nb_db, content, parameters):
-    return json.dumps({
+    return Response({
         'network': nb_db.get_network(parameters[NETWORK_ID])
     })
 
 
 @rest(GET, PORT_ENTITY, _responses)
 def show_port(nb_db, content, parameters):
-    return json.dumps({
+    return Response({
         'port': nb_db.get_port(parameters[PORT_ID])
     })
 
 
 @rest(GET, SUBNET_ENTITY, _responses)
 def show_subnet(nb_db, content, parameters):
-    return json.dumps({
+    return Response({
         'subnet': nb_db.get_subnet(parameters[SUBNET_ID])
     })
 
 
 @rest(GET, '', _responses)
 def get_default(nb_db, content, parameters):
-    return json.dumps({
+    return Response({
         'versions': [{
             'status': 'CURRENT',
             'id': 'v2.0',
@@ -89,7 +89,7 @@ def get_default(nb_db, content, parameters):
 @rest(GET, NETWORKS, _responses)
 def get_networks(nb_db, content, parameters):
     networks = nb_db.list_networks()
-    return json.dumps({
+    return Response({
         'networks': networks
     })
 
@@ -97,14 +97,14 @@ def get_networks(nb_db, content, parameters):
 @rest(GET, PORTS, _responses)
 def get_ports(nb_db, content, parameters):
     ports = nb_db.list_ports()
-    return json.dumps({
+    return Response({
         'ports': ports
     })
 
 
 @rest(GET, SUBNETS, _responses)
 def get_subnets(nb_db, content, parameters):
-    return json.dumps({
+    return Response({
         'subnets': nb_db.list_subnets()
     })
 
@@ -128,45 +128,35 @@ def delete_subnet(nb_db, content, parameters):
 def post_networks(nb_db, content, parameters):
     received_network = get_entity(content, 'network')
     network = nb_db.add_network(received_network)
-    return Response(
-        body=json.dumps({'network': network})
-    )
+    return Response({'network': network})
 
 
 @rest(POST, PORTS, _responses)
 def post_ports(nb_db, content, parameters):
     received_port = get_entity(content, 'port')
     port = nb_db.add_port(received_port)
-    return Response(
-        body=json.dumps({'port': port})
-    )
+    return Response({'port': port})
 
 
 @rest(POST, SUBNETS, _responses)
 def post_subnets(nb_db, content, parameters):
     received_subnet = get_entity(content, 'subnet')
     subnet = nb_db.add_subnet(received_subnet)
-    return Response(
-        body=json.dumps({'subnet': subnet})
-    )
+    return Response({'subnet': subnet})
 
 
 @rest(PUT, NETWORK_ENTITY, _responses)
 def put_network(nb_db, content, parameters):
     received_network = get_entity(content, 'network')
     network = nb_db.update_network(received_network, parameters[NETWORK_ID])
-    return Response(
-        body=json.dumps({'network': network})
-    )
+    return Response({'network': network})
 
 
 @rest(PUT, PORT_ENTITY, _responses)
 def put_ports(nb_db, content, parameters):
     received_port = get_entity(content, 'port')
     port = nb_db.update_port(received_port, parameters[PORT_ID])
-    return Response(
-        body=json.dumps({'port': port})
-    )
+    return Response({'port': port})
 
     # if not id:
     #    raise Exception('No port id in POST request')
@@ -184,27 +174,22 @@ def put_ports(nb_db, content, parameters):
 def put_subnets(nb_db, content, parameters):
     received_subnet = get_entity(content, 'subnet')
     subnet = nb_db.update_subnet(received_subnet, parameters[SUBNET_ID])
-    return Response(
-        body=json.dumps({'subnet': subnet})
-    )
+    return Response({'subnet': subnet})
 
 
 @rest(GET, 'tech', _responses)
 def get_debug(nb_db, content, parameters):
     networks = nb_db.list_networks()
     ports = nb_db.list_ports()
-    response = json.dumps({
+    return Response({
         'networks': [network for network in networks],
         'ports': [port for port in ports]
     })
-    return response
 
 
 @rest(GET, ROUTERS, _responses)
 def get_routers(nb_db, content, parameters):
-    return Response(
-        body=json.dumps({'routers': nb_db.list_routers()})
-    )
+    return Response({'routers': nb_db.list_routers()})
 
 
 @rest(POST, ROUTERS, _responses)
@@ -212,18 +197,14 @@ def post_routers(nb_db, content, parameters):
     content_json = json.loads(content)
     received_router = content_json['router']
     router = nb_db.add_router(received_router)
-    return Response(
-        body=json.dumps({'router': router})
-    )
+    return Response({'router': router})
 
 
 @rest(GET, ROUTER_ENTITY, _responses)
 def get_router(nb_db, content, parameters):
-    return Response(
-        body=json.dumps({
+    return Response({
             'router': nb_db.get_router(parameters[ROUTER_ID])
         })
-    )
 
 
 @rest(PUT, ROUTER_ENTITY, _responses)
@@ -231,9 +212,7 @@ def put_router(nb_db, content, parameters):
     content_json = json.loads(content)
     received_router = content_json['router']
     router = nb_db.update_router(received_router, parameters[ROUTER_ID])
-    return Response(
-        body=json.dumps({'router': router})
-    )
+    return Response({'router': router})
 
 
 @rest(DELETE, ROUTER_ENTITY, _responses)

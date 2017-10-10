@@ -154,7 +154,7 @@ class TestNeutronResponse(object):
 
         response = handler(nb_db, NOT_RELEVANT, {NETWORK_ID: NETWORK_ID01})
 
-        response_json = json.loads(response)
+        response_json = json.loads(response.body)
         assert response_json['network']['id'] == str(NETWORK_ID01)
         assert response_json['network']['name'] == NETWORK_NAME1
 
@@ -170,7 +170,7 @@ class TestNeutronResponse(object):
         )
         response = handler(nb_db, NOT_RELEVANT, {PORT_ID: PORT_ID07})
 
-        response_json = json.loads(response)
+        response_json = json.loads(response.body)
         assert response_json['port']['id'] == str(PORT_ID07)
         assert response_json['port']['name'] == 'port_name'
         assert response_json['port']['security_groups'] == []
@@ -186,7 +186,7 @@ class TestNeutronResponse(object):
         )
         response = handler(nb_db, NOT_RELEVANT, NOT_RELEVANT)
 
-        response_json = json.loads(response)
+        response_json = json.loads(response.body)
         assert response_json['networks'][0]['id'] == str(NETWORK_ID01)
         assert response_json['networks'][0]['name'] == NETWORK_NAME1
 
@@ -203,7 +203,7 @@ class TestNeutronResponse(object):
 
         response = handler(nb_db, NOT_RELEVANT, NOT_RELEVANT)
 
-        response_json = json.loads(response)
+        response_json = json.loads(response.body)
         assert response_json['ports'][0]['id'] == str(PORT_ID07)
         assert response_json['ports'][0]['name'] == 'port_name'
         assert response_json['ports'][0]['security_groups'] == []
