@@ -176,12 +176,18 @@ class OvnNorth(object):
 
     @PortMapper.map_to_rest
     def get_port(self, port_id):
-        return self._get_port(port_id)
+        return self._get_networkport(port_id)
 
     def _get_port(self, port_id):
         port = self.idl.lsp_get(port_id).execute()
         if not port:
-            raise ElementNotFoundError()
+            raise ElementNotFoundError(
+                'Port {port} does not exist'.format(port=port_id)
+            )
+        return port
+
+    def _get_networkport(self, port_id):
+        port = self._get_port(port_id)
         if not self._is_port_ovirt_controlled(port):
             raise ValueError('Not an ovirt controller port')
         return NetworkPort(port, self._get_port_network(port))
@@ -198,10 +204,9 @@ class OvnNorth(object):
         device_owner=None,
     ):
         port = self._create_port(name, network_id)
-        port_id = port.uuid
-        self._update_port_values(port, port_id, network_id, name, mac,
+        self._update_port_values(port, network_id, name, mac,
                                  is_enabled, device_id, device_owner)
-        return self.get_port(port_id)
+        return self.get_port(port.uuid)
 
     @PortMapper.validate_update
     @PortMapper.map_from_rest
@@ -215,14 +220,16 @@ class OvnNorth(object):
         device_id=None,
         device_owner=None,
     ):
-        port = self._get_port(port_id).port
+        port = self._get_networkport(port_id).port
         network_id = self._get_validated_port_network_id(port, network_id)
-        self._update_port_values(port, port_id, network_id, name, mac,
+        self._update_port_values(port, network_id, name, mac,
                                  is_enabled, device_id, device_owner)
         return self.get_port(port_id)
 
-    def _update_port_values(self, port, port_id, network_id, name, mac,
-                            is_enabled, device_id, device_owner):
+    def _update_port_values(
+        self, port, network_id=None, name=None, mac=None,
+        is_enabled=None, device_id=None, device_owner=None
+    ):
         # TODO(add transaction): setting of the individual values should
         # one day be done in a transaction:
         #   txn = Transaction(self.idl, self.ovsdb_connection)
@@ -235,7 +242,7 @@ class OvnNorth(object):
             mac = port.addresses[0].split()[0]
         subnet_row = self._get_dhcp_by_network_id(network_id)
 
-        db_set_command = DbSetCommand(self.idl, self.TABLE_LSP, port_id)
+        db_set_command = DbSetCommand(self.idl, self.TABLE_LSP, port.uuid)
 
         if mac:
             if subnet_row:
@@ -249,7 +256,7 @@ class OvnNorth(object):
             )
         else:
             self.idl.db_clear(
-                OvnNorth.TABLE_LSP, port_id, OvnNorth.ROW_LSP_DHCPV4_OPTIONS
+                OvnNorth.TABLE_LSP, port.uuid, OvnNorth.ROW_LSP_DHCPV4_OPTIONS
             ).execute()
         db_set_command.add(
             self.ROW_LSP_EXTERNAL_IDS,
