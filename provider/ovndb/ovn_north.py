@@ -331,20 +331,22 @@ class OvnNorth(object):
     def list_subnets(self):
         return self.idl.dhcp_options_list().execute()
 
-    @SubnetMapper.map_to_rest
-    def get_subnet(self, subnet_id):
+    def _get_subnet(self, subnet_id):
         subnet = self.idl.dhcp_options_get(subnet_id).execute()
-        if not subnet:
-            raise ElementNotFoundError()
-
-        # TODO: this is a workaround for an ovsdbapp problem returning
+        # TODO: this: str(subnet.uuid) != str(subnet_id)
+        # is a workaround for an ovsdbapp problem returning
         # random value for table with no indexing column specified when
         # no record for the given UUID was found.
         # Remove when issue is resolved.
-        if str(subnet.uuid) != str(subnet_id):
-            raise ElementNotFoundError()
-
+        if not subnet or str(subnet.uuid) != str(subnet_id):
+            raise ElementNotFoundError(
+                'Subnet {subnet} does not exist'.format(subnet=subnet_id)
+            )
         return subnet
+
+    @SubnetMapper.map_to_rest
+    def get_subnet(self, subnet_id):
+        return self._get_subnet(subnet_id)
 
     @SubnetMapper.validate_add
     @SubnetMapper.map_from_rest
