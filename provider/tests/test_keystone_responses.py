@@ -50,7 +50,7 @@ def test_post_tokens(mock_create_token):
     mock_create_token.assert_called_once_with(
         user_at_domain='joeuser',
         user_password='secret')
-    assert response['access']['token']['id'] == TOKEN
+    assert json.loads(response.body)['access']['token']['id'] == TOKEN
 
 
 def _test_invalid_content(content):

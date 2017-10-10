@@ -18,8 +18,6 @@
 #
 from __future__ import absolute_import
 
-import json
-
 from handlers.selecting_handler import SelectingHandler
 from handlers.keystone_responses import responses
 
@@ -27,7 +25,7 @@ from handlers.keystone_responses import responses
 class TokenHandler(SelectingHandler):
 
     def call_response_handler(self, response_handler, content, parameters):
-        return json.dumps(response_handler(content, parameters))
+        return response_handler(content, parameters)
 
     @staticmethod
     def get_responses():

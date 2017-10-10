@@ -22,6 +22,7 @@ from mock import MagicMock, ANY
 import mock
 
 from handlers.base_handler import BadRequestError
+from handlers.base_handler import Response
 from handlers.base_handler import Timeout
 from handlers.keystone import TokenHandler
 
@@ -35,26 +36,28 @@ response_handlers = {}
 
 @rest('POST', 'tokens', response_handlers)
 def tokens_handler(content, id):
-    return {'value': REST_RESPONSE_POST + json.loads(content)['key']}
+    return Response(
+        {'value': REST_RESPONSE_POST + json.loads(content)['key']}
+    )
 
 
 @rest('POST', 'empty', response_handlers)
 def empty_handler(content, id):
-    return EMPTY
+    return Response({'value': EMPTY})
 
 
 @rest(
     'POST', 'domains/{domain_id}/{config}/{group}/{option}', response_handlers
 )
 def domains_handler(content, params):
-    return {
+    return Response({
         'value': '{domain_id}/{config}/{group}/{option}{key}'.format(
             domain_id=params['domain_id'],
             config=params['config'],
             group=params['group'],
             option=params['option'],
             key=str(json.loads(content)['key'])
-        )}
+        )})
 
 
 @rest('POST', 'bad_req', response_handlers)
@@ -164,4 +167,5 @@ class TestKeystoneHandler(object):
         handler.rfile.read.return_value = None
         handler.headers = {'Content-Length': 0}
         handler.do_POST()
-        handler.wfile.write.assert_called_once_with(json.dumps(EMPTY))
+        expected_body = json.dumps({'value': EMPTY})
+        handler.wfile.write.assert_called_once_with(expected_body)

@@ -31,6 +31,7 @@ from ovirt_provider_config_common import nova_url_with_version
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import GET
 from handlers.base_handler import POST
+from handlers.base_handler import Response
 from handlers.responses_utils import get_entity
 from handlers.selecting_handler import rest
 
@@ -67,7 +68,7 @@ def post_tokens(content, parameters):
     neutron_id = openstack_neutron_id()
     keystone_id = openstack_keystone_id()
 
-    return {
+    return Response({
         'access': {
             'token': {
                 'id': token,
@@ -125,17 +126,17 @@ def post_tokens(content, parameters):
                 }
             ]
         },
-    }
+    })
 
 
 @rest(GET, TENANTS, _responses)
 def get_tenants(content, parameters):
-    return {
+    return Response({
         'tenants': [{
             'description': tenant_description(),
             'name': tenant_name(),
             'id': tenant_id()}]
-    }
+    })
 
 
 def responses():
