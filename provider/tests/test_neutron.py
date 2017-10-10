@@ -19,6 +19,7 @@ from __future__ import absolute_import
 
 from mock import MagicMock
 import httplib
+import json
 import mock
 
 from handlers.base_handler import Response
@@ -37,28 +38,34 @@ response_handlers = {}
 
 @rest('GET', 'testports', response_handlers)
 def get_handler(nb_db, content, path_parts):
-    return REST_RESPONSE_GET
+    return Response({'method:': REST_RESPONSE_GET})
 
 
 @rest('GET', 'testports/*', response_handlers)
 def show_handler(nb_db, content, path_parts):
-    return REST_RESPONSE_SHOW
+    return Response({'method:': REST_RESPONSE_SHOW})
 
 
 @rest('DELETE', 'testports/*', response_handlers)
 def delete_handler(nb_db, content, path_parts):
-    return None
+    return Response()
 
 
 @rest('POST', 'testports', response_handlers)
 def post_handler(nb_db, content, path_parts):
-    return REST_RESPONSE_POST + content
+    return Response({
+        'method:': REST_RESPONSE_POST,
+        'value:': content
+    })
 
 
 @rest('POST', 'response_code_201', response_handlers)
 def response_code_201(nb_db, content, path_parts):
     return Response(
-        body=REST_RESPONSE_POST + content,
+        {
+            'method:': REST_RESPONSE_POST,
+            'value:': content
+        },
         code=httplib.CREATED
     )
 
@@ -84,7 +91,8 @@ class TestNeutronHandler(object):
         handler.do_GET()
 
         assert mock_send_response.call_args[0][1] == 200
-        assert handler.wfile.write.call_args[0][0] == REST_RESPONSE_GET
+        expected_response = json.dumps({'method:': REST_RESPONSE_GET})
+        assert handler.wfile.write.call_args[0][0] == expected_response
         assert mock_send_response.call_count == 1
         assert mock_validate_token.call_count == 1
 
@@ -123,7 +131,8 @@ class TestNeutronHandler(object):
         handler.do_GET()
 
         assert mock_send_response.call_args[0][1] == 200
-        assert handler.wfile.write.call_args[0][0] == REST_RESPONSE_SHOW
+        expected_response = json.dumps({'method:': REST_RESPONSE_SHOW})
+        assert handler.wfile.write.call_args[0][0] == expected_response
         assert mock_send_response.call_count == 1
         assert mock_validate_token.call_count == 1
 
@@ -186,7 +195,10 @@ class TestNeutronHandler(object):
         handler.do_POST()
 
         assert mock_send_response.call_args[0][1] == 201
-        expected_response = REST_RESPONSE_POST + 'content'
+        expected_response = json.dumps({
+            'method:': REST_RESPONSE_POST,
+            'value:': 'content'
+        })
         assert handler.wfile.write.call_args[0][0] == expected_response
         assert mock_send_response.call_count == 1
         assert mock_validate_token.call_count == 1
@@ -211,7 +223,10 @@ class TestNeutronHandler(object):
         handler.do_POST()
 
         assert mock_send_response.call_args[0][1] == httplib.CREATED
-        expected_response = REST_RESPONSE_POST + 'content'
+        expected_response = json.dumps({
+            'method:': REST_RESPONSE_POST,
+            'value:': 'content'
+        })
         assert handler.wfile.write.call_args[0][0] == expected_response
         assert mock_send_response.call_count == 1
         assert mock_validate_token.call_count == 1

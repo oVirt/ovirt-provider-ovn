@@ -112,16 +112,19 @@ def get_subnets(nb_db, content, parameters):
 @rest(DELETE, NETWORK_ENTITY, _responses)
 def delete_network(nb_db, content, parameters):
     nb_db.delete_network(parameters[NETWORK_ID])
+    return Response()
 
 
 @rest(DELETE, PORT_ENTITY, _responses)
 def delete_port(nb_db, content, parameters):
     nb_db.delete_port(parameters[PORT_ID])
+    return Response()
 
 
 @rest(DELETE, SUBNET_ENTITY, _responses)
 def delete_subnet(nb_db, content, parameters):
     nb_db.delete_subnet(parameters[SUBNET_ID])
+    return Response()
 
 
 @rest(POST, NETWORKS, _responses)
