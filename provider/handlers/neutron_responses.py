@@ -17,7 +17,6 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
-import httplib
 import json
 
 from handlers.base_handler import GET
@@ -130,8 +129,7 @@ def post_networks(nb_db, content, parameters):
     received_network = get_entity(content, 'network')
     network = nb_db.add_network(received_network)
     return Response(
-        body=json.dumps({'network': network}),
-        code=httplib.CREATED
+        body=json.dumps({'network': network})
     )
 
 
@@ -140,8 +138,7 @@ def post_ports(nb_db, content, parameters):
     received_port = get_entity(content, 'port')
     port = nb_db.add_port(received_port)
     return Response(
-        body=json.dumps({'port': port}),
-        code=httplib.CREATED
+        body=json.dumps({'port': port})
     )
 
 
@@ -150,8 +147,7 @@ def post_subnets(nb_db, content, parameters):
     received_subnet = get_entity(content, 'subnet')
     subnet = nb_db.add_subnet(received_subnet)
     return Response(
-        body=json.dumps({'subnet': subnet}),
-        code=httplib.CREATED
+        body=json.dumps({'subnet': subnet})
     )
 
 
@@ -160,8 +156,7 @@ def put_network(nb_db, content, parameters):
     received_network = get_entity(content, 'network')
     network = nb_db.update_network(received_network, parameters[NETWORK_ID])
     return Response(
-        body=json.dumps({'network': network}),
-        code=httplib.OK
+        body=json.dumps({'network': network})
     )
 
 
@@ -170,8 +165,7 @@ def put_ports(nb_db, content, parameters):
     received_port = get_entity(content, 'port')
     port = nb_db.update_port(received_port, parameters[PORT_ID])
     return Response(
-        body=json.dumps({'port': port}),
-        code=httplib.OK
+        body=json.dumps({'port': port})
     )
 
     # if not id:
@@ -191,8 +185,7 @@ def put_subnets(nb_db, content, parameters):
     received_subnet = get_entity(content, 'subnet')
     subnet = nb_db.update_subnet(received_subnet, parameters[SUBNET_ID])
     return Response(
-        body=json.dumps({'subnet': subnet}),
-        code=httplib.OK
+        body=json.dumps({'subnet': subnet})
     )
 
 
@@ -210,8 +203,7 @@ def get_debug(nb_db, content, parameters):
 @rest(GET, ROUTERS, _responses)
 def get_routers(nb_db, content, parameters):
     return Response(
-        body=json.dumps({'routers': nb_db.list_routers()}),
-        code=httplib.OK
+        body=json.dumps({'routers': nb_db.list_routers()})
     )
 
 
@@ -221,8 +213,7 @@ def post_routers(nb_db, content, parameters):
     received_router = content_json['router']
     router = nb_db.add_router(received_router)
     return Response(
-        body=json.dumps({'router': router}),
-        code=httplib.CREATED
+        body=json.dumps({'router': router})
     )
 
 
@@ -231,8 +222,7 @@ def get_router(nb_db, content, parameters):
     return Response(
         body=json.dumps({
             'router': nb_db.get_router(parameters[ROUTER_ID])
-        }),
-        code=httplib.OK
+        })
     )
 
 
@@ -242,8 +232,7 @@ def put_router(nb_db, content, parameters):
     received_router = content_json['router']
     router = nb_db.update_router(received_router, parameters[ROUTER_ID])
     return Response(
-        body=json.dumps({'router': router}),
-        code=httplib.OK
+        body=json.dumps({'router': router})
     )
 
 
@@ -259,7 +248,6 @@ def put_add_router_inerface(nb_db, content, parameters):
     )
     return Response(
         body=json.dumps(result),
-        code=httplib.OK
     )
 
 
@@ -267,8 +255,7 @@ def put_add_router_inerface(nb_db, content, parameters):
 def put_remove_router_interface(nb_db, content, parameters):
     nb_db.delete_router_interface(get_entity(content), parameters[ROUTER_ID])
     return Response(
-        body=json.dumps({"router": {}}),
-        code=httplib.OK
+        body=json.dumps({"router": {}})
     )
 
 

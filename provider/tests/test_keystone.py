@@ -77,7 +77,7 @@ class TestKeystoneHandler(object):
     def _test_handle_post_request_ok(self, mock_send_response, path,
                                      expected_string):
         handler = self._test_handle_post_request(path)
-        mock_send_response.assert_called_once_with(handler, 200)
+        mock_send_response.assert_called_once_with(handler, 201)
         handler.wfile.write.assert_called_once_with(json.dumps(
             {'value': expected_string + 'value'}))
 

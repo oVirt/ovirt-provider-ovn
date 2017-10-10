@@ -91,13 +91,15 @@ class BaseHandler(BaseHTTPRequestHandler):
         BaseHTTPRequestHandler.__init__(self, request, client_address, server)
 
     def do_GET(self):
-        self._handle_request(GET)
+        self._handle_request(GET, code=httplib.OK)
 
     def do_POST(self):
-        self._handle_request(POST, content=self._get_content())
+        self._handle_request(POST, content=self._get_content(),
+                             code=httplib.CREATED)
 
     def do_PUT(self):
-        self._handle_request(PUT, content=self._get_content())
+        self._handle_request(PUT, content=self._get_content(),
+                             code=httplib.OK)
 
     def do_DELETE(self):
         self._handle_request(DELETE, code=httplib.NO_CONTENT)

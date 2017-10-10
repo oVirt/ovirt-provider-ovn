@@ -58,8 +58,8 @@ def post_handler(nb_db, content, path_parts):
 @rest('POST', 'response_code_201', response_handlers)
 def response_code_201(nb_db, content, path_parts):
     return Response(
-        REST_RESPONSE_POST + content,
-        httplib.CREATED
+        body=REST_RESPONSE_POST + content,
+        code=httplib.CREATED
     )
 
 
@@ -185,7 +185,7 @@ class TestNeutronHandler(object):
 
         handler.do_POST()
 
-        assert mock_send_response.call_args[0][1] == 200
+        assert mock_send_response.call_args[0][1] == 201
         expected_response = REST_RESPONSE_POST + 'content'
         assert handler.wfile.write.call_args[0][0] == expected_response
         assert mock_send_response.call_count == 1
