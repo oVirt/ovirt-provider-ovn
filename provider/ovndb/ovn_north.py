@@ -78,6 +78,12 @@ class OvnNorth(object):
     ROW_LSP_EXTERNAL_IDS = 'external_ids'
     ROW_LSP_ENABLED = 'enabled'
     ROW_LSP_DHCPV4_OPTIONS = 'dhcpv4_options'
+    ROW_LSP_TYPE = 'type'
+    ROW_LSP_OPTIONS = 'options'
+    LSP_TYPE_ROUTER = 'router'
+    LSP_ADDRESS_TYPE_DYNAMIC = 'dynamic'
+    LSP_ADDRESS_TYPE_ROUTER = 'router'
+    LSP_OPTION_ROUTER_PORT = 'router-port'
 
     TABLE_DHCP_Options = 'DHCP_Options'
     ROW_DHCP_EXTERNAL_IDS = 'external_ids'
@@ -87,6 +93,8 @@ class OvnNorth(object):
     TABLE_LR = 'Logical_Router'
     ROW_LR_NAME = 'name'
     ROW_LR_ENABLED = 'enabled'
+
+    ROUTER_PORT_NAME = 'router_port'
 
     def __init__(self):
         self._connect()
@@ -228,7 +236,8 @@ class OvnNorth(object):
 
     def _update_port_values(
         self, port, network_id=None, name=None, mac=None,
-        is_enabled=None, device_id=None, device_owner=None
+        is_enabled=None, device_id=None,
+        device_owner=None, router_port_name=None
     ):
         # TODO(add transaction): setting of the individual values should
         # one day be done in a transaction:
@@ -244,12 +253,17 @@ class OvnNorth(object):
 
         db_set_command = DbSetCommand(self.idl, self.TABLE_LSP, port.uuid)
 
-        if mac:
+        is_router = router_port_name is not None
+
+        if is_router:
+            db_set_command.add(
+                self.ROW_LSP_ADDRESSES, [OvnNorth.LSP_ADDRESS_TYPE_ROUTER])
+        elif mac:
             if subnet_row:
-                mac += ' dynamic'
+                mac += ' ' + OvnNorth.LSP_ADDRESS_TYPE_DYNAMIC
             db_set_command.add(self.ROW_LSP_ADDRESSES, [mac])
 
-        if subnet_row:
+        if subnet_row and not is_router:
             db_set_command.add(
                 self.ROW_LSP_DHCPV4_OPTIONS,
                 subnet_row.uuid
@@ -277,6 +291,16 @@ class OvnNorth(object):
             self.ROW_LSP_ENABLED,
             is_enabled,
             is_enabled
+        )
+        db_set_command.add(
+            self.ROW_LSP_TYPE,
+            OvnNorth.LSP_TYPE_ROUTER,
+            is_router
+        )
+        db_set_command.add(
+            self.ROW_LSP_OPTIONS,
+            {OvnNorth.LSP_OPTION_ROUTER_PORT: router_port_name},
+            is_router
         )
         db_set_command.execute()
 
