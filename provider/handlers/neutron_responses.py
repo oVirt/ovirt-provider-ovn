@@ -254,9 +254,11 @@ def delete_router(nb_db, content, parameters):
 
 @rest(PUT, ADD_ROUTER_INTERFACE, _responses)
 def put_add_router_inerface(nb_db, content, parameters):
-    nb_db.add_router_interface(get_entity(content), parameters[ROUTER_ID])
+    result = nb_db.add_router_interface(
+        get_entity(content), parameters[ROUTER_ID]
+    )
     return Response(
-        body=json.dumps({'router': {}}),
+        body=json.dumps(result),
         code=httplib.OK
     )
 

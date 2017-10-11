@@ -424,8 +424,18 @@ class AddRouterInterfaceMapper(Mapper):
         if not row:
             return {}
 
+        router_id, network_id, port_id, subnet_id = row
+
         return {
-            # TODO: add the complete set once backend is done
+            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_ID: router_id,
+            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_NETWORK_ID:
+                network_id,
+            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_PORT_ID: port_id,
+            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_SUBNET_ID:
+                subnet_id,
+            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_SUBNET_IDS: [
+                subnet_id
+            ],
             AddRouterInterfaceMapper.REST_TENANT_ID: tenant_id(),
         }
 

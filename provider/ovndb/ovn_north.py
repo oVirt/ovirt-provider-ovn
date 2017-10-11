@@ -566,7 +566,7 @@ class OvnNorth(object):
             device_owner=PortMapper.DEVICE_OWNER_OVIRT,
             router_port_name=lrp_name
         )
-        return lrp_name, lrp_ip
+        return str(port.uuid), lrp_name, lrp_ip, network_id
 
     def _update_routing_lsp_by_port(self, port_id, router_id):
         port = self._get_port(port_id)
@@ -577,7 +577,7 @@ class OvnNorth(object):
             is_enabled=True,
             router_port_name=lrp_name
         )
-        return lrp_name, lrp_ip
+        return lrp_name, lrp_ip, str(self._get_port_network(port).uuid)
 
     def _create_router_port(self, router_id, lrp_name, lrp_ip):
         self.idl.lrp_add(
@@ -587,17 +587,21 @@ class OvnNorth(object):
 
     @AddRouterInterfaceMapper.validate_update
     @AddRouterInterfaceMapper.map_from_rest
+    @AddRouterInterfaceMapper.map_to_rest
     def add_router_interface(self, router_id, subnet_id=None, port_id=None):
         self._validate_router_exists(router_id)
         if subnet_id:
-            lrp_name, lrp_ip = self._create_routing_lsp_by_subnet(
-                subnet_id, router_id
-            )
+            (
+                port_id, lrp_name, lrp_ip, network_id
+            ) = self._create_routing_lsp_by_subnet(subnet_id, router_id)
         else:
-            lrp_name, lrp_ip = self._update_routing_lsp_by_port(
+            lrp_name, lrp_ip, network_id = self._update_routing_lsp_by_port(
                 port_id, router_id
             )
+            subnet_id = str(self._get_dhcp_by_network_id(network_id).uuid)
         self._create_router_port(router_id, lrp_name, lrp_ip)
+
+        return router_id, network_id, port_id, subnet_id
 
     def _get_ip_from_subnet(self, subnet, network_id, router_id):
         subnet_gateway = subnet.options.get('router')
