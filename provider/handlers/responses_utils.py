@@ -23,9 +23,9 @@ import json
 from handlers.base_handler import BadRequestError
 
 
-def get_entity(content, entity_name):
+def get_entity(content, entity_name=None):
     try:
         content_json = json.loads(content)
-        return content_json[entity_name]
+        return content_json[entity_name] if entity_name else content_json
     except (ValueError, KeyError) as e:
         raise BadRequestError(e)
