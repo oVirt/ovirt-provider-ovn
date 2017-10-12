@@ -495,8 +495,7 @@ class OvnNorth(object):
     def delete_subnet(self, subnet_id):
         self.idl.dhcp_options_del(subnet_id).execute()
 
-    @RouterMapper.map_to_rest
-    def get_router(self, router_id):
+    def _get_router(self, router_id):
         # TODO: LrGet is not yet implemented by ovsdbapp
         # patch pending: https://review.openstack.org/#/c/505517/
         # replace once patch is accepted
@@ -504,6 +503,10 @@ class OvnNorth(object):
             return self.idl.lookup(OvnNorth.TABLE_LR, router_id)
         except RowNotFound:
             raise ElementNotFoundError()
+
+    @RouterMapper.map_to_rest
+    def get_router(self, router_id):
+        return self._get_router(router_id)
 
     @RouterMapper.map_to_rest
     def list_routers(self):
