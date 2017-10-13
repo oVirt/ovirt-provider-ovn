@@ -38,6 +38,7 @@ from ovndb.ovn_north_mappers import AddRouterInterfaceMapper
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import NetworkPort
 from ovndb.ovn_north_mappers import PortMapper
+from ovndb.ovn_north_mappers import RemoveRouterInterfaceMapper
 from ovndb.ovn_north_mappers import RestDataError
 from ovndb.ovn_north_mappers import RouterMapper
 from ovndb.ovn_north_mappers import SubnetConfigError
@@ -652,6 +653,8 @@ class OvnNorth(object):
         return '{ip}/{netmask}'.format(
             ip=port_ip, netmask=network_netmask)
 
+    @RemoveRouterInterfaceMapper.validate_update
+    @RemoveRouterInterfaceMapper.map_from_rest
     def delete_router_interface(self, router_id, subnet_id=None, port_id=None):
         pass
 
