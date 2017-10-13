@@ -143,7 +143,9 @@ class OvnNorth(object):
     def _get_network(self, network_id):
         network = self.idl.ls_get(network_id).execute()
         if not network:
-            raise ElementNotFoundError()
+            raise ElementNotFoundError(
+                'Network {network} does not exist'.format(network=network_id)
+            )
         return network
 
     @NetworkMapper.map_to_rest
@@ -522,7 +524,9 @@ class OvnNorth(object):
         try:
             return self.idl.lookup(OvnNorth.TABLE_LR, router_id)
         except RowNotFound:
-            raise ElementNotFoundError()
+            raise ElementNotFoundError(
+                'Router {router} does not exist'.format(subnet=router_id)
+            )
 
     @RouterMapper.map_to_rest
     def get_router(self, router_id):
