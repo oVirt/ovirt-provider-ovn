@@ -261,7 +261,7 @@ class OvnNorth(object):
         # The ovsdbapp transactions seem to have synchronization issues at the
         # moment, hence we'll be using individual transactions for now.
         if not mac and port.addresses:
-            mac = port.addresses[0].split()[0]
+            mac = self._get_port_mac(port)
         subnet_row = self._get_dhcp_by_network_id(network_id)
 
         db_set_command = DbSetCommand(self.idl, self.TABLE_LSP, port.uuid)
@@ -592,22 +592,27 @@ class OvnNorth(object):
             device_owner=PortMapper.DEVICE_OWNER_OVIRT,
             router_port_name=lrp_name
         )
-        return str(port.uuid), lrp_name, lrp_ip, network_id
+        return str(port.uuid), lrp_name, lrp_ip, network_id, self._random_mac()
 
     def _update_routing_lsp_by_port(self, port_id, router_id):
         port = self._get_port(port_id)
         lrp_ip = self._get_ip_from_port(port, router_id)
         lrp_name = self._create_router_port_name(port.uuid)
+        mac = self._get_port_mac(port)
         self._update_port_values(
             port=port,
             is_enabled=True,
             router_port_name=lrp_name
         )
-        return lrp_name, lrp_ip, str(self._get_port_network(port).uuid)
+        return (
+            port_id, lrp_name, lrp_ip, str(self._get_port_network(port).uuid),
+            mac
+        )
 
-    def _create_router_port(self, router_id, lrp_name, lrp_ip):
+    def _create_router_port(self, router_id, lrp_name, lrp_ip, mac):
         self.idl.lrp_add(
-            router=router_id, port=lrp_name, mac=self._random_mac(),
+            router=router_id, port=lrp_name,
+            mac=mac,
             networks=[lrp_ip],
         ).execute()
 
@@ -616,17 +621,14 @@ class OvnNorth(object):
     @AddRouterInterfaceMapper.map_to_rest
     def add_router_interface(self, router_id, subnet_id=None, port_id=None):
         self._validate_router_exists(router_id)
-        if subnet_id:
-            (
-                port_id, lrp_name, lrp_ip, network_id
-            ) = self._create_routing_lsp_by_subnet(subnet_id, router_id)
-        else:
-            lrp_name, lrp_ip, network_id = self._update_routing_lsp_by_port(
-                port_id, router_id
-            )
+        port_id, lrp_name, lrp_ip, network_id, mac = (
+            self._create_routing_lsp_by_subnet(subnet_id, router_id)
+            if subnet_id else
+            self._update_routing_lsp_by_port(port_id, router_id)
+        )
+        if not subnet_id:
             subnet_id = str(self._get_dhcp_by_network_id(network_id).uuid)
-        self._create_router_port(router_id, lrp_name, lrp_ip)
-
+        self._create_router_port(router_id, lrp_name, lrp_ip, mac)
         return router_id, network_id, port_id, subnet_id
 
     def _get_ip_from_subnet(self, subnet, network_id, router_id):
@@ -734,6 +736,9 @@ class OvnNorth(object):
                 'Logical router port {port} does not exist'
                 .format(port=lrp)
             )
+
+    def _get_port_mac(self, port):
+        return port.addresses[0].split()[0]
 
     def _random_mac(self):
         macparts = [0]
