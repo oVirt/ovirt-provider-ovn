@@ -243,7 +243,8 @@ class OvnNorth(object):
     def _update_port_values(
         self, port, network_id=None, name=None, mac=None,
         is_enabled=None, device_id=None,
-        device_owner=None, router_port_name=None
+        device_owner=None, router_port_name=None,
+        clear_router=False
     ):
         # TODO(add transaction): setting of the individual values should
         # one day be done in a transaction:
@@ -309,6 +310,15 @@ class OvnNorth(object):
             is_router
         )
         db_set_command.execute()
+
+        if clear_router:
+            self.idl.db_clear(
+                OvnNorth.TABLE_LSP, port.uuid, OvnNorth.ROW_LSP_TYPE
+            ).execute()
+            self.idl.db_remove(
+                OvnNorth.TABLE_LSP, port.uuid, OvnNorth.ROW_LSP_OPTIONS,
+                OvnNorth.LSP_OPTION_ROUTER_PORT
+            ).execute()
 
     def _get_validated_port_network_id(self, port, network_id):
         """
