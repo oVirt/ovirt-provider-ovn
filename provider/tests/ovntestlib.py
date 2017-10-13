@@ -64,6 +64,7 @@ class OvnPortRow(OvnRow):
         self.addresses = addresses
         self.up = None
         self.enabled = None
+        self.type = None
 
 
 class OvnSubnetRow(OvnRow):

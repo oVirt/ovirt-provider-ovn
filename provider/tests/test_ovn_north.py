@@ -270,7 +270,7 @@ class TestOvnNorth(object):
             False
         )
 
-        assert mock_db_set.call_count == 2
+        assert mock_db_set.call_count == 3
 
         assert mock_db_set.mock_calls[0] == mock.call(
             ovn_north.idl,
@@ -287,10 +287,6 @@ class TestOvnNorth(object):
             OvnNorth.TABLE_LSP,
             TestOvnNorth.PORT_ID01,
             (
-                OvnNorth.ROW_LSP_ADDRESSES,
-                [TestOvnNorth.MAC_ADDRESS]
-            ),
-            (
                 OvnNorth.ROW_LSP_EXTERNAL_IDS,
                 {PortMapper.OVN_DEVICE_ID: TestOvnNorth.DEVICE_ID}
             ),
@@ -306,6 +302,16 @@ class TestOvnNorth(object):
                 OvnNorth.ROW_LSP_ENABLED,
                 True
             )
+        )
+
+        assert mock_db_set.mock_calls[4] == mock.call(
+            ovn_north.idl,
+            OvnNorth.TABLE_LSP,
+            TestOvnNorth.PORT_ID01,
+            (
+                OvnNorth.ROW_LSP_ADDRESSES,
+                [TestOvnNorth.MAC_ADDRESS]
+            ),
         )
 
     @mock.patch(

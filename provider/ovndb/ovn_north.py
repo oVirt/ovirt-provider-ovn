@@ -100,8 +100,8 @@ class OvnNorth(object):
 
     TABLE_LRP = 'Logical_Router_Port'
 
-    ROUTER_PORT_NAME = 'router_port'
-    UNASSIGNED_PORT_NAME = 'unassgined_port'
+    ROUTER_SWITCH_PORT_NAME = 'router_port'
+    UNASSIGNED_SWTICH_PORT_NAME = 'unassgined_port'
 
     ROUTER_PORT_NAME_PREFIX = 'lrp'
 
@@ -226,8 +226,10 @@ class OvnNorth(object):
         device_owner=None,
     ):
         port = self._create_port(name, network_id)
-        self._update_port_values(port, network_id, name, mac,
-                                 is_enabled, device_id, device_owner)
+        self._update_port_values(
+            port, name, is_enabled, device_id, device_owner
+        )
+        self._update_port_address(port, network_id=network_id, mac=mac)
         return self.get_port(port.uuid)
 
     @PortMapper.validate_update
@@ -244,15 +246,15 @@ class OvnNorth(object):
     ):
         port = self._get_networkport(port_id).port
         network_id = self._get_validated_port_network_id(port, network_id)
-        self._update_port_values(port, network_id, name, mac,
-                                 is_enabled, device_id, device_owner)
+        self._update_port_values(
+            port, name, is_enabled, device_id, device_owner
+        )
+        self._update_port_address(port, network_id=network_id, mac=mac)
         return self.get_port(port_id)
 
     def _update_port_values(
-        self, port, network_id=None, name=None, mac=None,
-        is_enabled=None, device_id=None,
-        device_owner=None, router_port_name=None,
-        clear_router=False
+        self, port, name=None, is_enabled=None, device_id=None,
+        device_owner=None
     ):
         # TODO(add transaction): setting of the individual values should
         # one day be done in a transaction:
@@ -262,31 +264,7 @@ class OvnNorth(object):
         #   txn.commit()
         # The ovsdbapp transactions seem to have synchronization issues at the
         # moment, hence we'll be using individual transactions for now.
-        if not mac and port.addresses:
-            mac = self._get_port_mac(port)
-        subnet_row = self._get_dhcp_by_network_id(network_id)
-
         db_set_command = DbSetCommand(self.idl, self.TABLE_LSP, port.uuid)
-
-        is_router = router_port_name is not None
-
-        if is_router:
-            db_set_command.add(
-                self.ROW_LSP_ADDRESSES, [OvnNorth.LSP_ADDRESS_TYPE_ROUTER])
-        elif mac:
-            if subnet_row:
-                mac += ' ' + OvnNorth.LSP_ADDRESS_TYPE_DYNAMIC
-            db_set_command.add(self.ROW_LSP_ADDRESSES, [mac])
-
-        if subnet_row and not is_router:
-            db_set_command.add(
-                self.ROW_LSP_DHCPV4_OPTIONS,
-                subnet_row.uuid
-            )
-        else:
-            self.idl.db_clear(
-                OvnNorth.TABLE_LSP, port.uuid, OvnNorth.ROW_LSP_DHCPV4_OPTIONS
-            ).execute()
         db_set_command.add(
             self.ROW_LSP_EXTERNAL_IDS,
             {PortMapper.OVN_DEVICE_ID: device_id},
@@ -307,26 +285,61 @@ class OvnNorth(object):
             is_enabled,
             is_enabled
         )
+        db_set_command.execute()
+
+    def _update_port_address(self, port, network_id, mac=None):
+        if port.type == OvnNorth.LSP_TYPE_ROUTER:
+            return
+        mac = mac or self._get_port_mac(port)
+        if mac:
+            db_set_command = DbSetCommand(self.idl, self.TABLE_LSP, port.uuid)
+            subnet_row = self._get_dhcp_by_network_id(network_id)
+            if subnet_row:
+                db_set_command.add(
+                    self.ROW_LSP_DHCPV4_OPTIONS, subnet_row.uuid
+                )
+                mac += ' ' + OvnNorth.LSP_ADDRESS_TYPE_DYNAMIC
+            else:
+                self.idl.db_clear(
+                    OvnNorth.TABLE_LSP, port.uuid,
+                    OvnNorth.ROW_LSP_DHCPV4_OPTIONS
+                ).execute()
+
+            db_set_command.add(self.ROW_LSP_ADDRESSES, [mac])
+            db_set_command.execute()
+
+    def _connect_port_to_router(self, port, router_port_name):
+        db_set_command = DbSetCommand(self.idl, self.TABLE_LSP, port.uuid)
         db_set_command.add(
             self.ROW_LSP_TYPE,
             OvnNorth.LSP_TYPE_ROUTER,
-            is_router
         )
         db_set_command.add(
             self.ROW_LSP_OPTIONS,
             {OvnNorth.LSP_OPTION_ROUTER_PORT: router_port_name},
-            is_router
+        )
+        db_set_command.add(
+            self.ROW_LSP_ADDRESSES,
+            [OvnNorth.LSP_ADDRESS_TYPE_ROUTER]
         )
         db_set_command.execute()
 
-        if clear_router:
-            self.idl.db_clear(
-                OvnNorth.TABLE_LSP, port.uuid, OvnNorth.ROW_LSP_TYPE
-            ).execute()
-            self.idl.db_remove(
-                OvnNorth.TABLE_LSP, port.uuid, OvnNorth.ROW_LSP_OPTIONS,
-                OvnNorth.LSP_OPTION_ROUTER_PORT
-            ).execute()
+        self.idl.db_clear(
+            OvnNorth.TABLE_LSP, port.uuid, OvnNorth.ROW_LSP_DHCPV4_OPTIONS
+        ).execute()
+
+    def _disconnect_port_from_router(self, port):
+        self.idl.db_clear(
+            OvnNorth.TABLE_LSP, port.uuid, OvnNorth.ROW_LSP_TYPE
+        ).execute()
+        self.idl.db_remove(
+            OvnNorth.TABLE_LSP, port.uuid, OvnNorth.ROW_LSP_OPTIONS,
+            OvnNorth.LSP_OPTION_ROUTER_PORT
+        ).execute()
+        if port.name == OvnNorth.ROUTER_SWITCH_PORT_NAME:
+            self._update_port_values(
+                port, name=OvnNorth.UNASSIGNED_SWTICH_PORT_NAME
+            )
 
     def _get_validated_port_network_id(self, port, network_id):
         """
@@ -456,7 +469,7 @@ class OvnNorth(object):
         for port in network.ports:
             if port.type == OvnNorth.LSP_TYPE_ROUTER:
                 continue
-            self._update_port_values(port, network_id=network_id)
+            self._update_port_address(port, network_id=network_id)
 
         return self.get_subnet(subnet.uuid)
 
@@ -550,7 +563,7 @@ class OvnNorth(object):
         for port in network.ports:
             if port.type == OvnNorth.LSP_TYPE_ROUTER:
                 continue
-            self._update_port_values(port, network_id=network_id)
+            self._update_port_address(port, network_id=network_id)
 
     def _get_router(self, router_id):
         # TODO: LrGet is not yet implemented by ovsdbapp
@@ -664,17 +677,16 @@ class OvnNorth(object):
         self._validate_create_routing_lsp_by_subnet(
             subnet_id, subnet, router_id, network_id)
         lrp_ip = self._get_ip_from_subnet(subnet, network_id, router_id)
-        port = self._create_port(OvnNorth.ROUTER_PORT_NAME, network_id)
+        port = self._create_port(OvnNorth.ROUTER_SWITCH_PORT_NAME, network_id)
         lrp_name = self._create_router_port_name(port.uuid)
         self._update_port_values(
             port=port,
-            network_id=network_id,
-            name=OvnNorth.ROUTER_PORT_NAME,
+            name=OvnNorth.ROUTER_SWITCH_PORT_NAME,
             is_enabled=True,
             device_id=port.uuid,
             device_owner=PortMapper.DEVICE_OWNER_OVIRT,
-            router_port_name=lrp_name
         )
+        self._connect_port_to_router(port, lrp_name)
         self._set_subnet_gateway_router(subnet_id, router_id)
         return str(port.uuid), lrp_name, lrp_ip, network_id, self._random_mac()
 
@@ -691,8 +703,8 @@ class OvnNorth(object):
         self._update_port_values(
             port=port,
             is_enabled=True,
-            router_port_name=lrp_name
         )
+        self._connect_port_to_router(port, lrp_name)
         return (
             port_id, lrp_name, lrp_ip, str(self._get_port_network(port).uuid),
             mac
@@ -797,10 +809,8 @@ class OvnNorth(object):
                 'Port {port} is not connected to router {router}'
                 .format(port=port_id, router=router_id)
             )
-        self._update_port_values(
-            lsp, network_id=network_id, mac=lrp.mac, clear_router=True,
-            name=OvnNorth.UNASSIGNED_PORT_NAME
-        )
+        self._disconnect_port_from_router(lsp)
+        self._update_port_address(lsp, network_id=network_id, mac=lrp.mac)
         self.idl.lrp_del(str(lrp.uuid)).execute()
 
     def _delete_router_interface_by_subnet(self, router_id, subnet_id):
@@ -828,7 +838,7 @@ class OvnNorth(object):
             )
 
     def _get_port_mac(self, port):
-        return port.addresses[0].split()[0]
+        return port.addresses[0].split()[0] if port.addresses else None
 
     def _random_mac(self):
         macparts = [0]
