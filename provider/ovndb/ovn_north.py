@@ -134,12 +134,15 @@ class OvnNorth(object):
     def list_networks(self):
         return self.idl.ls_list().execute()
 
-    @NetworkMapper.map_to_rest
-    def get_network(self, network_id):
+    def _get_network(self, network_id):
         network = self.idl.ls_get(network_id).execute()
         if not network:
             raise ElementNotFoundError()
         return network
+
+    @NetworkMapper.map_to_rest
+    def get_network(self, network_id):
+        return self._get_network(network_id)
 
     @NetworkMapper.validate_add
     @NetworkMapper.map_from_rest
