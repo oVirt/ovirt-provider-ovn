@@ -400,44 +400,24 @@ class RouterMapper(Mapper):
             )
 
 
-class AddRouterInterfaceMapper(Mapper):
-    REST_ADDROUTERINTERFACE_ID = 'id'
-    REST_ADDROUTERINTERFACE_SUBNET_ID = 'subnet_id'
-    REST_ADDROUTERINTERFACE_PORT_ID = 'port_id'
-    REST_ADDROUTERINTERFACE_SUBNET_IDS = 'subnet_ids'
-    REST_ADDROUTERINTERFACE_NETWORK_ID = 'network_id'
+class BaseRouterInterfaceMapper(Mapper):
+    REST_ROUTERINTERFACE_ID = 'id'
+    REST_ROUTERINTERFACE_SUBNET_ID = 'subnet_id'
+    REST_ROUTERINTERFACE_PORT_ID = 'port_id'
+    REST_ROUTERINTERFACE_SUBNET_IDS = 'subnet_ids'
+    REST_ROUTERINTERFACE_NETWORK_ID = 'network_id'
 
     @staticmethod
     def rest2row(wrapped_self, func, rest_data, router_id):
         subnet = rest_data.get(
-            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_SUBNET_ID
+            BaseRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_ID
         )
         port = rest_data.get(
-            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_PORT_ID
+            BaseRouterInterfaceMapper.REST_ROUTERINTERFACE_PORT_ID
         )
         return func(
             wrapped_self, router_id=router_id, subnet_id=subnet, port_id=port
         )
-
-    @staticmethod
-    def row2rest(row):
-        if not row:
-            return {}
-
-        router_id, network_id, port_id, subnet_id = row
-
-        return {
-            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_ID: router_id,
-            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_NETWORK_ID:
-                network_id,
-            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_PORT_ID: port_id,
-            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_SUBNET_ID:
-                subnet_id,
-            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_SUBNET_IDS: [
-                subnet_id
-            ],
-            AddRouterInterfaceMapper.REST_TENANT_ID: tenant_id(),
-        }
 
     @staticmethod
     def validate_add_rest_input(rest_data):
@@ -448,10 +428,10 @@ class AddRouterInterfaceMapper(Mapper):
     @staticmethod
     def validate_update_rest_input(rest_data):
         subnet = rest_data.get(
-            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_SUBNET_ID
+            BaseRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_ID
         )
         port = rest_data.get(
-            AddRouterInterfaceMapper.REST_ADDROUTERINTERFACE_PORT_ID
+            BaseRouterInterfaceMapper.REST_ROUTERINTERFACE_PORT_ID
         )
         if subnet and port:
             raise RestDataError(
@@ -461,10 +441,37 @@ class AddRouterInterfaceMapper(Mapper):
             raise RestDataError(
                 'Either {subnet} or {port} must be specified.'
                 .format(
-                    subnet=RouterMapper.REST_ADDROUTERINTERFACE_SUBNET_ID,
-                    port=RouterMapper.REST_ADDROUTERINTERFACE_PORT_ID
+                    subnet=RouterMapper.REST_ROUTERINTERFACE_SUBNET_ID,
+                    port=RouterMapper.REST_ROUTERINTERFACE_PORT_ID
                 )
             )
+
+
+class AddRouterInterfaceMapper(BaseRouterInterfaceMapper):
+
+    @staticmethod
+    def row2rest(row):
+        if not row:
+            return {}
+
+        router_id, network_id, port_id, subnet_id = row
+
+        return {
+            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_ID: router_id,
+            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_NETWORK_ID:
+                network_id,
+            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_PORT_ID: port_id,
+            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_ID:
+                subnet_id,
+            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_IDS: [
+                subnet_id
+            ],
+            AddRouterInterfaceMapper.REST_TENANT_ID: tenant_id(),
+        }
+
+
+class RemoveRouterInterfaceMapper(BaseRouterInterfaceMapper):
+    pass
 
 
 class RestDataError(BadRequestError):
