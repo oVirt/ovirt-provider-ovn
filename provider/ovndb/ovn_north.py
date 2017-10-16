@@ -600,6 +600,11 @@ class OvnNorth(object):
 
     def _update_routing_lsp_by_port(self, port_id, router_id):
         port = self._get_port(port_id)
+        if port.type == OvnNorth.LSP_TYPE_ROUTER:
+            raise BadRequestError(
+                'Can not add {port} to router. Port is already connected to a'
+                ' router'.format(port=port_id)
+            )
         lrp_ip = self._get_ip_from_port(port, router_id)
         lrp_name = self._create_router_port_name(port.uuid)
         mac = self._get_port_mac(port)
