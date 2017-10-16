@@ -200,7 +200,7 @@ class OvnNorth(object):
     def get_port(self, port_id):
         return self._get_networkport(port_id)
 
-    def _get_port(self, port_id):
+    def _get_switch_port(self, port_id):
         port = self.idl.lsp_get(port_id).execute()
         if not port:
             raise ElementNotFoundError(
@@ -209,7 +209,7 @@ class OvnNorth(object):
         return port
 
     def _get_networkport(self, port_id):
-        port = self._get_port(port_id)
+        port = self._get_switch_port(port_id)
         if not self._is_port_ovirt_controlled(port):
             raise ValueError('Not an ovirt controller port')
         return NetworkPort(port, self._get_port_network(port))
@@ -599,7 +599,7 @@ class OvnNorth(object):
         return str(port.uuid), lrp_name, lrp_ip, network_id, self._random_mac()
 
     def _update_routing_lsp_by_port(self, port_id, router_id):
-        port = self._get_port(port_id)
+        port = self._get_switch_port(port_id)
         if port.type == OvnNorth.LSP_TYPE_ROUTER:
             raise BadRequestError(
                 'Can not add {port} to router. Port is already connected to a'
@@ -695,7 +695,7 @@ class OvnNorth(object):
             self._delete_router_interface_by_port(router_id, port_id)
 
     def _delete_router_interface_by_port(self, router_id, port_id):
-        lsp = self._get_port(port_id)
+        lsp = self._get_switch_port(port_id)
         lrp_name = lsp.options.get(OvnNorth.LSP_OPTION_ROUTER_PORT)
         if not lrp_name:
             raise BadRequestError(
@@ -730,7 +730,7 @@ class OvnNorth(object):
         network = self._get_network(network_id)
         for lrp in lr.ports:
             lsp_id = self._lsp_id_by_lrp(lrp)
-            lsp = self._get_port(lsp_id)
+            lsp = self._get_switch_port(lsp_id)
             if lsp in network.ports:
                 self._delete_router_interface(
                     router_id, lsp_id, lrp=lrp, network_id=network_id, lsp=lsp,
