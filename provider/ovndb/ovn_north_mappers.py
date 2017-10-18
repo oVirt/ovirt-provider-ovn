@@ -266,6 +266,7 @@ class SubnetMapper(Mapper):
     OVN_DHCP_SERVER_MAC = 'server_mac'
     OVN_DHCP_LEASE_TIME = 'lease_time'
     OVN_DHCP_MTU = 'mtu'
+    OVN_GATEWAY_ROUTER_ID = 'gateway_router'
 
     IP_VERSION = 4
 

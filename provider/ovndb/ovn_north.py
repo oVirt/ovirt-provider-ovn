@@ -525,7 +525,7 @@ class OvnNorth(object):
             return self.idl.lookup(OvnNorth.TABLE_LR, router_id)
         except RowNotFound:
             raise ElementNotFoundError(
-                'Router {router} does not exist'.format(subnet=router_id)
+                'Router {router} does not exist'.format(router=router_id)
             )
 
     @RouterMapper.map_to_rest
@@ -561,7 +561,7 @@ class OvnNorth(object):
             self.idl.lookup(OvnNorth.TABLE_LR, router_id)
         except RowNotFound:
             raise ElementNotFoundError(
-                'Router {router} does not exist'.format(subnet=router_id)
+                'Router {router} does not exist'.format(router=router_id)
             )
 
     def _create_router_port_name(self, port_id):
@@ -574,9 +574,30 @@ class OvnNorth(object):
     def _lsp_id_by_lrp(self, lrp):
         return lrp.name[len(OvnNorth.ROUTER_PORT_NAME_PREFIX):]
 
-    def _create_routing_lsp_by_subnet(self, subnet_id, router_id):
-        subnet = self._get_subnet(subnet_id)
-        network_id = subnet.external_ids.get(SubnetMapper.OVN_NETWORK_ID)
+    def _get_subnet_gateway_router_id(self, subnet):
+        return subnet.external_ids.get(SubnetMapper.OVN_GATEWAY_ROUTER_ID)
+
+    def _set_subnet_gateway_router(self, subnet_id, router_id):
+        self.idl.db_set(
+            OvnNorth.TABLE_DHCP_Options,
+            subnet_id,
+            (
+                OvnNorth.ROW_DHCP_EXTERNAL_IDS,
+                {SubnetMapper.OVN_GATEWAY_ROUTER_ID: router_id}
+            )
+        ).execute()
+
+    def _clear_subnet_gateway_router(self, subnet_id):
+        self.idl.db_remove(
+            OvnNorth.TABLE_DHCP_Options,
+            subnet_id,
+            OvnNorth.ROW_DHCP_EXTERNAL_IDS,
+            SubnetMapper.OVN_GATEWAY_ROUTER_ID
+        ).execute()
+
+    def _validate_create_routing_lsp_by_subnet(
+        self, subnet_id, subnet, router_id, network_id
+    ):
         if not network_id:
             raise ElementNotFoundError(
                 'Unable to add router interface. '
@@ -584,6 +605,29 @@ class OvnNorth(object):
                 .format(subnet_id=subnet_id)
             )
 
+        old_router_id = self._get_subnet_gateway_router_id(subnet)
+        if old_router_id:
+            if old_router_id == router_id:
+                raise BadRequestError(
+                    'Can not add subnet {subnet} to router {router}. Subnet is'
+                    ' already connected to this router'.format(
+                        subnet=subnet_id, router=router_id
+                    )
+                )
+            else:
+                raise BadRequestError(
+                    'Can not add subnet {subnet} to router {router}. Subnet is'
+                    ' already connected to router {old_router}'.format(
+                        subnet=subnet_id, router=router_id,
+                        old_router=old_router_id
+                    )
+                )
+
+    def _create_routing_lsp_by_subnet(self, subnet_id, router_id):
+        subnet = self._get_subnet(subnet_id)
+        network_id = subnet.external_ids.get(SubnetMapper.OVN_NETWORK_ID)
+        self._validate_create_routing_lsp_by_subnet(
+            subnet_id, subnet, router_id, network_id)
         lrp_ip = self._get_ip_from_subnet(subnet, network_id, router_id)
         port = self._create_port(OvnNorth.ROUTER_PORT_NAME, network_id)
         lrp_name = self._create_router_port_name(port.uuid)
@@ -596,6 +640,7 @@ class OvnNorth(object):
             device_owner=PortMapper.DEVICE_OWNER_OVIRT,
             router_port_name=lrp_name
         )
+        self._set_subnet_gateway_router(subnet_id, router_id)
         return str(port.uuid), lrp_name, lrp_ip, network_id, self._random_mac()
 
     def _update_routing_lsp_by_port(self, port_id, router_id):
@@ -736,6 +781,7 @@ class OvnNorth(object):
                     router_id, lsp_id, lrp=lrp, network_id=network_id, lsp=lsp,
                     lr=lr
                 )
+        self._clear_subnet_gateway_router(subnet_id)
 
     def _get_lrp(self, lrp):
         try:
