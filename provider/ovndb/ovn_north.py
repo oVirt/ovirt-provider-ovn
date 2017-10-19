@@ -515,6 +515,16 @@ class OvnNorth(object):
         return self.get_subnet(subnet_id)
 
     def delete_subnet(self, subnet_id):
+        subnet = self._get_subnet(subnet_id)
+        router_id = self._get_subnet_gateway_router_id(subnet)
+        if router_id:
+            raise BadRequestError(
+                'Unable to delete subnet {subnet} because it is connected to '
+                'router {router}. Please disconnect the subnet from the router'
+                ' first.'
+                .format(subnet=subnet_id, router=router_id)
+
+            )
         self.idl.dhcp_options_del(subnet_id).execute()
 
     def _get_router(self, router_id):

@@ -373,6 +373,11 @@ class TestOvnNorth(object):
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsDelCommand',
         autospec=False
     )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
+        'execute',
+        lambda x: TestOvnNorth.SUBNET_101
+    )
     def test_delete_subnet(self, mock_del_command, mock_connection):
         ovn_north = OvnNorth()
         ovn_north.delete_subnet(TestOvnNorth.SUBNET_ID101)
