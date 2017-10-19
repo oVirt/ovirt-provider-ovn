@@ -648,6 +648,10 @@ class TestOvnNorth(object):
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
         lambda x: None
     )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
+        lambda x: TestOvnNorth.NETWORK_10
+    )
     def test_subnet_add_invalid_network(self, mock_connection):
         ovn_north = OvnNorth()
         rest_data = {

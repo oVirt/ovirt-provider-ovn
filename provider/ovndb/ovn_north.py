@@ -406,7 +406,9 @@ class OvnNorth(object):
         gateway,
         dns=None,
     ):
-        if not self.idl.ls_get(network_id).execute():
+        try:
+            network = self._get_network(network_id)
+        except ElementNotFoundError:
             raise SubnetConfigError('Subnet can not be created, network {}'
                                     ' does not exist'.format(network_id))
 
@@ -441,6 +443,12 @@ class OvnNorth(object):
 
         subnet = self.idl.dhcp_options_add(cidr, **external_ids).execute()
         self.idl.dhcp_options_set_options(subnet.uuid, **options).execute()
+
+        for port in network.ports:
+            if port.type == OvnNorth.LSP_TYPE_ROUTER:
+                continue
+            self._update_port_values(port, network_id=network_id)
+
         return self.get_subnet(subnet.uuid)
 
     @SubnetMapper.validate_update
