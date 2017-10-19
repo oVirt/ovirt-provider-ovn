@@ -399,7 +399,7 @@ class TestOvnNorth(object):
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
-        lambda x: TestOvnNorth.networks
+        lambda x: TestOvnNorth.NETWORK_10
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
@@ -476,7 +476,7 @@ class TestOvnNorth(object):
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
-        lambda x: TestOvnNorth.networks
+        lambda x: TestOvnNorth.NETWORK_10
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
