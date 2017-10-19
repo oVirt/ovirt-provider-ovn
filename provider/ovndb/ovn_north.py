@@ -525,7 +525,15 @@ class OvnNorth(object):
                 .format(subnet=subnet_id, router=router_id)
 
             )
+        network_id = subnet.external_ids.get(
+            SubnetMapper.OVN_NETWORK_ID
+        )
+        network = self._get_network(network_id)
         self.idl.dhcp_options_del(subnet_id).execute()
+        for port in network.ports:
+            if port.type == OvnNorth.LSP_TYPE_ROUTER:
+                continue
+            self._update_port_values(port, network_id=network_id)
 
     def _get_router(self, router_id):
         # TODO: LrGet is not yet implemented by ovsdbapp

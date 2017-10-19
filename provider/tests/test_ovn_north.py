@@ -378,6 +378,10 @@ class TestOvnNorth(object):
         'execute',
         lambda x: TestOvnNorth.SUBNET_101
     )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
+        lambda x: TestOvnNorth.NETWORK_10
+    )
     def test_delete_subnet(self, mock_del_command, mock_connection):
         ovn_north = OvnNorth()
         ovn_north.delete_subnet(TestOvnNorth.SUBNET_ID101)
