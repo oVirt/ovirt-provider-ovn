@@ -80,8 +80,7 @@ class OvnSubnetRow(OvnRow):
             'router': '1.1.1.1',
             'dns_server': '8.8.8.8'
         }
-        if network_id:
-            self.external_ids[SubnetMapper.OVN_NETWORK_ID] = network_id
+        self.external_ids[SubnetMapper.OVN_NETWORK_ID] = network_id or '0'
 
 
 class OvnRouterRow(OvnRow):

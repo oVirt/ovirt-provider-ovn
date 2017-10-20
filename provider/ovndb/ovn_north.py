@@ -377,7 +377,11 @@ class OvnNorth(object):
 
     @SubnetMapper.map_to_rest
     def list_subnets(self):
-        return self.idl.dhcp_options_list().execute()
+        subnets = self.idl.dhcp_options_list().execute()
+        return [
+            subnet for subnet in subnets
+            if SubnetMapper.OVN_NETWORK_ID in subnet.external_ids
+        ]
 
     def _get_subnet(self, subnet_id):
         subnet = self.idl.dhcp_options_get(subnet_id).execute()
@@ -389,6 +393,11 @@ class OvnNorth(object):
         if not subnet or str(subnet.uuid) != str(subnet_id):
             raise ElementNotFoundError(
                 'Subnet {subnet} does not exist'.format(subnet=subnet_id)
+            )
+        if SubnetMapper.OVN_NETWORK_ID not in subnet.external_ids:
+            raise ElementNotFoundError(
+                'Subnet {subnet} is not an ovirt manager subnet'
+                .format(subnet=subnet_id)
             )
         return subnet
 
