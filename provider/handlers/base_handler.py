@@ -71,6 +71,10 @@ class MethodNotAllowedError(AttributeError):
     pass
 
 
+class ConflictError(AttributeError):
+    pass
+
+
 class BaseHandler(BaseHTTPRequestHandler):
 
     # Suppress static error message of BaseHTTPRequestHandler, because a
@@ -135,6 +139,9 @@ class BaseHandler(BaseHTTPRequestHandler):
         except BadGateway as e:
             self._handle_response_exception(
                 e, response_code=httplib.BAD_GATEWAY)
+        except ConflictError as e:
+            self._handle_response_exception(
+                e, response_code=httplib.CONFLICT)
         except Exception as e:
             self._handle_response_exception(e)
 

@@ -23,6 +23,7 @@ from ovsdbapp.schema.ovn_northbound.impl_idl import OvnNbApiIdlImpl
 import random
 
 from handlers.base_handler import BadRequestError
+from handlers.base_handler import ConflictError
 from handlers.base_handler import ElementNotFoundError
 
 from ovirt_provider_config_common import ovn_remote
@@ -781,7 +782,11 @@ class OvnNorth(object):
     @RemoveRouterInterfaceMapper.validate_update
     @RemoveRouterInterfaceMapper.map_from_rest
     def delete_router_interface(self, router_id, subnet_id=None, port_id=None):
-        if subnet_id:
+        if subnet_id and port_id:
+            self._delete_router_interface_by_subnet_and_port(
+                router_id, subnet_id, port_id
+            )
+        elif subnet_id:
             self._delete_router_interface_by_subnet(router_id, subnet_id)
         else:
             self._delete_router_interface_by_port(router_id, port_id)
@@ -812,6 +817,20 @@ class OvnNorth(object):
         self._disconnect_port_from_router(lsp)
         self._update_port_address(lsp, network_id=network_id, mac=lrp.mac)
         self.idl.lrp_del(str(lrp.uuid)).execute()
+
+    def _delete_router_interface_by_subnet_and_port(
+        self, router_id, subnet_id, port_id
+    ):
+        subnet = self._get_subnet(subnet_id)
+        network_id = subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
+        network = self._get_network(network_id)
+        lsp = self._get_switch_port(port_id)
+        if lsp not in network.ports:
+            raise ConflictError(
+                'Port {port} does not belong to subnet {subnet}.'
+                .format(port=port_id, subnet=subnet_id)
+            )
+        self._delete_router_interface_by_port(router_id, port_id)
 
     def _delete_router_interface_by_subnet(self, router_id, subnet_id):
         lr = self._get_router(router_id)

@@ -427,17 +427,13 @@ class BaseRouterInterfaceMapper(Mapper):
         )
 
     @staticmethod
-    def validate_update_rest_input(rest_data):
+    def _validate_update(rest_data):
         subnet = rest_data.get(
             BaseRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_ID
         )
         port = rest_data.get(
             BaseRouterInterfaceMapper.REST_ROUTERINTERFACE_PORT_ID
         )
-        if subnet and port:
-            raise RestDataError(
-                'Subnet and port can not both be set at the same time'
-            )
         if not subnet and not port:
             raise RestDataError(
                 'Either {subnet} or {port} must be specified.'
@@ -446,6 +442,7 @@ class BaseRouterInterfaceMapper(Mapper):
                     port=RouterMapper.REST_ROUTERINTERFACE_PORT_ID
                 )
             )
+        return subnet, port
 
 
 class AddRouterInterfaceMapper(BaseRouterInterfaceMapper):
@@ -470,9 +467,20 @@ class AddRouterInterfaceMapper(BaseRouterInterfaceMapper):
             AddRouterInterfaceMapper.REST_TENANT_ID: tenant_id(),
         }
 
+    @staticmethod
+    def validate_update_rest_input(rest_data):
+        subnet, port = BaseRouterInterfaceMapper._validate_update(rest_data)
+        if subnet and port:
+            raise RestDataError(
+                'Subnet and port can not both be set at the same time'
+            )
+
 
 class RemoveRouterInterfaceMapper(BaseRouterInterfaceMapper):
-    pass
+
+    @staticmethod
+    def validate_update_rest_input(rest_data):
+        BaseRouterInterfaceMapper._validate_update(rest_data)
 
 
 class RestDataError(BadRequestError):
