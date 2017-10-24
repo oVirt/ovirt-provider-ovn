@@ -309,7 +309,22 @@ class OvnNorth(object):
             db_set_command.add(self.ROW_LSP_ADDRESSES, [mac])
             db_set_command.execute()
 
-    def _connect_port_to_router(self, port, router_port_name):
+    def _connect_port_to_router(
+        self, port, router_port_name,
+        name=None,
+        is_enabled=True,
+        device_id=None,
+        device_owner=None,
+
+     ):
+        self._update_port_values(
+            port=port,
+            name=name,
+            is_enabled=is_enabled,
+            device_id=device_id,
+            device_owner=device_owner
+        )
+
         db_set_command = DbSetCommand(self.idl, self.TABLE_LSP, port.uuid)
         db_set_command.add(
             self.ROW_LSP_TYPE,
@@ -680,14 +695,14 @@ class OvnNorth(object):
         lrp_ip = self._get_ip_from_subnet(subnet, network_id, router_id)
         port = self._create_port(OvnNorth.ROUTER_SWITCH_PORT_NAME, network_id)
         lrp_name = self._create_router_port_name(port.uuid)
-        self._update_port_values(
-            port=port,
+        self._connect_port_to_router(
+            port,
+            lrp_name,
             name=OvnNorth.ROUTER_SWITCH_PORT_NAME,
             is_enabled=True,
             device_id=port.uuid,
             device_owner=PortMapper.DEVICE_OWNER_OVIRT,
         )
-        self._connect_port_to_router(port, lrp_name)
         self._set_subnet_gateway_router(subnet_id, router_id)
         return str(port.uuid), lrp_name, lrp_ip, network_id, self._random_mac()
 
@@ -701,11 +716,7 @@ class OvnNorth(object):
         lrp_ip = self._get_ip_from_port(port, router_id)
         lrp_name = self._create_router_port_name(port.uuid)
         mac = self._get_port_mac(port)
-        self._update_port_values(
-            port=port,
-            is_enabled=True,
-        )
-        self._connect_port_to_router(port, lrp_name)
+        self._connect_port_to_router(port, lrp_name, is_enabled=True)
         return (
             port_id, lrp_name, lrp_ip, str(self._get_port_network(port).uuid),
             mac
