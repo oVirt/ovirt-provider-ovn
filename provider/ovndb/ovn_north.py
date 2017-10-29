@@ -76,6 +76,7 @@ class OvnNorth(object):
     TABLE_LS = 'Logical_Switch'
     ROW_LS_NAME = 'name'
     ROW_LS_OTHER_CONFIG = 'other_config'
+    ROW_LS_EXTERNAL_IDS = 'external_ids'
 
     TABLE_LSP = 'Logical_Switch_Port'
     ROW_LSP_NAME = 'name'
@@ -83,12 +84,16 @@ class OvnNorth(object):
     ROW_LSP_EXTERNAL_IDS = 'external_ids'
     ROW_LSP_ENABLED = 'enabled'
     ROW_LSP_DHCPV4_OPTIONS = 'dhcpv4_options'
+    ROW_LSP_TAG_REQUEST = 'tag_request'
     ROW_LSP_TYPE = 'type'
     ROW_LSP_OPTIONS = 'options'
     LSP_TYPE_ROUTER = 'router'
+    LSP_TYPE_LOCALNET = 'localnet'
     LSP_ADDRESS_TYPE_DYNAMIC = 'dynamic'
     LSP_ADDRESS_TYPE_ROUTER = 'router'
+    LSP_ADDRESS_TYPE_UNKNOWN = 'unknown'
     LSP_OPTION_ROUTER_PORT = 'router-port'
+    LSP_OPTION_NETWORK_NAME = 'network_name'
 
     TABLE_DHCP_Options = 'DHCP_Options'
     ROW_DHCP_EXTERNAL_IDS = 'external_ids'
@@ -101,6 +106,7 @@ class OvnNorth(object):
 
     TABLE_LRP = 'Logical_Router_Port'
 
+    LOCALNET_SWITCH_PORT_NAME = 'localnet_port'
     ROUTER_SWITCH_PORT_NAME = 'router_port'
     UNASSIGNED_SWTICH_PORT_NAME = 'unassgined_port'
 
@@ -156,30 +162,89 @@ class OvnNorth(object):
     @NetworkMapper.validate_add
     @NetworkMapper.map_from_rest
     @NetworkMapper.map_to_rest
-    def add_network(self, name):
+    def add_network(self, name, localnet=None, vlan=None):
         # TODO: ovirt allows multiple networks with the same name
         # in oVirt, but OVS does not (may_exist=False will cause early fail)
+        if localnet:
+            return self._add_localnet_network(name, localnet, vlan)
+        else:
+            return self._add_network(name)
+
+    def _add_network(self, name):
         return self.idl.ls_add(switch=name, may_exist=False).execute()
+
+    def _add_localnet_network(self, name, localnet, vlan):
+        network = self.idl.ls_add(switch=name, may_exist=False).execute()
+        localnet_port = self._create_port(
+            OvnNorth.LOCALNET_SWITCH_PORT_NAME, str(network.uuid))
+        self._set_port_localnet_values(localnet_port, localnet, vlan)
+        self._set_network_localnet_values(network, localnet, vlan)
+        updated_network = self._get_network(str(network.uuid))
+        return updated_network
 
     @NetworkMapper.validate_update
     @NetworkMapper.map_from_rest
-    def update_network(self, network_id, name):
+    def update_network(self, network_id, name, localnet=None, vlan=None):
         self.idl.db_set(
             self.TABLE_LS,
             network_id,
             (self.ROW_LS_NAME, name),
         ).execute()
+        self._update_localnet_on_network(network_id, localnet, vlan)
         return self.get_network(network_id)
+
+    def _update_localnet_on_network(self, network_id, localnet, vlan):
+        network = self._get_network(network_id)
+        localnet_port = self._get_localnet_port(network)
+        if localnet:
+            if not localnet_port:
+                localnet_port = self._create_port(
+                    OvnNorth.LOCALNET_SWITCH_PORT_NAME, str(network.uuid))
+            self._set_port_localnet_values(localnet_port, localnet, vlan)
+        elif localnet_port:
+            self.delete_port(str(localnet_port.uuid))
+        self._set_network_localnet_values(network, localnet, vlan)
+
+    def _set_network_localnet_values(self, network, localnet=None, vlan=None):
+        db_set_command = DbSetCommand(self.idl, self.TABLE_LS, network.uuid)
+        db_set_command.add(
+            self.ROW_LS_EXTERNAL_IDS,
+            {NetworkMapper.OVN_LOCALNET: localnet},
+            localnet
+        )
+        db_set_command.add(
+            self.ROW_LS_EXTERNAL_IDS,
+            {NetworkMapper.OVN_VLAN: vlan},
+            vlan
+        )
+        db_set_command.execute()
+
+    def _set_port_localnet_values(self, port, localnet, vlan):
+        db_set_command = DbSetCommand(self.idl, self.TABLE_LSP, port.uuid)
+        db_set_command.add(
+            self.ROW_LSP_ADDRESSES,
+            [self.LSP_ADDRESS_TYPE_UNKNOWN]
+        )
+        db_set_command.add(
+            self.ROW_LSP_OPTIONS,
+            {OvnNorth.LSP_OPTION_NETWORK_NAME: localnet}
+        )
+        db_set_command.add(self.ROW_LSP_TYPE, OvnNorth.LSP_TYPE_LOCALNET)
+        db_set_command.add(self.ROW_LSP_TAG_REQUEST, vlan)
+        db_set_command.execute()
 
     def delete_network(self, network_id):
         network = self.idl.ls_get(network_id).execute()
         if not network:
             raise RestDataError('Network %s does not exist' % network_id)
         if network.ports:
-            raise RestDataError(
-                'Unable to delete network %s. Ports exist for the network'
-                % network_id
-            )
+            localnet_port = self._get_localnet_port(network)
+            only_localnet_port = len(network.ports) == 1 and localnet_port
+            if not only_localnet_port:
+                raise RestDataError(
+                    'Unable to delete network %s. Ports exist for the network'
+                    % network_id
+                )
 
         subnets = self.idl.dhcp_options_list().execute()
         for subnet in subnets:
@@ -189,6 +254,12 @@ class OvnNorth(object):
                     self.idl.dhcp_options_del(subnet.uuid).execute()
 
         self.idl.ls_del(network_id).execute()
+
+    def _get_localnet_port(self, network):
+        for port in network.ports:
+            if port.type == OvnNorth.LSP_TYPE_LOCALNET:
+                return port
+        return None
 
     @PortMapper.map_to_rest
     def list_ports(self):

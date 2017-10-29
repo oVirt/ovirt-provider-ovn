@@ -47,10 +47,12 @@ class OvnRow(object):
 
 
 class OvnNetworkRow(OvnRow):
-    def __init__(self, uuid, name=None, other_config=None, ports=None):
+    def __init__(self, uuid, name=None, other_config=None, external_ids=None,
+                 ports=None):
         self.uuid = uuid
         self.name = name
         self.other_config = other_config or {}
+        self.external_ids = external_ids or {}
         self.ports = ports or []
 
 

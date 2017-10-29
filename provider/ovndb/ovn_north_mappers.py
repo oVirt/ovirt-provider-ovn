@@ -92,36 +92,69 @@ class NetworkMapper(Mapper):
     REST_NETWORK_ID = 'id'
     REST_NETWORK_NAME = 'name'
     REST_STATUS = 'status'
+    REST_PROVIDER_NETWORK_TYPE = 'provider:network_type'
+    REST_PROVIDER_PHYSICAL_NETWORK = 'provider:physical_network'
+    REST_PROVIDER_SEGMENTATION_ID = 'provider:segmentation_id'
 
+    NETWORK_TYPE_FLAT = 'flat'
+    NETWORK_TYPE_VLAN = 'vlan'
+
+    OVN_LOCALNET = 'ovirt_ovn_localnet'
+    OVN_VLAN = 'ovirt_ovn_vlan'
     OVN_SUBNET = 'subnet'
 
     NETWORK_STATUS_ACTIVE = 'ACTIVE'
 
     @staticmethod
     def rest2row(wrapped_self, func, rest_network_data, network_id):
-        name = rest_network_data.get(NetworkMapper.REST_NETWORK_NAME)
+        network_name = rest_network_data.get(NetworkMapper.REST_NETWORK_NAME)
+        provider_physical_network = rest_network_data.get(
+            NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK)
+        provider_segmentation_id = rest_network_data.get(
+            NetworkMapper.REST_PROVIDER_SEGMENTATION_ID)
         if network_id:
             return func(
                 wrapped_self,
-                network_id=network_id,
-                name=name
+                network_id,
+                name=network_name,
+                localnet=provider_physical_network,
+                vlan=provider_segmentation_id
             )
-        else:
-            return func(
-                wrapped_self,
-                name=name
-            )
+        return func(
+            wrapped_self,
+            name=network_name,
+            localnet=provider_physical_network,
+            vlan=provider_segmentation_id
+        )
 
     @staticmethod
     def row2rest(network_row):
         if not network_row:
             return {}
-        return {
+        result = {
             NetworkMapper.REST_NETWORK_ID: str(network_row.uuid),
             NetworkMapper.REST_NETWORK_NAME: network_row.name,
             NetworkMapper.REST_TENANT_ID: tenant_id(),
             NetworkMapper.REST_STATUS: NetworkMapper.NETWORK_STATUS_ACTIVE
         }
+        result.update(NetworkMapper._row2rest_localnet(network_row))
+        return result
+
+    @staticmethod
+    def _row2rest_localnet(network_row):
+        result = {}
+        ovn_localnet = network_row.external_ids.get(NetworkMapper.OVN_LOCALNET)
+        ovn_vlan = network_row.external_ids.get(NetworkMapper.OVN_VLAN)
+        if ovn_localnet and ovn_vlan:
+            result[NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK] = ovn_localnet
+            result[NetworkMapper.REST_PROVIDER_SEGMENTATION_ID] = int(ovn_vlan)
+            result[NetworkMapper.REST_PROVIDER_NETWORK_TYPE] = \
+                NetworkMapper.NETWORK_TYPE_VLAN
+        elif ovn_localnet:
+            result[NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK] = ovn_localnet
+            result[NetworkMapper.REST_PROVIDER_NETWORK_TYPE] = \
+                NetworkMapper.NETWORK_TYPE_FLAT
+        return result
 
     @staticmethod
     def validate_add_rest_input(rest_data):
@@ -135,6 +168,42 @@ class NetworkMapper(Mapper):
     def _validate_rest_input(rest_data):
         if NetworkMapper.REST_NETWORK_NAME not in rest_data:
             raise NetworkNameRequiredDataError()
+        NetworkMapper._validate_rest_input_provider_network(rest_data)
+
+    @staticmethod
+    def _validate_rest_input_provider_network(rest_data):
+        network_type = rest_data.get(NetworkMapper.REST_PROVIDER_NETWORK_TYPE)
+        if not network_type:
+            if NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK in rest_data:
+                raise PhysicalNetworkProviderDataError(
+                    'provider:physical_network cannot be used without a '
+                    'specified provider:network_type')
+            elif NetworkMapper.REST_PROVIDER_SEGMENTATION_ID in rest_data:
+                raise PhysicalNetworkProviderDataError(
+                    'provider:segmentation_id cannot be used without a '
+                    'specified provider:network_type')
+        elif network_type == NetworkMapper.NETWORK_TYPE_FLAT:
+            if NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK not in rest_data:
+                raise PhysicalNetworkProviderDataError(
+                    'provider:physical_network is mandatory for network type '
+                    'flat')
+            elif NetworkMapper.REST_PROVIDER_SEGMENTATION_ID in rest_data:
+                raise PhysicalNetworkProviderDataError(
+                    'provider:segmentation_id can only be used with network '
+                    'type vlan')
+        elif network_type == NetworkMapper.NETWORK_TYPE_VLAN:
+            if NetworkMapper.REST_PROVIDER_SEGMENTATION_ID not in rest_data:
+                raise PhysicalNetworkProviderDataError(
+                    'provider:segmentation_id is mandatory for network type '
+                    'vlan')
+            elif NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK not in rest_data:
+                raise PhysicalNetworkProviderDataError(
+                    'provider:physical_network is mandatory for network type '
+                    'vlan')
+        else:
+            raise PhysicalNetworkProviderDataError(
+                'provider:network_type [{}] is not supported'.format(
+                    network_type))
 
 
 class PortMapper(Mapper):
@@ -497,6 +566,10 @@ class NetworkNameRequiredDataError(RestDataError):
 
     def __init__(self):
         super(NetworkNameRequiredDataError, self).__init__(self.message)
+
+
+class PhysicalNetworkProviderDataError(RestDataError):
+    pass
 
 
 class NetworkIdRequiredForPortDataError(RestDataError):
