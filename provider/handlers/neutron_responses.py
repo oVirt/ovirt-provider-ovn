@@ -221,6 +221,7 @@ def put_router(nb_db, content, parameters):
 @rest(DELETE, ROUTER_ENTITY, _responses)
 def delete_router(nb_db, content, parameters):
     nb_db.delete_router(parameters[ROUTER_ID])
+    return Response()
 
 
 @rest(PUT, ADD_ROUTER_INTERFACE, _responses)
@@ -228,17 +229,13 @@ def put_add_router_inerface(nb_db, content, parameters):
     result = nb_db.add_router_interface(
         get_entity(content), parameters[ROUTER_ID]
     )
-    return Response(
-        body=json.dumps(result),
-    )
+    return Response(result)
 
 
 @rest(PUT, DELETE_ROUTER_INTERFACE, _responses)
 def put_remove_router_interface(nb_db, content, parameters):
     nb_db.delete_router_interface(get_entity(content), parameters[ROUTER_ID])
-    return Response(
-        body=json.dumps({"router": {}})
-    )
+    return Response({"router": {}})
 
 
 def responses():
