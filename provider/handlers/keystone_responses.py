@@ -129,7 +129,7 @@ def post_tokens(content, parameters):
                 }
             ]
         },
-    })
+    }, code=200)
 
 
 @rest(GET, TENANTS, _responses)
