@@ -17,6 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
+import httplib
+
 from ovirt_provider_config_common import openstack_region
 from ovirt_provider_config_common import openstack_neutron_id
 from ovirt_provider_config_common import openstack_keystone_id
@@ -70,6 +72,10 @@ def post_tokens(content, parameters):
     region = openstack_region()
     neutron_id = openstack_neutron_id()
     keystone_id = openstack_keystone_id()
+
+    # OpenStack Identity API v2.0 specifies HTTP 200 as return code for
+    # successful token creation
+    http_code = httplib.OK
 
     return Response({
         'access': {
@@ -129,7 +135,7 @@ def post_tokens(content, parameters):
                 }
             ]
         },
-    }, code=200)
+    }, code=http_code)
 
 
 @rest(GET, TENANTS, _responses)
