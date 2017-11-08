@@ -352,7 +352,8 @@ class OvnNorth(object):
             OvnNorth.TABLE_LSP, port.uuid, OvnNorth.ROW_LSP_OPTIONS,
             OvnNorth.LSP_OPTION_ROUTER_PORT
         ).execute()
-        if port.name == OvnNorth.ROUTER_SWITCH_PORT_NAME:
+        port_name = port.external_ids.get(PortMapper.OVN_NIC_NAME)
+        if port_name == OvnNorth.ROUTER_SWITCH_PORT_NAME:
             self._update_port_values(
                 port, name=OvnNorth.UNASSIGNED_SWTICH_PORT_NAME
             )
