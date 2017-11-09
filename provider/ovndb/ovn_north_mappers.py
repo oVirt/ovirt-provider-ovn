@@ -91,8 +91,11 @@ class NetworkMapper(Mapper):
     # The names of properties received/sent in a REST request
     REST_NETWORK_ID = 'id'
     REST_NETWORK_NAME = 'name'
+    REST_STATUS = 'status'
 
     OVN_SUBNET = 'subnet'
+
+    NETWORK_STATUS_ACTIVE = 'ACTIVE'
 
     @staticmethod
     def rest2row(wrapped_self, func, rest_network_data, network_id):
@@ -116,7 +119,8 @@ class NetworkMapper(Mapper):
         return {
             NetworkMapper.REST_NETWORK_ID: str(network_row.uuid),
             NetworkMapper.REST_NETWORK_NAME: network_row.name,
-            NetworkMapper.REST_TENANT_ID: tenant_id()
+            NetworkMapper.REST_TENANT_ID: tenant_id(),
+            NetworkMapper.REST_STATUS: NetworkMapper.NETWORK_STATUS_ACTIVE
         }
 
     @staticmethod
