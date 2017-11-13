@@ -675,17 +675,31 @@ class OvnNorth(object):
     def list_routers(self):
         return self.idl.lr_list().execute()
 
-    @RouterMapper.validate_add
-    @RouterMapper.map_from_rest
-    @RouterMapper.map_to_rest
-    def add_router(self, name, enabled):
+    def _add_router(
+        self, name, enabled, network_id=None, gateway_subnet=None,
+        gateway_ip=None
+    ):
         return self.idl.lr_add(
             router=name, may_exist=False, enabled=enabled
         ).execute()
 
+    @RouterMapper.validate_add
+    @RouterMapper.map_from_rest
+    @RouterMapper.map_to_rest
+    def add_router(
+        self, name, enabled, network_id=None, gateway_subnet=None,
+        gateway_ip=None
+    ):
+        return self._add_router(
+            name, enabled, network_id, gateway_subnet, gateway_ip
+        )
+
     @RouterMapper.validate_update
     @RouterMapper.map_from_rest
-    def update_router(self, router_id, name, enabled):
+    def update_router(
+        self, router_id, name, enabled, network_id=None,
+        gateway_subnet=None, geteway_ip=None
+    ):
         db_set_command = DbSetCommand(self.idl, self.TABLE_LR, router_id)
         db_set_command.add(self.ROW_LR_NAME, name, name)
         db_set_command.add(self.ROW_LR_ENABLED, enabled, enabled)

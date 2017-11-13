@@ -17,9 +17,11 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
+
 from mock import Mock
 from uuid import UUID
 import json
+import mock
 import pytest
 
 from handlers.base_handler import BadRequestError
@@ -47,8 +49,12 @@ from handlers.neutron_responses import SUBNETS
 
 from handlers.selecting_handler import SelectingHandler
 
+from ovndb.ovn_north import OvnNorth
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import PortMapper
+from ovndb.ovn_north_mappers import RouterMapper
+
+from ovntestlib import OvnRouterRow
 
 
 NOT_RELEVANT = None
@@ -305,3 +311,55 @@ class TestNeutronResponse(object):
         response = handler(nb_db, '{"port" :{}}', {PORT_ID: str(PORT_ID07)})
         response_json = json.loads(response.body)
         assert response_json['port']['id'] == str(PORT_ID07)
+
+    @mock.patch('ovsdbapp.backend.ovs_idl.connection', autospec=False)
+    def test_post_routers(self, mock_connection):
+        nb_db = OvnNorth()
+        nb_db._add_router = Mock()
+        nb_db._add_router.return_value = OvnRouterRow(
+            'uuid',
+            'router1',
+            {
+                RouterMapper.OVN_ROUTER_GATEWAY_NETWORK: 'network_id',
+                RouterMapper.OVN_ROUTER_GATEWAY_SUBNET: 'subnet_id',
+                RouterMapper.OVN_ROUTER_GATEWAY_IP: '1.1.1.1',
+
+            }
+        )
+        rest_input = '''{
+            "router": {
+                "name": "router1",
+                "external_gateway_info": {
+                    "enable_snat": "true",
+                    "external_fixed_ips": [{
+                        "ip_address": "172.24.4.6",
+                        "subnet_id": "b930d7f6-ceb7-40a0-8b81-a425dd994ccf"
+                    }],
+                    "network_id": "ae34051f-aa6c-4c75-abf5-50dc9ac99ef3"
+                }
+            }
+        }'''
+
+        handler, params = SelectingHandler.get_response_handler(
+            responses(), POST, ROUTERS.split('/')
+        )
+        response = handler(nb_db, rest_input, NOT_RELEVANT)
+
+        response_json = json.loads(response.body)
+        router = response_json['router']
+        assert router[RouterMapper.REST_ROUTER_NAME] == 'router1'
+        assert router[RouterMapper.REST_ROUTER_ID] == 'uuid'
+
+        gateway = router[RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO]
+        ips = gateway[RouterMapper.REST_ROUTER_FIXED_IPS][0]
+        assert gateway[RouterMapper.REST_ROUTER_NETWORK_ID] == 'network_id'
+        assert ips[RouterMapper.REST_ROUTER_SUBNET_ID] == 'subnet_id'
+        assert ips[RouterMapper.REST_ROUTER_IP_ADDRESS] == '1.1.1.1'
+
+        nb_db._add_router.assert_called_once_with(
+            'router1',
+            True,
+            'ae34051f-aa6c-4c75-abf5-50dc9ac99ef3',
+            'b930d7f6-ceb7-40a0-8b81-a425dd994ccf',
+            '172.24.4.6'
+        )

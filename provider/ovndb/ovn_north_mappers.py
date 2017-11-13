@@ -420,11 +420,22 @@ class SubnetMapper(Mapper):
 class RouterMapper(Mapper):
     REST_ROUTER_ID = 'id'
     REST_ROUTER_NAME = 'name'
-    REST_ROUTER_EXTERNAL_GATEWAY_INFO = 'external_gateway_info'
 
     REST_ROUTER_ROUTES = 'routes'
     REST_ROUTER_ADMIN_STATE_UP = 'admin_state_up'
     REST_ROUTER_STATUS = 'status'
+
+    REST_ROUTER_EXTERNAL_GATEWAY_INFO = 'external_gateway_info'
+    REST_ROUTER_NETWORK_ID = 'network_id'
+    REST_ROUTER_ENABLE_SNAT = 'enable_snat'
+
+    REST_ROUTER_FIXED_IPS = 'external_fixed_ips'
+    REST_ROUTER_IP_ADDRESS = 'ip_address'
+    REST_ROUTER_SUBNET_ID = 'subnet_id'
+
+    OVN_ROUTER_GATEWAY_NETWORK = 'ovirt_gateway_network'
+    OVN_ROUTER_GATEWAY_SUBNET = 'ovirt_gateway_subnet'
+    OVN_ROUTER_GATEWAY_IP = 'ovirt_gateway_ip'
 
     ROUTER_STATUS_ACTIVE = 'ACTIVE'
     ROUTER_STATUS_INACTIVE = 'INACTIVE'
@@ -433,18 +444,45 @@ class RouterMapper(Mapper):
     def rest2row(wrapped_self, func, rest_data, router_id):
         name = rest_data.get(RouterMapper.REST_ROUTER_NAME)
         enabled = rest_data.get(RouterMapper.REST_ROUTER_ADMIN_STATE_UP, True)
+
+        network, subnet, ip = RouterMapper._get_external_gateway_from_rest(
+            rest_data
+        )
+
         if router_id:
-            return func(wrapped_self, router_id=router_id, name=name,
-                        enabled=enabled)
+            return func(
+                wrapped_self, router_id=router_id, name=name, enabled=enabled,
+                network_id=network, gateway_subnet=subnet,
+                gateway_ip=ip
+            )
         else:
-            return func(wrapped_self, name=name, enabled=enabled)
+            return func(
+                wrapped_self, name=name, enabled=enabled,
+                network_id=network, gateway_subnet=subnet,
+                gateway_ip=ip
+            )
+
+    @staticmethod
+    def _get_external_gateway_from_rest(rest_data):
+        gateway_info = rest_data.get(
+            RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO, {})
+        if not gateway_info:
+            return None, None, None
+        network_id = gateway_info.get(RouterMapper.REST_ROUTER_NETWORK_ID)
+        fixed_ips = gateway_info.get(
+            RouterMapper.REST_ROUTER_FIXED_IPS
+        )
+        fixed_ip = fixed_ips[0]
+        gateway_subnet = fixed_ip.get(RouterMapper.REST_ROUTER_SUBNET_ID)
+        gateway_ip = fixed_ip.get(RouterMapper.REST_ROUTER_IP_ADDRESS)
+        return network_id, gateway_subnet, gateway_ip
 
     @staticmethod
     def row2rest(row):
         if not row:
             return {}
 
-        return {
+        result = {
             RouterMapper.REST_ROUTER_ID: str(row.uuid),
             RouterMapper.REST_ROUTER_NAME: row.name,
             RouterMapper.REST_ROUTER_ADMIN_STATE_UP: row.enabled,
@@ -453,25 +491,77 @@ class RouterMapper(Mapper):
                 if row.enabled else RouterMapper.ROUTER_STATUS_INACTIVE,
             RouterMapper.REST_ROUTER_ROUTES: [],
             RouterMapper.REST_TENANT_ID: tenant_id(),
-
         }
+        RouterMapper._get_external_gateway_from_row(result, row)
+
+        return result
+
+    @staticmethod
+    def _get_external_gateway_from_row(result, row):
+        network = row.external_ids.get(
+            RouterMapper.OVN_ROUTER_GATEWAY_NETWORK
+        )
+
+        if network:
+            gateway = {
+                RouterMapper.REST_ROUTER_NETWORK_ID: network
+            }
+            result[RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO] = gateway
+
+            subnet = row.external_ids.get(
+                RouterMapper.OVN_ROUTER_GATEWAY_SUBNET
+            )
+            if subnet:
+                external_ips = {
+                    RouterMapper.REST_ROUTER_SUBNET_ID: subnet
+                }
+                gateway[RouterMapper.REST_ROUTER_FIXED_IPS] = [external_ips]
+
+                ip = row.external_ids.get(
+                    RouterMapper.OVN_ROUTER_GATEWAY_IP
+                )
+                if ip:
+                    external_ips[RouterMapper.REST_ROUTER_IP_ADDRESS] = ip
 
     @staticmethod
     def validate_add_rest_input(rest_data):
-        RouterMapper._validate_common(rest_data)
+        RouterMapper._validate_external_gateway_info(rest_data)
 
     @staticmethod
     def validate_update_rest_input(rest_data):
-        RouterMapper._validate_common(rest_data)
+        RouterMapper._validate_external_gateway_info(rest_data)
 
     @staticmethod
-    def _validate_common(rest_data):
-        # TODO: to be implemented
-        if RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO in rest_data:
-            raise NotImplementedError(
-                '{name} is not yet implemented.'
-                .format(RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO)
+    def _validate_external_gateway_info(rest_data):
+        gateway_info = rest_data.get(
+            RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO, {})
+        if gateway_info:
+            message = '{key} missing in the external gateway information.'
+            if RouterMapper.REST_ROUTER_NETWORK_ID not in gateway_info:
+                raise RestDataError(
+                    message.format(key=RouterMapper.REST_ROUTER_NETWORK_ID)
+                )
+            if RouterMapper.REST_ROUTER_FIXED_IPS not in gateway_info:
+                raise RestDataError(
+                    message.format(key=RouterMapper.REST_ROUTER_FIXED_IPS)
+                )
+            fixed_ips = gateway_info.get(
+                RouterMapper.REST_ROUTER_FIXED_IPS
             )
+            if not fixed_ips or len(fixed_ips) > 1:
+                raise RestDataError(
+                   '{key} must have exactly one element'.format(
+                       key=RouterMapper.REST_ROUTER_FIXED_IPS
+                    )
+                )
+            if RouterMapper.REST_ROUTER_SUBNET_ID not in fixed_ips[0]:
+                raise RestDataError(
+                    message.format(key=RouterMapper.REST_ROUTER_SUBNET_ID)
+                )
+            if RouterMapper.REST_ROUTER_IP_ADDRESS not in fixed_ips[0]:
+                raise RestDataError(
+                    message.format(key=RouterMapper.REST_ROUTER_IP_ADDRESS)
+                )
 
 
 class BaseRouterInterfaceMapper(Mapper):
