@@ -18,11 +18,16 @@
 #
 from __future__ import absolute_import
 
+import json
+
+from handlers.base_handler import POST
 from handlers.selecting_handler import SelectingHandler
 from handlers.keystone_responses import responses
 
 
 class TokenHandler(SelectingHandler):
+
+    OBFUSCATED_PASSWORD = '<PASSWORD_HIDDEN>'
 
     def call_response_handler(self, response_handler, content, parameters):
         return response_handler(content, parameters)
@@ -30,3 +35,14 @@ class TokenHandler(SelectingHandler):
     @staticmethod
     def get_responses():
         return responses()
+
+    def _format_content_for_log(self, method, path, content):
+        if method == POST and 'tokens' in path:
+            try:
+                content_json = json.loads(content)
+                credentials = content_json['auth']['passwordCredentials']
+                credentials['password'] = TokenHandler.OBFUSCATED_PASSWORD
+                return json.dumps(content_json)
+            except:
+                pass
+        return content

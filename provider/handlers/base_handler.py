@@ -105,10 +105,19 @@ class BaseHandler(BaseHTTPRequestHandler):
     def do_DELETE(self):
         self._handle_request(DELETE, code=httplib.NO_CONTENT)
 
-    def _handle_request(self, method, code=httplib.OK, content=None):
-        logging.debug('Request: {} : {}'.format(method, self.path))
+    def _format_content_for_log(self, method, path, content):
+        return content
+
+    def _log_request(self, method, path, content):
+        logging.debug('Request: {} : {}'.format(method, path))
         if content:
-            logging.debug('Request body:\n{}'.format(content))
+            logging.debug(
+                'Request body:\n{}'.format(
+                    self._format_content_for_log(method, path, content)
+                ))
+
+    def _handle_request(self, method, code=httplib.OK, content=None):
+        self._log_request(method, self.path, content)
         try:
 
             path_parts = self._parse_request_path(self.path)
