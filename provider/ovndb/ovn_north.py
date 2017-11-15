@@ -572,17 +572,20 @@ class OvnNorth(object):
         gateway=None,
         dns=None,
     ):
-        if not self.idl.ls_get(network_id).execute():
-            raise SubnetConfigError(
-                'Unable to move subnet to network {network_id}. The network'
-                ' does not exit.'.format(network_id=network_id)
-            )
-        subnet_by_network = self._get_dhcp_by_network_id(network_id)
-        if subnet_by_network and str(subnet_by_network.uuid) != subnet_id:
-            raise SubnetConfigError(
-                'Unable to move subnet to network {network_id}. The network'
-                ' already has a subnet assigned'.format(network_id=network_id)
-            )
+        if network_id:
+            if not self.idl.ls_get(network_id).execute():
+                raise SubnetConfigError(
+                    'Unable to move subnet to network {network_id}. '
+                    'The network does not exit.'
+                    .format(network_id=network_id)
+                )
+            subnet_by_network = self._get_dhcp_by_network_id(network_id)
+            if subnet_by_network and str(subnet_by_network.uuid) != subnet_id:
+                raise SubnetConfigError(
+                    'Unable to move subnet to network {network_id}. The'
+                    ' network already has a subnet assigned'
+                    .format(network_id=network_id)
+                )
 
         db_set_command = DbSetCommand(
             self.idl, self.TABLE_DHCP_Options, subnet_id)
