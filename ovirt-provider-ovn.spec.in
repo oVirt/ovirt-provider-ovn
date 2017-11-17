@@ -40,8 +40,17 @@ Source0:        %{name}-%{version}.tar.gz
 
 Requires: firewalld-filesystem
 Requires: kernel >= 3.10.0-512
-Requires: openvswitch-ovn-central >= 2.6
-Requires: %{_py2}-openvswitch >= 2.6
+
+Requires: openvswitch >= 0:2.7
+Requires: openvswitch-ovn-central >= 0:2.7
+Requires: openvswitch-ovn-common >= 0:2.7
+Requires: %{_py2}-openvswitch >= 0:2.7
+
+Conflicts: openvswitch = 1:2.6.1
+Conflicts: openvswitch-ovn-central = 1:2.6.1
+Conflicts: openvswitch-ovn-common = 1:2.6.1
+Conflicts: %{_py2}-openvswitch = 1:2.6.1
+
 Requires: python-requests
 Requires: python2-ovsdbapp
 
@@ -83,9 +92,17 @@ License: GPLv2+
 BuildArch: noarch
 Requires: firewalld-filesystem
 Requires: kernel >= 3.10.0-512
-Requires: openvswitch >= 2.6
-Requires: openvswitch-ovn-host >= 2.6
-Requires: %{_py2}-openvswitch  >= 2.6
+
+Requires: openvswitch >= 0:2.7
+Requires: openvswitch-ovn-host >= 0:2.7
+Requires: openvswitch-ovn-common >= 0:2.7
+Requires: %{_py2}-openvswitch  >= 0:2.7
+
+Conflicts: openvswitch = 1:2.6.1
+Conflicts: openvswitch-ovn-central = 1:2.6.1
+Conflicts: openvswitch-ovn-common = 1:2.6.1
+Conflicts: %{_py2}-openvswitch = 1:2.6.1
+
 Requires: vdsm
 Requires(post): firewalld-filesystem
 
