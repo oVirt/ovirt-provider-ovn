@@ -8,3 +8,5 @@ python-six
 python2-pytest
 python2-setuptools
 python2-ovsdbapp
+git
+yum
