@@ -30,13 +30,13 @@
 %endif
 
 Name:           ovirt-provider-ovn
-Version:        1.2
+Version:        1.2.0
 Release:        %{release_suffix}%{?dist}
 Summary:        The oVirt external network provider for OVN
 License:        GPLv2+
 BuildArch:      noarch
 URL:            https://gerrit.ovirt.org/#/admin/projects/ovirt-provider-ovn
-Source0:        %{name}-%{version}-%{release_suffix}.tar.gz
+Source0:        %{name}-%{version}.tar.gz
 
 Requires: firewalld-filesystem
 Requires: kernel >= 3.10.0-512

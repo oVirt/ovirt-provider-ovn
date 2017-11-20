@@ -17,13 +17,13 @@
 # Refer to the README and COPYING files for full details of the license
 
 NAME=ovirt-provider-ovn
-VERSION=1.2
+VERSION=1.2.0
 DIST_DIR=$(NAME)-$(VERSION)
 GITHASH=$(shell git rev-parse --short HEAD)
 TIMESTAMP:=$(shell date +'%Y%m%d%H%M%S')
 RELEASE_SUFFIX=0.$(TIMESTAMP).git$(GITHASH)
 
-DIST_FILE=$(NAME)-$(VERSION)-$(RELEASE_SUFFIX).tar.gz
+DIST_FILE=$(NAME)-$(VERSION).tar.gz
 PYTHON ?= $(shell which python)
 MKDIR=mkdir -p
 RPM_SOURCE_DIR=$(shell rpm --eval %_sourcedir)
