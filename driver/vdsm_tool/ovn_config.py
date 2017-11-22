@@ -18,6 +18,7 @@
 #
 
 from __future__ import absolute_import
+import subprocess
 import sys
 
 from netaddr import IPAddress
@@ -25,7 +26,6 @@ from netaddr.core import AddrFormatError
 
 from vdsm.network.api import network_caps
 
-from .. import commands
 from . import expose, ExtraArgsError
 
 OVN_CONFIG_SCRIPT = \
@@ -96,8 +96,6 @@ def get_ip_addr(net):
 
 
 def exec_ovn_config(cmd):
-    rc, out, err = commands.execCmd(cmd, raw=True)
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+    rc = subprocess.call(cmd)
     if rc != 0:
         raise EnvironmentError('Failed to configure OVN controller.')
