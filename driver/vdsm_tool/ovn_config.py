@@ -25,8 +25,7 @@ from netaddr import IPAddress
 from netaddr.core import AddrFormatError
 
 from vdsm.network.api import network_caps
-
-from . import expose, ExtraArgsError
+from vdsm.tool import expose, ExtraArgsError
 
 OVN_CONFIG_SCRIPT = \
     '/usr/libexec/ovirt-provider-ovn/setup_ovn_controller.sh'
