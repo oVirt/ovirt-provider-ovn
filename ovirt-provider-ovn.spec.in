@@ -99,7 +99,7 @@ Requires: openvswitch-ovn-common >= 0:2.7
 Requires: %{_py2}-openvswitch  >= 0:2.7
 
 Conflicts: openvswitch = 1:2.6.1
-Conflicts: openvswitch-ovn-central = 1:2.6.1
+Conflicts: openvswitch-ovn-host = 1:2.6.1
 Conflicts: openvswitch-ovn-common = 1:2.6.1
 Conflicts: %{_py2}-openvswitch = 1:2.6.1
 
