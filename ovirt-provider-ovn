@@ -1,0 +1,8 @@
+"/var/log/ovirt-provider-ovn.log" {
+	monthly
+	missingok
+	copytruncate
+	compress
+	nocreate
+	rotate 1
+}

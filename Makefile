@@ -36,6 +36,7 @@ install:
 	install -m 644 -D provider/readme.conf $(DESTDIR)/etc/ovirt-provider-ovn/conf.d/README
 	install -m 644 -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/logger.conf
 	install -m 644 -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/ovirt-provider-ovn.conf
+	install -m 644 -D ovirt-provider-ovn $(DESTDIR)/etc/logrotate.d/ovirt-provider-ovn
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/
 	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ provider/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/
@@ -73,6 +74,7 @@ dist:
 	cp Makefile build/$(DIST_DIR)/
 	cp ovirt-provider-ovn.spec.in build/$(DIST_DIR)/ovirt-provider-ovn.spec
 	cp README.adoc build/$(DIST_DIR)/
+	cp ovirt-provider-ovn build/$(DIST_DIR)/
 	sed -i s/%{release_suffix}/$(RELEASE_SUFFIX)/ build/$(DIST_DIR)/ovirt-provider-ovn.spec
 	tar -zcf $(DIST_FILE) -C build $(DIST_DIR)
 	rm -rf build

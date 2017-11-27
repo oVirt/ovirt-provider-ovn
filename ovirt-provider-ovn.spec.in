@@ -115,6 +115,7 @@ to OVN.
 
 %files
 %config(noreplace) %{_sysconfdir}/ovirt-provider-ovn
+%config(noreplace) %{_sysconfdir}/logrotate.d/ovirt-provider-ovn
 %{_datadir}/ovirt-provider-ovn
 %{_unitdir}/ovirt-provider-ovn.service
 /usr/lib/firewalld/services/ovirt-provider-ovn.xml
