@@ -75,7 +75,10 @@ dist:
 	cp ovirt-provider-ovn.spec.in build/$(DIST_DIR)/ovirt-provider-ovn.spec
 	cp README.adoc build/$(DIST_DIR)/
 	cp ovirt-provider-ovn build/$(DIST_DIR)/
-	sed -i s/%{release_suffix}/$(RELEASE_SUFFIX)/ build/$(DIST_DIR)/ovirt-provider-ovn.spec
+	sed -i \
+		-e s/@RELEASE_SUFFIX@/$(RELEASE_SUFFIX)/ \
+		-e s/@VERSION@/$(VERSION)/ \
+		build/$(DIST_DIR)/ovirt-provider-ovn.spec
 	tar -zcf $(DIST_FILE) -C build $(DIST_DIR)
 	rm -rf build
 

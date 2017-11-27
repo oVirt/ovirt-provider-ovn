@@ -30,8 +30,8 @@
 %endif
 
 Name:           ovirt-provider-ovn
-Version:        1.2.1
-Release:        %{release_suffix}%{?dist}
+Version:        @VERSION@
+Release:        @RELEASE_SUFFIX@%{?dist}
 Summary:        The oVirt external network provider for OVN
 License:        GPLv2+
 BuildArch:      noarch
