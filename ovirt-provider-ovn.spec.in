@@ -30,7 +30,7 @@
 %endif
 
 Name:           ovirt-provider-ovn
-Version:        1.2.0
+Version:        1.2.1
 Release:        %{release_suffix}%{?dist}
 Summary:        The oVirt external network provider for OVN
 License:        GPLv2+
