@@ -27,6 +27,7 @@ import ssl
 
 import auth
 import ovirt_provider_config
+import version
 
 from handlers.keystone import TokenHandler
 from handlers.neutron import NeutronHandler
@@ -42,11 +43,31 @@ LOG_CONFIG_FILE = '/etc/ovirt-provider-ovn/logger.conf'
 
 def _init_logging():
     logging.config.fileConfig(LOG_CONFIG_FILE)
+    logging.info('Starting server')
+    _log_rpm_version()
+
+
+def _log_rpm_version():
+    logging.info(
+        'Version: {version}-{release}'.format(
+            version=version.VERSION,
+            release=version.RELEASE,
+        )
+    )
+    logging.info(
+        'Build date: {date}'.format(
+            date=version.TIMESTAMP,
+        )
+    )
+    logging.info(
+        'Githash: {githash}'.format(
+            githash=version.GITHASH,
+        )
+    )
 
 
 def main():
     _init_logging()
-    logging.info('Starting server')
 
     ovirt_provider_config.load()
     auth.init()

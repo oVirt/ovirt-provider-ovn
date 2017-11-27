@@ -39,6 +39,7 @@ install:
 	install -m 644 -D ovirt-provider-ovn $(DESTDIR)/etc/logrotate.d/ovirt-provider-ovn
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/
 	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ provider/*.py*
+	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ version.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/
 	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/ provider/auth/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/
@@ -63,9 +64,20 @@ install:
 	install -m 644 -t $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/ driver/vdsm_tool/ovn_config.py*
 	install -m 644 -D README.adoc $(DESTDIR)/usr/share/doc/ovirt-provider-ovn/README.adoc
 
+
 distcheck: check dist
 
-dist:
+.PHONY: version.py
+version.py: version.py.in
+	sed \
+	    -e s/@VERSION@/\'${VERSION}\'/ \
+	    -e s/@RELEASE_SUFFIX@/\'${RELEASE_SUFFIX}\'/ \
+	    -e s/@GITHASH@/\'${GITHASH}\'/ \
+	    -e s/@TIMESTAMP@/\'${TIMESTAMP}\'/ \
+	    < version.py.in \
+	    > provider/version.py
+
+dist: version.py
 	mkdir -p build/$(DIST_DIR)/
 
 	find ./provider \( -name "*py" -o -name "*conf" -o -name "*xml" -o -name "*service" \)   -exec cp --parents \{\} build/$(DIST_DIR)/ \;
@@ -73,6 +85,7 @@ dist:
 
 	cp Makefile build/$(DIST_DIR)/
 	cp ovirt-provider-ovn.spec.in build/$(DIST_DIR)/ovirt-provider-ovn.spec
+	cp provider/version.py build/$(DIST_DIR)/version.py
 	cp README.adoc build/$(DIST_DIR)/
 	cp ovirt-provider-ovn build/$(DIST_DIR)/
 	sed -i \
