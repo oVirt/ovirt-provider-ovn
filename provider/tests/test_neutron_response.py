@@ -34,12 +34,14 @@ from handlers.neutron_responses import PORT_ID
 
 from handlers.neutron_responses import ADD_ROUTER_INTERFACE
 from handlers.neutron_responses import DELETE_ROUTER_INTERFACE
+from handlers.neutron_responses import FLOATINGIPS
 from handlers.neutron_responses import NETWORK_ENTITY
 from handlers.neutron_responses import NETWORKS
 from handlers.neutron_responses import PORT_ENTITY
 from handlers.neutron_responses import PORTS
 from handlers.neutron_responses import ROUTER_ENTITY
 from handlers.neutron_responses import ROUTERS
+from handlers.neutron_responses import SECURITY_GROUPS
 from handlers.neutron_responses import SUBNET_ENTITY
 from handlers.neutron_responses import SUBNETS
 
@@ -105,6 +107,15 @@ class TestNeutronResponse(object):
             assert handler is not None
             assert params is not None
             assert params['router_id'] == '7'
+
+        for path in [
+            FLOATINGIPS,
+            SECURITY_GROUPS
+        ]:
+            handler, params = SelectingHandler.get_response_handler(
+                responses(), GET, path.split('/')
+            )
+            assert handler is not None
 
         # This is a test call engine makes to check if provider is alive
         handler, params = SelectingHandler.get_response_handler(

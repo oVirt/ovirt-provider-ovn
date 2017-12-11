@@ -47,6 +47,9 @@ ROUTER_ENTITY = 'routers/{router_id}'
 ADD_ROUTER_INTERFACE = 'routers/{router_id}/add_router_interface'
 DELETE_ROUTER_INTERFACE = 'routers/{router_id}/remove_router_interface'
 
+FLOATINGIPS = 'floatingips'
+SECURITY_GROUPS = 'security-groups'
+
 
 _responses = {}
 
@@ -236,6 +239,16 @@ def put_add_router_inerface(nb_db, content, parameters):
 def put_remove_router_interface(nb_db, content, parameters):
     nb_db.delete_router_interface(get_entity(content), parameters[ROUTER_ID])
     return Response({"router": {}})
+
+
+@rest(GET, FLOATINGIPS, _responses)
+def get_floating_ips(nb_db, content, parameters):
+    return Response({'floatingips': []})
+
+
+@rest(GET, SECURITY_GROUPS, _responses)
+def get_security_groups(nb_db, content, parameters):
+    return Response({'security_groups': []})
 
 
 def responses():
