@@ -25,6 +25,8 @@ import hooking
 BRIDGE_NAME = 'br-int'
 PROVIDER_TYPE_KEY = 'provider_type'
 PROVIDER_TYPE = 'EXTERNAL_NETWORK'
+PLUGIN_TYPE_KEY = 'plugin_type'
+PLUGIN_TYPE_OVN = 'OVIRT_PROVIDER_OVN'
 VNIC_ID_KEY = 'vnic_id'
 
 
@@ -62,6 +64,10 @@ def get_lsp_name():
 def main():
     provider_type = os.environ.get(PROVIDER_TYPE_KEY, None)
     if provider_type != PROVIDER_TYPE:
+        return
+
+    plugin_type = os.environ.get(PLUGIN_TYPE_KEY, None)
+    if plugin_type != PLUGIN_TYPE_OVN:
         return
 
     domxml = hooking.read_domxml()
