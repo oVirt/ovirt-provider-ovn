@@ -144,7 +144,8 @@ def get_tenants(content, parameters):
         'tenants': [{
             'description': tenant_description(),
             'name': tenant_name(),
-            'id': tenant_id()}]
+            'id': tenant_id(),
+            'enabled': True}]
     })
 
 
