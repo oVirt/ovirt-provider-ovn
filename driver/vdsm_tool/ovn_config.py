@@ -48,7 +48,7 @@ def ovn_config(*args):
     tunneling-network - the vdsm network name which is to be used for OVN tunneling
     """
     if len(args) != 3:
-        raise ExtraArgsError()
+        raise ExtraArgsError(n=3)
 
     if is_ipaddress(args[2]):
         ip_address = args[2]
