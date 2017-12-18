@@ -688,9 +688,17 @@ class OvnNorth(object):
             self._validate_gateway_router_ip(network_id, gateway_ip)
             self._reserve_network_ip(network_id, gateway_ip)
 
-        return self.idl.lr_add(
+        router = self.idl.lr_add(
             router=name, may_exist=False, enabled=enabled
         ).execute()
+        router_id = str(router.uuid)
+
+        if network_id:
+            self._add_external_gateway_interface(
+                router_id, network_id, gateway_subnet_id, gateway_ip
+            )
+            router = self._get_router(router_id)
+        return router
 
     @RouterMapper.validate_add
     @RouterMapper.map_from_rest
@@ -889,6 +897,30 @@ class OvnNorth(object):
             )
         ).execute()
 
+    def _add_external_gateway_interface(
+        self, router_id, network_id, gateway_subnet_id, gateway_ip
+    ):
+        port_ip = '{ip}/{netmask}'.format(
+            ip=gateway_ip,
+            netmask=self._get_mask_from_subnet(
+                self._get_subnet(gateway_subnet_id)
+            )
+        )
+
+        port = self._create_port(OvnNorth.ROUTER_SWITCH_PORT_NAME, network_id)
+        lrp_name = self._create_router_port_name(port.uuid)
+        self._create_router_port(
+            router_id, lrp_name, port_ip, self._random_mac()
+        )
+        self._connect_port_to_router(
+            port,
+            lrp_name,
+            name=OvnNorth.ROUTER_SWITCH_PORT_NAME,
+            is_enabled=True,
+            device_id=port.uuid,
+            device_owner=PortMapper.DEVICE_OWNER_OVIRT,
+        )
+
     @AddRouterInterfaceMapper.validate_update
     @AddRouterInterfaceMapper.map_from_rest
     @AddRouterInterfaceMapper.map_to_rest
@@ -904,6 +936,9 @@ class OvnNorth(object):
         self._create_router_port(router_id, lrp_name, lrp_ip, mac)
         return router_id, network_id, port_id, subnet_id
 
+    def _get_mask_from_subnet(self, subnet):
+        return subnet.cidr.split('/')[1]
+
     def _get_ip_from_subnet(self, subnet, network_id, router_id):
         subnet_gateway = subnet.options.get('router')
         if not subnet_gateway:
@@ -917,7 +952,7 @@ class OvnNorth(object):
                     router_id=router_id
                 )
             )
-        subnet_netmask = subnet.cidr.split('/')[1]
+        subnet_netmask = self._get_mask_from_subnet(subnet)
         return '{ip}/{netmask}'.format(
             ip=subnet_gateway, netmask=subnet_netmask
         )
