@@ -851,9 +851,20 @@ class OvnNorth(object):
             ip=subnet_gateway, netmask=subnet_netmask
         )
 
-    def _get_port_ip(self, port, router_id):
-        port_addresses = port.dynamic_addresses
-        if not port_addresses:
+    def _get_port_static_ip(self, port):
+        return self._get_ip_from_addresses(port.addresses)
+
+    def _get_port_dynamic_ip(self, port):
+        return self._get_ip_from_addresses(port.dynamic_addresses)
+
+    def _get_ip_from_addresses(self, addresses):
+        if not addresses:
+            return None
+        address_parts = addresses[0].split(' ')
+        return address_parts[1] if len(address_parts) > 1 else None
+
+    def _validate_port_ip_for_router(self, port_ip, port, router_id):
+        if not port_ip:
             raise ElementNotFoundError(
                 'Unable to attach port {port_id} to router '
                 '{router_id}. '
@@ -861,10 +872,10 @@ class OvnNorth(object):
                 'an ip from subnet assigned.'
                 .format(port_id=port.uuid, router_id=router_id)
             )
-        return port_addresses[0].split(' ')[1]
 
     def _get_ip_from_port(self, port, router_id):
-        port_ip = self._get_port_ip(port, router_id)
+        port_ip = self._get_port_dynamic_ip(port)
+        self._validate_port_ip_for_router(port_ip, port, router_id)
         network = self._get_port_network(port)
         network_cidr = network.other_config.get(NetworkMapper.OVN_SUBNET)
         if not network_cidr:
