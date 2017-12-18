@@ -637,7 +637,7 @@ class OvnNorth(object):
 
     def delete_subnet(self, subnet_id):
         subnet = self._get_subnet(subnet_id)
-        router_id = self._get_subnet_gateway_router_id(subnet)
+        router_id = self._get_subnet_gateway_router_id(subnet_id)
         if router_id:
             raise BadRequestError(
                 'Unable to delete subnet {subnet} because it is connected to '
@@ -727,7 +727,8 @@ class OvnNorth(object):
     def _lsp_id_by_lrp(self, lrp):
         return lrp.name[len(OvnNorth.ROUTER_PORT_NAME_PREFIX):]
 
-    def _get_subnet_gateway_router_id(self, subnet):
+    def _get_subnet_gateway_router_id(self, subnet_id):
+        subnet = self._get_subnet(subnet_id)
         return subnet.external_ids.get(SubnetMapper.OVN_GATEWAY_ROUTER_ID)
 
     def _set_subnet_gateway_router(self, subnet_id, router_id):
@@ -749,7 +750,7 @@ class OvnNorth(object):
         ).execute()
 
     def _validate_create_routing_lsp_by_subnet(
-        self, subnet_id, subnet, router_id, network_id
+        self, network_id, subnet_id, router_id=None
     ):
         if not network_id:
             raise ElementNotFoundError(
@@ -758,7 +759,14 @@ class OvnNorth(object):
                 .format(subnet_id=subnet_id)
             )
 
-        old_router_id = self._get_subnet_gateway_router_id(subnet)
+        network_subnet = self._get_dhcp_by_network_id(network_id)
+        if not network_subnet or str(network_subnet.uuid) != subnet_id:
+            raise BadRequestError(
+                'Subnet {subnet_id} does not belong to network {network_id}'
+                .format(subnet_id=subnet_id, network_id=network_id)
+            )
+
+        old_router_id = self._get_subnet_gateway_router_id(subnet_id)
         if old_router_id:
             if old_router_id == router_id:
                 raise BadRequestError(
@@ -769,7 +777,7 @@ class OvnNorth(object):
                 )
             else:
                 raise BadRequestError(
-                    'Can not add subnet {subnet} to router {router}. Subnet is'
+                    'Can not add subnet {subnet} to router. Subnet is'
                     ' already connected to router {old_router}'.format(
                         subnet=subnet_id, router=router_id,
                         old_router=old_router_id
@@ -780,7 +788,7 @@ class OvnNorth(object):
         subnet = self._get_subnet(subnet_id)
         network_id = subnet.external_ids.get(SubnetMapper.OVN_NETWORK_ID)
         self._validate_create_routing_lsp_by_subnet(
-            subnet_id, subnet, router_id, network_id)
+            network_id, subnet_id, router_id)
         lrp_ip = self._get_ip_from_subnet(subnet, network_id, router_id)
         port = self._create_port(OvnNorth.ROUTER_SWITCH_PORT_NAME, network_id)
         lrp_name = self._create_router_port_name(port.uuid)
