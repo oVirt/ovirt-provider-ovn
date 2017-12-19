@@ -683,6 +683,8 @@ class OvnNorth(object):
             self._validate_create_routing_lsp_by_subnet(
                 network_id, gateway_subnet_id
             )
+            self._validate_gateway_router_ip(network_id, gateway_ip)
+
         return self.idl.lr_add(
             router=name, may_exist=False, enabled=enabled
         ).execute()
@@ -829,6 +831,26 @@ class OvnNorth(object):
             mac=mac,
             networks=[lrp_ip],
         ).execute()
+
+    def _is_ip_available_in_network(self, network_id, ip):
+        network = self._get_network(network_id)
+        if any(
+            ip == self._get_port_dynamic_ip(port) or
+            ip == self._get_port_static_ip(port)
+            for port in network.ports
+        ):
+            return False
+        return True
+
+    def _validate_gateway_router_ip(self, network_id, gateway_ip):
+        if not self._is_ip_available_in_network(network_id, gateway_ip):
+            raise RestDataError(
+                'ip_address {ip_address} is already used on the external '
+                'network {network_id}'.format(
+                    ip_address=gateway_ip,
+                    network_id=network_id
+                )
+            )
 
     @AddRouterInterfaceMapper.validate_update
     @AddRouterInterfaceMapper.map_from_rest
