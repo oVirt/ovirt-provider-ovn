@@ -77,6 +77,8 @@ class OvnNorth(object):
     ROW_LS_NAME = 'name'
     ROW_LS_OTHER_CONFIG = 'other_config'
     ROW_LS_EXTERNAL_IDS = 'external_ids'
+    LS_OPTION_EXCLUDE_IPS = 'exclude_ips'
+    LS_EXCLUDE_IP_DELIMITER = '..'
 
     TABLE_LSP = 'Logical_Switch_Port'
     ROW_LSP_NAME = 'name'
@@ -840,7 +842,8 @@ class OvnNorth(object):
             for port in network.ports
         ):
             return False
-        return True
+        exclude_ips = self._get_network_exclude_ips(network)
+        return ip not in exclude_ips
 
     def _validate_gateway_router_ip(self, network_id, gateway_ip):
         if not self._is_ip_available_in_network(network_id, gateway_ip):
@@ -851,6 +854,22 @@ class OvnNorth(object):
                     network_id=network_id
                 )
             )
+
+    def _get_network_exclude_ips(self, network):
+        exclude_values = network.other_config.get(
+            OvnNorth.LS_OPTION_EXCLUDE_IPS
+        )
+        # TODO: should we care about IP ranges? we do not use them, but
+        # what if someone else will?
+        # lets raise for now
+        result = []
+        for exclude_value in exclude_values.split():
+            if OvnNorth.LS_EXCLUDED_IP_DELIMITER not in exclude_value:
+                raise NotImplementedError(
+                    'Hanlding of ip ranges not yet implemented'
+                )
+            result.append(exclude_value)
+        return result
 
     @AddRouterInterfaceMapper.validate_update
     @AddRouterInterfaceMapper.map_from_rest
