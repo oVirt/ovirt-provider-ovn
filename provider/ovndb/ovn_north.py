@@ -686,6 +686,7 @@ class OvnNorth(object):
                 network_id, gateway_subnet_id
             )
             self._validate_gateway_router_ip(network_id, gateway_ip)
+            self._reserve_network_ip(network_id, gateway_ip)
 
         return self.idl.lr_add(
             router=name, may_exist=False, enabled=enabled
@@ -870,6 +871,23 @@ class OvnNorth(object):
                 )
             result.append(exclude_value)
         return result
+
+    def _reserve_network_ip(self, network_id, gateway_ip):
+        exclude_values = self._get_network(network_id).other_config.get(
+            self.LS_OPTION_EXCLUDE_IPS, {}
+        )
+        new_values = (
+            (exclude_values + ' ') if exclude_values else str()
+         ) + gateway_ip
+
+        self.idl.db_set(
+            OvnNorth.TABLE_LS,
+            network_id,
+            (
+                OvnNorth.ROW_LS_OTHER_CONFIG,
+                {OvnNorth.LS_OPTION_EXCLUDE_IPS: new_values}
+            )
+        ).execute()
 
     @AddRouterInterfaceMapper.validate_update
     @AddRouterInterfaceMapper.map_from_rest
