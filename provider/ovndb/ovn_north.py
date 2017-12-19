@@ -676,9 +676,13 @@ class OvnNorth(object):
         return self.idl.lr_list().execute()
 
     def _add_router(
-        self, name, enabled, network_id=None, gateway_subnet=None,
+        self, name, enabled, network_id=None, gateway_subnet_id=None,
         gateway_ip=None
     ):
+        if network_id:
+            self._validate_create_routing_lsp_by_subnet(
+                network_id, gateway_subnet_id
+            )
         return self.idl.lr_add(
             router=name, may_exist=False, enabled=enabled
         ).execute()
