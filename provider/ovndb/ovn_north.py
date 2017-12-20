@@ -22,6 +22,8 @@ from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 from ovsdbapp.schema.ovn_northbound.impl_idl import OvnNbApiIdlImpl
 import random
 
+import ovndb.ip as ip_utils
+
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import ConflictError
 from handlers.base_handler import ElementNotFoundError
@@ -846,8 +848,8 @@ class OvnNorth(object):
     def _is_ip_available_in_network(self, network_id, ip):
         network = self._get_network(network_id)
         if any(
-            ip == self._get_port_dynamic_ip(port) or
-            ip == self._get_port_static_ip(port)
+            ip == ip_utils.get_port_dynamic_ip(port) or
+            ip == ip_utils.get_port_static_ip(port)
             for port in network.ports
         ):
             return False
@@ -957,12 +959,6 @@ class OvnNorth(object):
             ip=subnet_gateway, netmask=subnet_netmask
         )
 
-    def _get_port_static_ip(self, port):
-        return self._get_ip_from_addresses(port.addresses)
-
-    def _get_port_dynamic_ip(self, port):
-        return self._get_ip_from_addresses(port.dynamic_addresses)
-
     def _get_ip_from_addresses(self, addresses):
         if not addresses:
             return None
@@ -980,7 +976,7 @@ class OvnNorth(object):
             )
 
     def _get_ip_from_port(self, port, router_id):
-        port_ip = self._get_port_dynamic_ip(port)
+        port_ip = ip_utils.get_port_dynamic_ip(port)
         self._validate_port_ip_for_router(port_ip, port, router_id)
         network = self._get_port_network(port)
         network_cidr = network.other_config.get(NetworkMapper.OVN_SUBNET)
