@@ -38,6 +38,7 @@ from ovirt_provider_config_common import ssl_key_file
 from ovirt_provider_config_common import ssl_cacert_file
 from ovirt_provider_config_common import ssl_cert_file
 
+from ovndb.db_set_command import DbSetCommand
 from ovndb.ovn_north_mappers import AddRouterInterfaceMapper
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import NetworkPort
@@ -47,29 +48,6 @@ from ovndb.ovn_north_mappers import RestDataError
 from ovndb.ovn_north_mappers import RouterMapper
 from ovndb.ovn_north_mappers import SubnetConfigError
 from ovndb.ovn_north_mappers import SubnetMapper
-
-
-class DbSetCommand(object):
-
-    def __init__(self, idl, table, entity_id):
-        self.idl = idl
-        self.table = table
-        self.entity_id = entity_id
-        self.values = list()
-
-    def execute(self):
-        if not self.values:
-            return
-        x = self.idl.db_set(
-            self.table,
-            self.entity_id,
-            *self.values
-        )
-        x.execute()
-
-    def add(self, column, value, add_condition=True):
-        if add_condition:
-            self.values.append((column, value))
 
 
 class OvnNorth(object):
