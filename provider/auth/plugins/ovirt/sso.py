@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from functools import wraps
+import logging
 
 import requests
 
@@ -57,14 +58,24 @@ def _inspect_response(func):
     return wrapper
 
 
+@_inspect_response
+@_translate_request_exception
+def _post(url, *args, **kwargs):
+    _get_logger().debug('Connecting to oVirt engine\'s SSO module: {}'
+                        .format(url))
+    return requests.post(url, *args, **kwargs)
+
+
+def _get_logger():
+    return logging.getLogger(__name__)
+
+
 def create_token(username, password, engine_url, ca_file, timeout):
     sso_response = _get_sso_token(
         username, password, engine_url, ca_file, timeout)
     return sso_response[TOKEN_NAME]
 
 
-@_inspect_response
-@_translate_request_exception
 def _get_sso_token(username, password, engine_url, ca_file, timeout):
     post_data = {
         'grant_type': 'password',
@@ -72,11 +83,13 @@ def _get_sso_token(username, password, engine_url, ca_file, timeout):
         'username': username,
         'password': password
     }
-    return requests.post(_token_url(engine_url),
-                         headers=AUTH_HEADERS,
-                         data=post_data,
-                         verify=ca_file,
-                         timeout=timeout)
+    return _post(
+        _token_url(engine_url),
+        headers=AUTH_HEADERS,
+        data=post_data,
+        verify=ca_file,
+        timeout=timeout
+    )
 
 
 def get_profiles(
@@ -91,32 +104,32 @@ def get_profiles(
     return profiles
 
 
-@_inspect_response
-@_translate_request_exception
 def _profile_list(
         token, engine_url, ca_file, timeout, client_id, client_secret):
-    return requests.post(_token_info_url(engine_url),
-                         headers=AUTH_HEADERS,
-                         data={
-                             'token': token,
-                             'query_type': 'profile-list',
-                             'scope': PUBLIC_AUTHZ_SEARCH_SCOPE
-                             },
-                         auth=(client_id, client_secret),
-                         verify=ca_file,
-                         timeout=timeout)
+    return _post(
+        _token_info_url(engine_url),
+        headers=AUTH_HEADERS,
+        data={
+            'token': token,
+            'query_type': 'profile-list',
+            'scope': PUBLIC_AUTHZ_SEARCH_SCOPE
+        },
+        auth=(client_id, client_secret),
+        verify=ca_file,
+        timeout=timeout
+    )
 
 
-@_inspect_response
-@_translate_request_exception
 def get_token_info(
         token, engine_url, ca_file, timeout, client_id, client_secret):
-    return requests.post(_token_info_url(engine_url),
-                         headers=AUTH_HEADERS,
-                         data={'token': token},
-                         auth=(client_id, client_secret),
-                         verify=ca_file,
-                         timeout=timeout)
+    return _post(
+        _token_info_url(engine_url),
+        headers=AUTH_HEADERS,
+        data={'token': token},
+        auth=(client_id, client_secret),
+        verify=ca_file,
+        timeout=timeout
+    )
 
 
 def _get_token_url(engine_url):
