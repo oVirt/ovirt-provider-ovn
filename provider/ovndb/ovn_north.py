@@ -20,7 +20,6 @@ import ovs.stream
 import ovsdbapp.backend.ovs_idl.connection
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 from ovsdbapp.schema.ovn_northbound.impl_idl import OvnNbApiIdlImpl
-import random
 
 import ovndb.constants as ovnconst
 import ovndb.ip as ip_utils
@@ -786,7 +785,13 @@ class OvnNorth(object):
             device_owner=PortMapper.DEVICE_OWNER_OVIRT,
         )
         self._set_subnet_gateway_router(subnet_id, router_id)
-        return str(port.uuid), lrp_name, lrp_ip, network_id, self._random_mac()
+        return (
+            str(port.uuid),
+            lrp_name,
+            lrp_ip,
+            network_id,
+            ip_utils.random_mac()
+        )
 
     def _update_routing_lsp_by_port(self, port_id, router_id):
         port = self._get_switch_port(port_id)
@@ -878,7 +883,7 @@ class OvnNorth(object):
         port = self._create_port(ovnconst.ROUTER_SWITCH_PORT_NAME, network_id)
         lrp_name = self._create_router_port_name(port.uuid)
         self._create_router_port(
-            router_id, lrp_name, port_ip, self._random_mac()
+            router_id, lrp_name, port_ip, ip_utils.random_mac()
         )
         self._connect_port_to_router(
             port,
@@ -1034,11 +1039,6 @@ class OvnNorth(object):
                 'Logical router port {port} does not exist'
                 .format(port=lrp)
             )
-
-    def _random_mac(self):
-        macparts = [0]
-        macparts.extend([random.randint(0x00, 0xff) for i in range(5)])
-        return ':'.join(map(lambda x: "%02x" % x, macparts))
 
     def __enter__(self):
         return self

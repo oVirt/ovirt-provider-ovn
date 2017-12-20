@@ -17,6 +17,9 @@
 # Refer to the README and COPYING files for full details of the license
 
 
+import random
+
+
 def get_port_static_ip(port):
     return _get_ip_from_addresses(port.addresses)
 
@@ -27,6 +30,12 @@ def get_port_dynamic_ip(port):
 
 def get_port_mac(port):
     return port.addresses[0].split()[0] if port.addresses else None
+
+
+def random_mac():
+    macparts = [0]
+    macparts.extend([random.randint(0x00, 0xff) for i in range(5)])
+    return ':'.join(map(lambda x: "%02x" % x, macparts))
 
 
 def _get_ip_from_addresses(addresses):
