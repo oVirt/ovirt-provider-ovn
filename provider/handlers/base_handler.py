@@ -110,7 +110,11 @@ class BaseHandler(BaseHTTPRequestHandler):
         return content
 
     def _log_request(self, method, path, content):
-        logging.debug('Request: {} : {}'.format(method, path))
+        logging.debug(
+            'From: {address}:{port} Request: {method} {path}'.format(
+              address=self.client_address[0], port=self.client_address[1],
+              method=method, path=path
+            ))
         if content:
             logging.debug(
                 'Request body:\n{}'.format(

@@ -31,7 +31,7 @@ from handlers.selecting_handler import rest
 REST_RESPONSE_GET = 'REST_RESPONSE_GET'
 REST_RESPONSE_SHOW = 'REST_RESPONSE_SHOW'
 REST_RESPONSE_POST = 'REST_RESPONSE_POST'
-
+CLIENT_ADDRESS = ('127.0.0.1', 41736)
 
 response_handlers = {}
 
@@ -86,6 +86,7 @@ class TestNeutronHandler(object):
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
         handler.headers = {}
+        handler.client_address = CLIENT_ADDRESS
         handler.path = '/v2.0/testports?t=1'
 
         handler.do_GET()
@@ -105,6 +106,7 @@ class TestNeutronHandler(object):
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
         handler.headers = {}
+        handler.client_address = CLIENT_ADDRESS
         handler.path = '/v2.0/testports'
 
         handler.do_GET()
@@ -126,6 +128,7 @@ class TestNeutronHandler(object):
         handler.wfile = MagicMock()
         id = '123456'
         handler.headers = {}
+        handler.client_address = CLIENT_ADDRESS
         handler.path = '/v2.0/testports/' + id
 
         handler.do_GET()
@@ -149,6 +152,7 @@ class TestNeutronHandler(object):
         handler.wfile = MagicMock()
         id = '123456'
         handler.headers = {}
+        handler.client_address = CLIENT_ADDRESS
         handler.path = '/v2.0/testports/' + id
 
         handler.do_DELETE()
@@ -169,6 +173,7 @@ class TestNeutronHandler(object):
 
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
+        handler.client_address = CLIENT_ADDRESS
         handler.path = '/v2.0/testports'
         handler.do_DELETE()
         assert send_error.call_count == 1
@@ -188,6 +193,7 @@ class TestNeutronHandler(object):
         handler.wfile = MagicMock()
         handler.rfile = MagicMock()
         handler.rfile.read.return_value = 'content'
+        handler.client_address = CLIENT_ADDRESS
         handler.headers = {'Content-Length': 7}
 
         handler.path = '/v2.0/testports'
@@ -216,6 +222,7 @@ class TestNeutronHandler(object):
         handler.wfile = MagicMock()
         handler.rfile = MagicMock()
         handler.rfile.read.return_value = 'content'
+        handler.client_address = CLIENT_ADDRESS
         handler.headers = {'Content-Length': 7}
 
         handler.path = '/v2.0/response_code_201'

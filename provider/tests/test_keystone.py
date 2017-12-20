@@ -30,6 +30,7 @@ from handlers.selecting_handler import rest
 
 REST_RESPONSE_POST = 'REST_RESPONSE_POST'
 EMPTY = 'EMPTY'
+CLIENT_ADDRESS = ('127.0.0.1', 41736)
 
 response_handlers = {}
 
@@ -102,6 +103,7 @@ class TestKeystoneHandler(object):
         handler = TokenHandler(None, None, None)
         handler.wfile = MagicMock()
         handler.rfile = MagicMock()
+        handler.client_address = CLIENT_ADDRESS
         handler.path = path
         return handler
 
