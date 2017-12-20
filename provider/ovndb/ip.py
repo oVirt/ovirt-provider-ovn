@@ -25,6 +25,10 @@ def get_port_dynamic_ip(port):
     return _get_ip_from_addresses(port.dynamic_addresses)
 
 
+def get_port_mac(port):
+    return port.addresses[0].split()[0] if port.addresses else None
+
+
 def _get_ip_from_addresses(addresses):
     if not addresses:
         return None

@@ -327,7 +327,7 @@ class OvnNorth(object):
     def _update_port_address(self, port, network_id, mac=None):
         if port.type == ovnconst.LSP_TYPE_ROUTER:
             return
-        mac = mac or self._get_port_mac(port)
+        mac = mac or ip_utils.get_port_mac(port)
         if mac:
             db_set_command = DbSetCommand(
                 self.idl, ovnconst.TABLE_LSP, port.uuid
@@ -797,7 +797,7 @@ class OvnNorth(object):
             )
         lrp_ip = self._get_ip_from_port(port, router_id)
         lrp_name = self._create_router_port_name(port.uuid)
-        mac = self._get_port_mac(port)
+        mac = ip_utils.get_port_mac(port)
         self._connect_port_to_router(port, lrp_name, is_enabled=True)
         return (
             port_id, lrp_name, lrp_ip, str(self._get_port_network(port).uuid),
@@ -1034,9 +1034,6 @@ class OvnNorth(object):
                 'Logical router port {port} does not exist'
                 .format(port=lrp)
             )
-
-    def _get_port_mac(self, port):
-        return port.addresses[0].split()[0] if port.addresses else None
 
     def _random_mac(self):
         macparts = [0]
