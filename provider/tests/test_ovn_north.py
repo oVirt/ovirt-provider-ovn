@@ -22,6 +22,8 @@ import mock
 import pytest
 import six
 
+import ovndb.constants as ovnconst
+
 from ovirt_provider_config_common import dhcp_lease_time
 from ovirt_provider_config_common import dhcp_mtu
 from ovirt_provider_config_common import dhcp_server_mac
@@ -247,7 +249,7 @@ class TestOvnNorth(object):
         assert mock_lsp_add_command.mock_calls[0] == mock.call(
             ovn_north.idl,
             str(TestOvnNorth.NETWORK_LOCALNET_12.uuid),
-            OvnNorth.LOCALNET_SWITCH_PORT_NAME,
+            ovnconst.LOCALNET_SWITCH_PORT_NAME,
             None,
             None,
             False
@@ -277,7 +279,7 @@ class TestOvnNorth(object):
         assert mock_set_command.call_count == 1
         assert mock_set_command.mock_calls[0] == mock.call(
             ovn_north.idl,
-            OvnNorth.TABLE_LS,
+            ovnconst.TABLE_LS,
             TestOvnNorth.NETWORK_ID10,
             (NetworkMapper.REST_NETWORK_NAME, TestOvnNorth.NETWORK_NAME10)
         )
@@ -307,7 +309,7 @@ class TestOvnNorth(object):
         assert mock_set_command.call_count == 4
         assert mock_set_command.mock_calls[0] == mock.call(
             ovn_north.idl,
-            OvnNorth.TABLE_LS,
+            ovnconst.TABLE_LS,
             TestOvnNorth.NETWORK_ID12,
             (NetworkMapper.REST_NETWORK_NAME, TestOvnNorth.NETWORK_NAME12)
         )
@@ -315,7 +317,7 @@ class TestOvnNorth(object):
         assert mock_lsp_add_command.mock_calls[0] == mock.call(
             ovn_north.idl,
             str(TestOvnNorth.NETWORK_LOCALNET_12.uuid),
-            OvnNorth.LOCALNET_SWITCH_PORT_NAME,
+            ovnconst.LOCALNET_SWITCH_PORT_NAME,
             None,
             None,
             False
@@ -401,42 +403,42 @@ class TestOvnNorth(object):
 
         assert mock_db_set.mock_calls[0] == mock.call(
             ovn_north.idl,
-            OvnNorth.TABLE_LSP,
+            ovnconst.TABLE_LSP,
             str(TestOvnNorth.PORT_ID01),
             (
-                OvnNorth.ROW_LSP_NAME,
+                ovnconst.ROW_LSP_NAME,
                 str(TestOvnNorth.PORT_ID01)
             )
         )
 
         assert mock_db_set.mock_calls[2] == mock.call(
             ovn_north.idl,
-            OvnNorth.TABLE_LSP,
+            ovnconst.TABLE_LSP,
             TestOvnNorth.PORT_ID01,
             (
-                OvnNorth.ROW_LSP_EXTERNAL_IDS,
+                ovnconst.ROW_LSP_EXTERNAL_IDS,
                 {PortMapper.OVN_DEVICE_ID: TestOvnNorth.DEVICE_ID}
             ),
             (
-                OvnNorth.ROW_LSP_EXTERNAL_IDS,
+                ovnconst.ROW_LSP_EXTERNAL_IDS,
                 {PortMapper.OVN_NIC_NAME: TestOvnNorth.PORT_NAME01}
             ),
             (
-                OvnNorth.ROW_LSP_EXTERNAL_IDS,
+                ovnconst.ROW_LSP_EXTERNAL_IDS,
                 {PortMapper.OVN_DEVICE_OWNER: PortMapper.DEVICE_OWNER_OVIRT}
             ),
             (
-                OvnNorth.ROW_LSP_ENABLED,
+                ovnconst.ROW_LSP_ENABLED,
                 True
             )
         )
 
         assert mock_db_set.mock_calls[4] == mock.call(
             ovn_north.idl,
-            OvnNorth.TABLE_LSP,
+            ovnconst.TABLE_LSP,
             TestOvnNorth.PORT_ID01,
             (
-                OvnNorth.ROW_LSP_ADDRESSES,
+                ovnconst.ROW_LSP_ADDRESSES,
                 [TestOvnNorth.MAC_ADDRESS]
             ),
         )
@@ -573,10 +575,10 @@ class TestOvnNorth(object):
 
         expected_dbset_call = mock.call(
             ovn_north.idl,
-            OvnNorth.TABLE_LS,
+            ovnconst.TABLE_LS,
             str(TestOvnNorth.NETWORK_ID10),
             (
-                OvnNorth.ROW_LS_OTHER_CONFIG,
+                ovnconst.ROW_LS_OTHER_CONFIG,
                 {NetworkMapper.OVN_SUBNET: subnet_cidr}
             ),
         )
@@ -855,5 +857,5 @@ class TestOvnNorth(object):
         assert result['name'] == str(TestOvnNorth.ROUTER_NAME20)
 
         assert mock_lookup.call_args == mock.call(
-            OvnNorth.TABLE_LR, str(TestOvnNorth.ROUTER_ID20)
+            ovnconst.TABLE_LR, str(TestOvnNorth.ROUTER_ID20)
         )

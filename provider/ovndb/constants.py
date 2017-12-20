@@ -1,0 +1,60 @@
+# Copyright 2017 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+
+
+OVN_NORTHBOUND = 'OVN_Northbound'
+TABLE_LS = 'Logical_Switch'
+ROW_LS_NAME = 'name'
+ROW_LS_OTHER_CONFIG = 'other_config'
+ROW_LS_EXTERNAL_IDS = 'external_ids'
+LS_OPTION_EXCLUDE_IPS = 'exclude_ips'
+LS_EXCLUDED_IP_DELIMITER = '..'
+
+TABLE_LSP = 'Logical_Switch_Port'
+ROW_LSP_NAME = 'name'
+ROW_LSP_ADDRESSES = 'addresses'
+ROW_LSP_EXTERNAL_IDS = 'external_ids'
+ROW_LSP_ENABLED = 'enabled'
+ROW_LSP_DHCPV4_OPTIONS = 'dhcpv4_options'
+ROW_LSP_TAG_REQUEST = 'tag_request'
+ROW_LSP_TYPE = 'type'
+ROW_LSP_OPTIONS = 'options'
+LSP_TYPE_ROUTER = 'router'
+LSP_TYPE_LOCALNET = 'localnet'
+LSP_ADDRESS_TYPE_DYNAMIC = 'dynamic'
+LSP_ADDRESS_TYPE_ROUTER = 'router'
+LSP_ADDRESS_TYPE_UNKNOWN = 'unknown'
+LSP_OPTION_ROUTER_PORT = 'router-port'
+LSP_OPTION_NETWORK_NAME = 'network_name'
+
+TABLE_DHCP_Options = 'DHCP_Options'
+ROW_DHCP_EXTERNAL_IDS = 'external_ids'
+ROW_DHCP_OPTIONS = 'options'
+ROW_DHCP_CIDR = 'cidr'
+
+TABLE_LR = 'Logical_Router'
+ROW_LR_NAME = 'name'
+ROW_LR_ENABLED = 'enabled'
+
+TABLE_LRP = 'Logical_Router_Port'
+
+LOCALNET_SWITCH_PORT_NAME = 'localnet_port'
+ROUTER_SWITCH_PORT_NAME = 'router_port'
+UNASSIGNED_SWTICH_PORT_NAME = 'unassgined_port'
+
+ROUTER_PORT_NAME_PREFIX = 'lrp'

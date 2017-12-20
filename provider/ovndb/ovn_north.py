@@ -22,6 +22,7 @@ from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 from ovsdbapp.schema.ovn_northbound.impl_idl import OvnNbApiIdlImpl
 import random
 
+import ovndb.constants as ovnconst
 import ovndb.ip as ip_utils
 
 from handlers.base_handler import BadRequestError
@@ -74,48 +75,6 @@ class DbSetCommand(object):
 
 class OvnNorth(object):
 
-    OVN_NORTHBOUND = 'OVN_Northbound'
-    TABLE_LS = 'Logical_Switch'
-    ROW_LS_NAME = 'name'
-    ROW_LS_OTHER_CONFIG = 'other_config'
-    ROW_LS_EXTERNAL_IDS = 'external_ids'
-    LS_OPTION_EXCLUDE_IPS = 'exclude_ips'
-    LS_EXCLUDE_IP_DELIMITER = '..'
-
-    TABLE_LSP = 'Logical_Switch_Port'
-    ROW_LSP_NAME = 'name'
-    ROW_LSP_ADDRESSES = 'addresses'
-    ROW_LSP_EXTERNAL_IDS = 'external_ids'
-    ROW_LSP_ENABLED = 'enabled'
-    ROW_LSP_DHCPV4_OPTIONS = 'dhcpv4_options'
-    ROW_LSP_TAG_REQUEST = 'tag_request'
-    ROW_LSP_TYPE = 'type'
-    ROW_LSP_OPTIONS = 'options'
-    LSP_TYPE_ROUTER = 'router'
-    LSP_TYPE_LOCALNET = 'localnet'
-    LSP_ADDRESS_TYPE_DYNAMIC = 'dynamic'
-    LSP_ADDRESS_TYPE_ROUTER = 'router'
-    LSP_ADDRESS_TYPE_UNKNOWN = 'unknown'
-    LSP_OPTION_ROUTER_PORT = 'router-port'
-    LSP_OPTION_NETWORK_NAME = 'network_name'
-
-    TABLE_DHCP_Options = 'DHCP_Options'
-    ROW_DHCP_EXTERNAL_IDS = 'external_ids'
-    ROW_DHCP_OPTIONS = 'options'
-    ROW_DHCP_CIDR = 'cidr'
-
-    TABLE_LR = 'Logical_Router'
-    ROW_LR_NAME = 'name'
-    ROW_LR_ENABLED = 'enabled'
-
-    TABLE_LRP = 'Logical_Router_Port'
-
-    LOCALNET_SWITCH_PORT_NAME = 'localnet_port'
-    ROUTER_SWITCH_PORT_NAME = 'router_port'
-    UNASSIGNED_SWTICH_PORT_NAME = 'unassgined_port'
-
-    ROUTER_PORT_NAME_PREFIX = 'lrp'
-
     def __init__(self):
         self._connect()
 
@@ -123,7 +82,7 @@ class OvnNorth(object):
         self._configure_ssl_connection()
         self.ovsidl = ovsdbapp.backend.ovs_idl.connection.OvsdbIdl.from_server(
             ovn_remote(),
-            OvnNorth.OVN_NORTHBOUND
+            ovnconst.OVN_NORTHBOUND
         )
         ovsdb_connection = ovsdbapp.backend.ovs_idl.connection.Connection(
             idl=self.ovsidl,
@@ -180,7 +139,7 @@ class OvnNorth(object):
     def _add_localnet_network(self, name, localnet, vlan):
         network = self.idl.ls_add(switch=name, may_exist=False).execute()
         localnet_port = self._create_port(
-            OvnNorth.LOCALNET_SWITCH_PORT_NAME, str(network.uuid))
+            ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid))
         self._set_port_localnet_values(localnet_port, localnet, vlan)
         self._set_network_localnet_values(network, localnet, vlan)
         updated_network = self._get_network(str(network.uuid))
@@ -190,9 +149,9 @@ class OvnNorth(object):
     @NetworkMapper.map_from_rest
     def update_network(self, network_id, name, localnet=None, vlan=None):
         self.idl.db_set(
-            self.TABLE_LS,
+            ovnconst.TABLE_LS,
             network_id,
-            (self.ROW_LS_NAME, name),
+            (ovnconst.ROW_LS_NAME, name),
         ).execute()
         self._update_localnet_on_network(network_id, localnet, vlan)
         return self.get_network(network_id)
@@ -203,38 +162,40 @@ class OvnNorth(object):
         if localnet:
             if not localnet_port:
                 localnet_port = self._create_port(
-                    OvnNorth.LOCALNET_SWITCH_PORT_NAME, str(network.uuid))
+                    ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid))
             self._set_port_localnet_values(localnet_port, localnet, vlan)
         elif localnet_port:
             self.delete_port(str(localnet_port.uuid))
         self._set_network_localnet_values(network, localnet, vlan)
 
     def _set_network_localnet_values(self, network, localnet=None, vlan=None):
-        db_set_command = DbSetCommand(self.idl, self.TABLE_LS, network.uuid)
+        db_set_command = DbSetCommand(
+            self.idl, ovnconst.TABLE_LS, network.uuid
+        )
         db_set_command.add(
-            self.ROW_LS_EXTERNAL_IDS,
+            ovnconst.ROW_LS_EXTERNAL_IDS,
             {NetworkMapper.OVN_LOCALNET: localnet},
             localnet
         )
         db_set_command.add(
-            self.ROW_LS_EXTERNAL_IDS,
+            ovnconst.ROW_LS_EXTERNAL_IDS,
             {NetworkMapper.OVN_VLAN: vlan},
             vlan
         )
         db_set_command.execute()
 
     def _set_port_localnet_values(self, port, localnet, vlan):
-        db_set_command = DbSetCommand(self.idl, self.TABLE_LSP, port.uuid)
+        db_set_command = DbSetCommand(self.idl, ovnconst.TABLE_LSP, port.uuid)
         db_set_command.add(
-            self.ROW_LSP_ADDRESSES,
-            [self.LSP_ADDRESS_TYPE_UNKNOWN]
+            ovnconst.ROW_LSP_ADDRESSES,
+            [ovnconst.LSP_ADDRESS_TYPE_UNKNOWN]
         )
         db_set_command.add(
-            self.ROW_LSP_OPTIONS,
-            {OvnNorth.LSP_OPTION_NETWORK_NAME: localnet}
+            ovnconst.ROW_LSP_OPTIONS,
+            {ovnconst.LSP_OPTION_NETWORK_NAME: localnet}
         )
-        db_set_command.add(self.ROW_LSP_TYPE, OvnNorth.LSP_TYPE_LOCALNET)
-        db_set_command.add(self.ROW_LSP_TAG_REQUEST, vlan)
+        db_set_command.add(ovnconst.ROW_LSP_TYPE, ovnconst.LSP_TYPE_LOCALNET)
+        db_set_command.add(ovnconst.ROW_LSP_TAG_REQUEST, vlan)
         db_set_command.execute()
 
     def delete_network(self, network_id):
@@ -261,7 +222,7 @@ class OvnNorth(object):
 
     def _get_localnet_port(self, network):
         for port in network.ports:
-            if port.type == OvnNorth.LSP_TYPE_LOCALNET:
+            if port.type == ovnconst.LSP_TYPE_LOCALNET:
                 return port
         return None
 
@@ -340,48 +301,50 @@ class OvnNorth(object):
         #   txn.commit()
         # The ovsdbapp transactions seem to have synchronization issues at the
         # moment, hence we'll be using individual transactions for now.
-        db_set_command = DbSetCommand(self.idl, self.TABLE_LSP, port.uuid)
+        db_set_command = DbSetCommand(self.idl, ovnconst.TABLE_LSP, port.uuid)
         db_set_command.add(
-            self.ROW_LSP_EXTERNAL_IDS,
+            ovnconst.ROW_LSP_EXTERNAL_IDS,
             {PortMapper.OVN_DEVICE_ID: device_id},
             device_id
         )
         db_set_command.add(
-            self.ROW_LSP_EXTERNAL_IDS,
+            ovnconst.ROW_LSP_EXTERNAL_IDS,
             {PortMapper.OVN_NIC_NAME: name},
             name
         )
         db_set_command.add(
-            self.ROW_LSP_EXTERNAL_IDS,
+            ovnconst.ROW_LSP_EXTERNAL_IDS,
             {PortMapper.OVN_DEVICE_OWNER: device_owner},
             device_owner
         )
         db_set_command.add(
-            self.ROW_LSP_ENABLED,
+            ovnconst.ROW_LSP_ENABLED,
             is_enabled,
             is_enabled
         )
         db_set_command.execute()
 
     def _update_port_address(self, port, network_id, mac=None):
-        if port.type == OvnNorth.LSP_TYPE_ROUTER:
+        if port.type == ovnconst.LSP_TYPE_ROUTER:
             return
         mac = mac or self._get_port_mac(port)
         if mac:
-            db_set_command = DbSetCommand(self.idl, self.TABLE_LSP, port.uuid)
+            db_set_command = DbSetCommand(
+                self.idl, ovnconst.TABLE_LSP, port.uuid
+            )
             subnet_row = self._get_dhcp_by_network_id(network_id)
             if subnet_row:
                 db_set_command.add(
-                    self.ROW_LSP_DHCPV4_OPTIONS, subnet_row.uuid
+                    ovnconst.ROW_LSP_DHCPV4_OPTIONS, subnet_row.uuid
                 )
-                mac += ' ' + OvnNorth.LSP_ADDRESS_TYPE_DYNAMIC
+                mac += ' ' + ovnconst.LSP_ADDRESS_TYPE_DYNAMIC
             else:
                 self.idl.db_clear(
-                    OvnNorth.TABLE_LSP, port.uuid,
-                    OvnNorth.ROW_LSP_DHCPV4_OPTIONS
+                    ovnconst.TABLE_LSP, port.uuid,
+                    ovnconst.ROW_LSP_DHCPV4_OPTIONS
                 ).execute()
 
-            db_set_command.add(self.ROW_LSP_ADDRESSES, [mac])
+            db_set_command.add(ovnconst.ROW_LSP_ADDRESSES, [mac])
             db_set_command.execute()
 
     def _connect_port_to_router(
@@ -400,37 +363,37 @@ class OvnNorth(object):
             device_owner=device_owner
         )
 
-        db_set_command = DbSetCommand(self.idl, self.TABLE_LSP, port.uuid)
+        db_set_command = DbSetCommand(self.idl, ovnconst.TABLE_LSP, port.uuid)
         db_set_command.add(
-            self.ROW_LSP_TYPE,
-            OvnNorth.LSP_TYPE_ROUTER,
+            ovnconst.ROW_LSP_TYPE,
+            ovnconst.LSP_TYPE_ROUTER,
         )
         db_set_command.add(
-            self.ROW_LSP_OPTIONS,
-            {OvnNorth.LSP_OPTION_ROUTER_PORT: router_port_name},
+            ovnconst.ROW_LSP_OPTIONS,
+            {ovnconst.LSP_OPTION_ROUTER_PORT: router_port_name},
         )
         db_set_command.add(
-            self.ROW_LSP_ADDRESSES,
-            [OvnNorth.LSP_ADDRESS_TYPE_ROUTER]
+            ovnconst.ROW_LSP_ADDRESSES,
+            [ovnconst.LSP_ADDRESS_TYPE_ROUTER]
         )
         db_set_command.execute()
 
         self.idl.db_clear(
-            OvnNorth.TABLE_LSP, port.uuid, OvnNorth.ROW_LSP_DHCPV4_OPTIONS
+            ovnconst.TABLE_LSP, port.uuid, ovnconst.ROW_LSP_DHCPV4_OPTIONS
         ).execute()
 
     def _disconnect_port_from_router(self, port):
         self.idl.db_clear(
-            OvnNorth.TABLE_LSP, port.uuid, OvnNorth.ROW_LSP_TYPE
+            ovnconst.TABLE_LSP, port.uuid, ovnconst.ROW_LSP_TYPE
         ).execute()
         self.idl.db_remove(
-            OvnNorth.TABLE_LSP, port.uuid, OvnNorth.ROW_LSP_OPTIONS,
-            OvnNorth.LSP_OPTION_ROUTER_PORT
+            ovnconst.TABLE_LSP, port.uuid, ovnconst.ROW_LSP_OPTIONS,
+            ovnconst.LSP_OPTION_ROUTER_PORT
         ).execute()
         port_name = port.external_ids.get(PortMapper.OVN_NIC_NAME)
-        if port_name == OvnNorth.ROUTER_SWITCH_PORT_NAME:
+        if port_name == ovnconst.ROUTER_SWITCH_PORT_NAME:
             self._update_port_values(
-                port, name=OvnNorth.UNASSIGNED_SWTICH_PORT_NAME
+                port, name=ovnconst.UNASSIGNED_SWTICH_PORT_NAME
             )
 
     def _get_validated_port_network_id(self, port, network_id):
@@ -460,9 +423,9 @@ class OvnNorth(object):
         ).execute()
         port_id = str(port.uuid)
         self.idl.db_set(
-            self.TABLE_LSP,
+            ovnconst.TABLE_LSP,
             port_id,
-            (self.ROW_LSP_NAME, str(port_id))
+            (ovnconst.ROW_LSP_NAME, str(port_id))
         ).execute()
         return port
 
@@ -550,16 +513,16 @@ class OvnNorth(object):
             options[SubnetMapper.OVN_DNS_SERVER] = dns
 
         self.idl.db_set(
-            OvnNorth.TABLE_LS,
+            ovnconst.TABLE_LS,
             network_id,
-            (OvnNorth.ROW_LS_OTHER_CONFIG, {NetworkMapper.OVN_SUBNET: cidr}),
+            (ovnconst.ROW_LS_OTHER_CONFIG, {NetworkMapper.OVN_SUBNET: cidr}),
         ).execute()
 
         subnet = self.idl.dhcp_options_add(cidr, **external_ids).execute()
         self.idl.dhcp_options_set_options(subnet.uuid, **options).execute()
 
         for port in network.ports:
-            if port.type == OvnNorth.LSP_TYPE_ROUTER:
+            if port.type == ovnconst.LSP_TYPE_ROUTER:
                 continue
             self._update_port_address(port, network_id=network_id)
 
@@ -592,47 +555,50 @@ class OvnNorth(object):
                 )
 
         db_set_command = DbSetCommand(
-            self.idl, self.TABLE_DHCP_Options, subnet_id)
+            self.idl, ovnconst.TABLE_DHCP_Options, subnet_id)
 
         if cidr:
             dhcp_server_ip = cidr.split('/', 1)[0]
             db_set_command.add(
-                OvnNorth.ROW_DHCP_OPTIONS,
+                ovnconst.ROW_DHCP_OPTIONS,
                 {SubnetMapper.OVN_DHCP_SERVER_ID: dhcp_server_ip}
             )
-            db_set_command.add(self.ROW_DHCP_CIDR, cidr)
+            db_set_command.add(ovnconst.ROW_DHCP_CIDR, cidr)
             self.idl.db_set(
-                self.TABLE_LS,
+                ovnconst.TABLE_LS,
                 network_id,
-                (self.ROW_LS_OTHER_CONFIG, {NetworkMapper.OVN_SUBNET: cidr}),
+                (
+                    ovnconst.ROW_LS_OTHER_CONFIG,
+                    {NetworkMapper.OVN_SUBNET: cidr}
+                ),
             ).execute()
 
         db_set_command.add(
-            self.ROW_DHCP_EXTERNAL_IDS,
+            ovnconst.ROW_DHCP_EXTERNAL_IDS,
             {SubnetMapper.OVN_NAME: name},
             name
         )
         db_set_command.add(
-            self.ROW_DHCP_EXTERNAL_IDS,
+            ovnconst.ROW_DHCP_EXTERNAL_IDS,
             {SubnetMapper.OVN_NETWORK_ID: network_id},
             network_id
         )
         db_set_command.add(
-            self.ROW_DHCP_OPTIONS,
+            ovnconst.ROW_DHCP_OPTIONS,
             {SubnetMapper.OVN_GATEWAY: gateway},
             gateway
         )
         db_set_command.add(
-            self.ROW_DHCP_OPTIONS,
+            ovnconst.ROW_DHCP_OPTIONS,
             {SubnetMapper.OVN_DNS_SERVER: dns},
             dns
         )
         db_set_command.add(
-            self.ROW_DHCP_OPTIONS,
+            ovnconst.ROW_DHCP_OPTIONS,
             {SubnetMapper.OVN_DHCP_LEASE_TIME: dhcp_lease_time()}
         )
         db_set_command.add(
-            self.ROW_DHCP_OPTIONS,
+            ovnconst.ROW_DHCP_OPTIONS,
             {SubnetMapper.OVN_DHCP_SERVER_MAC: dhcp_server_mac()}
         )
         db_set_command.execute()
@@ -656,7 +622,7 @@ class OvnNorth(object):
         network = self._get_network(network_id)
         self.idl.dhcp_options_del(subnet_id).execute()
         for port in network.ports:
-            if port.type == OvnNorth.LSP_TYPE_ROUTER:
+            if port.type == ovnconst.LSP_TYPE_ROUTER:
                 continue
             self._update_port_address(port, network_id=network_id)
 
@@ -665,7 +631,7 @@ class OvnNorth(object):
         # patch pending: https://review.openstack.org/#/c/505517/
         # replace once patch is accepted
         try:
-            return self.idl.lookup(OvnNorth.TABLE_LR, router_id)
+            return self.idl.lookup(ovnconst.TABLE_LR, router_id)
         except RowNotFound:
             raise ElementNotFoundError(
                 'Router {router} does not exist'.format(router=router_id)
@@ -719,9 +685,9 @@ class OvnNorth(object):
         self, router_id, name, enabled, network_id=None,
         gateway_subnet=None, geteway_ip=None
     ):
-        db_set_command = DbSetCommand(self.idl, self.TABLE_LR, router_id)
-        db_set_command.add(self.ROW_LR_NAME, name, name)
-        db_set_command.add(self.ROW_LR_ENABLED, enabled, enabled)
+        db_set_command = DbSetCommand(self.idl, ovnconst.TABLE_LR, router_id)
+        db_set_command.add(ovnconst.ROW_LR_NAME, name, name)
+        db_set_command.add(ovnconst.ROW_LR_ENABLED, enabled, enabled)
         db_set_command.execute()
         return self.get_router(router_id)
 
@@ -730,7 +696,7 @@ class OvnNorth(object):
 
     def _validate_router_exists(self, router_id):
         try:
-            self.idl.lookup(OvnNorth.TABLE_LR, router_id)
+            self.idl.lookup(ovnconst.TABLE_LR, router_id)
         except RowNotFound:
             raise ElementNotFoundError(
                 'Router {router} does not exist'.format(router=router_id)
@@ -741,10 +707,10 @@ class OvnNorth(object):
         # for convinience we will set the name to the id of the matching LSP
         # with an 'lrp' prefix.
         # We need the prefix due to an ovn issue in OVN lookup (bug pending)
-        return OvnNorth.ROUTER_PORT_NAME_PREFIX + str(port_id)
+        return ovnconst.ROUTER_PORT_NAME_PREFIX + str(port_id)
 
     def _lsp_id_by_lrp(self, lrp):
-        return lrp.name[len(OvnNorth.ROUTER_PORT_NAME_PREFIX):]
+        return lrp.name[len(ovnconst.ROUTER_PORT_NAME_PREFIX):]
 
     def _get_subnet_gateway_router_id(self, subnet_id):
         subnet = self._get_subnet(subnet_id)
@@ -752,19 +718,19 @@ class OvnNorth(object):
 
     def _set_subnet_gateway_router(self, subnet_id, router_id):
         self.idl.db_set(
-            OvnNorth.TABLE_DHCP_Options,
+            ovnconst.TABLE_DHCP_Options,
             subnet_id,
             (
-                OvnNorth.ROW_DHCP_EXTERNAL_IDS,
+                ovnconst.ROW_DHCP_EXTERNAL_IDS,
                 {SubnetMapper.OVN_GATEWAY_ROUTER_ID: router_id}
             )
         ).execute()
 
     def _clear_subnet_gateway_router(self, subnet_id):
         self.idl.db_remove(
-            OvnNorth.TABLE_DHCP_Options,
+            ovnconst.TABLE_DHCP_Options,
             subnet_id,
-            OvnNorth.ROW_DHCP_EXTERNAL_IDS,
+            ovnconst.ROW_DHCP_EXTERNAL_IDS,
             SubnetMapper.OVN_GATEWAY_ROUTER_ID
         ).execute()
 
@@ -809,12 +775,12 @@ class OvnNorth(object):
         self._validate_create_routing_lsp_by_subnet(
             network_id, subnet_id, router_id)
         lrp_ip = self._get_ip_from_subnet(subnet, network_id, router_id)
-        port = self._create_port(OvnNorth.ROUTER_SWITCH_PORT_NAME, network_id)
+        port = self._create_port(ovnconst.ROUTER_SWITCH_PORT_NAME, network_id)
         lrp_name = self._create_router_port_name(port.uuid)
         self._connect_port_to_router(
             port,
             lrp_name,
-            name=OvnNorth.ROUTER_SWITCH_PORT_NAME,
+            name=ovnconst.ROUTER_SWITCH_PORT_NAME,
             is_enabled=True,
             device_id=port.uuid,
             device_owner=PortMapper.DEVICE_OWNER_OVIRT,
@@ -824,7 +790,7 @@ class OvnNorth(object):
 
     def _update_routing_lsp_by_port(self, port_id, router_id):
         port = self._get_switch_port(port_id)
-        if port.type == OvnNorth.LSP_TYPE_ROUTER:
+        if port.type == ovnconst.LSP_TYPE_ROUTER:
             raise BadRequestError(
                 'Can not add {port} to router. Port is already connected to a'
                 ' router'.format(port=port_id)
@@ -868,14 +834,14 @@ class OvnNorth(object):
 
     def _get_network_exclude_ips(self, network):
         exclude_values = network.other_config.get(
-            OvnNorth.LS_OPTION_EXCLUDE_IPS
+            ovnconst.LS_OPTION_EXCLUDE_IPS
         )
         # TODO: should we care about IP ranges? we do not use them, but
         # what if someone else will?
         # lets raise for now
         result = []
         for exclude_value in exclude_values.split():
-            if OvnNorth.LS_EXCLUDED_IP_DELIMITER in exclude_value:
+            if ovnconst.LS_EXCLUDED_IP_DELIMITER in exclude_value:
                 raise NotImplementedError(
                     'Handling of ip ranges not yet implemented'
                 )
@@ -884,18 +850,18 @@ class OvnNorth(object):
 
     def _reserve_network_ip(self, network_id, gateway_ip):
         exclude_values = self._get_network(network_id).other_config.get(
-            self.LS_OPTION_EXCLUDE_IPS, {}
+            ovnconst.LS_OPTION_EXCLUDE_IPS, {}
         )
         new_values = (
             (exclude_values + ' ') if exclude_values else str()
          ) + gateway_ip
 
         self.idl.db_set(
-            OvnNorth.TABLE_LS,
+            ovnconst.TABLE_LS,
             network_id,
             (
-                OvnNorth.ROW_LS_OTHER_CONFIG,
-                {OvnNorth.LS_OPTION_EXCLUDE_IPS: new_values}
+                ovnconst.ROW_LS_OTHER_CONFIG,
+                {ovnconst.LS_OPTION_EXCLUDE_IPS: new_values}
             )
         ).execute()
 
@@ -909,7 +875,7 @@ class OvnNorth(object):
             )
         )
 
-        port = self._create_port(OvnNorth.ROUTER_SWITCH_PORT_NAME, network_id)
+        port = self._create_port(ovnconst.ROUTER_SWITCH_PORT_NAME, network_id)
         lrp_name = self._create_router_port_name(port.uuid)
         self._create_router_port(
             router_id, lrp_name, port_ip, self._random_mac()
@@ -917,7 +883,7 @@ class OvnNorth(object):
         self._connect_port_to_router(
             port,
             lrp_name,
-            name=OvnNorth.ROUTER_SWITCH_PORT_NAME,
+            name=ovnconst.ROUTER_SWITCH_PORT_NAME,
             is_enabled=True,
             device_id=port.uuid,
             device_owner=PortMapper.DEVICE_OWNER_OVIRT,
@@ -1006,7 +972,7 @@ class OvnNorth(object):
 
     def _delete_router_interface_by_port(self, router_id, port_id):
         lsp = self._get_switch_port(port_id)
-        lrp_name = lsp.options.get(OvnNorth.LSP_OPTION_ROUTER_PORT)
+        lrp_name = lsp.options.get(ovnconst.LSP_OPTION_ROUTER_PORT)
         if not lrp_name:
             raise BadRequestError(
                 'Port {port} is not connected to a router'
@@ -1062,7 +1028,7 @@ class OvnNorth(object):
 
     def _get_lrp(self, lrp):
         try:
-            return self.idl.lookup(OvnNorth.TABLE_LRP, lrp)
+            return self.idl.lookup(ovnconst.TABLE_LRP, lrp)
         except RowNotFound:
             raise ElementNotFoundError(
                 'Logical router port {port} does not exist'
