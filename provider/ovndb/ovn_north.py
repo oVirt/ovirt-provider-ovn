@@ -875,7 +875,7 @@ class OvnNorth(object):
     ):
         port_ip = '{ip}/{netmask}'.format(
             ip=gateway_ip,
-            netmask=self._get_mask_from_subnet(
+            netmask=ip_utils.get_mask_from_subnet(
                 self._get_subnet(gateway_subnet_id)
             )
         )
@@ -909,9 +909,6 @@ class OvnNorth(object):
         self._create_router_port(router_id, lrp_name, lrp_ip, mac)
         return router_id, network_id, port_id, subnet_id
 
-    def _get_mask_from_subnet(self, subnet):
-        return subnet.cidr.split('/')[1]
-
     def _get_ip_from_subnet(self, subnet, network_id, router_id):
         subnet_gateway = subnet.options.get('router')
         if not subnet_gateway:
@@ -925,7 +922,7 @@ class OvnNorth(object):
                     router_id=router_id
                 )
             )
-        subnet_netmask = self._get_mask_from_subnet(subnet)
+        subnet_netmask = ip_utils.get_mask_from_subnet(subnet)
         return '{ip}/{netmask}'.format(
             ip=subnet_gateway, netmask=subnet_netmask
         )

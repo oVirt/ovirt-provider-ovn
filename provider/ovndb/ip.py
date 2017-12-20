@@ -38,6 +38,10 @@ def random_mac():
     return ':'.join(map(lambda x: "%02x" % x, macparts))
 
 
+def get_mask_from_subnet(subnet):
+    return subnet.cidr.split('/')[1]
+
+
 def _get_ip_from_addresses(addresses):
     if not addresses:
         return None
