@@ -1,5 +1,5 @@
 "/var/log/ovirt-provider-ovn.log" {
-	monthly
+	maxsize 10M
 	missingok
 	copytruncate
 	compress
