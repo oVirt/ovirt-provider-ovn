@@ -50,6 +50,7 @@ ROW_DHCP_CIDR = 'cidr'
 TABLE_LR = 'Logical_Router'
 ROW_LR_NAME = 'name'
 ROW_LR_ENABLED = 'enabled'
+ROW_LR_STATIC_ROUTES = 'static_routes'
 
 TABLE_LRP = 'Logical_Router_Port'
 ROW_LRP_NETWORKS = 'networks'
@@ -59,3 +60,9 @@ ROUTER_SWITCH_PORT_NAME = 'router_port'
 UNASSIGNED_SWTICH_PORT_NAME = 'unassgined_port'
 
 ROUTER_PORT_NAME_PREFIX = 'lrp'
+
+TABLE_ROUTES = 'Logical_Router_Static_Route'
+ROW_ROUTES_IP_PREFIX = 'ip_prefix'
+ROW_ROUTES_NEXTHOP = 'nexthop'
+
+DEFAULT_ROUTE = '0.0.0.0/0'

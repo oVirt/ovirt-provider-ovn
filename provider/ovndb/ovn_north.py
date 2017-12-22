@@ -660,8 +660,18 @@ class OvnNorth(object):
             self._add_external_gateway_interface(
                 router_id, network_id, gateway_subnet_id, gateway_ip
             )
+            subnet = self._get_subnet(gateway_subnet_id)
+            self._add_default_route_to_router(router_id, subnet)
             router = self._get_router(router_id)
         return router
+
+    def _add_default_route_to_router(self, router_id, subnet):
+        default_gateway = subnet.options.get('router')
+        self.idl.lr_route_add(
+            router_id,
+            ovnconst.DEFAULT_ROUTE,
+            default_gateway
+        ).execute()
 
     @RouterMapper.validate_add
     @RouterMapper.map_from_rest
