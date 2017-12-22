@@ -23,6 +23,7 @@ from ovsdbapp.schema.ovn_northbound.impl_idl import OvnNbApiIdlImpl
 
 import ovndb.constants as ovnconst
 import ovndb.ip as ip_utils
+import ovndb.validation as validate
 
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import ConflictError
@@ -888,18 +889,10 @@ class OvnNorth(object):
         return router_id, network_id, port_id, subnet_id
 
     def _get_ip_from_subnet(self, subnet, network_id, router_id):
+        validate.attach_network_to_router_by_subnet(
+            subnet, network_id, router_id
+        )
         subnet_gateway = subnet.options.get('router')
-        if not subnet_gateway:
-            raise ElementNotFoundError(
-                'Unable to attach network {network_id} to router '
-                '{router_id} by subnet {subnet_id}.'
-                'Attaching by subnet requires the subnet to have '
-                'a default gateway specified.'
-                .format(
-                    network_id=network_id, subnet_id=subnet.uuid,
-                    router_id=router_id
-                )
-            )
         subnet_netmask = ip_utils.get_mask_from_subnet(subnet)
         return '{ip}/{netmask}'.format(
             ip=subnet_gateway, netmask=subnet_netmask
