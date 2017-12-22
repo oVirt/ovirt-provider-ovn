@@ -35,6 +35,7 @@ GET = 'GET'
 DELETE = 'DELETE'
 POST = 'POST'
 PUT = 'PUT'
+JSON_SUFFIX = '.json'
 
 ERROR_MESSAGE = """\
 {{
@@ -195,10 +196,17 @@ class BaseHandler(BaseHTTPRequestHandler):
     @staticmethod
     def _parse_request_path(full_path):
         full_path = urlparse.urlparse(full_path).path
+        full_path = BaseHandler._remove_json_extension(full_path)
         elements = filter(None, full_path.split('/'))[1:]
         if not elements:
             elements.append('')
         return elements
+
+    @staticmethod
+    def _remove_json_extension(path):
+        if path and path.lower().endswith(JSON_SUFFIX):
+            path = path[: - len(JSON_SUFFIX)]
+        return path
 
     @abc.abstractmethod
     def handle_request(self, method, path_parts, content):

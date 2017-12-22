@@ -29,7 +29,6 @@ PATH_SEPARATOR = '/'
 RESPONSE_VALUE_KEY = '#VALUE'
 RESPONSE_VALUE_PARAMETER = '#PARAMETER'
 WILDCARD_KEY = '*'
-JSON_SUFFIX = '.json'
 
 
 def rest(method, path, response_handlers):
@@ -187,7 +186,7 @@ class SelectingHandler(BaseHandler):
                 key = current_map.keys()[0]
                 assert key, 'Expected parameter name is missing'
                 current_map = current_map[key]
-                parameters[key] = cls._parse_parameter(part)
+                parameters[key] = part
             elif WILDCARD_KEY in current_map:
                 current_map = current_map[WILDCARD_KEY]
             else:
@@ -200,12 +199,6 @@ class SelectingHandler(BaseHandler):
         if method not in method_map:
             raise MethodNotAllowedError()
         return method_map[method], parameters
-
-    @staticmethod
-    def _parse_parameter(path_part):
-        if path_part and path_part.lower().endswith(JSON_SUFFIX):
-            path_part = path_part[: - len(JSON_SUFFIX)]
-        return path_part
 
     @abc.abstractmethod
     def call_response_handler(self, response_handler, content, parameters):
