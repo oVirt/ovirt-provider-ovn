@@ -17,8 +17,10 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
+from datetime import datetime, timedelta
 import httplib
 
+from ovirt_provider_config_common import auth_token_timeout
 from ovirt_provider_config_common import openstack_region
 from ovirt_provider_config_common import openstack_neutron_id
 from ovirt_provider_config_common import openstack_keystone_id
@@ -81,7 +83,7 @@ def post_tokens(content, parameters):
         'access': {
             'token': {
                 'id': token,
-                'expires': None
+                'expires': _get_token_expires()
             },
             'user': {
                 'username': 'admin',
@@ -136,6 +138,14 @@ def post_tokens(content, parameters):
             ]
         },
     }, code=http_code)
+
+
+def _get_token_expires():
+    if auth_token_timeout() == 0:
+        return None
+
+    expires = datetime.utcnow() + timedelta(seconds=auth_token_timeout())
+    return expires.strftime('%Y-%m-%d %H:%M:%SZ')
 
 
 @rest(GET, TENANTS, _responses)

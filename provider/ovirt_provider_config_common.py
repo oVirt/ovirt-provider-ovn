@@ -24,6 +24,7 @@ from ovirt_provider_config import CONFIG_SECTION_OVN_REMOTE
 from ovirt_provider_config import CONFIG_SECTION_PROVIDER
 from ovirt_provider_config import CONFIG_SECTION_SSL
 from ovirt_provider_config import DEFAULT_AUTH_PLUGIN
+from ovirt_provider_config import DEFAULT_AUTH_TOKEN_TIMEOUT
 from ovirt_provider_config import DEFAULT_DHCP_ENABLE_MTU
 from ovirt_provider_config import DEFAULT_DHCP_LEASE_TIME
 from ovirt_provider_config import DEFAULT_DHCP_MTU
@@ -43,6 +44,7 @@ from ovirt_provider_config import DEFAULT_SSL_CERT_FILE
 from ovirt_provider_config import DEFAULT_SSL_ENABLED
 from ovirt_provider_config import DEFAULT_SSL_KEY_FILE
 from ovirt_provider_config import KEY_AUTH_PLUGIN
+from ovirt_provider_config import KEY_AUTH_TOKEN_TIMEOUT
 from ovirt_provider_config import KEY_DHCP_ENABLE_MTU
 from ovirt_provider_config import KEY_DHCP_LEASE_TIME
 from ovirt_provider_config import KEY_DHCP_MTU
@@ -263,6 +265,14 @@ def auth_plugin():
         CONFIG_SECTION_AUTH,
         KEY_AUTH_PLUGIN,
         DEFAULT_AUTH_PLUGIN
+    )
+
+
+def auth_token_timeout():
+    return ovirt_provider_config.getint(
+        CONFIG_SECTION_AUTH,
+        KEY_AUTH_TOKEN_TIMEOUT,
+        DEFAULT_AUTH_TOKEN_TIMEOUT
     )
 
 

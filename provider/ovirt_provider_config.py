@@ -84,6 +84,8 @@ DEFAULT_DHCP_ENABLE_MTU = True
 CONFIG_SECTION_AUTH = 'AUTH'
 KEY_AUTH_PLUGIN = 'auth-plugin'
 DEFAULT_AUTH_PLUGIN = 'auth.plugins.static_token:MagicTokenPlugin'
+KEY_AUTH_TOKEN_TIMEOUT = 'auth-token-timeout'
+DEFAULT_AUTH_TOKEN_TIMEOUT = 360000
 
 CONFIG_SECTION_OVIRT = 'OVIRT'
 KEY_OVIRT_HOST = 'ovirt-host'

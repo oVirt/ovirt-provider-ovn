@@ -141,6 +141,13 @@ auth-plugin:: Plugin to use for authorization and authentication.
   `python_module_name:class_name` +
   _default:_ `auth.plugins.ovirt:AuthorizationByUserName`
 
+auth-token-timeout:: Period in seconds until the token expires which will be
+  reported in keystone. Please note that this value exists only to fulfill the
+  API the has no influence on the validity of the token, which is decided by
+  the auth-plugin. +
+  The value `0` indicates that the token looks like it never expires. +
+  _default:_ `360000`
+
 ### Section [OVIRT]
 This section provides information used by the ovirt authentication plugins.
 
