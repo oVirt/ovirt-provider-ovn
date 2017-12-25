@@ -145,7 +145,7 @@ def _get_token_expires():
         return None
 
     expires = datetime.utcnow() + timedelta(seconds=auth_token_timeout())
-    return expires.strftime('%Y-%m-%d %H:%M:%SZ')
+    return expires.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 @rest(GET, TENANTS, _responses)
