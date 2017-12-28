@@ -683,7 +683,7 @@ class OvnNorth(object):
     @RouterMapper.map_from_rest
     def update_router(
         self, router_id, name, enabled, network_id=None,
-        gateway_subnet=None, geteway_ip=None
+        gateway_subnet=None, gateway_ip=None
     ):
         db_set_command = DbSetCommand(self.idl, ovnconst.TABLE_LR, router_id)
         db_set_command.add(ovnconst.ROW_LR_NAME, name, name)
