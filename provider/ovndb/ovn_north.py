@@ -865,9 +865,9 @@ class OvnNorth(object):
         # lets raise for now
         result = []
         for exclude_value in exclude_values.split():
-            if OvnNorth.LS_EXCLUDED_IP_DELIMITER not in exclude_value:
+            if OvnNorth.LS_EXCLUDED_IP_DELIMITER in exclude_value:
                 raise NotImplementedError(
-                    'Hanlding of ip ranges not yet implemented'
+                    'Handling of ip ranges not yet implemented'
                 )
             result.append(exclude_value)
         return result
