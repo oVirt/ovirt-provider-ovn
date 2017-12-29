@@ -79,7 +79,7 @@ def _is_valid_ip(candidate):
 
 def get_network_exclude_ips(network):
     exclude_values = network.other_config.get(
-        ovnconst.LS_OPTION_EXCLUDE_IPS
+        ovnconst.LS_OPTION_EXCLUDE_IPS, ''
     )
     # TODO: should we care about IP ranges? we do not use them, but
     # what if someone else will?
