@@ -17,7 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 
 NAME=ovirt-provider-ovn
-VERSION=1.2.3
+VERSION=1.2.4
 DIST_DIR=$(NAME)-$(VERSION)
 GITHASH=$(shell git rev-parse --short HEAD)
 TIMESTAMP:=$(shell date +'%Y%m%d%H%M%S')
