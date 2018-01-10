@@ -157,7 +157,7 @@ class OvnNorth(object):
         )
         db_set_command.add(
             ovnconst.ROW_LS_EXTERNAL_IDS,
-            {NetworkMapper.OVN_VLAN: vlan},
+            {NetworkMapper.OVN_VLAN: str(vlan)},
             vlan
         )
         db_set_command.execute()
