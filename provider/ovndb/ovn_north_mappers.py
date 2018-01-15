@@ -395,15 +395,14 @@ class SubnetMapper(Mapper):
             SubnetMapper.REST_SUBNET_ALLOCATION_POOLS: [
                 SubnetMapper.get_allocation_pool(row.cidr),
             ],
+            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: [
+                options[SubnetMapper.OVN_DNS_SERVER]
+            ] if SubnetMapper.OVN_DNS_SERVER in options else []
         }
         if SubnetMapper.OVN_GATEWAY in options:
             result[SubnetMapper.REST_SUBNET_GATEWAY_IP] = (
                 options[SubnetMapper.OVN_GATEWAY]
             )
-        if SubnetMapper.REST_SUBNET_DNS_NAMESERVERS in options:
-            result[SubnetMapper.REST_SUBNET_DNS_NAMESERVERS] = [
-                options[SubnetMapper.OVN_DNS_SERVER]
-            ]
 
         return result
 
