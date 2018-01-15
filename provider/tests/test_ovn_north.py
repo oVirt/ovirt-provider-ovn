@@ -49,6 +49,7 @@ class TestOvnNorth(object):
     NETWORK_NAME = 'test_net'
     LOCALNET_NAME = 'localnet'
     LOCALNET_VLAN = 10
+    SUBNET_CIDR = '1.1.1.0/24'
 
     NETWORK_ID10 = UUID(int=10)
     NETWORK_ID11 = UUID(int=11)
@@ -84,8 +85,13 @@ class TestOvnNorth(object):
     SUBNET_ID101 = UUID(int=101)
     SUBNET_ID102 = UUID(int=102)
 
-    SUBNET_101 = OvnSubnetRow(SUBNET_ID101, network_id=str(NETWORK_ID10))
-    SUBNET_102 = OvnSubnetRow(SUBNET_ID102)
+    SUBNET_101 = OvnSubnetRow(
+        SUBNET_ID101,
+        network_id=str(NETWORK_ID10),
+        cidr=SUBNET_CIDR
+    )
+
+    SUBNET_102 = OvnSubnetRow(SUBNET_ID102, cidr=SUBNET_CIDR)
 
     NETWORK_10 = OvnNetworkRow(NETWORK_ID10, NETWORK_NAME10)
     NETWORK_11 = OvnNetworkRow(
@@ -557,11 +563,10 @@ class TestOvnNorth(object):
                         mock_dbset_command, mock_connection):
         add_execute = mock_add_command.return_value.execute
         add_execute.return_value = TestOvnNorth.SUBNET_102
-        subnet_cidr = '1.1.1.0/24'
         ovn_north = OvnNorth()
         rest_data = {
             SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
-            SubnetMapper.REST_SUBNET_CIDR: subnet_cidr,
+            SubnetMapper.REST_SUBNET_CIDR: TestOvnNorth.SUBNET_CIDR,
             SubnetMapper.REST_SUBNET_NETWORK_ID:
                 str(TestOvnNorth.NETWORK_ID10),
             SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
@@ -579,14 +584,14 @@ class TestOvnNorth(object):
             str(TestOvnNorth.NETWORK_ID10),
             (
                 ovnconst.ROW_LS_OTHER_CONFIG,
-                {NetworkMapper.OVN_SUBNET: subnet_cidr}
+                {NetworkMapper.OVN_SUBNET: TestOvnNorth.SUBNET_CIDR}
             ),
         )
         assert mock_dbset_command.mock_calls[0] == expected_dbset_call
 
         expected_add_call = mock.call(
             ovn_north.idl,
-            subnet_cidr,
+            TestOvnNorth.SUBNET_CIDR,
             ovirt_name='subnet_name',
             ovirt_network_id=str(TestOvnNorth.NETWORK_ID10)
         )
@@ -634,11 +639,10 @@ class TestOvnNorth(object):
                                mock_dbset_command, mock_connection):
         add_execute = mock_add_command.return_value.execute
         add_execute.return_value = TestOvnNorth.SUBNET_102
-        subnet_cidr = '1.1.1.0/24'
         ovn_north = OvnNorth()
         rest_data = {
             SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
-            SubnetMapper.REST_SUBNET_CIDR: subnet_cidr,
+            SubnetMapper.REST_SUBNET_CIDR: TestOvnNorth.SUBNET_CIDR,
             SubnetMapper.REST_SUBNET_NETWORK_ID:
                 str(TestOvnNorth.NETWORK_ID10),
             SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: [],
@@ -758,7 +762,7 @@ class TestOvnNorth(object):
         ovn_north = OvnNorth()
         rest_data = {
             SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
-            SubnetMapper.REST_SUBNET_CIDR: '1.1.1.0/24',
+            SubnetMapper.REST_SUBNET_CIDR: TestOvnNorth.SUBNET_CIDR,
             SubnetMapper.REST_SUBNET_NETWORK_ID:
                 str(TestOvnNorth.NETWORK_ID10),
             SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
@@ -770,7 +774,7 @@ class TestOvnNorth(object):
         ovn_north = OvnNorth()
         rest_data = {
             SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
-            SubnetMapper.REST_SUBNET_CIDR: '1.1.1.0/24',
+            SubnetMapper.REST_SUBNET_CIDR: TestOvnNorth.SUBNET_CIDR,
             SubnetMapper.REST_SUBNET_NETWORK_ID: '',
             SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
             SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
@@ -791,7 +795,7 @@ class TestOvnNorth(object):
         ovn_north = OvnNorth()
         rest_data = {
             SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
-            SubnetMapper.REST_SUBNET_CIDR: '1.1.1.0/24',
+            SubnetMapper.REST_SUBNET_CIDR: TestOvnNorth.SUBNET_CIDR,
             SubnetMapper.REST_SUBNET_NETWORK_ID: 7,
             SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
             SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',

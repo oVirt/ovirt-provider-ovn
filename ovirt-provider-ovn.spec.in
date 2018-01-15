@@ -52,6 +52,7 @@ Conflicts: openvswitch-ovn-common = 1:2.6.1
 Conflicts: %{_py2}-openvswitch = 1:2.6.1
 
 Requires: python-requests
+Requires: python-netaddr
 Requires: python2-ovsdbapp
 
 BuildRequires: python

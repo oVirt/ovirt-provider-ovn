@@ -20,6 +20,7 @@ import abc
 from collections import namedtuple
 from functools import wraps
 
+from netaddr import IPNetwork
 import six
 
 from ovirt_provider_config_common import tenant_id
@@ -330,6 +331,9 @@ class SubnetMapper(Mapper):
     REST_SUBNET_GATEWAY_IP = 'gateway_ip'
     REST_SUBNET_ENABLE_DHCP = 'enable_dhcp'
     REST_SUBNET_IP_VERSION = 'ip_version'
+    REST_SUBNET_ALLOCATION_POOLS = 'allocation_pools'
+    REST_SUBNET_ALLOCATION_POOLS_START = 'start'
+    REST_SUBNET_ALLOCATION_POOLS_STOP = 'stop'
 
     OVN_NAME = 'ovirt_name'
     OVN_NETWORK_ID = 'ovirt_network_id'
@@ -388,6 +392,9 @@ class SubnetMapper(Mapper):
             SubnetMapper.REST_SUBNET_IP_VERSION: SubnetMapper.IP_VERSION,
             SubnetMapper.REST_TENANT_ID: tenant_id(),
             SubnetMapper.REST_SUBNET_ENABLE_DHCP: True,
+            SubnetMapper.REST_SUBNET_ALLOCATION_POOLS: [
+                SubnetMapper.get_allocation_pool(row.cidr),
+            ],
         }
         if SubnetMapper.OVN_GATEWAY in options:
             result[SubnetMapper.REST_SUBNET_GATEWAY_IP] = (
@@ -399,6 +406,17 @@ class SubnetMapper(Mapper):
             ]
 
         return result
+
+    @staticmethod
+    def get_allocation_pool(cidr):
+        ip_network = IPNetwork(cidr)
+        if len(ip_network) > 2:
+            return {
+                SubnetMapper.REST_SUBNET_ALLOCATION_POOLS_START:
+                    str(ip_network[2]),
+                SubnetMapper.REST_SUBNET_ALLOCATION_POOLS_STOP:
+                    str(ip_network[-1])
+            }
 
     @staticmethod
     def validate_add_rest_input(rest_data):
