@@ -486,7 +486,8 @@ class RouterMapper(Mapper):
         result = {
             RouterMapper.REST_ROUTER_ID: str(row.uuid),
             RouterMapper.REST_ROUTER_NAME: row.name,
-            RouterMapper.REST_ROUTER_ADMIN_STATE_UP: row.enabled,
+            RouterMapper.REST_ROUTER_ADMIN_STATE_UP:
+                row.enabled[0] if row.enabled else True,
             RouterMapper.REST_ROUTER_STATUS:
                 RouterMapper.ROUTER_STATUS_ACTIVE
                 if row.enabled else RouterMapper.ROUTER_STATUS_INACTIVE,

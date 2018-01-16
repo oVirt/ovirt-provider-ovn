@@ -90,5 +90,5 @@ class OvnRouterRow(OvnRow):
     def __init__(self, uuid, name=None, external_ids={}):
         self.uuid = uuid
         self.name = name
-        self.enabled = True
+        self.enabled = [True]
         self.external_ids = external_ids
