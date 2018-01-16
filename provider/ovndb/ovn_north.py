@@ -433,6 +433,9 @@ class OvnNorth(object):
 
     @SubnetMapper.map_to_rest
     def list_subnets(self):
+        return self._list_subnets()
+
+    def _list_subnets(self):
         subnets = self.idl.dhcp_options_list().execute()
         return [
             subnet for subnet in subnets
@@ -964,12 +967,31 @@ class OvnNorth(object):
                 'Port {port} is not connected to a router'
                 .format(port=port_id)
             )
+        subnet = self._get_subnet_from_port_id(port_id)
         lrp = self._get_lrp(lrp_name)
         network_id = str(self._get_port_network(lsp).uuid)
         lr = self._get_router(router_id)
         self._delete_router_interface(
             router_id, port_id, lrp, network_id, lsp, lr
         )
+        if subnet and not self._is_subnet_on_router(router_id, subnet.uuid):
+            self._clear_subnet_gateway_router(str(subnet.uuid))
+
+    def _is_subnet_on_router(self, router_id, subnet_id):
+        lr = self._get_router(router_id)
+        for lrp in lr.ports:
+            lsp_id = self._lsp_id_by_lrp(lrp)
+            lrp_subnet = self._get_subnet_from_port_id(lsp_id)
+            if str(lrp_subnet.uuid) == subnet_id:
+                return True
+        return False
+
+    def _get_subnet_from_port_id(self, port_id):
+        for subnet in self._list_subnets():
+            network_id = subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
+            network = self._get_network(network_id)
+            if any(port.name == port_id for port in network.ports):
+                return subnet
 
     def _delete_router_interface(
         self, router_id, port_id, lrp, network_id, lsp, lr
