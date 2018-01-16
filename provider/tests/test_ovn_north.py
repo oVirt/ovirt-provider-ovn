@@ -49,6 +49,7 @@ class TestOvnNorth(object):
     NETWORK_NAME = 'test_net'
     LOCALNET_NAME = 'localnet'
     LOCALNET_VLAN = 10
+    DEVICE_OWNER_OVIRT = 'oVirt'
     SUBNET_CIDR = '1.1.1.0/24'
 
     NETWORK_ID10 = UUID(int=10)
@@ -69,7 +70,7 @@ class TestOvnNorth(object):
         external_ids={
             PortMapper.OVN_NIC_NAME: PORT_NAME01,
             PortMapper.OVN_DEVICE_ID: str(PORT_ID01),
-            PortMapper.OVN_DEVICE_OWNER: PortMapper.DEVICE_OWNER_OVIRT,
+            PortMapper.OVN_DEVICE_OWNER: DEVICE_OWNER_OVIRT,
         }
     )
     PORT_2 = OvnPortRow(
@@ -78,7 +79,7 @@ class TestOvnNorth(object):
         external_ids={
             PortMapper.OVN_NIC_NAME: PORT_NAME02,
             PortMapper.OVN_DEVICE_ID: str(PORT_ID02),
-            PortMapper.OVN_DEVICE_OWNER: PortMapper.DEVICE_OWNER_OVIRT,
+            PortMapper.OVN_DEVICE_OWNER: DEVICE_OWNER_OVIRT,
         }
     )
 
@@ -384,7 +385,7 @@ class TestOvnNorth(object):
             PortMapper.REST_PORT_NAME: TestOvnNorth.PORT_NAME01,
             PortMapper.REST_PORT_NETWORK_ID: str(TestOvnNorth.NETWORK_ID10),
             PortMapper.REST_PORT_DEVICE_ID: TestOvnNorth.DEVICE_ID,
-            PortMapper.REST_PORT_DEVICE_OWNER: PortMapper.DEVICE_OWNER_OVIRT,
+            PortMapper.REST_PORT_DEVICE_OWNER: TestOvnNorth.DEVICE_OWNER_OVIRT,
             PortMapper.REST_PORT_ADMIN_STATE_UP: True,
             PortMapper.REST_PORT_MAC_ADDRESS: TestOvnNorth.MAC_ADDRESS
         }
@@ -431,7 +432,7 @@ class TestOvnNorth(object):
             ),
             (
                 ovnconst.ROW_LSP_EXTERNAL_IDS,
-                {PortMapper.OVN_DEVICE_OWNER: PortMapper.DEVICE_OWNER_OVIRT}
+                {PortMapper.OVN_DEVICE_OWNER: TestOvnNorth.DEVICE_OWNER_OVIRT}
             ),
             (
                 ovnconst.ROW_LSP_ENABLED,
@@ -834,7 +835,7 @@ class TestOvnNorth(object):
             external_ids={
                 PortMapper.OVN_NIC_NAME: TestOvnNorth.PORT_NAME01,
                 PortMapper.OVN_DEVICE_ID: str(TestOvnNorth.PORT_ID01),
-                PortMapper.OVN_DEVICE_OWNER: PortMapper.DEVICE_OWNER_OVIRT,
+                PortMapper.OVN_DEVICE_OWNER: TestOvnNorth.DEVICE_OWNER_OVIRT,
             }
         )
         port_row.up = is_up

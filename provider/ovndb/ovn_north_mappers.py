@@ -223,7 +223,7 @@ class PortMapper(Mapper):
     OVN_DEVICE_ID = 'ovirt_device_id'
     OVN_NIC_NAME = 'ovirt_nic_name'
     OVN_DEVICE_OWNER = 'ovirt_device_owner'
-    DEVICE_OWNER_OVIRT = 'oVirt'
+    DEVICE_OWNER_ROUTER = 'network:router_interface'
 
     @staticmethod
     def rest2row(wrapped_self, func, rest_data, port_id):

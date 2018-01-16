@@ -329,8 +329,7 @@ class OvnNorth(object):
         self, port, router_port_name,
         name=None,
         is_enabled=True,
-        device_id=None,
-        device_owner=None,
+        device_id=None
 
      ):
         self._update_port_values(
@@ -338,7 +337,7 @@ class OvnNorth(object):
             name=name,
             is_enabled=is_enabled,
             device_id=device_id,
-            device_owner=device_owner
+            device_owner=PortMapper.DEVICE_OWNER_ROUTER
         )
 
         db_set_command = DbSetCommand(self.idl, ovnconst.TABLE_LSP, port.uuid)
@@ -373,6 +372,12 @@ class OvnNorth(object):
             self._update_port_values(
                 port, name=ovnconst.UNASSIGNED_SWTICH_PORT_NAME
             )
+        self.idl.db_remove(
+            ovnconst.TABLE_LSP,
+            port.uuid,
+            ovnconst.ROW_LSP_EXTERNAL_IDS,
+            PortMapper.OVN_DEVICE_OWNER
+        ).execute()
 
     def _get_validated_port_network_id(self, port, network_id):
         """
@@ -760,8 +765,7 @@ class OvnNorth(object):
             lrp_name,
             name=ovnconst.ROUTER_SWITCH_PORT_NAME,
             is_enabled=True,
-            device_id=port.uuid,
-            device_owner=PortMapper.DEVICE_OWNER_OVIRT,
+            device_id=port.uuid
         )
         self._set_subnet_gateway_router(subnet_id, router_id)
         return (
@@ -869,8 +873,7 @@ class OvnNorth(object):
             lrp_name,
             name=ovnconst.ROUTER_SWITCH_PORT_NAME,
             is_enabled=True,
-            device_id=port.uuid,
-            device_owner=PortMapper.DEVICE_OWNER_OVIRT,
+            device_id=port.uuid
         )
 
     @AddRouterInterfaceMapper.validate_update
