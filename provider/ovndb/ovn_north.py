@@ -327,16 +327,15 @@ class OvnNorth(object):
 
     def _connect_port_to_router(
         self, port, router_port_name,
+        router_id,
         name=None,
-        is_enabled=True,
-        device_id=None
-
+        is_enabled=True
      ):
         self._update_port_values(
             port=port,
             name=name,
             is_enabled=is_enabled,
-            device_id=device_id,
+            device_id=router_id,
             device_owner=PortMapper.DEVICE_OWNER_ROUTER
         )
 
@@ -377,6 +376,12 @@ class OvnNorth(object):
             port.uuid,
             ovnconst.ROW_LSP_EXTERNAL_IDS,
             PortMapper.OVN_DEVICE_OWNER
+        ).execute()
+        self.idl.db_remove(
+            ovnconst.TABLE_LSP,
+            port.uuid,
+            ovnconst.ROW_LSP_EXTERNAL_IDS,
+            PortMapper.OVN_DEVICE_ID
         ).execute()
 
     def _get_validated_port_network_id(self, port, network_id):
@@ -763,9 +768,9 @@ class OvnNorth(object):
         self._connect_port_to_router(
             port,
             lrp_name,
+            router_id,
             name=ovnconst.ROUTER_SWITCH_PORT_NAME,
-            is_enabled=True,
-            device_id=port.uuid
+            is_enabled=True
         )
         self._set_subnet_gateway_router(subnet_id, router_id)
         return (
@@ -786,7 +791,12 @@ class OvnNorth(object):
         lrp_ip = self._get_ip_from_port(port, router_id)
         lrp_name = self._create_router_port_name(port.uuid)
         mac = ip_utils.get_port_mac(port)
-        self._connect_port_to_router(port, lrp_name, is_enabled=True)
+        self._connect_port_to_router(
+            port,
+            lrp_name,
+            router_id,
+            is_enabled=True
+        )
         return (
             port_id, lrp_name, lrp_ip, str(self._get_port_network(port).uuid),
             mac
@@ -871,9 +881,9 @@ class OvnNorth(object):
         self._connect_port_to_router(
             port,
             lrp_name,
+            router_id,
             name=ovnconst.ROUTER_SWITCH_PORT_NAME,
-            is_enabled=True,
-            device_id=port.uuid
+            is_enabled=True
         )
 
     @AddRouterInterfaceMapper.validate_update
