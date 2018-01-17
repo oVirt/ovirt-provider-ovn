@@ -358,32 +358,6 @@ class OvnNorth(object):
             ovnconst.TABLE_LSP, port.uuid, ovnconst.ROW_LSP_DHCPV4_OPTIONS
         ).execute()
 
-    def _disconnect_port_from_router(self, port):
-        self.idl.db_clear(
-            ovnconst.TABLE_LSP, port.uuid, ovnconst.ROW_LSP_TYPE
-        ).execute()
-        self.idl.db_remove(
-            ovnconst.TABLE_LSP, port.uuid, ovnconst.ROW_LSP_OPTIONS,
-            ovnconst.LSP_OPTION_ROUTER_PORT
-        ).execute()
-        port_name = port.external_ids.get(PortMapper.OVN_NIC_NAME)
-        if port_name == ovnconst.ROUTER_SWITCH_PORT_NAME:
-            self._update_port_values(
-                port, name=ovnconst.UNASSIGNED_SWTICH_PORT_NAME
-            )
-        self.idl.db_remove(
-            ovnconst.TABLE_LSP,
-            port.uuid,
-            ovnconst.ROW_LSP_EXTERNAL_IDS,
-            PortMapper.OVN_DEVICE_OWNER
-        ).execute()
-        self.idl.db_remove(
-            ovnconst.TABLE_LSP,
-            port.uuid,
-            ovnconst.ROW_LSP_EXTERNAL_IDS,
-            PortMapper.OVN_DEVICE_ID
-        ).execute()
-
     def _get_validated_port_network_id(self, port, network_id):
         """
         Validates that the network_id proposed for the port is valid,
@@ -1001,9 +975,8 @@ class OvnNorth(object):
                 'Port {port} is not connected to router {router}'
                 .format(port=port_id, router=router_id)
             )
-        self._disconnect_port_from_router(lsp)
-        self._update_port_address(lsp, network_id=network_id, mac=lrp.mac)
         self.idl.lrp_del(str(lrp.uuid)).execute()
+        self.delete_port(port_id)
 
     def _delete_router_interface_by_subnet_and_port(
         self, router_id, subnet_id, port_id
