@@ -965,7 +965,7 @@ class OvnNorth(object):
                 .format(port=port_id)
             )
         lrp = self._get_lrp(lrp_name)
-        network_id = self._get_port_network(lsp)
+        network_id = str(self._get_port_network(lsp).uuid)
         lr = self._get_router(router_id)
         self._delete_router_interface(
             router_id, port_id, lrp, network_id, lsp, lr
