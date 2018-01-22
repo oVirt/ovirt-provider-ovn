@@ -19,6 +19,19 @@
 
 import random
 
+from netaddr import IPAddress
+from netaddr.core import AddrFormatError
+
+
+def get_port_ip(lsp, lrp=None):
+    if not lsp.addresses:
+        return None
+    if 'router' in lsp.addresses[0]:
+        return get_port_router_ip(lrp)
+    elif 'dynamic' in lsp.addresses[0]:
+        return get_port_dynamic_ip(lsp)
+    return get_port_static_ip(lsp)
+
 
 def get_port_static_ip(port):
     return _get_ip_from_addresses(port.addresses)
@@ -26,6 +39,10 @@ def get_port_static_ip(port):
 
 def get_port_dynamic_ip(port):
     return _get_ip_from_addresses(port.dynamic_addresses)
+
+
+def get_port_router_ip(lrp):
+    return lrp.networks[0].split('/')[0] if lrp and lrp.networks else None
 
 
 def get_port_mac(port):
@@ -46,4 +63,13 @@ def _get_ip_from_addresses(addresses):
     if not addresses:
         return None
     address_parts = addresses[0].split(' ')
-    return address_parts[1] if len(address_parts) > 1 else None
+    candidate = address_parts[1] if len(address_parts) > 1 else None
+    return candidate if _is_valid_ip(candidate) else None
+
+
+def _is_valid_ip(candidate):
+    try:
+        IPAddress(candidate)
+    except AddrFormatError:
+        return False
+    return True

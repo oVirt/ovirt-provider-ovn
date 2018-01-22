@@ -58,7 +58,7 @@ class OvnNetworkRow(OvnRow):
 
 class OvnPortRow(OvnRow):
     def __init__(self, uuid, name=None, external_ids=None, device_id=None,
-                 addresses=None):
+                 addresses=['unknown']):
         self.uuid = uuid
         self.name = name
         self.external_ids = external_ids or {PortMapper.DEVICE_ID: device_id}
@@ -67,6 +67,7 @@ class OvnPortRow(OvnRow):
         self.up = None
         self.enabled = None
         self.type = None
+        self.options = {}
 
 
 class OvnSubnetRow(OvnRow):

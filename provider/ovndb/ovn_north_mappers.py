@@ -24,11 +24,12 @@ from netaddr import IPNetwork
 import six
 
 from ovirt_provider_config_common import tenant_id
+import ovndb.ip as ip_utils
 from handlers.base_handler import MethodNotAllowedError
 from handlers.base_handler import BadRequestError
 
 
-NetworkPort = namedtuple('NetworkPort', ['port', 'network'])
+NetworkPort = namedtuple('NetworkPort', ['lsp', 'ls', 'dhcp_options', 'lrp'])
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -219,6 +220,8 @@ class PortMapper(Mapper):
     REST_PORT_SECURITY_GROUPS = 'security_groups'
     REST_PORT_SECURITY_ENABLED = 'port_security_enabled'
     REST_PORT_FIXED_IPS = 'fixed_ips'
+    REST_PORT_SUBNET_ID = 'subnet_id'
+    REST_PORT_IP_ADDRESS = 'ip_address'
 
     OVN_DEVICE_ID = 'ovirt_device_id'
     OVN_NIC_NAME = 'ovirt_nic_name'
@@ -259,44 +262,59 @@ class PortMapper(Mapper):
     @staticmethod
     def row2rest(row):
         """
-            Maps the db rows (port, network) to a Json representation of
-            a port.
-            The 'admin_state_up' property of the port is the product
-            of two values:
-            - port.up - managed internally by OVN, True only if
+            Maps the db rows (lsp, ls) to a Json representation of a port.
+            The 'admin_state_up' property of the lsp is the product of
+            two values:
+            - lsp.up - managed internally by OVN, True only if
             set explicitly to [True]
-            - port.enabled - set by the user, True if empty (None) or
+            - lsp.enabled - set by the user, True if empty (None) or
             set to [True]
         """
         if not row:
             return {}
-        port, network = row
+        lsp, ls, dhcp_options, lrp = row
         rest_data = {
-            PortMapper.REST_PORT_ID: str(port.uuid),
+            PortMapper.REST_PORT_ID: str(lsp.uuid),
             PortMapper.REST_PORT_NAME:
-                port.external_ids[PortMapper.OVN_NIC_NAME],
-            PortMapper.REST_PORT_NETWORK_ID: str(network.uuid),
+                lsp.external_ids[PortMapper.OVN_NIC_NAME],
+            PortMapper.REST_PORT_NETWORK_ID: str(ls.uuid),
             PortMapper.REST_PORT_SECURITY_GROUPS: [],
             PortMapper.REST_PORT_SECURITY_ENABLED: False,
             PortMapper.REST_TENANT_ID: tenant_id(),
-            PortMapper.REST_PORT_FIXED_IPS: [],
+            PortMapper.REST_PORT_FIXED_IPS: PortMapper.get_fixed_ips(
+                lsp,
+                dhcp_options,
+                lrp
+            ),
             PortMapper.REST_PORT_ADMIN_STATE_UP: bool(
-                (port.up and port.up[0]) and
-                (not port.enabled or port.enabled[0])
+                (lsp.up and lsp.up[0]) and
+                (not lsp.enabled or lsp.enabled[0])
             )
         }
-        if PortMapper.OVN_DEVICE_ID in port.external_ids:
+        if PortMapper.OVN_DEVICE_ID in lsp.external_ids:
             rest_data[
                 PortMapper.REST_PORT_DEVICE_ID
-            ] = str(port.external_ids[PortMapper.OVN_DEVICE_ID])
-        if PortMapper.OVN_DEVICE_OWNER in port.external_ids:
+            ] = str(lsp.external_ids[PortMapper.OVN_DEVICE_ID])
+        if PortMapper.OVN_DEVICE_OWNER in lsp.external_ids:
             rest_data[
                 PortMapper.REST_PORT_DEVICE_OWNER
-            ] = port.external_ids[PortMapper.OVN_DEVICE_OWNER]
-        if port.addresses:
-            mac = port.addresses[0].split(' ')[0]
+            ] = lsp.external_ids[PortMapper.OVN_DEVICE_OWNER]
+        if lsp.addresses:
+            mac = lsp.addresses[0].split(' ')[0]
             rest_data[PortMapper.REST_PORT_MAC_ADDRESS] = mac
         return rest_data
+
+    @staticmethod
+    def get_fixed_ips(lsp, dhcp_options, lrp):
+        ip_address = ip_utils.get_port_ip(lsp, lrp)
+        if ip_address:
+            return [{
+                PortMapper.REST_PORT_IP_ADDRESS: ip_address,
+                PortMapper.REST_PORT_SUBNET_ID:
+                    str(dhcp_options.uuid) if dhcp_options else None,
+            }]
+
+        return []
 
     @staticmethod
     def validate_add_rest_input(rest_data):

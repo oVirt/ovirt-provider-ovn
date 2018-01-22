@@ -207,13 +207,20 @@ class OvnNorth(object):
     @PortMapper.map_to_rest
     def list_ports(self):
         ports_rows = self.idl.lsp_list().execute()
-        return [NetworkPort(port_row, self._get_port_network(port_row))
+        return [self._get_network_port(port_row)
                 for port_row in ports_rows
                 if self._is_port_ovirt_controlled(port_row)]
 
     @PortMapper.map_to_rest
     def get_port(self, port_id):
-        return self._get_networkport(port_id)
+        return self._get_network_port(self._get_port(port_id))
+
+    def _get_network_port(self, lsp):
+        ls = self._get_port_network(lsp)
+        dhcp_options = self._get_subnet_from_port_id(str(lsp.uuid))
+        lrp_name = lsp.options.get(ovnconst.LSP_OPTION_ROUTER_PORT)
+        lrp = self._get_lrp(lrp_name) if lrp_name else None
+        return NetworkPort(lsp=lsp, ls=ls, dhcp_options=dhcp_options, lrp=lrp)
 
     def _get_switch_port(self, port_id):
         port = self.idl.lsp_get(port_id).execute()
@@ -223,11 +230,11 @@ class OvnNorth(object):
             )
         return port
 
-    def _get_networkport(self, port_id):
+    def _get_port(self, port_id):
         port = self._get_switch_port(port_id)
         if not self._is_port_ovirt_controlled(port):
             raise ValueError('Not an ovirt controller port')
-        return NetworkPort(port, self._get_port_network(port))
+        return port
 
     @PortMapper.validate_add
     @PortMapper.map_from_rest
@@ -259,7 +266,7 @@ class OvnNorth(object):
         device_id=None,
         device_owner=None,
     ):
-        port = self._get_networkport(port_id).port
+        port = self._get_port(port_id)
         network_id = self._get_validated_port_network_id(port, network_id)
         self._update_port_values(
             port, name, is_enabled, device_id, device_owner

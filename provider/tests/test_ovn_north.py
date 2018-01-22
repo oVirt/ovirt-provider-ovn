@@ -451,6 +451,11 @@ class TestOvnNorth(object):
         )
 
     @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
+        'execute',
+        lambda x: []
+    )
+    @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsListCommand.execute',
         lambda x: TestOvnNorth.networks
     )
@@ -822,6 +827,11 @@ class TestOvnNorth(object):
     def test_port_admin_state_up_false_enabled_true(self, mock_connection):
         self._port_admin_state(mock_connection, [False], [True], False)
 
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
+        'execute',
+        lambda x: []
+    )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsListCommand',
     )
