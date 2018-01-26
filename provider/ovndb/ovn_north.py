@@ -752,6 +752,8 @@ class OvnNorth(object):
                         old_router=old_router_id
                     )
                 )
+        if router_id:
+            self._validate_subnet_is_not_on_router(subnet_id, router_id)
 
     def _create_routing_lsp_by_subnet(self, subnet_id, router_id):
         subnet = self._get_subnet(subnet_id)
@@ -777,6 +779,13 @@ class OvnNorth(object):
             ip_utils.random_mac()
         )
 
+    def _validate_subnet_is_not_on_router(self, subnet_id, router_id):
+        if self._is_subnet_on_router(router_id, subnet_id):
+            raise BadRequestError(
+                'Bad router request: Router already has a port on subnet'
+                ' {subnet}'.format(subnet=subnet_id)
+            )
+
     def _update_routing_lsp_by_port(self, port_id, router_id):
         port = self._get_switch_port(port_id)
         if port.type == ovnconst.LSP_TYPE_ROUTER:
@@ -784,6 +793,9 @@ class OvnNorth(object):
                 'Can not add {port} to router. Port is already connected to a'
                 ' router'.format(port=port_id)
             )
+        subnet = self._get_subnet_from_port_id(port_id)
+        if subnet:
+            self._validate_subnet_is_not_on_router(subnet.uuid, router_id)
         lrp_ip = self._get_ip_from_port(port, router_id)
         lrp_name = self._create_router_port_name(port.uuid)
         mac = ip_utils.get_port_mac(port)
