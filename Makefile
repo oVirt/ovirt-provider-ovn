@@ -40,6 +40,8 @@ install:
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/
 	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ provider/*.py*
 	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ version.py*
+	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ LICENSE
+	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ AUTHORS
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/
 	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/ provider/auth/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/
@@ -63,7 +65,8 @@ install:
 	install -d $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/
 	install -m 644 -t $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/ driver/vdsm_tool/ovn_config.py*
 	install -m 644 -D README.adoc $(DESTDIR)/usr/share/doc/ovirt-provider-ovn/README.adoc
-
+	install -m 644 -t $(DESTDIR)/usr/libexec/ovirt-provider-ovn/ LICENSE
+	install -m 644 -t $(DESTDIR)/usr/libexec/ovirt-provider-ovn/ AUTHORS
 
 distcheck: check dist
 
@@ -87,6 +90,8 @@ dist: version.py
 	cp ovirt-provider-ovn.spec.in build/$(DIST_DIR)/ovirt-provider-ovn.spec
 	cp provider/version.py build/$(DIST_DIR)/version.py
 	cp README.adoc build/$(DIST_DIR)/
+	cp LICENSE build/$(DIST_DIR)/
+	cp AUTHORS build/$(DIST_DIR)/
 	cp ovirt-provider-ovn.logrotate build/$(DIST_DIR)/
 	sed -i \
 		-e s/@RELEASE_SUFFIX@/$(RELEASE_SUFFIX)/ \

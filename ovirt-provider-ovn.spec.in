@@ -121,6 +121,7 @@ to OVN.
 %{_unitdir}/ovirt-provider-ovn.service
 /usr/lib/firewalld/services/ovirt-provider-ovn.xml
 %doc /usr/share/doc/ovirt-provider-ovn/README.adoc
+%license LICENSE
 
 %files driver
 %{_libexecdir}/vdsm/hooks/before_nic_hotplug/*
@@ -128,6 +129,7 @@ to OVN.
 %{_libexecdir}/ovirt-provider-ovn
 # TODO use %{python_sitelib} here and in `make install`
 /usr/lib/python2.7/site-packages/vdsm/tool/ovn_config.py*
+%license LICENSE
 
 
 %changelog
