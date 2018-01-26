@@ -24,6 +24,7 @@ import six
 
 import ovndb.constants as ovnconst
 
+from handlers.base_handler import ConflictError
 from ovirt_provider_config_common import dhcp_lease_time
 from ovirt_provider_config_common import dhcp_mtu
 from ovirt_provider_config_common import dhcp_server_mac
@@ -474,6 +475,15 @@ class TestOvnNorth(object):
             ports[1], TestOvnNorth.PORT_2, str(TestOvnNorth.NETWORK_ID11)
         )
 
+    @mock.patch('ovsdbapp.schema.ovn_northbound.commands.LspGetCommand.'
+                'execute',
+                lambda port_id: OvnPortRow(
+                    port_id,
+                    external_ids={
+                        PortMapper.OVN_DEVICE_OWNER:
+                            TestOvnNorth.DEVICE_OWNER_OVIRT
+                    }
+                ))
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LspDelCommand',
         autospec=False
@@ -489,6 +499,25 @@ class TestOvnNorth(object):
             False
         )
         assert mock_del_command.mock_calls[0] == expected_del_call
+
+    @mock.patch('ovsdbapp.schema.ovn_northbound.commands.LspGetCommand.'
+                'execute',
+                lambda port_id: OvnPortRow(
+                    port_id,
+                    external_ids={
+                        PortMapper.OVN_DEVICE_OWNER:
+                            PortMapper.DEVICE_OWNER_ROUTER
+                    }
+                ))
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LspDelCommand',
+        autospec=False
+    )
+    def test_delete_router_port(self, mock_del_command, mock_connection):
+        ovn_north = OvnNorth()
+        with pytest.raises(ConflictError):
+            ovn_north.delete_port(TestOvnNorth.PORT_ID01)
+        assert mock_del_command.call_count == 0
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'

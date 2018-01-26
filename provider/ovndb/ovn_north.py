@@ -143,7 +143,7 @@ class OvnNorth(object):
                     ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid))
             self._set_port_localnet_values(localnet_port, localnet, vlan)
         elif localnet_port:
-            self.delete_port(str(localnet_port.uuid))
+            self._delete_port(str(localnet_port.uuid))
         self._set_network_localnet_values(network, localnet, vlan)
 
     def _set_network_localnet_values(self, network, localnet=None, vlan=None):
@@ -410,6 +410,18 @@ class OvnNorth(object):
         pass
 
     def delete_port(self, port_id):
+        lsp = self._get_switch_port(port_id)
+        if lsp.external_ids.get(PortMapper.OVN_DEVICE_OWNER) == \
+                PortMapper.DEVICE_OWNER_ROUTER:
+            raise ConflictError(
+                'Port {port} cannot be deleted directly via the port API: '
+                'has device owner network:router_interface'.format(
+                    port=port_id
+                )
+            )
+        self._delete_port(port_id)
+
+    def _delete_port(self, port_id):
         self.idl.lsp_del(port_id).execute()
 
     @SubnetMapper.map_to_rest
@@ -983,7 +995,7 @@ class OvnNorth(object):
                 .format(port=port_id, router=router_id)
             )
         self.idl.lrp_del(str(lrp.uuid)).execute()
-        self.delete_port(port_id)
+        self._delete_port(port_id)
 
     def _delete_router_interface_by_subnet_and_port(
         self, router_id, subnet_id, port_id
