@@ -24,12 +24,14 @@ from netaddr import IPNetwork
 import six
 
 from ovirt_provider_config_common import tenant_id
+import ovndb.constants as ovnconst
 import ovndb.ip as ip_utils
 from handlers.base_handler import MethodNotAllowedError
 from handlers.base_handler import BadRequestError
 
 
 NetworkPort = namedtuple('NetworkPort', ['lsp', 'ls', 'dhcp_options', 'lrp'])
+Network = namedtuple('Network', ['ls', 'localnet_lsp'])
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -101,8 +103,6 @@ class NetworkMapper(Mapper):
     NETWORK_TYPE_FLAT = 'flat'
     NETWORK_TYPE_VLAN = 'vlan'
 
-    OVN_LOCALNET = 'ovirt_ovn_localnet'
-    OVN_VLAN = 'ovirt_ovn_vlan'
     OVN_SUBNET = 'subnet'
 
     NETWORK_STATUS_ACTIVE = 'ACTIVE'
@@ -130,32 +130,39 @@ class NetworkMapper(Mapper):
         )
 
     @staticmethod
-    def row2rest(network_row):
-        if not network_row:
+    def row2rest(network):
+        if not network:
             return {}
+        ls, localnet_lsp = network.ls, network.localnet_lsp
         result = {
-            NetworkMapper.REST_NETWORK_ID: str(network_row.uuid),
-            NetworkMapper.REST_NETWORK_NAME: network_row.name,
+            NetworkMapper.REST_NETWORK_ID: str(ls.uuid),
+            NetworkMapper.REST_NETWORK_NAME: ls.name,
             NetworkMapper.REST_TENANT_ID: tenant_id(),
             NetworkMapper.REST_STATUS: NetworkMapper.NETWORK_STATUS_ACTIVE
         }
-        result.update(NetworkMapper._row2rest_localnet(network_row))
+        result.update(NetworkMapper._row2rest_localnet(localnet_lsp))
         return result
 
     @staticmethod
-    def _row2rest_localnet(network_row):
-        result = {}
-        ovn_localnet = network_row.external_ids.get(NetworkMapper.OVN_LOCALNET)
-        ovn_vlan = network_row.external_ids.get(NetworkMapper.OVN_VLAN)
-        if ovn_localnet and ovn_vlan:
-            result[NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK] = ovn_localnet
-            result[NetworkMapper.REST_PROVIDER_SEGMENTATION_ID] = int(ovn_vlan)
-            result[NetworkMapper.REST_PROVIDER_NETWORK_TYPE] = \
-                NetworkMapper.NETWORK_TYPE_VLAN
-        elif ovn_localnet:
-            result[NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK] = ovn_localnet
-            result[NetworkMapper.REST_PROVIDER_NETWORK_TYPE] = \
-                NetworkMapper.NETWORK_TYPE_FLAT
+    def _row2rest_localnet(localnet_lsp):
+        if not localnet_lsp:
+            return {}
+        result = {
+            NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK:
+                localnet_lsp.options.get(ovnconst.LSP_OPTION_NETWORK_NAME)
+        }
+        ovn_vlan = localnet_lsp.tag
+        if ovn_vlan:
+            result[NetworkMapper.REST_PROVIDER_SEGMENTATION_ID] = int(
+                ovn_vlan[0]
+            )
+            result[
+                NetworkMapper.REST_PROVIDER_NETWORK_TYPE
+            ] = NetworkMapper.NETWORK_TYPE_VLAN
+        else:
+            result[
+                NetworkMapper.REST_PROVIDER_NETWORK_TYPE
+            ] = NetworkMapper.NETWORK_TYPE_FLAT
         return result
 
     @staticmethod

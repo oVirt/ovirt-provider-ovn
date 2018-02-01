@@ -42,6 +42,7 @@ from ovirt_provider_config_common import ssl_cert_file
 from ovndb.db_set_command import DbSetCommand
 from ovndb.ovn_north_mappers import AddRouterInterfaceMapper
 from ovndb.ovn_north_mappers import NetworkMapper
+from ovndb.ovn_north_mappers import Network
 from ovndb.ovn_north_mappers import NetworkPort
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import RemoveRouterInterfaceMapper
@@ -92,9 +93,16 @@ class OvnNorth(object):
 
     @NetworkMapper.map_to_rest
     def list_networks(self):
-        return self._execute(self.idl.ls_list())
+        ls_rows = self._execute(self.idl.ls_list())
+        return [self._get_network(ls) for ls in ls_rows]
 
-    def _get_network(self, network_id):
+    def _get_network(self, ls):
+        return Network(
+            ls=ls,
+            localnet_lsp=self._get_localnet_lsp(ls)
+        )
+
+    def _get_ls(self, network_id):
         network = self._execute(self.idl.ls_get(network_id))
         if not network:
             raise ElementNotFoundError(
@@ -104,7 +112,9 @@ class OvnNorth(object):
 
     @NetworkMapper.map_to_rest
     def get_network(self, network_id):
-        return self._get_network(network_id)
+        return self._get_network(
+            self._get_ls(network_id)
+        )
 
     @NetworkMapper.validate_add
     @NetworkMapper.map_from_rest
@@ -118,16 +128,17 @@ class OvnNorth(object):
             return self._add_network(name)
 
     def _add_network(self, name):
-        return self._execute(self.idl.ls_add(switch=name, may_exist=False))
+        return self._get_network(
+            self._execute(self.idl.ls_add(switch=name, may_exist=False))
+        )
 
     def _add_localnet_network(self, name, localnet, vlan):
         network = self._execute(self.idl.ls_add(switch=name, may_exist=False))
         localnet_port = self._create_port(
             ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid))
         self._set_port_localnet_values(localnet_port, localnet, vlan)
-        self._set_network_localnet_values(network, localnet, vlan)
-        updated_network = self._get_network(str(network.uuid))
-        return updated_network
+        updated_network = self._get_ls(str(network.uuid))
+        return self._get_network(updated_network)
 
     @NetworkMapper.validate_update
     @NetworkMapper.map_from_rest
@@ -141,8 +152,8 @@ class OvnNorth(object):
         return self.get_network(network_id)
 
     def _update_localnet_on_network(self, network_id, localnet, vlan):
-        network = self._get_network(network_id)
-        localnet_port = self._get_localnet_port(network)
+        network = self._get_ls(network_id)
+        localnet_port = self._get_localnet_lsp(network)
         if localnet:
             if not localnet_port:
                 localnet_port = self._create_port(
@@ -150,23 +161,6 @@ class OvnNorth(object):
             self._set_port_localnet_values(localnet_port, localnet, vlan)
         elif localnet_port:
             self._delete_port(str(localnet_port.uuid))
-        self._set_network_localnet_values(network, localnet, vlan)
-
-    def _set_network_localnet_values(self, network, localnet=None, vlan=None):
-        db_set_command = DbSetCommand(
-            self.idl, ovnconst.TABLE_LS, network.uuid
-        )
-        db_set_command.add(
-            ovnconst.ROW_LS_EXTERNAL_IDS,
-            {NetworkMapper.OVN_LOCALNET: localnet},
-            localnet
-        )
-        db_set_command.add(
-            ovnconst.ROW_LS_EXTERNAL_IDS,
-            {NetworkMapper.OVN_VLAN: str(vlan)},
-            vlan
-        )
-        db_set_command.execute()
 
     def _set_port_localnet_values(self, port, localnet, vlan):
         db_set_command = DbSetCommand(self.idl, ovnconst.TABLE_LSP, port.uuid)
@@ -187,7 +181,7 @@ class OvnNorth(object):
         if not network:
             raise RestDataError('Network %s does not exist' % network_id)
         if network.ports:
-            localnet_port = self._get_localnet_port(network)
+            localnet_port = self._get_localnet_lsp(network)
             only_localnet_port = len(network.ports) == 1 and localnet_port
             if not only_localnet_port:
                 raise RestDataError(
@@ -204,10 +198,10 @@ class OvnNorth(object):
 
         self._execute(self.idl.ls_del(network_id))
 
-    def _get_localnet_port(self, network):
-        for port in network.ports:
-            if port.type == ovnconst.LSP_TYPE_LOCALNET:
-                return port
+    def _get_localnet_lsp(self, ls):
+        for lsp in ls.ports:
+            if lsp.type == ovnconst.LSP_TYPE_LOCALNET:
+                return lsp
         return None
 
     @PortMapper.map_to_rest
@@ -515,7 +509,7 @@ class OvnNorth(object):
         dns=None,
     ):
         try:
-            network = self._get_network(network_id)
+            network = self._get_ls(network_id)
         except ElementNotFoundError:
             raise SubnetConfigError('Subnet can not be created, network {}'
                                     ' does not exist'.format(network_id))
@@ -613,7 +607,7 @@ class OvnNorth(object):
         network_id = subnet.external_ids.get(
             SubnetMapper.OVN_NETWORK_ID
         )
-        network = self._get_network(network_id)
+        network = self._get_ls(network_id)
         self._execute(self.idl.dhcp_options_del(subnet_id))
         for port in network.ports:
             if port.type == ovnconst.LSP_TYPE_ROUTER:
@@ -806,7 +800,7 @@ class OvnNorth(object):
         ))
 
     def _reserve_network_ip(self, network_id, gateway_ip):
-        exclude_values = self._get_network(network_id).other_config.get(
+        exclude_values = self._get_ls(network_id).other_config.get(
             ovnconst.LS_OPTION_EXCLUDE_IPS, {}
         )
         new_values = (
@@ -936,7 +930,7 @@ class OvnNorth(object):
     def _get_subnet_from_port_id(self, port_id):
         for subnet in self._list_subnets():
             network_id = subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
-            network = self._get_network(network_id)
+            network = self._get_ls(network_id)
             if any(port.name == port_id for port in network.ports):
                 return subnet
 
@@ -956,7 +950,7 @@ class OvnNorth(object):
     ):
         subnet = self._get_subnet(subnet_id)
         network_id = subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
-        network = self._get_network(network_id)
+        network = self._get_ls(network_id)
         lsp = self._get_switch_port(port_id)
         if lsp not in network.ports:
             raise ConflictError(
@@ -969,7 +963,7 @@ class OvnNorth(object):
         lr = self._get_router(router_id)
         subnet = self._get_subnet(subnet_id)
         network_id = subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
-        network = self._get_network(network_id)
+        network = self._get_ls(network_id)
         for lrp in lr.ports:
             lsp_id = self._lsp_id_by_lrp(lrp)
             lsp = self._get_switch_port(lsp_id)

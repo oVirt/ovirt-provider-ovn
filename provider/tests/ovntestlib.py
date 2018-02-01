@@ -58,7 +58,8 @@ class OvnNetworkRow(OvnRow):
 
 class OvnPortRow(OvnRow):
     def __init__(self, uuid, name=None, external_ids=None, device_id=None,
-                 addresses=['unknown']):
+                 addresses=['unknown'], port_type=None, options=None,
+                 tag=None):
         self.uuid = uuid
         self.name = name
         self.external_ids = external_ids or {PortMapper.DEVICE_ID: device_id}
@@ -66,8 +67,9 @@ class OvnPortRow(OvnRow):
         self.addresses = addresses
         self.up = None
         self.enabled = None
-        self.type = None
-        self.options = {}
+        self.type = port_type
+        self.options = options if options else {}
+        self.tag = [tag] if tag else []
 
 
 class OvnSubnetRow(OvnRow):
