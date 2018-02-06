@@ -24,6 +24,8 @@ import atexit
 import logging
 import logging.config
 import ssl
+import sys
+import threading
 
 import auth
 import ovirt_provider_config
@@ -41,8 +43,41 @@ from ovirt_provider_config_common import keystone_port
 LOG_CONFIG_FILE = '/etc/ovirt-provider-ovn/logger.conf'
 
 
+def setup_thread_excepthook():
+    """
+    Workaround for `sys.excepthook` thread bug from:
+    http://bugs.python.org/issue1230540
+    TODO: remove once bug is fixed
+    """
+
+    init_original = threading.Thread.__init__
+
+    def init(self, *args, **kwargs):
+        init_original(self, *args, **kwargs)
+        run_original = self.run
+
+        def run_with_except_hook(*args2, **kwargs2):
+            try:
+                run_original(*args2, **kwargs2)
+            except Exception:
+                sys.excepthook(*sys.exc_info())
+
+        self.run = run_with_except_hook
+
+    threading.Thread.__init__ = init
+
+
+def uncaught_error_hook(exc_type, exc_value, exc_traceback):
+    logging.error(
+        "Uncaught exception",
+        exc_info=(exc_type, exc_value, exc_traceback)
+    )
+
+
 def _init_logging():
+    setup_thread_excepthook()
     logging.config.fileConfig(LOG_CONFIG_FILE)
+    sys.excepthook = uncaught_error_hook
     logging.info('Starting server')
     _log_rpm_version()
 
