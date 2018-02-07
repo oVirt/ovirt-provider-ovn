@@ -23,6 +23,7 @@ from threading import Thread
 import atexit
 import logging
 import logging.config
+import os
 import ssl
 import sys
 import threading
@@ -72,6 +73,9 @@ def uncaught_error_hook(exc_type, exc_value, exc_traceback):
         "Uncaught exception",
         exc_info=(exc_type, exc_value, exc_traceback)
     )
+    logging.error("Irrecoverable error. Exiting!")
+    logging.getLogger().handlers[0].flush()
+    os._exit(-1)
 
 
 def _init_logging():
