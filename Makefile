@@ -57,8 +57,10 @@ install:
 	install -m 644 -D provider/scripts/ovirt-provider-ovn.service $(DESTDIR)/usr/lib/systemd/system/ovirt-provider-ovn.service
 
 	install -m 644 -D provider/scripts/ovirt-provider-ovn.xml $(DESTDIR)/usr/lib/firewalld/services/ovirt-provider-ovn.xml
-	install -m 555 -D driver/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_device_create/ovirt_provider_ovn_hook
-	install -m 555 -D driver/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_nic_hotplug/ovirt_provider_ovn_hook
+	install -m 555 -D driver/vdsm_hooks/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_device_create/ovirt_provider_ovn_hook
+	install -m 555 -D driver/vdsm_hooks/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_nic_hotplug/ovirt_provider_ovn_hook
+	install -m 555 -D driver/vdsm_hooks/after_get_caps.py $(DESTDIR)/usr/libexec/vdsm/hooks/after_get_caps/ovirt_provider_ovn_hook
+	install -m 644 -D driver/vdsm_hooks/sudoers $(DESTDIR)/etc/sudoers.d/50_vdsm_hook_ovirt_provider_ovn_hook
 
 	install -d $(DESTDIR)/usr/libexec/ovirt-provider-ovn
 	install -m 544 -D driver/scripts/setup_ovn_controller.sh $(DESTDIR)/usr/libexec/ovirt-provider-ovn/setup_ovn_controller.sh
@@ -93,6 +95,7 @@ dist: version.py
 	cp LICENSE build/$(DIST_DIR)/
 	cp AUTHORS build/$(DIST_DIR)/
 	cp ovirt-provider-ovn.logrotate build/$(DIST_DIR)/
+	cp driver/vdsm_hooks/sudoers build/$(DIST_DIR)/driver/vdsm_hooks/
 	sed -i \
 		-e s/@RELEASE_SUFFIX@/$(RELEASE_SUFFIX)/ \
 		-e s/@VERSION@/$(VERSION)/ \

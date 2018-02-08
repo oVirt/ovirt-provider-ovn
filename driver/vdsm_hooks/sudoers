@@ -1,0 +1,1 @@
+vdsm  ALL=(ALL) NOPASSWD: /usr/bin/ovs-vsctl get Open_vSwitch . external_ids\:system-id

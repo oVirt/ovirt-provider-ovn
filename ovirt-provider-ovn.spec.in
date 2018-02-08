@@ -126,9 +126,11 @@ to OVN.
 %files driver
 %{_libexecdir}/vdsm/hooks/before_nic_hotplug/*
 %{_libexecdir}/vdsm/hooks/before_device_create/*
+%{_libexecdir}/vdsm/hooks/after_get_caps/*
 %{_libexecdir}/ovirt-provider-ovn
 # TODO use %{python_sitelib} here and in `make install`
 /usr/lib/python2.7/site-packages/vdsm/tool/ovn_config.py*
+%{_sysconfdir}/sudoers.d/50_vdsm_hook_ovirt_provider_ovn_hook
 %license LICENSE
 
 
