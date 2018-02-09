@@ -236,6 +236,7 @@ class PortMapper(Mapper):
         is_enabled = rest_data.get(PortMapper.REST_PORT_ADMIN_STATE_UP)
         device_id = rest_data.get(PortMapper.REST_PORT_DEVICE_ID)
         device_owner = rest_data.get(PortMapper.REST_PORT_DEVICE_OWNER)
+        fixed_ips = rest_data.get(PortMapper.REST_PORT_FIXED_IPS)
 
         if port_id:
             return func(
@@ -246,7 +247,8 @@ class PortMapper(Mapper):
                 mac=mac,
                 is_enabled=is_enabled,
                 device_id=device_id,
-                device_owner=device_owner
+                device_owner=device_owner,
+                fixed_ips=fixed_ips
             )
         else:
             return func(
@@ -256,7 +258,8 @@ class PortMapper(Mapper):
                 mac=mac,
                 is_enabled=is_enabled,
                 device_id=device_id,
-                device_owner=device_owner
+                device_owner=device_owner,
+                fixed_ips=fixed_ips
             )
 
     @staticmethod
