@@ -78,3 +78,14 @@ def ip_available_in_network(network, ip):
                 network_id=str(network.uuid)
             )
         )
+
+
+def port_ip_for_router(port_ip, port, router_id):
+    if not port_ip:
+        raise ElementNotFoundError(
+            'Unable to attach port {port_id} to router '
+            '{router_id}. '
+            'Attaching by port requires the port to have '
+            'an ip from subnet assigned.'
+            .format(port_id=port.uuid, router_id=router_id)
+        )

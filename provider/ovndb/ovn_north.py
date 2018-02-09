@@ -919,19 +919,9 @@ class OvnNorth(object):
         address_parts = addresses[0].split(' ')
         return address_parts[1] if len(address_parts) > 1 else None
 
-    def _validate_port_ip_for_router(self, port_ip, port, router_id):
-        if not port_ip:
-            raise ElementNotFoundError(
-                'Unable to attach port {port_id} to router '
-                '{router_id}. '
-                'Attaching by port requires the port to have '
-                'an ip from subnet assigned.'
-                .format(port_id=port.uuid, router_id=router_id)
-            )
-
     def _get_ip_from_port(self, port, router_id):
         port_ip = ip_utils.get_port_ip(port)
-        self._validate_port_ip_for_router(port_ip, port, router_id)
+        validate.port_ip_for_router(port_ip, port, router_id)
         network = self._get_port_network(port)
         network_cidr = network.other_config.get(NetworkMapper.OVN_SUBNET)
         if not network_cidr:
