@@ -18,6 +18,7 @@
 
 
 import ovndb.ip as ip_utils
+from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import RestDataError
@@ -89,3 +90,41 @@ def port_ip_for_router(port_ip, port, router_id):
             'an ip from subnet assigned.'
             .format(port_id=port.uuid, router_id=router_id)
         )
+
+
+def create_routing_lsp_by_subnet(
+    network_id, subnet_id, existing_subnet_for_network,
+    existing_router_for_subnet, router_id=None
+):
+    if not network_id:
+        raise ElementNotFoundError(
+            'Unable to add router interface. '
+            'Subnet {subnet_id} does not belong to any network'
+            .format(subnet_id=subnet_id)
+        )
+
+    if (
+        not existing_subnet_for_network or
+        str(existing_subnet_for_network.uuid) != subnet_id
+    ):
+        raise BadRequestError(
+            'Subnet {subnet_id} does not belong to network {network_id}'
+            .format(subnet_id=subnet_id, network_id=network_id)
+        )
+
+    if existing_router_for_subnet:
+        if existing_router_for_subnet == router_id:
+            raise BadRequestError(
+                'Can not add subnet {subnet} to router {router}. Subnet is'
+                ' already connected to this router'.format(
+                    subnet=subnet_id, router=router_id
+                )
+            )
+        else:
+            raise BadRequestError(
+                'Can not add subnet {subnet} to router. Subnet is'
+                ' already connected to router {old_router}'.format(
+                    subnet=subnet_id, router=router_id,
+                    old_router=existing_router_for_subnet
+                )
+            )

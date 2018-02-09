@@ -752,37 +752,14 @@ class OvnNorth(object):
     def _validate_create_routing_lsp_by_subnet(
         self, network_id, subnet_id, router_id=None
     ):
-        if not network_id:
-            raise ElementNotFoundError(
-                'Unable to add router interface. '
-                'Subnet {subnet_id} does not belong to any network'
-                .format(subnet_id=subnet_id)
-            )
-
-        network_subnet = self._get_dhcp_by_network_id(network_id)
-        if not network_subnet or str(network_subnet.uuid) != subnet_id:
-            raise BadRequestError(
-                'Subnet {subnet_id} does not belong to network {network_id}'
-                .format(subnet_id=subnet_id, network_id=network_id)
-            )
-
-        old_router_id = self._get_subnet_gateway_router_id(subnet_id)
-        if old_router_id:
-            if old_router_id == router_id:
-                raise BadRequestError(
-                    'Can not add subnet {subnet} to router {router}. Subnet is'
-                    ' already connected to this router'.format(
-                        subnet=subnet_id, router=router_id
-                    )
-                )
-            else:
-                raise BadRequestError(
-                    'Can not add subnet {subnet} to router. Subnet is'
-                    ' already connected to router {old_router}'.format(
-                        subnet=subnet_id, router=router_id,
-                        old_router=old_router_id
-                    )
-                )
+        existing_subnet_for_network = self._get_dhcp_by_network_id(network_id)
+        existing_router_for_subnet = self._get_subnet_gateway_router_id(
+            subnet_id
+        )
+        validate.create_routing_lsp_by_subnet(
+            network_id, subnet_id, existing_subnet_for_network,
+            existing_router_for_subnet, router_id
+        )
         if router_id:
             self._validate_subnet_is_not_on_router(subnet_id, router_id)
 
