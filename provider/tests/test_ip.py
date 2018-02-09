@@ -54,3 +54,11 @@ def test_get_port_ip_empty():
     assert ip_utils.get_port_ip(
         lsp=Lsp(addresses=[], dynamic_addresses=None)
     ) is None
+
+
+def test_ip_in_cidr():
+    assert ip_utils.ip_in_cidr('192.168.0.1', '192.168.0.0/24')
+    assert ip_utils.ip_in_cidr('192.168.0.1', '192.168.0.0/16')
+    assert ip_utils.ip_in_cidr('192.168.0.1', '0.0.0.0/0')
+    assert ip_utils.ip_in_cidr('192.168.0.1', '192.168.0.1/32')
+    assert not ip_utils.ip_in_cidr('192.168.0.1', '192.168.1.0/24')

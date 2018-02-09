@@ -22,6 +22,7 @@ import random
 import ovndb.constants as ovnconst
 
 from netaddr import IPAddress
+from netaddr import IPNetwork
 from netaddr.core import AddrFormatError
 
 
@@ -59,6 +60,10 @@ def random_mac():
 
 def get_mask_from_subnet(subnet):
     return subnet.cidr.split('/')[1]
+
+
+def ip_in_cidr(ip, cidr):
+    return IPAddress(ip) in IPNetwork(cidr)
 
 
 def _get_ip_from_addresses(addresses):
