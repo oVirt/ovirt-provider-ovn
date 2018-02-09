@@ -341,6 +341,41 @@ class PortMapper(Mapper):
         sec_enabled = rest_data.get(PortMapper.REST_PORT_SECURITY_ENABLED)
         if sec_enabled:
             raise PortSecurityNotSupportedDataError()
+        fixed_ips = rest_data.get(PortMapper.REST_PORT_FIXED_IPS)
+        if fixed_ips:
+            if type(fixed_ips) is not list:
+                raise RestDataError(
+                    '{type} must be of type: list'.format(
+                        type=PortMapper.REST_PORT_FIXED_IPS
+                    )
+                )
+            if len(fixed_ips) > 1:
+                raise RestDataError(
+                    'Specifying more then one {type} value is not allowed'
+                    .format(type=PortMapper.REST_PORT_FIXED_IPS)
+                )
+            if (type(fixed_ips[0]) is not dict):
+                raise RestDataError(
+                    '{type} must be a dictionary containing {ip_addr} and '
+                    '{subnet_id}'.format(
+                        type=PortMapper.REST_PORT_FIXED_IPS,
+                        ip_addr=PortMapper.REST_PORT_IP_ADDRESS,
+                        subnet_id=PortMapper.REST_PORT_SUBNET_ID,
+                    )
+                )
+            if (
+                PortMapper.REST_PORT_IP_ADDRESS not in fixed_ips[0] and
+                PortMapper.REST_PORT_SUBNET_ID not in fixed_ips[0]
+
+            ):
+                raise RestDataError(
+                    '{type} must contain at least the {ip_addr} or the '
+                    '{subnet_id} element'.format(
+                        type=PortMapper.REST_PORT_FIXED_IPS,
+                        ip_addr=PortMapper.REST_PORT_IP_ADDRESS,
+                        subnet_id=PortMapper.REST_PORT_SUBNET_ID
+                    )
+                )
 
 
 class SubnetMapper(Mapper):
