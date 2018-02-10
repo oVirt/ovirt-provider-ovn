@@ -18,6 +18,8 @@
 
 
 from handlers.base_handler import ElementNotFoundError
+from ovndb.ovn_north_mappers import PortMapper
+from ovndb.ovn_north_mappers import RestDataError
 
 
 def attach_network_to_router_by_subnet(subnet, network_id, router_id):
@@ -31,5 +33,27 @@ def attach_network_to_router_by_subnet(subnet, network_id, router_id):
             .format(
                 network_id=network_id, subnet_id=subnet.uuid,
                 router_id=router_id
+            )
+        )
+
+
+def fixed_ip_matches_port_subnet(fixed_ips, subnet):
+    if not fixed_ips:
+        return
+    if not subnet:
+        raise RestDataError(
+            'Invalid paramter {fixed_ips}. {fixed_ips} can not be used if '
+            'the network does not have a subnet attached.'.format(
+                fixed_ips=PortMapper.REST_PORT_FIXED_IPS,
+            )
+        )
+    fixed_ip_subnet_id = fixed_ips[0].get(PortMapper.REST_PORT_SUBNET_ID)
+    if fixed_ip_subnet_id and fixed_ip_subnet_id != str(subnet.uuid):
+        raise RestDataError(
+            '{subnet_id} specified in {fixed_ips} is different from the '
+            '{subnet_id} of the port\'s network'
+            .format(
+                subnet_id=PortMapper.REST_PORT_SUBNET_ID,
+                fixed_ips=PortMapper.REST_PORT_FIXED_IPS,
             )
         )
