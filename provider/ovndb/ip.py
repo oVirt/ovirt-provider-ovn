@@ -92,3 +92,13 @@ def get_network_exclude_ips(network):
             )
         result.append(exclude_value)
     return result
+
+
+def is_ip_available_in_network(network, ip):
+    if any(
+        ip == get_port_ip(port)
+        for port in network.ports
+    ):
+        return False
+    exclude_ips = get_network_exclude_ips(network)
+    return ip not in exclude_ips
