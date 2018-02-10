@@ -19,6 +19,8 @@
 
 import random
 
+import ovndb.constants as ovnconst
+
 from netaddr import IPAddress
 from netaddr.core import AddrFormatError
 
@@ -73,3 +75,20 @@ def _is_valid_ip(candidate):
     except AddrFormatError:
         return False
     return True
+
+
+def get_network_exclude_ips(network):
+    exclude_values = network.other_config.get(
+        ovnconst.LS_OPTION_EXCLUDE_IPS
+    )
+    # TODO: should we care about IP ranges? we do not use them, but
+    # what if someone else will?
+    # lets raise for now
+    result = []
+    for exclude_value in exclude_values.split():
+        if ovnconst.LS_EXCLUDED_IP_DELIMITER in exclude_value:
+            raise NotImplementedError(
+                'Handling of ip ranges not yet implemented'
+            )
+        result.append(exclude_value)
+    return result

@@ -860,7 +860,7 @@ class OvnNorth(object):
             for port in network.ports
         ):
             return False
-        exclude_ips = self._get_network_exclude_ips(network)
+        exclude_ips = ip_utils.get_network_exclude_ips(network)
         return ip not in exclude_ips
 
     def _validate_gateway_router_ip(self, network_id, gateway_ip):
@@ -872,22 +872,6 @@ class OvnNorth(object):
                     network_id=network_id
                 )
             )
-
-    def _get_network_exclude_ips(self, network):
-        exclude_values = network.other_config.get(
-            ovnconst.LS_OPTION_EXCLUDE_IPS
-        )
-        # TODO: should we care about IP ranges? we do not use them, but
-        # what if someone else will?
-        # lets raise for now
-        result = []
-        for exclude_value in exclude_values.split():
-            if ovnconst.LS_EXCLUDED_IP_DELIMITER in exclude_value:
-                raise NotImplementedError(
-                    'Handling of ip ranges not yet implemented'
-                )
-            result.append(exclude_value)
-        return result
 
     def _reserve_network_ip(self, network_id, gateway_ip):
         exclude_values = self._get_network(network_id).other_config.get(
