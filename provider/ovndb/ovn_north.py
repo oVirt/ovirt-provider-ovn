@@ -357,15 +357,7 @@ class OvnNorth(object):
         ip = fixed_ip.get(PortMapper.REST_PORT_IP_ADDRESS)
         if not ip:
             return ovnconst.LSP_ADDRESS_TYPE_DYNAMIC
-        if not ip_utils.is_ip_available_in_network(
-            self._get_network(network_id), ip
-        ):
-            raise RestDataError(
-                'The ip {ip} specified in {fixed_ips} is already in use on '
-                'the network'.format(
-                    ip=ip, fixed_ips=PortMapper.REST_PORT_FIXED_IPS
-                )
-            )
+        validate.ip_available_in_network(self._get_network(network_id), ip)
         return ip
 
     def _connect_port_to_router(
@@ -675,7 +667,8 @@ class OvnNorth(object):
             self._validate_create_routing_lsp_by_subnet(
                 network_id, gateway_subnet_id
             )
-            self._validate_gateway_router_ip(network_id, gateway_ip)
+            validate.ip_available_in_network(
+                self._get_network(network_id), gateway_ip)
             self._reserve_network_ip(network_id, gateway_ip)
 
         router = self._execute(self.idl.lr_add(
@@ -854,18 +847,6 @@ class OvnNorth(object):
             mac=mac,
             networks=[lrp_ip],
         ))
-
-    def _validate_gateway_router_ip(self, network_id, gateway_ip):
-        if not ip_utils.is_ip_available_in_network(
-            self._get_network(network_id), gateway_ip
-        ):
-            raise RestDataError(
-                'ip_address {ip_address} is already used on the external '
-                'network {network_id}'.format(
-                    ip_address=gateway_ip,
-                    network_id=network_id
-                )
-            )
 
     def _reserve_network_ip(self, network_id, gateway_ip):
         exclude_values = self._get_network(network_id).other_config.get(

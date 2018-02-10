@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 
 
+import ovndb.ip as ip_utils
 from handlers.base_handler import ElementNotFoundError
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import RestDataError
@@ -64,4 +65,16 @@ def fixed_ip_port_has_mac(mac, fixed_ips):
         raise RestDataError(
             'Unable to set {fixed_ips} on a port with no mac address defined'
             .format(fixed_ips=PortMapper.REST_PORT_FIXED_IPS,)
+        )
+
+
+def ip_available_in_network(network, ip):
+    if not ip_utils.is_ip_available_in_network(network, ip):
+        raise RestDataError(
+            'The ip {ip} specified is already in use on '
+            'network {network_id}'.format(
+                ip=ip,
+                fixed_ips=PortMapper.REST_PORT_FIXED_IPS,
+                network_id=str(network.uuid)
+            )
         )
