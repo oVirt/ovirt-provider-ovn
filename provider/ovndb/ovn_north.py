@@ -258,7 +258,8 @@ class OvnNorth(object):
         self._update_port_values(
             port, name, is_enabled, device_id, device_owner
         )
-        self._update_port_address(port, network_id=network_id, mac=mac)
+        self._update_port_address(
+            port, network_id=network_id, mac=mac, fixed_ips=fixed_ips)
         return self.get_port(port.uuid)
 
     @PortMapper.validate_update
@@ -279,7 +280,8 @@ class OvnNorth(object):
         self._update_port_values(
             port, name, is_enabled, device_id, device_owner
         )
-        self._update_port_address(port, network_id=network_id, mac=mac)
+        self._update_port_address(
+            port, network_id=network_id, mac=mac, fixed_ips=fixed_ips)
         return self.get_port(port_id)
 
     def _update_port_values(
@@ -317,20 +319,23 @@ class OvnNorth(object):
         )
         db_set_command.execute()
 
-    def _update_port_address(self, port, network_id, mac=None):
+    def _update_port_address(self, port, network_id, mac=None, fixed_ips=None):
         if port.type == ovnconst.LSP_TYPE_ROUTER:
             return
         mac = mac or ip_utils.get_port_mac(port)
+        validate.fixed_ip_port_has_mac(mac, fixed_ips)
+        subnet = self._get_dhcp_by_network_id(network_id)
+        validate.fixed_ip_matches_port_subnet(fixed_ips, subnet)
         if mac:
             db_set_command = DbSetCommand(
                 self.idl, ovnconst.TABLE_LSP, port.uuid
             )
-            subnet_row = self._get_dhcp_by_network_id(network_id)
-            if subnet_row:
+            if subnet:
                 db_set_command.add(
-                    ovnconst.ROW_LSP_DHCPV4_OPTIONS, subnet_row.uuid
+                    ovnconst.ROW_LSP_DHCPV4_OPTIONS, subnet.uuid
                 )
-                mac += ' ' + ovnconst.LSP_ADDRESS_TYPE_DYNAMIC
+                mac += ' ' + self._get_port_addesses_suffix(
+                    network_id, fixed_ips)
             else:
                 self._execute(self.idl.db_clear(
                     ovnconst.TABLE_LSP, port.uuid,
@@ -339,6 +344,27 @@ class OvnNorth(object):
 
             db_set_command.add(ovnconst.ROW_LSP_ADDRESSES, [mac])
             db_set_command.execute()
+
+    def _get_port_addesses_suffix(self, network_id, fixed_ips):
+        if not fixed_ips:
+            return ovnconst.LSP_ADDRESS_TYPE_DYNAMIC
+
+        # Only one fixed ip is supported for now
+        # OVN does allow multiple IP's, so support for multiple fixed ips
+        # can be added
+        # TODO: handle multiple fixed_ips
+        fixed_ip = fixed_ips[0]
+        ip = fixed_ip.get(PortMapper.REST_PORT_IP_ADDRESS)
+        if not ip:
+            return ovnconst.LSP_ADDRESS_TYPE_DYNAMIC
+        if not self._is_ip_available_in_network(network_id, ip):
+            raise RestDataError(
+                'The ip {ip} specified in {fixed_ips} is already in use on '
+                'the network'.format(
+                    ip=ip, fixed_ips=PortMapper.REST_PORT_FIXED_IPS
+                )
+            )
+        return ip
 
     def _connect_port_to_router(
         self, port, router_port_name,
