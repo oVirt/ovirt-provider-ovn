@@ -930,7 +930,7 @@ class OvnNorth(object):
             )
 
     def _get_ip_from_port(self, port, router_id):
-        port_ip = ip_utils.get_port_dynamic_ip(port)
+        port_ip = ip_utils.get_port_ip(port)
         self._validate_port_ip_for_router(port_ip, port, router_id)
         network = self._get_port_network(port)
         network_cidr = network.other_config.get(NetworkMapper.OVN_SUBNET)
