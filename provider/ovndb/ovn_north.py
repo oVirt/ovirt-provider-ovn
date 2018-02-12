@@ -830,8 +830,7 @@ class OvnNorth(object):
     def _is_ip_available_in_network(self, network_id, ip):
         network = self._get_network(network_id)
         if any(
-            ip == ip_utils.get_port_dynamic_ip(port) or
-            ip == ip_utils.get_port_static_ip(port)
+            ip == ip_utils.get_port_ip(port)
             for port in network.ports
         ):
             return False
