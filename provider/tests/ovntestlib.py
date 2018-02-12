@@ -90,8 +90,13 @@ class OvnSubnetRow(OvnRow):
 
 
 class OvnRouterRow(OvnRow):
-    def __init__(self, uuid, name=None, external_ids={}):
+    def __init__(self, uuid, name=None, external_ids={}, ports=None):
         self.uuid = uuid
         self.name = name
         self.enabled = [True]
         self.external_ids = external_ids
+        self.ports = ports or []
+
+
+class OvnRouterPort(object):
+    pass

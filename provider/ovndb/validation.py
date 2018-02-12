@@ -19,6 +19,7 @@
 
 import ovndb.constants as ovnconst
 import ovndb.ip as ip_utils
+from handlers.base_handler import ConflictError
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
 from ovndb.ovn_north_mappers import PortMapper
@@ -137,4 +138,13 @@ def port_is_connected_to_router(lsp):
         raise BadRequestError(
             'Port {port} is not connected to a router'
             .format(port=str(lsp.uuid))
+        )
+
+
+def router_has_no_ports(lr):
+    if lr.ports:
+        raise ConflictError(
+            'Router {router_id} still has ports'.format(
+                router_id=lr.uuid
+            )
         )

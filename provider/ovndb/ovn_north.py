@@ -683,6 +683,7 @@ class OvnNorth(object):
         return self.get_router(router_id)
 
     def delete_router(self, router_id):
+        validate.router_has_no_ports(self._get_router(router_id))
         self._execute(self.idl.lr_del(router_id))
 
     def _validate_router_exists(self, router_id):

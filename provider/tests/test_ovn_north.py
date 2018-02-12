@@ -38,6 +38,7 @@ from ovndb.ovn_north_mappers import UnsupportedDataValueError
 
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
+from ovntestlib import OvnRouterPort
 from ovntestlib import OvnRouterRow
 from ovntestlib import OvnSubnetRow
 
@@ -932,3 +933,51 @@ class TestOvnNorth(object):
         assert mock_lookup.call_args == mock.call(
             ovnconst.TABLE_LR, str(TestOvnNorth.ROUTER_ID20)
         )
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LrDelCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
+    )
+    def test_delete_router(self, mock_lookup, mock_del_command,
+                           mock_connection):
+        mock_lookup.return_value = TestOvnNorth.ROUTER_20
+        ovn_north = OvnNorth()
+
+        ovn_north.delete_router(str(TestOvnNorth.ROUTER_ID20))
+
+        assert mock_lookup.call_args == mock.call(
+            ovnconst.TABLE_LR, str(TestOvnNorth.ROUTER_ID20)
+        )
+
+        assert mock_del_command.call_count == 1
+        expected_del_call = mock.call(
+            ovn_north.idl,
+            str(TestOvnNorth.ROUTER_ID20),
+            False
+        )
+        assert mock_del_command.mock_calls[0] == expected_del_call
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LrDelCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
+    )
+    def test_delete_router_fail(self, mock_lookup, mock_del_command,
+                                mock_connection):
+        mock_lookup.return_value = OvnRouterRow(
+            TestOvnNorth.ROUTER_ID20,
+            ports=[OvnRouterPort()]
+        )
+        ovn_north = OvnNorth()
+        with pytest.raises(ConflictError):
+            ovn_north.delete_router(str(TestOvnNorth.ROUTER_ID20))
+
+        assert mock_lookup.call_args == mock.call(
+            ovnconst.TABLE_LR, str(TestOvnNorth.ROUTER_ID20)
+        )
+        assert mock_del_command.call_count == 0
