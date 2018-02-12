@@ -597,6 +597,8 @@ class RouterMapper(Mapper):
                 )
                 if ip:
                     external_ips[RouterMapper.REST_ROUTER_IP_ADDRESS] = ip
+        else:
+            result[RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO] = None
 
     @staticmethod
     def validate_add_rest_input(rest_data):
