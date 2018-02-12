@@ -267,7 +267,7 @@ class TestOvnNorth(object):
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
-        lambda x: OvnNetworkRow(
+        lambda cmd, check_error: OvnNetworkRow(
             TestOvnNorth.NETWORK_ID10,
             TestOvnNorth.NETWORK_NAME10
         )
@@ -334,7 +334,7 @@ class TestOvnNorth(object):
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
-        lambda x: TestOvnNorth.NETWORK_10
+        lambda cmd, check_error: TestOvnNorth.NETWORK_10
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsDelCommand',
@@ -343,7 +343,7 @@ class TestOvnNorth(object):
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
         'execute',
-        lambda x: []
+        lambda cmd, check_error: []
     )
     def test_delete_network(self, mock_del_command, mock_connection):
         ovn_north = OvnNorth()
@@ -358,16 +358,20 @@ class TestOvnNorth(object):
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsListCommand.execute',
-        lambda x: TestOvnNorth.networks
+        lambda cmd, check_error: TestOvnNorth.networks
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LspGetCommand.execute',
-        lambda x: TestOvnNorth.PORT_1
+        lambda cmd, check_error: TestOvnNorth.PORT_1
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
         'execute',
-        lambda x: []
+        lambda cmd, check_error: []
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbClearCommand.execute',
+        lambda cmd, check_error: []
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LspAddCommand',
@@ -454,15 +458,15 @@ class TestOvnNorth(object):
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
         'execute',
-        lambda x: []
+        lambda cmd, check_error: []
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsListCommand.execute',
-        lambda x: TestOvnNorth.networks
+        lambda cmd, check_error: TestOvnNorth.networks
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LspListCommand.execute',
-        lambda x: TestOvnNorth.ports
+        lambda cmd, check_error: TestOvnNorth.ports
     )
     def test_list_ports(self, mock_connection):
         ovn_north = OvnNorth()
@@ -477,8 +481,8 @@ class TestOvnNorth(object):
 
     @mock.patch('ovsdbapp.schema.ovn_northbound.commands.LspGetCommand.'
                 'execute',
-                lambda port_id: OvnPortRow(
-                    port_id,
+                lambda cmd, check_error: OvnPortRow(
+                    TestOvnNorth.PORT_ID01,
                     external_ids={
                         PortMapper.OVN_DEVICE_OWNER:
                             TestOvnNorth.DEVICE_OWNER_OVIRT
@@ -502,8 +506,8 @@ class TestOvnNorth(object):
 
     @mock.patch('ovsdbapp.schema.ovn_northbound.commands.LspGetCommand.'
                 'execute',
-                lambda port_id: OvnPortRow(
-                    port_id,
+                lambda cmd, check_error: OvnPortRow(
+                    TestOvnNorth.PORT_ID01,
                     external_ids={
                         PortMapper.OVN_DEVICE_OWNER:
                             PortMapper.DEVICE_OWNER_ROUTER
@@ -522,7 +526,7 @@ class TestOvnNorth(object):
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
         'execute',
-        lambda x: TestOvnNorth.subnets
+        lambda cmd, check_error: TestOvnNorth.subnets
     )
     def test_list_subnets(self, mock_connection):
         ovn_north = OvnNorth()
@@ -535,7 +539,7 @@ class TestOvnNorth(object):
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
         'execute',
-        lambda x: TestOvnNorth.SUBNET_101
+        lambda cmd, check_error: TestOvnNorth.SUBNET_101
     )
     def test_get_subnet(self, mock_connection):
         ovn_north = OvnNorth()
@@ -552,11 +556,11 @@ class TestOvnNorth(object):
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
         'execute',
-        lambda x: TestOvnNorth.SUBNET_101
+        lambda cmd, check_error: TestOvnNorth.SUBNET_101
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
-        lambda x: TestOvnNorth.NETWORK_10
+        lambda cmd, check_error: TestOvnNorth.NETWORK_10
     )
     def test_delete_subnet(self, mock_del_command, mock_connection):
         ovn_north = OvnNorth()
@@ -571,16 +575,16 @@ class TestOvnNorth(object):
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
         'execute',
-        lambda x: []
+        lambda cmd, check_error: []
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
-        lambda x: TestOvnNorth.NETWORK_10
+        lambda cmd, check_error: TestOvnNorth.NETWORK_10
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
         'execute',
-        lambda x: TestOvnNorth.SUBNET_102
+        lambda cmd, check_error: TestOvnNorth.SUBNET_102
     )
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
@@ -647,16 +651,16 @@ class TestOvnNorth(object):
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
         'execute',
-        lambda x: []
+        lambda cmd, check_error: []
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
-        lambda x: TestOvnNorth.NETWORK_10
+        lambda cmd, check_error: TestOvnNorth.NETWORK_10
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
         'execute',
-        lambda x: TestOvnNorth.SUBNET_102
+        lambda cmd, check_error: TestOvnNorth.SUBNET_102
     )
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
@@ -695,16 +699,16 @@ class TestOvnNorth(object):
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsListCommand.execute',
-        lambda x: TestOvnNorth.networks
+        lambda cmd, check_error: TestOvnNorth.networks
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LspGetCommand.execute',
-        lambda x: TestOvnNorth.PORT_1
+        lambda cmd, check_error: TestOvnNorth.PORT_1
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
         'execute',
-        lambda x: []
+        lambda cmd, check_error: []
     )
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
@@ -783,7 +787,7 @@ class TestOvnNorth(object):
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
-        lambda x: OvnNetworkRow(
+        lambda cmd, check_error: OvnNetworkRow(
             TestOvnNorth.NETWORK_ID10,
             TestOvnNorth.NETWORK_NAME10
         )
@@ -791,7 +795,7 @@ class TestOvnNorth(object):
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
         'execute',
-        lambda x: TestOvnNorth.subnets
+        lambda cmd, check_error: TestOvnNorth.subnets
     )
     def test_subnet_add_duplicate_network(self, mock_connection):
         ovn_north = OvnNorth()
@@ -820,11 +824,11 @@ class TestOvnNorth(object):
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
-        lambda x: None
+        lambda cmd, check_error: None
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
-        lambda x: TestOvnNorth.NETWORK_10
+        lambda cmd, check_error: TestOvnNorth.NETWORK_10
     )
     def test_subnet_add_invalid_network(self, mock_connection):
         ovn_north = OvnNorth()
@@ -859,7 +863,7 @@ class TestOvnNorth(object):
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
         'execute',
-        lambda x: []
+        lambda cmd, check_error: []
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsListCommand',
