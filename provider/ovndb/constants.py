@@ -52,6 +52,7 @@ ROW_LR_NAME = 'name'
 ROW_LR_ENABLED = 'enabled'
 
 TABLE_LRP = 'Logical_Router_Port'
+ROW_LRP_NETWORKS = 'networks'
 
 LOCALNET_SWITCH_PORT_NAME = 'localnet_port'
 ROUTER_SWITCH_PORT_NAME = 'router_port'

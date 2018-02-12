@@ -284,6 +284,24 @@ class OvnNorth(object):
             port, network_id=network_id, mac=mac, fixed_ips=fixed_ips)
         return self.get_port(port_id)
 
+    def _update_lsp_bound_lrp(self, port_id, fixed_ips):
+        if not fixed_ips:
+            return
+        lrp = self._get_lrp_by_lsp_id(port_id)
+        subnet = self._get_subnet_from_port_id(port_id)
+        validate.fixed_ip_matches_port_subnet(fixed_ips, subnet)
+
+        new_lrp_ip = '{ip}/{netmask}'.format(
+            ip=fixed_ips[0].get(PortMapper.REST_PORT_IP_ADDRESS),
+            netmask=ip_utils.get_mask_from_subnet(subnet)
+        )
+
+        self._execute(self.idl.db_set(
+            ovnconst.TABLE_LRP,
+            str(lrp.uuid),
+            (ovnconst.ROW_LRP_NETWORKS, new_lrp_ip)
+        ))
+
     def _update_port_values(
         self, port, name=None, is_enabled=None, device_id=None,
         device_owner=None
@@ -321,6 +339,7 @@ class OvnNorth(object):
 
     def _update_port_address(self, port, network_id, mac=None, fixed_ips=None):
         if port.type == ovnconst.LSP_TYPE_ROUTER:
+            self._update_lsp_bound_lrp(str(port.uuid), fixed_ips)
             return
         mac = mac or ip_utils.get_port_mac(port)
         validate.fixed_ip_port_has_mac(mac, fixed_ips)
