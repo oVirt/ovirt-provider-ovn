@@ -321,8 +321,6 @@ class PortMapper(Mapper):
 
     @staticmethod
     def validate_add_rest_input(rest_data):
-        if PortMapper.REST_PORT_DEVICE_ID not in rest_data:
-            raise PortDeviceIdRequiredDataError()
         if PortMapper.REST_PORT_NETWORK_ID not in rest_data:
             raise NetworkIdRequiredForPortDataError()
         PortMapper._validate_common(rest_data)
