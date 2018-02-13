@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 
 
+import ovndb.constants as ovnconst
 import ovndb.ip as ip_utils
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
@@ -128,3 +129,12 @@ def create_routing_lsp_by_subnet(
                     old_router=existing_router_for_subnet
                 )
             )
+
+
+def port_is_connected_to_router(lsp):
+    lrp_name = lsp.options.get(ovnconst.LSP_OPTION_ROUTER_PORT)
+    if not lrp_name:
+        raise BadRequestError(
+            'Port {port} is not connected to a router'
+            .format(port=str(lsp.uuid))
+        )
