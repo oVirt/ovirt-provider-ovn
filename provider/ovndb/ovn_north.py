@@ -927,14 +927,13 @@ class OvnNorth(object):
 
     def _delete_router_interface_by_port(self, router_id, port_id):
         lsp = self._get_switch_port(port_id)
-        lrp_name = lsp.options.get(ovnconst.LSP_OPTION_ROUTER_PORT)
-        if not lrp_name:
+        if not lsp.options.get(ovnconst.LSP_OPTION_ROUTER_PORT):
             raise BadRequestError(
                 'Port {port} is not connected to a router'
                 .format(port=port_id)
             )
         subnet = self._get_subnet_from_port_id(port_id)
-        lrp = self._get_lrp(lrp_name)
+        lrp = self._get_lrp_by_lsp_id(port_id)
         network_id = str(self._get_port_network(lsp).uuid)
         lr = self._get_router(router_id)
         self._delete_router_interface(
@@ -942,6 +941,11 @@ class OvnNorth(object):
         )
         if subnet and not self._is_subnet_on_router(router_id, subnet.uuid):
             self._clear_subnet_gateway_router(str(subnet.uuid))
+
+    def _get_lrp_by_lsp_id(self, port_id):
+        lsp = self._get_switch_port(port_id)
+        lrp_name = lsp.options.get(ovnconst.LSP_OPTION_ROUTER_PORT)
+        return self._get_lrp(lrp_name) if lrp_name else None
 
     def _is_subnet_on_router(self, router_id, subnet_id):
         lr = self._get_router(router_id)
