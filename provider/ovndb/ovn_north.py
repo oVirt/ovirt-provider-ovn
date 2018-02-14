@@ -567,54 +567,15 @@ class OvnNorth(object):
         self,
         subnet_id,
         name=None,
-        cidr=None,
-        network_id=None,
         gateway=None,
         dns=None,
     ):
-        if network_id:
-            if not self._execute(self.idl.ls_get(network_id)):
-                raise SubnetConfigError(
-                    'Unable to move subnet to network {network_id}. '
-                    'The network does not exit.'
-                    .format(network_id=network_id)
-                )
-            subnet_by_network = self._get_dhcp_by_network_id(network_id)
-            if subnet_by_network and str(subnet_by_network.uuid) != subnet_id:
-                raise SubnetConfigError(
-                    'Unable to move subnet to network {network_id}. The'
-                    ' network already has a subnet assigned'
-                    .format(network_id=network_id)
-                )
-
         db_set_command = DbSetCommand(
             self.idl, ovnconst.TABLE_DHCP_Options, subnet_id)
-
-        if cidr:
-            dhcp_server_ip = cidr.split('/', 1)[0]
-            db_set_command.add(
-                ovnconst.ROW_DHCP_OPTIONS,
-                {SubnetMapper.OVN_DHCP_SERVER_ID: dhcp_server_ip}
-            )
-            db_set_command.add(ovnconst.ROW_DHCP_CIDR, cidr)
-            self._execute(self.idl.db_set(
-                ovnconst.TABLE_LS,
-                network_id,
-                (
-                    ovnconst.ROW_LS_OTHER_CONFIG,
-                    {NetworkMapper.OVN_SUBNET: cidr}
-                ),
-            ))
-
         db_set_command.add(
             ovnconst.ROW_DHCP_EXTERNAL_IDS,
             {SubnetMapper.OVN_NAME: name},
             name
-        )
-        db_set_command.add(
-            ovnconst.ROW_DHCP_EXTERNAL_IDS,
-            {SubnetMapper.OVN_NETWORK_ID: network_id},
-            network_id
         )
         db_set_command.add(
             ovnconst.ROW_DHCP_OPTIONS,

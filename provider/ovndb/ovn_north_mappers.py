@@ -415,8 +415,6 @@ class SubnetMapper(Mapper):
                 wrapped_self,
                 subnet_id=subnet_id,
                 name=name,
-                cidr=cidr,
-                network_id=network_id,
                 gateway=gateway,
                 dns=dns,
             )
