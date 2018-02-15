@@ -929,13 +929,13 @@ class OvnNorth(object):
         lsp = self._get_switch_port(port_id)
         validate.port_is_connected_to_router(lsp)
 
+        subnet = self._get_subnet_from_port_id(port_id)
         lrp = self._get_lrp_by_lsp_id(port_id)
         network_id = str(self._get_port_network(lsp).uuid)
         lr = self._get_router(router_id)
         self._delete_router_interface(
             router_id, port_id, lrp, network_id, lsp, lr
         )
-        subnet = self._get_subnet_from_port_id(port_id)
         if subnet and not self._is_subnet_on_router(router_id, subnet.uuid):
             self._clear_subnet_gateway_router(str(subnet.uuid))
 
