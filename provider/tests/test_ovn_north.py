@@ -67,6 +67,11 @@ class TestOvnNorth(object):
     PORT_NAME02 = 'port2'
     PORT_NAME03 = 'port3'
 
+    PORT_NAME01_FIXED_IP = "1.1.1.1"
+    PORT_NAME01_FIXED_IPS = [{
+        PortMapper.REST_PORT_IP_ADDRESS: PORT_NAME01_FIXED_IP
+    }]
+
     PORT_1 = OvnPortRow(
         PORT_ID01,
         addresses=MAC_ADDRESS,
@@ -378,7 +383,11 @@ class TestOvnNorth(object):
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
         'execute',
-        lambda cmd, check_error: []
+        lambda cmd, check_error: [TestOvnNorth.SUBNET_101]
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
+        lambda cmd, check_error: TestOvnNorth.NETWORK_10
     )
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbClearCommand.execute',
@@ -403,7 +412,8 @@ class TestOvnNorth(object):
             PortMapper.REST_PORT_DEVICE_ID: TestOvnNorth.DEVICE_ID,
             PortMapper.REST_PORT_DEVICE_OWNER: TestOvnNorth.DEVICE_OWNER_OVIRT,
             PortMapper.REST_PORT_ADMIN_STATE_UP: True,
-            PortMapper.REST_PORT_MAC_ADDRESS: TestOvnNorth.MAC_ADDRESS
+            PortMapper.REST_PORT_MAC_ADDRESS: TestOvnNorth.MAC_ADDRESS,
+            PortMapper.REST_PORT_FIXED_IPS: TestOvnNorth.PORT_NAME01_FIXED_IPS
         }
         result = ovn_north.add_port(rest_data)
 
@@ -460,9 +470,13 @@ class TestOvnNorth(object):
             ovn_north.idl,
             ovnconst.TABLE_LSP,
             TestOvnNorth.PORT_ID01,
+            (ovnconst.ROW_LSP_DHCPV4_OPTIONS, TestOvnNorth.SUBNET_ID101),
             (
                 ovnconst.ROW_LSP_ADDRESSES,
-                [TestOvnNorth.MAC_ADDRESS]
+                ['{mac_address} {ip_address}'.format(
+                    mac_address=TestOvnNorth.MAC_ADDRESS,
+                    ip_address=TestOvnNorth.PORT_NAME01_FIXED_IP
+                )]
             ),
         )
 

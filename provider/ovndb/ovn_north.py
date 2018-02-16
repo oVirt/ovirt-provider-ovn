@@ -370,7 +370,7 @@ class OvnNorth(object):
         ip = fixed_ip.get(PortMapper.REST_PORT_IP_ADDRESS)
         if not ip:
             return ovnconst.LSP_ADDRESS_TYPE_DYNAMIC
-        validate.ip_available_in_network(self._get_network(network_id), ip)
+        validate.ip_available_in_network(self._get_ls(network_id), ip)
         return ip
 
     def _connect_port_to_router(
