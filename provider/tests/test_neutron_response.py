@@ -330,7 +330,7 @@ class TestNeutronResponse(object):
             "router": {
                 "name": "router1",
                 "external_gateway_info": {
-                    "enable_snat": "true",
+                    "enable_snat": false,
                     "external_fixed_ips": [{
                         "ip_address": "172.24.4.6",
                         "subnet_id": "b930d7f6-ceb7-40a0-8b81-a425dd994ccf"

@@ -159,6 +159,9 @@ class BaseHandler(BaseHTTPRequestHandler):
         except ConflictError as e:
             self._handle_response_exception(
                 e, response_code=httplib.CONFLICT)
+        except NotImplementedError as e:
+            self._handle_response_exception(
+                e, response_code=httplib.NOT_IMPLEMENTED)
         except Exception as e:
             self._handle_response_exception(e)
 

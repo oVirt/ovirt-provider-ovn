@@ -642,6 +642,16 @@ class RouterMapper(Mapper):
                 raise RestDataError(
                     message.format(key=RouterMapper.REST_ROUTER_IP_ADDRESS)
                 )
+            enable_snat = gateway_info.get(
+                RouterMapper.REST_ROUTER_ENABLE_SNAT,
+                True
+            )
+            if enable_snat:
+                raise NotImplementedError(
+                    '{key} must set be false'.format(
+                        key=RouterMapper.REST_ROUTER_ENABLE_SNAT
+                    )
+                )
 
 
 class BaseRouterInterfaceMapper(Mapper):
