@@ -229,10 +229,12 @@ class PortMapper(Mapper):
     REST_PORT_FIXED_IPS = 'fixed_ips'
     REST_PORT_SUBNET_ID = 'subnet_id'
     REST_PORT_IP_ADDRESS = 'ip_address'
+    REST_PORT_BINDING_HOST = 'binding:host_id'
 
     OVN_DEVICE_ID = 'ovirt_device_id'
     OVN_NIC_NAME = 'ovirt_nic_name'
     OVN_DEVICE_OWNER = 'ovirt_device_owner'
+    OVN_REQUESTED_CHASSIS = 'requested-chassis'
     DEVICE_OWNER_ROUTER = 'network:router_interface'
 
     @staticmethod
@@ -244,6 +246,7 @@ class PortMapper(Mapper):
         device_id = rest_data.get(PortMapper.REST_PORT_DEVICE_ID)
         device_owner = rest_data.get(PortMapper.REST_PORT_DEVICE_OWNER)
         fixed_ips = rest_data.get(PortMapper.REST_PORT_FIXED_IPS)
+        binding_host = rest_data.get(PortMapper.REST_PORT_BINDING_HOST)
 
         if port_id:
             return func(
@@ -255,7 +258,8 @@ class PortMapper(Mapper):
                 is_enabled=is_enabled,
                 device_id=device_id,
                 device_owner=device_owner,
-                fixed_ips=fixed_ips
+                fixed_ips=fixed_ips,
+                binding_host=binding_host,
             )
         else:
             return func(
@@ -266,7 +270,8 @@ class PortMapper(Mapper):
                 is_enabled=is_enabled,
                 device_id=device_id,
                 device_owner=device_owner,
-                fixed_ips=fixed_ips
+                fixed_ips=fixed_ips,
+                binding_host=binding_host,
             )
 
     @staticmethod
@@ -312,6 +317,9 @@ class PortMapper(Mapper):
         if lsp.addresses:
             mac = lsp.addresses[0].split(' ')[0]
             rest_data[PortMapper.REST_PORT_MAC_ADDRESS] = mac
+        if lsp.options and PortMapper.OVN_REQUESTED_CHASSIS in lsp.options:
+            binding_host = lsp.options[PortMapper.REST_PORT_BINDING_HOST]
+            rest_data[PortMapper.REST_PORT_BINDING_HOST] = binding_host
         return rest_data
 
     @staticmethod

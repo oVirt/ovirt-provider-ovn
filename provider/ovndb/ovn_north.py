@@ -249,6 +249,7 @@ class OvnNorth(object):
         device_id=None,
         device_owner=None,
         fixed_ips=None,
+        binding_host=None,
     ):
         port = self._create_port(name, network_id)
         self._update_port_values(
@@ -270,6 +271,7 @@ class OvnNorth(object):
         device_id=None,
         device_owner=None,
         fixed_ips=None,
+        binding_host=None,
     ):
         port = self._get_port(port_id)
         network_id = self._get_validated_port_network_id(port, network_id)
