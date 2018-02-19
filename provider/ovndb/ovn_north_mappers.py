@@ -334,7 +334,7 @@ class PortMapper(Mapper):
             mac = lsp.addresses[0].split(' ')[0]
             rest_data[PortMapper.REST_PORT_MAC_ADDRESS] = mac
         if lsp.options and PortMapper.OVN_REQUESTED_CHASSIS in lsp.options:
-            binding_host = lsp.options[PortMapper.REST_PORT_BINDING_HOST]
+            binding_host = lsp.options[PortMapper.OVN_REQUESTED_CHASSIS]
             rest_data[PortMapper.REST_PORT_BINDING_HOST] = binding_host
         return rest_data
 

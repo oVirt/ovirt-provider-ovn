@@ -276,7 +276,8 @@ class PortApiInputMaker(ApiInputMaker):
             device_owner=None,
             admin_state_up=None,
             mac_address=None,
-            fixed_ips=None
+            fixed_ips=None,
+            binding_host_id=None
     ):
         self._name = (PortMapper.REST_PORT_NAME, name)
         self._network_id = (PortMapper.REST_PORT_NETWORK_ID, network_id)
@@ -285,3 +286,6 @@ class PortApiInputMaker(ApiInputMaker):
         self._port_up = (PortMapper.REST_PORT_ADMIN_STATE_UP, admin_state_up)
         self._mac_address = (PortMapper.REST_PORT_MAC_ADDRESS, mac_address)
         self._fixed_ips = (PortMapper.REST_PORT_FIXED_IPS, fixed_ips)
+        self._binding_host_id = (
+            PortMapper.REST_PORT_BINDING_HOST, binding_host_id
+        )

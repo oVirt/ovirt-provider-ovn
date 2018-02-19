@@ -39,6 +39,7 @@ from ovirt_provider_config import DEFAULT_OPENSTACK_TENANT_DESCRIPTION
 from ovirt_provider_config import DEFAULT_OPENSTACK_TENANT_ID
 from ovirt_provider_config import DEFAULT_OPENSTACK_TENANT_NAME
 from ovirt_provider_config import DEFAULT_OVN_REMOTE_AT_LOCALHOST
+from ovirt_provider_config import DEFAULT_OVS_VERSION_29
 from ovirt_provider_config import DEFAULT_PROVIDER_HOST
 from ovirt_provider_config import DEFAULT_SSL_CERT_FILE
 from ovirt_provider_config import DEFAULT_SSL_ENABLED
@@ -60,6 +61,7 @@ from ovirt_provider_config import KEY_OPENSTACK_TENANT_DESCRIPTION
 from ovirt_provider_config import KEY_OPENSTACK_TENANT_ID
 from ovirt_provider_config import KEY_OPENSTACK_TENANT_NAME
 from ovirt_provider_config import KEY_OVN_REMOTE
+from ovirt_provider_config import KEY_OVS_VERSION_29
 from ovirt_provider_config import KEY_PROVIDER_HOST
 from ovirt_provider_config import KEY_SSL_CACERT_FILE
 from ovirt_provider_config import KEY_SSL_CERT_FILE
@@ -279,3 +281,11 @@ def auth_token_timeout():
 def is_ovn_remote_ssl():
     protocol = ovn_remote().split(':')[0]
     return protocol == PROTOCOL_SSL
+
+
+def ovs_version_29():
+    return ovirt_provider_config.getboolean(
+        CONFIG_SECTION_PROVIDER,
+        KEY_OVS_VERSION_29,
+        DEFAULT_OVS_VERSION_29
+    )

@@ -34,6 +34,7 @@ from ovirt_provider_config_common import dhcp_server_mac
 from ovirt_provider_config_common import dhcp_enable_mtu
 from ovirt_provider_config_common import dhcp_mtu
 from ovirt_provider_config_common import is_ovn_remote_ssl
+from ovirt_provider_config_common import ovs_version_29
 from ovirt_provider_config_common import ssl_key_file
 from ovirt_provider_config_common import ssl_cacert_file
 from ovirt_provider_config_common import ssl_cert_file
@@ -260,7 +261,7 @@ class OvnNorth(object):
     ):
         port = self._create_port(name, network_id)
         self._update_port_values(
-            port, name, is_enabled, device_id, device_owner
+            port, name, is_enabled, device_id, device_owner, binding_host
         )
         mac = mac or ip_utils.random_unique_mac(
             self.atomics.list_lsp(),
@@ -287,7 +288,7 @@ class OvnNorth(object):
         port = self.atomics.get_lsp(ovirt_lsp_id=port_id)
         network_id = self._get_validated_port_network_id(port, network_id)
         self._update_port_values(
-            port, name, is_enabled, device_id, device_owner
+            port, name, is_enabled, device_id, device_owner, binding_host
         )
         self._update_port_address(
             port, network_id=network_id, mac=mac, fixed_ips=fixed_ips)
@@ -313,7 +314,7 @@ class OvnNorth(object):
 
     def _update_port_values(
         self, port, name=None, is_enabled=None, device_id=None,
-        device_owner=None
+        device_owner=None, binding_host=None,
     ):
         # TODO(add transaction): setting of the individual values should
         # one day be done in a transaction:
@@ -341,6 +342,10 @@ class OvnNorth(object):
             ovnconst.ROW_LSP_ENABLED,
             is_enabled,
             is_enabled
+        ).add(
+            ovnconst.ROW_LSP_OPTIONS,
+            {PortMapper.OVN_REQUESTED_CHASSIS: binding_host},
+            ovs_version_29() and binding_host
         ).execute()
 
     def _update_port_address(self, port, network_id, mac=None, fixed_ips=None):

@@ -72,6 +72,8 @@ class TestOvnNorth(object):
     NETWORK_NAME12 = 'name12'
     NETWORK_NAMEMTU = 'nameMTU'
 
+    PORT_BINDING_ID = 'bee7-15900d-bee7-1590d'
+
     PORT_ID01 = UUID(int=1)
     PORT_ID02 = UUID(int=2)
     PORT_ID03 = UUID(int=3)
@@ -553,6 +555,10 @@ class TestOvnNorth(object):
         'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
         autospec=False
     )
+    @mock.patch(
+        'ovndb.ovn_north.ovs_version_29',
+        lambda: True
+    )
     def test_add_port(self, mock_db_set, mock_add_command, mock_connection):
         mock_add_command.return_value.execute.return_value = (
             TestOvnNorth.PORT_1
@@ -563,7 +569,8 @@ class TestOvnNorth(object):
             device_id=TestOvnNorth.DEVICE_ID,
             device_owner=TestOvnNorth.DEVICE_OWNER_OVIRT, admin_state_up=True,
             mac_address=TestOvnNorth.MAC_ADDRESS,
-            fixed_ips=TestOvnNorth.PORT_NAME01_FIXED_IPS
+            fixed_ips=TestOvnNorth.PORT_NAME01_FIXED_IPS,
+            binding_host_id=TestOvnNorth.PORT_BINDING_ID
         ).get()
         result = ovn_north.add_port(rest_data)
 
@@ -617,6 +624,13 @@ class TestOvnNorth(object):
             (
                 ovnconst.ROW_LSP_ENABLED,
                 True
+            ),
+            (
+                ovnconst.ROW_LSP_OPTIONS,
+                {
+                    PortMapper.OVN_REQUESTED_CHASSIS:
+                        TestOvnNorth.PORT_BINDING_ID
+                }
             )
         )
 
