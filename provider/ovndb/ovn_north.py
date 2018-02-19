@@ -642,7 +642,7 @@ class OvnNorth(object):
                 network_id, gateway_subnet_id
             )
             validate.ip_available_in_network(
-                self._get_network(network_id), gateway_ip)
+                self._get_ls(network_id), gateway_ip)
             self._reserve_network_ip(network_id, gateway_ip)
 
         router = self._execute(self.idl.lr_add(
