@@ -58,13 +58,13 @@ class OvnNetworkRow(OvnRow):
 
 class OvnPortRow(OvnRow):
     def __init__(self, uuid, name=None, external_ids=None, device_id=None,
-                 addresses=['unknown'], port_type=None, options=None,
+                 addresses=None, port_type=None, options=None,
                  tag=None):
         self.uuid = uuid
         self.name = name
         self.external_ids = external_ids or {PortMapper.DEVICE_ID: device_id}
         self.dhcpv4_options = None
-        self.addresses = addresses
+        self.addresses = addresses or ['unknown']
         self.up = None
         self.enabled = None
         self.type = port_type
@@ -90,11 +90,11 @@ class OvnSubnetRow(OvnRow):
 
 
 class OvnRouterRow(OvnRow):
-    def __init__(self, uuid, name=None, external_ids={}, ports=None):
+    def __init__(self, uuid, name=None, external_ids=None, ports=None):
         self.uuid = uuid
         self.name = name
         self.enabled = [True]
-        self.external_ids = external_ids
+        self.external_ids = external_ids or {}
         self.ports = ports or []
 
 
