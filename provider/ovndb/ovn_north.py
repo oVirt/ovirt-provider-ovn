@@ -79,6 +79,8 @@ class OvnNorth(object):
             return command.execute(check_error=True)
         except (ValueError, TypeError) as e:
             raise BadRequestError(e)
+        except RowNotFound as e:
+            raise ElementNotFoundError(e)
 
     def close(self):
         self.ovsidl.close()
