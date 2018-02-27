@@ -109,14 +109,16 @@ class BaseHandler(BaseHTTPRequestHandler):
     def _format_content_for_log(self, method, path, content):
         return content
 
-    def _log_request(self, method, path, content):
-        logging.debug(
+    def _log_request(self, method, path, content, log_level=logging.DEBUG):
+        logging.log(
+            log_level,
             'From: {address}:{port} Request: {method} {path}'.format(
               address=self.client_address[0], port=self.client_address[1],
               method=method, path=path
             ))
         if content:
-            logging.debug(
+            logging.log(
+                log_level,
                 'Request body:\n{}'.format(
                     self._format_content_for_log(method, path, content)
                 ))
@@ -132,38 +134,57 @@ class BaseHandler(BaseHTTPRequestHandler):
             self._process_response(response.body, response.code or code)
         except PathNotFoundError as e:
             message = 'Incorrect path: {}'.format(self.path)
-            self._handle_response_exception(e, message=message,
-                                            response_code=httplib.NOT_FOUND)
+            self._handle_response_exception(
+                e, method, self.path, content, message=message,
+                response_code=httplib.NOT_FOUND
+            )
         except ElementNotFoundError as e:
             message = 'The element requested has not been found.'
-            self._handle_response_exception(e, message=message,
-                                            response_code=httplib.NOT_FOUND)
+            self._handle_response_exception(
+                e, method, self.path, content, message=message,
+                response_code=httplib.NOT_FOUND
+            )
         except MethodNotAllowedError as e:
             message = 'Method not allowed: {}'.format(method)
             self._handle_response_exception(
-                e, message=message, response_code=httplib.METHOD_NOT_ALLOWED)
+                e, method, self.path, content, message=message,
+                response_code=httplib.METHOD_NOT_ALLOWED
+            )
         except BadRequestError as e:
-            self._handle_response_exception(e,
-                                            response_code=httplib.BAD_REQUEST)
+            self._handle_response_exception(
+                e, method, self.path, content,
+                response_code=httplib.BAD_REQUEST
+            )
         except Unauthorized as e:
-            self._handle_response_exception(e,
-                                            response_code=httplib.UNAUTHORIZED)
+            self._handle_response_exception(
+                e, method, self.path, content,
+                response_code=httplib.UNAUTHORIZED
+            )
         except Forbidden as e:
-            self._handle_response_exception(e, response_code=httplib.FORBIDDEN)
+            self._handle_response_exception(
+                e, method, self.path, content, response_code=httplib.FORBIDDEN
+            )
         except Timeout as e:
             self._handle_response_exception(
-                e, response_code=httplib.GATEWAY_TIMEOUT)
+                e, method, self.path, content,
+                response_code=httplib.GATEWAY_TIMEOUT
+            )
         except BadGateway as e:
             self._handle_response_exception(
-                e, response_code=httplib.BAD_GATEWAY)
+                e, method, self.path, content,
+                response_code=httplib.BAD_GATEWAY
+            )
         except ConflictError as e:
             self._handle_response_exception(
-                e, response_code=httplib.CONFLICT)
+                e, method, self.path, content, response_code=httplib.CONFLICT
+            )
         except NotImplementedError as e:
             self._handle_response_exception(
-                e, response_code=httplib.NOT_IMPLEMENTED)
+                e, method, self.path, content,
+                response_code=httplib.NOT_IMPLEMENTED
+            )
         except Exception as e:
-            self._handle_response_exception(e)
+            self._handle_response_exception(e, method, self.path, content)
 
     def _validate_request(self, method, id):
         if method in [DELETE, PUT] and not id:
@@ -190,8 +211,10 @@ class BaseHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def _handle_response_exception(
-            self, e, message=None,
-            response_code=httplib.INTERNAL_SERVER_ERROR):
+        self, e, method, path, content=None, message=None,
+        response_code=httplib.INTERNAL_SERVER_ERROR,
+    ):
+        self._log_request(method, path, content, log_level=logging.ERROR)
         error_message = e.message or message
         logging.exception(error_message)
         self.send_error(response_code)
