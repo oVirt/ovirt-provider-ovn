@@ -255,6 +255,7 @@ class OvnNorth(object):
         self._update_port_values(
             port, name, is_enabled, device_id, device_owner
         )
+        mac = mac or ip_utils.random_mac()
         self._update_port_address(
             port, network_id=network_id, mac=mac, fixed_ips=fixed_ips)
         return self.get_port(port.uuid)
@@ -340,7 +341,6 @@ class OvnNorth(object):
             self._update_lsp_bound_lrp(str(port.uuid), fixed_ips)
             return
         mac = mac or ip_utils.get_port_mac(port)
-        validate.fixed_ip_port_has_mac(mac, fixed_ips)
         subnet = self._get_dhcp_by_network_id(network_id)
         validate.fixed_ip_matches_port_subnet(fixed_ips, subnet)
         if mac:

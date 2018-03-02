@@ -63,14 +63,6 @@ def fixed_ip_matches_port_subnet(fixed_ips, subnet):
         )
 
 
-def fixed_ip_port_has_mac(mac, fixed_ips):
-    if fixed_ips and not mac:
-        raise RestDataError(
-            'Unable to set {fixed_ips} on a port with no mac address defined'
-            .format(fixed_ips=PortMapper.REST_PORT_FIXED_IPS,)
-        )
-
-
 def ip_available_in_network(network, ip):
     if not ip_utils.is_ip_available_in_network(network, ip):
         raise RestDataError(
