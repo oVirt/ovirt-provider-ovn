@@ -52,7 +52,27 @@ def get_port_mac(port):
     return port.addresses[0].split()[0] if port.addresses else None
 
 
-def random_mac():
+def _get_all_macs(ports, get_macs):
+    return [str(get_macs(port)) for port in ports]
+
+
+def random_unique_mac(ls_ports, router_ports):
+    all_macs = set().union(
+        _get_all_macs(ls_ports, lambda p: get_port_mac(p)),
+        _get_all_macs(router_ports, lambda p: p['mac'])
+    )
+
+    for _ in range(99):
+        mac = _random_mac()
+        if mac not in all_macs:
+            return mac
+
+    raise Exception(
+        'Unable to allocate an unused mac after 100 retries'
+    )
+
+
+def _random_mac():
     macparts = [0]
     macparts.extend([random.randint(0x00, 0xff) for i in range(5)])
     return ':'.join(map(lambda x: "%02x" % x, macparts))

@@ -255,7 +255,10 @@ class OvnNorth(object):
         self._update_port_values(
             port, name, is_enabled, device_id, device_owner
         )
-        mac = mac or ip_utils.random_mac()
+        mac = mac or ip_utils.random_unique_mac(
+            self._execute(self.idl.lsp_list()),
+            self._list_lrp()
+        )
         self._update_port_address(
             port, network_id=network_id, mac=mac, fixed_ips=fixed_ips)
         return self.get_port(port.uuid)
@@ -775,7 +778,10 @@ class OvnNorth(object):
             lrp_name,
             lrp_ip,
             network_id,
-            ip_utils.random_mac()
+            ip_utils.random_unique_mac(
+                self._execute(self.idl.lsp_list()),
+                self._list_lrp()
+            )
         )
 
     def _validate_subnet_is_not_on_router(self, subnet_id, router_id):
@@ -846,7 +852,11 @@ class OvnNorth(object):
         port = self._create_port(ovnconst.ROUTER_SWITCH_PORT_NAME, network_id)
         lrp_name = self._create_router_port_name(port.uuid)
         self._create_router_port(
-            router_id, lrp_name, port_ip, ip_utils.random_mac()
+            router_id, lrp_name, port_ip,
+            ip_utils.random_unique_mac(
+                self._execute(self.idl.lsp_list()),
+                self._list_lrp(),
+            )
         )
         self._connect_port_to_router(
             port,
@@ -1005,6 +1015,12 @@ class OvnNorth(object):
             type == ovnconst.LSP_TYPE_ROUTER or
             type == ovnconst.LSP_TYPE_LOCALNET
         )
+
+    def _list_lrp(self):
+        # TODO: ovsdbapp does not allow to retrieve all lrp's in one query,
+        # so we have to resort to using the generic query
+        # To be changed once lrp_list is modified
+        return self._execute(self.idl.db_list(ovnconst.TABLE_LRP))
 
     def __enter__(self):
         return self
