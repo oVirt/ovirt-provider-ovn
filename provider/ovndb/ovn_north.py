@@ -523,9 +523,11 @@ class OvnNorth(object):
                                     ' for network {}'.format(network_id))
 
         external_ids = {
-            SubnetMapper.OVN_NAME: name,
             SubnetMapper.OVN_NETWORK_ID: network_id
         }
+        if name:
+            external_ids[SubnetMapper.OVN_NAME] = name
+
         dhcp_server_ip = cidr.split('/', 1)[0]
 
         options = {

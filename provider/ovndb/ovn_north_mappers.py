@@ -451,8 +451,6 @@ class SubnetMapper(Mapper):
         external_ids = row.external_ids
         result = {
             SubnetMapper.REST_SUBNET_ID: str(row.uuid),
-            SubnetMapper.REST_SUBNET_NAME:
-                external_ids[SubnetMapper.OVN_NAME],
             SubnetMapper.REST_SUBNET_CIDR: row.cidr,
             SubnetMapper.REST_SUBNET_NETWORK_ID:
                 external_ids[SubnetMapper.OVN_NETWORK_ID],
@@ -466,6 +464,10 @@ class SubnetMapper(Mapper):
                 options[SubnetMapper.OVN_DNS_SERVER]
             ] if SubnetMapper.OVN_DNS_SERVER in options else []
         }
+        if SubnetMapper.REST_SUBNET_NAME in external_ids:
+            result[SubnetMapper.REST_SUBNET_NAME] = (
+                external_ids[SubnetMapper.OVN_NAME]
+            )
         if SubnetMapper.OVN_GATEWAY in options:
             result[SubnetMapper.REST_SUBNET_GATEWAY_IP] = (
                 options[SubnetMapper.OVN_GATEWAY]
