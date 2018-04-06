@@ -553,7 +553,7 @@ class OvnNorth(object):
         )
 
         for port in network.ports:
-            if port.type == ovnconst.LSP_TYPE_ROUTER:
+            if self._is_port_address_value_static(port.type):
                 continue
             self._update_port_address(port, network_id=network_id)
 
@@ -614,7 +614,7 @@ class OvnNorth(object):
         network = self._get_ls(network_id)
         self._execute(self.idl.dhcp_options_del(subnet_id))
         for port in network.ports:
-            if port.type == ovnconst.LSP_TYPE_ROUTER:
+            if self._is_port_address_value_static(port.type):
                 continue
             self._update_port_address(port, network_id=network_id)
 
@@ -987,6 +987,12 @@ class OvnNorth(object):
                 'Logical router port {port} does not exist'
                 .format(port=lrp)
             )
+
+    def _is_port_address_value_static(self, type):
+        return (
+            type == ovnconst.LSP_TYPE_ROUTER or
+            type == ovnconst.LSP_TYPE_LOCALNET
+        )
 
     def __enter__(self):
         return self
