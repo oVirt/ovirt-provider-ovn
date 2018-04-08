@@ -464,7 +464,7 @@ class SubnetMapper(Mapper):
                 options[SubnetMapper.OVN_DNS_SERVER]
             ] if SubnetMapper.OVN_DNS_SERVER in options else []
         }
-        if SubnetMapper.REST_SUBNET_NAME in external_ids:
+        if SubnetMapper.OVN_NAME in external_ids:
             result[SubnetMapper.REST_SUBNET_NAME] = (
                 external_ids[SubnetMapper.OVN_NAME]
             )
