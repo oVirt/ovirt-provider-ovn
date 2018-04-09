@@ -36,6 +36,7 @@ from ovndb.ovn_north_mappers import SubnetConfigError
 from ovndb.ovn_north_mappers import SubnetMapper
 from ovndb.ovn_north_mappers import UnsupportedDataValueError
 
+from ovntestlib import assert_subnet_equal
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
 from ovntestlib import OvnRouterPort
@@ -630,7 +631,10 @@ class TestOvnNorth(object):
         add_execute.return_value = TestOvnNorth.SUBNET_102
         ovn_north = OvnNorth()
         rest_data = {
-            SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
+            SubnetMapper.REST_SUBNET_NAME:
+                TestOvnNorth.SUBNET_102.external_ids.get(
+                    SubnetMapper.OVN_NAME
+                ),
             SubnetMapper.REST_SUBNET_CIDR: TestOvnNorth.SUBNET_CIDR,
             SubnetMapper.REST_SUBNET_NETWORK_ID:
                 str(TestOvnNorth.NETWORK_ID10),
@@ -638,7 +642,7 @@ class TestOvnNorth(object):
             SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
         }
         result = ovn_north.add_subnet(rest_data)
-        assert result['id'] == str(TestOvnNorth.SUBNET_ID102)
+        assert_subnet_equal(result, TestOvnNorth.SUBNET_102)
         assert mock_dbset_command.call_count == 1
         assert mock_add_command.call_count == 1
         assert mock_setoptions_command.call_count == 1
@@ -657,7 +661,9 @@ class TestOvnNorth(object):
         expected_add_call = mock.call(
             ovn_north.idl,
             TestOvnNorth.SUBNET_CIDR,
-            ovirt_name='subnet_name',
+            ovirt_name=TestOvnNorth.SUBNET_102.external_ids.get(
+                    SubnetMapper.OVN_NAME
+                ),
             ovirt_network_id=str(TestOvnNorth.NETWORK_ID10)
         )
         assert mock_add_command.mock_calls[0] == expected_add_call
@@ -714,7 +720,7 @@ class TestOvnNorth(object):
             SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
         }
         result = ovn_north.add_subnet(rest_data)
-        assert result['id'] == str(TestOvnNorth.SUBNET_ID102)
+        assert_subnet_equal(result, TestOvnNorth.SUBNET_102)
         assert mock_dbset_command.call_count == 1
         assert mock_add_command.call_count == 1
         assert mock_setoptions_command.call_count == 1

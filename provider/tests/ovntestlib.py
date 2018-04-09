@@ -89,6 +89,27 @@ class OvnSubnetRow(OvnRow):
         self.external_ids[SubnetMapper.OVN_NETWORK_ID] = network_id or '0'
 
 
+def assert_subnet_equal(actual, subnet_row):
+    assert actual['id'] == str(subnet_row.uuid)
+    assert actual['cidr'] == subnet_row.cidr
+    assert actual.get('name') == subnet_row.external_ids.get(
+        SubnetMapper.OVN_NAME
+    )
+    assert actual['network_id'] == subnet_row.external_ids.get(
+        SubnetMapper.OVN_NETWORK_ID
+    )
+    assert actual['ip_version'] == SubnetMapper.IP_VERSION
+    assert actual.get('enable_dhcp')
+    ovn_dns_server = [subnet_row.options.get(SubnetMapper.OVN_DNS_SERVER)]
+    actual_dns_nameservers = actual.get('dns_nameservers')
+    if actual_dns_nameservers or ovn_dns_server:
+        assert actual_dns_nameservers == ovn_dns_server
+    assert actual.get('gateway_ip') == subnet_row.options.get(
+        SubnetMapper.OVN_GATEWAY
+    )
+    assert actual.get('allocation_pools')
+
+
 class OvnRouterRow(OvnRow):
     def __init__(self, uuid, name=None, external_ids=None, ports=None):
         self.uuid = uuid
