@@ -62,7 +62,9 @@ class OvnPortRow(OvnRow):
                  tag=None):
         self.uuid = uuid
         self.name = name
-        self.external_ids = external_ids or {PortMapper.DEVICE_ID: device_id}
+        self.external_ids = external_ids or {
+            PortMapper.OVN_DEVICE_ID: device_id
+        }
         self.dhcpv4_options = None
         self.addresses = addresses or ['unknown']
         self.up = None
