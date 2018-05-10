@@ -20,7 +20,6 @@ from __future__ import absolute_import
 from uuid import UUID
 import mock
 import pytest
-import six
 
 import ovndb.constants as ovnconst
 
@@ -30,12 +29,14 @@ from ovirt_provider_config_common import dhcp_mtu
 from ovirt_provider_config_common import dhcp_server_mac
 from ovirt_provider_config_common import tenant_id
 from ovndb.ovn_north import OvnNorth
+from ovndb.ovn_north_mappers import Network
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import SubnetConfigError
 from ovndb.ovn_north_mappers import SubnetMapper
 from ovndb.ovn_north_mappers import UnsupportedDataValueError
 
+from ovntestlib import assert_network_equal
 from ovntestlib import assert_subnet_equal
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
@@ -142,47 +143,6 @@ class TestOvnNorth(object):
 
     subnets = [SUBNET_101, SUBNET_102]
 
-    def assert_networks_equal(self, actual, network_row):
-        assert actual['id'] == str(network_row.uuid)
-        assert actual['name'] == network_row.name
-        assert actual['tenant_id'] == tenant_id()
-        self._assert_localnet_networks_equal(actual, network_row)
-
-    def _assert_localnet_networks_equal(self, actual, net_row):
-        actual_localnet_conf = self._get_localnet_conf_from_net_rest(actual)
-        expected_localnet_conf = self._get_localnet_conf_from_net_row(net_row)
-        assert actual_localnet_conf == expected_localnet_conf
-
-    def _get_localnet_conf_from_net_rest(self, network_rest):
-        return {
-            key: val for key, val in six.viewitems(network_rest)
-            if key in (
-                NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK,
-                NetworkMapper.REST_PROVIDER_SEGMENTATION_ID,
-                NetworkMapper.REST_PROVIDER_NETWORK_TYPE
-            )
-        }
-
-    def _get_localnet_conf_from_net_row(self, net_row):
-        if not net_row.ports:
-            return {}
-        conf = {}
-        localnet_port = net_row.ports[0]
-        physical_net = localnet_port.options.get(
-            ovnconst.LSP_OPTION_NETWORK_NAME
-        )
-        segmentation_id = localnet_port.tag[0] if localnet_port.tag else None
-        if physical_net and segmentation_id:
-            conf[NetworkMapper.REST_PROVIDER_NETWORK_TYPE] = \
-                NetworkMapper.NETWORK_TYPE_VLAN
-            conf[NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK] = physical_net
-            conf[NetworkMapper.REST_PROVIDER_SEGMENTATION_ID] = segmentation_id
-        elif physical_net:
-            conf[NetworkMapper.REST_PROVIDER_NETWORK_TYPE] = \
-                NetworkMapper.NETWORK_TYPE_FLAT
-            conf[NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK] = physical_net
-        return conf
-
     def assert_port_equal(self, actual, port_row, network_id):
         assert actual['id'] == str(port_row.uuid)
         assert actual['network_id'] == network_id
@@ -205,9 +165,19 @@ class TestOvnNorth(object):
         result = ovn_north.list_networks()
 
         assert len(result) == 3
-        self.assert_networks_equal(result[0], TestOvnNorth.NETWORK_10)
-        self.assert_networks_equal(result[1], TestOvnNorth.NETWORK_11)
-        self.assert_networks_equal(result[2], TestOvnNorth.NETWORK_LOCALNET_12)
+        assert_network_equal(
+            result[0], Network(ls=TestOvnNorth.NETWORK_10, localnet_lsp=None)
+        )
+        assert_network_equal(
+            result[1], Network(ls=TestOvnNorth.NETWORK_11, localnet_lsp=None)
+        )
+        localnet_network = TestOvnNorth.NETWORK_LOCALNET_12
+        assert_network_equal(
+            result[2],
+            Network(
+                ls=localnet_network, localnet_lsp=localnet_network.ports[0]
+            )
+        )
         assert mock_ls_list.call_count == 1
         assert mock_ls_list.return_value.execute.call_count == 1
 
@@ -222,7 +192,8 @@ class TestOvnNorth(object):
         ovn_north = OvnNorth()
         result = ovn_north.get_network(str(TestOvnNorth.NETWORK_ID10))
 
-        self.assert_networks_equal(result, TestOvnNorth.NETWORK_10)
+        network = Network(ls=TestOvnNorth.NETWORK_10, localnet_lsp=None)
+        assert_network_equal(result, network)
         assert mock_ls_get.call_count == 1
         assert mock_ls_get.return_value.execute.call_count == 1
         assert mock_ls_get.mock_calls[0] == mock.call(
@@ -243,7 +214,8 @@ class TestOvnNorth(object):
         }
         result = ovn_north.add_network(rest_data)
 
-        self.assert_networks_equal(result, TestOvnNorth.NETWORK_10)
+        network = Network(ls=TestOvnNorth.NETWORK_10, localnet_lsp=None)
+        assert_network_equal(result, network)
         assert mock_add_command.call_count == 1
         assert mock_add_command.mock_calls[0] == mock.call(
             ovn_north.idl,
@@ -274,7 +246,13 @@ class TestOvnNorth(object):
         }
         result = ovn_north.add_network(rest_data)
 
-        self.assert_networks_equal(result, TestOvnNorth.NETWORK_LOCALNET_12)
+        localnet_network = TestOvnNorth.NETWORK_LOCALNET_12
+        assert_network_equal(
+            result,
+            Network(
+                ls=localnet_network, localnet_lsp=localnet_network.ports[0]
+            )
+        )
         assert mock_ls_add_command.call_count == 1
         assert mock_ls_add_command.mock_calls[0] == mock.call(
             ovn_north.idl,
@@ -311,7 +289,8 @@ class TestOvnNorth(object):
         }
         result = ovn_north.update_network(rest_data, TestOvnNorth.NETWORK_ID10)
 
-        self.assert_networks_equal(result, TestOvnNorth.NETWORK_10)
+        network = Network(ls=TestOvnNorth.NETWORK_10, localnet_lsp=None)
+        assert_network_equal(result, network)
         assert mock_set_command.call_count == 1
         assert mock_set_command.mock_calls[0] == mock.call(
             ovn_north.idl,
@@ -340,7 +319,13 @@ class TestOvnNorth(object):
         }
         result = ovn_north.update_network(rest_data, TestOvnNorth.NETWORK_ID12)
 
-        self.assert_networks_equal(result, TestOvnNorth.NETWORK_LOCALNET_12)
+        localnet_network = TestOvnNorth.NETWORK_LOCALNET_12
+        assert_network_equal(
+            result,
+            Network(
+                ls=localnet_network, localnet_lsp=localnet_network.ports[0]
+            )
+        )
         assert mock_set_command.call_count == 2
         assert mock_set_command.mock_calls[0] == mock.call(
             ovn_north.idl,

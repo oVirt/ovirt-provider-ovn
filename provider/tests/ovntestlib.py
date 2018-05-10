@@ -17,9 +17,12 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
+from ovirt_provider_config_common import tenant_id
+
+from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import SubnetMapper
-
+import ovndb.constants as ovnconst
 
 TABLES = [['table0', ['column0', 'column1']]]
 REMOTE = 'address://url'
@@ -54,6 +57,31 @@ class OvnNetworkRow(OvnRow):
         self.other_config = other_config or {}
         self.external_ids = external_ids or {}
         self.ports = ports or []
+
+
+def assert_network_equal(rest_data, network):
+    assert network.ls
+    assert rest_data['id'] == str(network.ls.uuid)
+    assert rest_data['name'] == network.ls.name
+    assert rest_data['tenant_id'] == tenant_id()
+    if network.localnet_lsp:
+        assert_lsp_equal(rest_data, network.localnet_lsp)
+
+
+def assert_lsp_equal(rest_data, localnet_lsp):
+    options = localnet_lsp.options
+    physical_network = options.get(ovnconst.LSP_OPTION_NETWORK_NAME)
+    if physical_network:
+        assert physical_network == \
+               rest_data.get(NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK)
+        vlan_tag = localnet_lsp.tag
+        network_type = rest_data.get(NetworkMapper.REST_PROVIDER_NETWORK_TYPE)
+        if vlan_tag:
+            vlan_id = rest_data[NetworkMapper.REST_PROVIDER_SEGMENTATION_ID]
+            assert vlan_tag[0] == vlan_id
+            assert network_type == NetworkMapper.NETWORK_TYPE_VLAN
+        else:
+            assert network_type == NetworkMapper.NETWORK_TYPE_FLAT
 
 
 class OvnPortRow(OvnRow):
