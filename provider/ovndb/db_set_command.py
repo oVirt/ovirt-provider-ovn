@@ -38,3 +38,4 @@ class DbSetCommand(object):
     def add(self, column, value, add_condition=True):
         if add_condition:
             self.values.append((column, value))
+        return self

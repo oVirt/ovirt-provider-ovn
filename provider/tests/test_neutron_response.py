@@ -52,6 +52,7 @@ from handlers.selecting_handler import SelectingHandler
 from ovndb.ovn_north import OvnNorth
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import PortMapper
+from ovndb.ovn_north_mappers import Router
 from ovndb.ovn_north_mappers import RouterMapper
 
 from ovntestlib import OvnRouterRow
@@ -316,16 +317,13 @@ class TestNeutronResponse(object):
     def test_post_routers(self, mock_connection):
         nb_db = OvnNorth()
         nb_db._add_router = Mock()
-        nb_db._add_router.return_value = OvnRouterRow(
+        nb_db._add_router.return_value = Router(OvnRouterRow(
             'uuid',
             'router1',
             {
-                RouterMapper.OVN_ROUTER_GATEWAY_NETWORK: 'network_id',
-                RouterMapper.OVN_ROUTER_GATEWAY_SUBNET: 'subnet_id',
-                RouterMapper.OVN_ROUTER_GATEWAY_IP: '1.1.1.1',
-
+                RouterMapper.OVN_ROUTER_GATEWAY_PORT: 'port_id',
             }
-        )
+        ), 'network_id', 'subnet_id', '1.1.1.1')
         rest_input = '''{
             "router": {
                 "name": "router1",

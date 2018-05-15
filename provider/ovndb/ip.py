@@ -78,6 +78,10 @@ def _random_mac():
     return ':'.join(map(lambda x: "%02x" % x, macparts))
 
 
+def get_ip_from_cidr(cidr):
+    return cidr.split('/')[0]
+
+
 def get_mask_from_subnet(subnet):
     return subnet.cidr.split('/')[1]
 

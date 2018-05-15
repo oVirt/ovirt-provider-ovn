@@ -47,6 +47,7 @@ from ovndb.ovn_north_mappers import NetworkPort
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import RemoveRouterInterfaceMapper
 from ovndb.ovn_north_mappers import RestDataError
+from ovndb.ovn_north_mappers import Router
 from ovndb.ovn_north_mappers import RouterMapper
 from ovndb.ovn_north_mappers import SubnetConfigError
 from ovndb.ovn_north_mappers import SubnetMapper
@@ -636,11 +637,34 @@ class OvnNorth(object):
 
     @RouterMapper.map_to_rest
     def get_router(self, router_id):
-        return self._get_router(router_id)
+        return self._get_router_from_lr(self._get_router(router_id))
+
+    def _get_router_from_lr(self, lr):
+        gw_port_id = lr.external_ids.get(RouterMapper.OVN_ROUTER_GATEWAY_PORT)
+        if not gw_port_id:
+            return Router(
+                lr=lr, ext_gw_ls_id=None, ext_gw_dhcp_options_id=None,
+                gw_ip=None
+            )
+        gw_port = self._execute(self.idl.lsp_get(gw_port_id))
+        ls = self._get_port_network(gw_port)
+        ls_id = str(ls.uuid)
+
+        dhcp_options = self._get_dhcp_by_network_id(ls_id)
+        lrp = self._get_lrp_by_lsp_id(gw_port_id)
+        gw_ip = ip_utils.get_ip_from_cidr(lrp.networks[0])
+
+        return Router(
+            lr=lr, ext_gw_ls_id=ls_id,
+            ext_gw_dhcp_options_id=str(dhcp_options.uuid), gw_ip=gw_ip
+        )
 
     @RouterMapper.map_to_rest
     def list_routers(self):
-        return self._execute(self.idl.lr_list())
+        return [
+            self._get_router_from_lr(lr)
+            for lr in self._execute(self.idl.lr_list())
+        ]
 
     def _add_router(
         self, name, enabled, network_id=None, gateway_subnet_id=None,
@@ -666,7 +690,10 @@ class OvnNorth(object):
             subnet = self._get_subnet(gateway_subnet_id)
             self._add_default_route_to_router(router_id, subnet)
             router = self._get_router(router_id)
-        return router
+        return Router(
+            lr=router, ext_gw_ls_id=network_id,
+            ext_gw_dhcp_options_id=gateway_subnet_id, gw_ip=gateway_ip
+        )
 
     def _add_default_route_to_router(self, router_id, subnet):
         default_gateway = subnet.options.get('router')
@@ -865,6 +892,13 @@ class OvnNorth(object):
             name=ovnconst.ROUTER_SWITCH_PORT_NAME,
             is_enabled=True
         )
+
+        DbSetCommand(self.idl, ovnconst.TABLE_LR, router_id).add(
+            ovnconst.ROW_LR_EXTERNAL_IDS,
+            {
+                RouterMapper.OVN_ROUTER_GATEWAY_PORT: str(port.uuid),
+            }
+        ).execute()
 
     @AddRouterInterfaceMapper.validate_update
     @AddRouterInterfaceMapper.map_from_rest

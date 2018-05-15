@@ -51,6 +51,7 @@ TABLE_LR = 'Logical_Router'
 ROW_LR_NAME = 'name'
 ROW_LR_ENABLED = 'enabled'
 ROW_LR_STATIC_ROUTES = 'static_routes'
+ROW_LR_EXTERNAL_IDS = 'external_ids'
 
 TABLE_LRP = 'Logical_Router_Port'
 ROW_LRP_NETWORKS = 'networks'

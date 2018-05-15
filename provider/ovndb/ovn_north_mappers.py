@@ -32,6 +32,8 @@ from handlers.base_handler import BadRequestError
 
 NetworkPort = namedtuple('NetworkPort', ['lsp', 'ls', 'dhcp_options', 'lrp'])
 Network = namedtuple('Network', ['ls', 'localnet_lsp'])
+Router = namedtuple(
+    'Router', ['lr', 'ext_gw_ls_id', 'ext_gw_dhcp_options_id', 'gw_ip'])
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -520,9 +522,7 @@ class RouterMapper(Mapper):
     REST_ROUTER_IP_ADDRESS = 'ip_address'
     REST_ROUTER_SUBNET_ID = 'subnet_id'
 
-    OVN_ROUTER_GATEWAY_NETWORK = 'ovirt_gateway_network'
-    OVN_ROUTER_GATEWAY_SUBNET = 'ovirt_gateway_subnet'
-    OVN_ROUTER_GATEWAY_IP = 'ovirt_gateway_ip'
+    OVN_ROUTER_GATEWAY_PORT = 'ovirt_gateway_port'
 
     ROUTER_STATUS_ACTIVE = 'ACTIVE'
     ROUTER_STATUS_INACTIVE = 'INACTIVE'
@@ -565,10 +565,10 @@ class RouterMapper(Mapper):
         return network_id, gateway_subnet, gateway_ip
 
     @staticmethod
-    def row2rest(row):
-        if not row:
+    def row2rest(router):
+        if not router:
             return {}
-
+        row = router.lr
         result = {
             RouterMapper.REST_ROUTER_ID: str(row.uuid),
             RouterMapper.REST_ROUTER_NAME: row.name,
@@ -579,39 +579,27 @@ class RouterMapper(Mapper):
                 if row.enabled else RouterMapper.ROUTER_STATUS_INACTIVE,
             RouterMapper.REST_ROUTER_ROUTES: [],
             RouterMapper.REST_TENANT_ID: tenant_id(),
+            RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO:
+                RouterMapper._get_external_gateway_from_row(router),
         }
-        RouterMapper._get_external_gateway_from_row(result, row)
 
         return result
 
     @staticmethod
-    def _get_external_gateway_from_row(result, row):
-        network = row.external_ids.get(
-            RouterMapper.OVN_ROUTER_GATEWAY_NETWORK
-        )
-
-        if network:
-            gateway = {
-                RouterMapper.REST_ROUTER_NETWORK_ID: network
-            }
-            result[RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO] = gateway
-
-            subnet = row.external_ids.get(
-                RouterMapper.OVN_ROUTER_GATEWAY_SUBNET
-            )
-            if subnet:
-                external_ips = {
-                    RouterMapper.REST_ROUTER_SUBNET_ID: subnet
+    def _get_external_gateway_from_row(router):
+        if not router.ext_gw_ls_id:
+            return None
+        return {
+            RouterMapper.REST_ROUTER_NETWORK_ID: router.ext_gw_ls_id,
+            RouterMapper.REST_ROUTER_ENABLE_SNAT: False,
+            RouterMapper.REST_ROUTER_FIXED_IPS: [
+                {
+                    RouterMapper.REST_ROUTER_SUBNET_ID:
+                        router.ext_gw_dhcp_options_id,
+                    RouterMapper.REST_ROUTER_IP_ADDRESS: router.gw_ip
                 }
-                gateway[RouterMapper.REST_ROUTER_FIXED_IPS] = [external_ips]
-
-                ip = row.external_ids.get(
-                    RouterMapper.OVN_ROUTER_GATEWAY_IP
-                )
-                if ip:
-                    external_ips[RouterMapper.REST_ROUTER_IP_ADDRESS] = ip
-        else:
-            result[RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO] = None
+            ]
+        }
 
     @staticmethod
     def validate_add_rest_input(rest_data):
