@@ -41,7 +41,6 @@ from ovirt_provider_config_common import ssl_cert_file
 
 from ovndb.db_set_command import DbSetCommand
 from ovndb.ovn_north_atomics import OvnNorthAtomics
-
 from ovndb.ovn_north_mappers import AddRouterInterfaceMapper
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import Network
@@ -208,14 +207,10 @@ class OvnNorth(object):
         network = self.atomics.get_ls(ls_id=network_id)
         if not network:
             raise RestDataError('Network %s does not exist' % network_id)
-        if network.ports:
-            localnet_port = self._get_localnet_lsp(network)
-            only_localnet_port = len(network.ports) == 1 and localnet_port
-            if not only_localnet_port:
-                raise RestDataError(
-                    'Unable to delete network %s. Ports exist for the network'
-                    % network_id
-                )
+        validate.network_has_no_ports(
+            network_id, network.ports,
+            self._get_localnet_lsp(network)
+        )
 
         subnets = self.atomics.list_dhcp()
         for subnet in subnets:

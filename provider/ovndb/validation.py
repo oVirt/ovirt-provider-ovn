@@ -22,6 +22,7 @@ import ovndb.ip as ip_utils
 from handlers.base_handler import ConflictError
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
+
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import RestDataError
 
@@ -168,4 +169,12 @@ def port_added_to_lr_must_have_subnet(network_cidr, lsp_id, lr_id):
             'Attaching by port requires the port\'s network '
             'to have a subnet attached.'
             .format(port_id=lsp_id, router_id=lr_id)
+        )
+
+
+def network_has_no_ports(ls_id, ls_ports, localnet_lsp):
+    if filter(lambda x: x != localnet_lsp, ls_ports):
+        raise RestDataError(
+            'Unable to delete network {}. Ports exist for the network'
+            .format(ls_id)
         )
