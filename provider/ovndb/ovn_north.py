@@ -971,6 +971,26 @@ class OvnNorth(object):
         if subnet and not self._is_subnet_on_router(router_id, subnet.uuid):
             self._clear_subnet_gateway_router(str(subnet.uuid))
 
+        lr_gw_port = lr.external_ids.get(RouterMapper.OVN_ROUTER_GATEWAY_PORT)
+        if port_id == lr_gw_port:
+            self._remove_lr_gw_port(lr)
+
+    def _remove_lr_gw_port(self, lr):
+        self._execute(self.idl.db_remove(
+            ovnconst.TABLE_LR,
+            str(lr.uuid),
+            ovnconst.ROW_LR_EXTERNAL_IDS,
+            RouterMapper.OVN_ROUTER_GATEWAY_PORT
+        ))
+        for route in lr.static_routes:
+            if route.ip_prefix == ovnconst.DEFAULT_ROUTE:
+                self._execute(self.idl.db_remove(
+                    ovnconst.TABLE_LR,
+                    str(lr.uuid),
+                    ovnconst.ROW_LR_STATIC_ROUTES,
+                    route
+                ))
+
     def _get_lrp_by_lsp_id(self, port_id):
         lsp = self._get_switch_port(port_id)
         lrp_name = lsp.options.get(ovnconst.LSP_OPTION_ROUTER_PORT)
@@ -1020,6 +1040,7 @@ class OvnNorth(object):
         subnet = self._get_subnet(subnet_id)
         network_id = subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
         network = self._get_ls(network_id)
+        lr_gw_port = lr.external_ids.get(RouterMapper.OVN_ROUTER_GATEWAY_PORT)
         for lrp in lr.ports:
             lsp_id = self._lsp_id_by_lrp(lrp)
             lsp = self._get_switch_port(lsp_id)
@@ -1027,6 +1048,8 @@ class OvnNorth(object):
                 self._delete_router_interface(
                     router_id, lsp_id, lrp=lrp, lr=lr
                 )
+                if lsp_id == lr_gw_port:
+                    self._remove_lr_gw_port(lr)
         self._clear_subnet_gateway_router(subnet_id)
 
     def _get_lrp(self, lrp):
