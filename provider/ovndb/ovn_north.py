@@ -966,11 +966,8 @@ class OvnNorth(object):
 
         subnet = self._get_subnet_from_port_id(port_id)
         lrp = self._get_lrp_by_lsp_id(port_id)
-        network_id = str(self._get_port_network(lsp).uuid)
         lr = self._get_router(router_id)
-        self._delete_router_interface(
-            router_id, port_id, lrp, network_id, lsp, lr
-        )
+        self._delete_router_interface(router_id, port_id, lrp, lr)
         if subnet and not self._is_subnet_on_router(router_id, subnet.uuid):
             self._clear_subnet_gateway_router(str(subnet.uuid))
 
@@ -995,9 +992,7 @@ class OvnNorth(object):
             if any(port.name == port_id for port in network.ports):
                 return subnet
 
-    def _delete_router_interface(
-        self, router_id, port_id, lrp, network_id, lsp, lr
-    ):
+    def _delete_router_interface(self, router_id, port_id, lrp, lr):
         if lrp not in lr.ports:
             raise BadRequestError(
                 'Port {port} is not connected to router {router}'
@@ -1030,8 +1025,7 @@ class OvnNorth(object):
             lsp = self._get_switch_port(lsp_id)
             if lsp in network.ports:
                 self._delete_router_interface(
-                    router_id, lsp_id, lrp=lrp, network_id=network_id, lsp=lsp,
-                    lr=lr
+                    router_id, lsp_id, lrp=lrp, lr=lr
                 )
         self._clear_subnet_gateway_router(subnet_id)
 
