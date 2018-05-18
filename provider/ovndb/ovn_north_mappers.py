@@ -99,6 +99,7 @@ class Mapper(object):
 
 class NetworkMapper(Mapper):
     # The names of properties received/sent in a REST request
+    REST_MTU = 'mtu'
     REST_NETWORK_ID = 'id'
     REST_NETWORK_NAME = 'name'
     REST_STATUS = 'status'
@@ -120,19 +121,22 @@ class NetworkMapper(Mapper):
             NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK)
         provider_segmentation_id = rest_network_data.get(
             NetworkMapper.REST_PROVIDER_SEGMENTATION_ID)
+        mtu = rest_network_data.get(NetworkMapper.REST_MTU)
         if network_id:
             return func(
                 wrapped_self,
                 network_id,
                 name=network_name,
                 localnet=provider_physical_network,
-                vlan=provider_segmentation_id
+                vlan=provider_segmentation_id,
+                mtu=mtu
             )
         return func(
             wrapped_self,
             name=network_name,
             localnet=provider_physical_network,
-            vlan=provider_segmentation_id
+            vlan=provider_segmentation_id,
+            mtu=mtu
         )
 
     @staticmethod
@@ -146,6 +150,9 @@ class NetworkMapper(Mapper):
             NetworkMapper.REST_TENANT_ID: tenant_id(),
             NetworkMapper.REST_STATUS: NetworkMapper.NETWORK_STATUS_ACTIVE
         }
+        mtu_value = ls.external_ids.get(ovnconst.LS_EXTERNAL_IDS_MTU)
+        if mtu_value:
+            result[NetworkMapper.REST_MTU] = int(mtu_value)
         result.update(NetworkMapper._row2rest_localnet(localnet_lsp))
         return result
 

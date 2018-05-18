@@ -123,30 +123,42 @@ class OvnNorth(object):
     @NetworkMapper.validate_add
     @NetworkMapper.map_from_rest
     @NetworkMapper.map_to_rest
-    def add_network(self, name, localnet=None, vlan=None):
+    def add_network(self, name, localnet=None, vlan=None, mtu=None):
         # TODO: ovirt allows multiple networks with the same name
         # in oVirt, but OVS does not (may_exist=False will cause early fail)
         if localnet:
-            return self._add_localnet_network(name, localnet, vlan)
+            return self._add_localnet_network(name, localnet, vlan, mtu)
         else:
-            return self._add_network(name)
+            return self._get_network(self._create_network(name, mtu))
 
-    def _add_network(self, name):
-        return self._get_network(
-            self._execute(self.idl.ls_add(switch=name, may_exist=False))
+    def _create_network(self, name, mtu=None):
+        return self._execute(
+            self.idl.ls_add(
+                switch=name,
+                may_exist=False,
+                external_ids={'mtu': str(mtu)} if mtu is not None else {}
+            )
         )
 
-    def _add_localnet_network(self, name, localnet, vlan):
-        network = self._execute(self.idl.ls_add(switch=name, may_exist=False))
+    def _add_localnet_network(self, name, localnet, vlan, mtu):
+        network = self._create_network(name, mtu)
         localnet_port = self._create_port(
-            ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid))
+            ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid)
+        )
         self._set_port_localnet_values(localnet_port, localnet, vlan)
         updated_network = self._get_ls(str(network.uuid))
         return self._get_network(updated_network)
 
     @NetworkMapper.validate_update
     @NetworkMapper.map_from_rest
-    def update_network(self, network_id, name, localnet=None, vlan=None):
+    def update_network(
+            self,
+            network_id,
+            name,
+            localnet=None,
+            vlan=None,
+            mtu=None
+    ):
         self._execute(self.idl.db_set(
             ovnconst.TABLE_LS,
             network_id,
@@ -550,7 +562,10 @@ class OvnNorth(object):
         }
         if gateway:
             options[SubnetMapper.OVN_GATEWAY] = gateway
-        if dhcp_enable_mtu():
+        network_mtu = network.external_ids.get(SubnetMapper.OVN_DHCP_MTU)
+        if network_mtu:
+            options[SubnetMapper.OVN_DHCP_MTU] = network_mtu
+        elif dhcp_enable_mtu():
             options[SubnetMapper.OVN_DHCP_MTU] = dhcp_mtu()
 
         if dns:

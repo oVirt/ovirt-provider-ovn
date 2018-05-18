@@ -55,13 +55,16 @@ class TestOvnNorth(object):
     LOCALNET_VLAN = 10
     DEVICE_OWNER_OVIRT = 'oVirt'
     SUBNET_CIDR = '1.1.1.0/24'
+    VALUE_NETWORK_MTU = 32854
 
     NETWORK_ID10 = UUID(int=10)
     NETWORK_ID11 = UUID(int=11)
     NETWORK_ID12 = UUID(int=12)
+    NETWORK_IDMTU = UUID(int=123)
     NETWORK_NAME10 = 'name10'
     NETWORK_NAME11 = 'name11'
     NETWORK_NAME12 = 'name12'
+    NETWORK_NAMEMTU = 'nameMTU'
 
     PORT_ID01 = UUID(int=1)
     PORT_ID02 = UUID(int=2)
@@ -109,6 +112,7 @@ class TestOvnNorth(object):
 
     SUBNET_ID101 = UUID(int=101)
     SUBNET_ID102 = UUID(int=102)
+    SUBNET_IDMTU = UUID(int=987)
 
     SUBNET_101 = OvnSubnetRow(
         SUBNET_ID101,
@@ -117,6 +121,12 @@ class TestOvnNorth(object):
     )
 
     SUBNET_102 = OvnSubnetRow(SUBNET_ID102, cidr=SUBNET_CIDR)
+
+    SUBNET_MTU = OvnSubnetRow(
+        SUBNET_IDMTU,
+        network_id=str(NETWORK_IDMTU),
+        cidr=SUBNET_CIDR
+    )
 
     NETWORK_10 = OvnNetworkRow(NETWORK_ID10, NETWORK_NAME10)
     NETWORK_11 = OvnNetworkRow(
@@ -130,6 +140,10 @@ class TestOvnNorth(object):
         NETWORK_ID12,
         NETWORK_NAME12,
         ports=[PORT_3]
+    )
+    NETWORK_MTU = OvnNetworkRow(
+        NETWORK_IDMTU, NETWORK_NAMEMTU,
+        external_ids={NetworkMapper.REST_MTU: str(VALUE_NETWORK_MTU)}
     )
 
     ROUTER_ID20 = UUID(int=20)
@@ -220,7 +234,8 @@ class TestOvnNorth(object):
         assert mock_add_command.mock_calls[0] == mock.call(
             ovn_north.idl,
             TestOvnNorth.NETWORK_NAME10,
-            False
+            False,
+            external_ids={}
         )
 
     @mock.patch('ovsdbapp.schema.ovn_northbound.commands.LsAddCommand')
@@ -257,7 +272,8 @@ class TestOvnNorth(object):
         assert mock_ls_add_command.mock_calls[0] == mock.call(
             ovn_north.idl,
             TestOvnNorth.NETWORK_NAME12,
-            False
+            False,
+            external_ids={}
         )
         assert mock_lsp_add_command.call_count == 1
         assert mock_lsp_add_command.mock_calls[0] == mock.call(
@@ -270,6 +286,84 @@ class TestOvnNorth(object):
         )
         assert mock_db_set_command.call_count == 2
         assert mock_ls_get_command.call_count == 1
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
+        'execute',
+        lambda cmd, check_error: TestOvnNorth.SUBNET_MTU
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsAddCommand.'
+        'execute',
+        lambda cmd, check_error: TestOvnNorth.SUBNET_MTU
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
+        'execute',
+        lambda cmd, check_error: []
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsAddCommand.execute',
+        lambda cmd, check_error: TestOvnNorth.NETWORK_MTU
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
+        lambda cmd, check_error: TestOvnNorth.NETWORK_MTU
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsSetOptionsCommand',
+        autospec=False
+    )
+    def test_add_network_with_mtu(
+            self,
+            mock_setoptions_command,
+            mock_dbset_command,
+            mock_connection
+    ):
+        ovn_north = OvnNorth()
+        network_rest_data = {
+            NetworkMapper.REST_NETWORK_NAME: TestOvnNorth.NETWORK_NAMEMTU,
+            NetworkMapper.REST_MTU: TestOvnNorth.VALUE_NETWORK_MTU
+        }
+        network_creation_result = ovn_north.add_network(network_rest_data)
+        assert_network_equal(
+            network_creation_result,
+            Network(ls=TestOvnNorth.NETWORK_MTU, localnet_lsp=None)
+        )
+
+        # create a subnet associated with the above network
+        subnet_rest_data = {
+            SubnetMapper.REST_SUBNET_NAME:
+                TestOvnNorth.SUBNET_102.external_ids.get(
+                    SubnetMapper.OVN_NAME
+                ),
+            SubnetMapper.REST_SUBNET_CIDR: TestOvnNorth.SUBNET_CIDR,
+            SubnetMapper.REST_SUBNET_NETWORK_ID:
+                str(TestOvnNorth.NETWORK_IDMTU),
+            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
+            SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
+        }
+
+        expected_options_call = mock.call(
+            ovn_north.idl,
+            TestOvnNorth.SUBNET_IDMTU,
+            dns_server='1.1.1.1',
+            lease_time=dhcp_lease_time(),
+            router='1.1.1.0',
+            server_id='1.1.1.0',
+            server_mac=dhcp_server_mac(),
+            mtu=str(TestOvnNorth.VALUE_NETWORK_MTU)
+        )
+
+        subnet_creation_result = ovn_north.add_subnet(subnet_rest_data)
+        assert mock_setoptions_command.call_count == 1
+        assert mock_setoptions_command.mock_calls[0] == expected_options_call
+        assert mock_dbset_command.call_count == 1
+        assert_subnet_equal(subnet_creation_result, TestOvnNorth.SUBNET_MTU)
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
