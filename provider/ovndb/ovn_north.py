@@ -966,9 +966,16 @@ class OvnNorth(object):
 
         subnet = self._get_subnet_from_port_id(port_id)
         lrp = self._get_lrp_by_lsp_id(port_id)
+        lrp_ip = ip_utils.get_ip_from_cidr(lrp.networks[0])
         lr = self._get_router(router_id)
+
+        is_subnet_gateway = (
+            subnet and
+            self._is_subnet_on_router(router_id, str(subnet.uuid)) and
+            lrp_ip == subnet.options.get(SubnetMapper.OVN_GATEWAY, None)
+        )
         self._delete_router_interface(router_id, port_id, lrp, lr)
-        if subnet and not self._is_subnet_on_router(router_id, subnet.uuid):
+        if is_subnet_gateway:
             self._clear_subnet_gateway_router(str(subnet.uuid))
 
         lr_gw_port = lr.external_ids.get(RouterMapper.OVN_ROUTER_GATEWAY_PORT)
