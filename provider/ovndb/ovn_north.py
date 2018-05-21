@@ -679,30 +679,45 @@ class OvnNorth(object):
         self, name, enabled, network_id=None, gateway_subnet_id=None,
         gateway_ip=None
     ):
-        if network_id:
-            self._validate_create_routing_lsp_by_subnet(
-                network_id, gateway_subnet_id
-            )
-            validate.ip_available_in_network(
-                self._get_ls(network_id), gateway_ip)
-            self._reserve_network_ip(network_id, gateway_ip)
+        self._validate_external_gateway(
+            gateway_ip, gateway_subnet_id, network_id
+        )
+        self._reserve_network_ip(network_id, gateway_ip)
 
         router = self._execute(self.idl.lr_add(
             router=name, may_exist=False, enabled=enabled
         ))
         router_id = str(router.uuid)
 
+        self._add_external_gateway_to_router(
+            gateway_ip, gateway_subnet_id, network_id, router_id
+        )
+        router = self._get_router(router_id)
+        return Router(
+            lr=router, ext_gw_ls_id=network_id,
+            ext_gw_dhcp_options_id=gateway_subnet_id, gw_ip=gateway_ip
+        )
+
+    def _add_external_gateway_to_router(
+        self, gateway_ip, gateway_subnet_id, network_id, router_id
+    ):
         if network_id:
             self._add_external_gateway_interface(
                 router_id, network_id, gateway_subnet_id, gateway_ip
             )
             subnet = self._get_subnet(gateway_subnet_id)
             self._add_default_route_to_router(router_id, subnet)
-            router = self._get_router(router_id)
-        return Router(
-            lr=router, ext_gw_ls_id=network_id,
-            ext_gw_dhcp_options_id=gateway_subnet_id, gw_ip=gateway_ip
-        )
+
+    def _validate_external_gateway(
+        self, gateway_ip, gateway_subnet_id, network_id
+    ):
+        if network_id:
+            self._validate_create_routing_lsp_by_subnet(
+                network_id, gateway_subnet_id, is_external_gateway=True
+            )
+            validate.ip_available_in_network(
+                self._get_ls(network_id), gateway_ip
+            )
 
     def _add_default_route_to_router(self, router_id, subnet):
         default_gateway = subnet.options.get('router')
@@ -729,10 +744,17 @@ class OvnNorth(object):
         self, router_id, name, enabled, network_id=None,
         gateway_subnet=None, gateway_ip=None
     ):
+        self._validate_external_gateway(
+            gateway_ip, gateway_subnet, network_id
+        )
+        self._reserve_network_ip(network_id, gateway_ip)
         db_set_command = DbSetCommand(self.idl, ovnconst.TABLE_LR, router_id)
         db_set_command.add(ovnconst.ROW_LR_NAME, name, name)
         db_set_command.add(ovnconst.ROW_LR_ENABLED, enabled, enabled)
         db_set_command.execute()
+        self._add_external_gateway_to_router(
+            gateway_ip, gateway_subnet, network_id, router_id
+        )
         return self.get_router(router_id)
 
     def delete_router(self, router_id):
@@ -786,7 +808,7 @@ class OvnNorth(object):
         ))
 
     def _validate_create_routing_lsp_by_subnet(
-        self, network_id, subnet_id, router_id=None
+        self, network_id, subnet_id, router_id=None, is_external_gateway=False
     ):
         existing_subnet_for_network = self._get_dhcp_by_network_id(network_id)
         existing_router_for_subnet = self._get_subnet_gateway_router_id(
@@ -794,7 +816,8 @@ class OvnNorth(object):
         )
         validate.create_routing_lsp_by_subnet(
             network_id, subnet_id, existing_subnet_for_network,
-            existing_router_for_subnet, router_id
+            existing_router_for_subnet, router_id,
+            is_external_gateway=is_external_gateway
         )
         if router_id:
             self._validate_subnet_is_not_on_router(subnet_id, router_id)

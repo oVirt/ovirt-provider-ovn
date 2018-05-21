@@ -88,7 +88,8 @@ def port_ip_for_router(port_ip, port, router_id):
 
 def create_routing_lsp_by_subnet(
     network_id, subnet_id, existing_subnet_for_network,
-    existing_router_for_subnet, router_id=None
+    existing_router_for_subnet, router_id=None,
+    is_external_gateway=False
 ):
     if not network_id:
         raise ElementNotFoundError(
@@ -106,22 +107,39 @@ def create_routing_lsp_by_subnet(
             .format(subnet_id=subnet_id, network_id=network_id)
         )
 
-    if existing_router_for_subnet:
-        if existing_router_for_subnet == router_id:
+    _validate_subnet_is_connected_to_this_router(
+        existing_router_for_subnet, router_id, subnet_id
+    )
+
+    if not is_external_gateway:
+        _validate_subnet_is_connected_to_another_router(
+            existing_router_for_subnet, subnet_id, router_id
+        )
+
+
+def _validate_subnet_is_connected_to_this_router(
+    existing_router_for_subnet, router_id, subnet_id
+):
+    if existing_router_for_subnet and existing_router_for_subnet == router_id:
             raise BadRequestError(
                 'Can not add subnet {subnet} to router {router}. Subnet is'
                 ' already connected to this router'.format(
                     subnet=subnet_id, router=router_id
                 )
             )
-        else:
-            raise BadRequestError(
-                'Can not add subnet {subnet} to router. Subnet is'
-                ' already connected to router {old_router}'.format(
-                    subnet=subnet_id, router=router_id,
-                    old_router=existing_router_for_subnet
-                )
+
+
+def _validate_subnet_is_connected_to_another_router(
+    existing_router_for_subnet, subnet_id, router_id
+):
+    if existing_router_for_subnet and existing_router_for_subnet != router_id:
+        raise BadRequestError(
+            'Can not add subnet {subnet} to router. Subnet is'
+            ' already connected to router {old_router}'.format(
+                subnet=subnet_id, router=router_id,
+                old_router=existing_router_for_subnet
             )
+        )
 
 
 def port_is_connected_to_router(lsp):
