@@ -23,6 +23,7 @@ from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import SubnetMapper
 import ovndb.constants as ovnconst
+import ovndb.ip as iputils
 
 TABLES = [['table0', ['column0', 'column1']]]
 REMOTE = 'address://url'
@@ -100,6 +101,23 @@ class OvnPortRow(OvnRow):
         self.type = port_type
         self.options = options if options else {}
         self.tag = [tag] if tag else []
+
+
+def assert_port_equal(rest_data, port):
+    assert rest_data['id'] == str(port.lsp.uuid)
+    assert rest_data['network_id'] == str(port.ls.uuid)
+    assert rest_data['name'] == port.lsp.external_ids[PortMapper.OVN_NIC_NAME]
+    device_owner = port.lsp.external_ids.get(PortMapper.OVN_DEVICE_OWNER)
+    assert rest_data.get(PortMapper.REST_PORT_DEVICE_OWNER) == device_owner
+    device_id = port.lsp.external_ids[PortMapper.OVN_DEVICE_ID]
+    assert rest_data['device_id'] == device_id
+    assert rest_data['security_groups'] == []
+    assert rest_data['port_security_enabled'] is False
+    assert rest_data['tenant_id'] == tenant_id()
+    assert rest_data.get('fixed_ips') == PortMapper.get_fixed_ips(
+        port.lsp, port.dhcp_options, port.lrp
+    )
+    assert rest_data.get('mac_address') == iputils.get_port_mac(port.lsp)
 
 
 class OvnSubnetRow(OvnRow):

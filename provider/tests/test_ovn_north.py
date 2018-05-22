@@ -31,12 +31,14 @@ from ovirt_provider_config_common import tenant_id
 from ovndb.ovn_north import OvnNorth
 from ovndb.ovn_north_mappers import Network
 from ovndb.ovn_north_mappers import NetworkMapper
+from ovndb.ovn_north_mappers import NetworkPort
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import SubnetConfigError
 from ovndb.ovn_north_mappers import SubnetMapper
 from ovndb.ovn_north_mappers import UnsupportedDataValueError
 
 from ovntestlib import assert_network_equal
+from ovntestlib import assert_port_equal
 from ovntestlib import assert_subnet_equal
 from ovntestlib import NetworkApiInputMaker
 from ovntestlib import PortApiInputMaker
@@ -159,17 +161,6 @@ class TestOvnNorth(object):
     networks = [NETWORK_10, NETWORK_11, NETWORK_LOCALNET_12]
 
     subnets = [SUBNET_101, SUBNET_102]
-
-    def assert_port_equal(self, actual, port_row, network_id):
-        assert actual['id'] == str(port_row.uuid)
-        assert actual['network_id'] == network_id
-        assert actual['name'] == port_row.external_ids[PortMapper.OVN_NIC_NAME]
-        device_id = port_row.external_ids[PortMapper.OVN_DEVICE_ID]
-        assert actual['device_id'] == device_id
-        assert actual['security_groups'] == []
-        assert actual['port_security_enabled'] is False
-        assert actual['tenant_id'] == tenant_id()
-        assert actual['fixed_ips'] == []
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsListCommand',
@@ -576,9 +567,13 @@ class TestOvnNorth(object):
         result = ovn_north.add_port(rest_data)
 
         # ID11 because this network has the port in TestOvnNorth.networks
-        self.assert_port_equal(
-            result, TestOvnNorth.PORT_1, str(TestOvnNorth.NETWORK_ID11)
+        logical_switch = OvnNetworkRow(
+            TestOvnNorth.NETWORK_ID11, name=TestOvnNorth.NETWORK_NAME11,
+            ports=[TestOvnNorth.PORT_1]
         )
+        port = NetworkPort(lsp=TestOvnNorth.PORT_1, ls=logical_switch,
+                           dhcp_options=None, lrp=None)
+        assert_port_equal(result, port)
 
         assert mock_add_command.call_count == 1
         mock_add_command.assert_called_with(
@@ -655,12 +650,25 @@ class TestOvnNorth(object):
         ovn_north = OvnNorth()
         ports = ovn_north.list_ports()
         assert len(ports) == 2
-        self.assert_port_equal(
-            ports[0], TestOvnNorth.PORT_1, str(TestOvnNorth.NETWORK_ID11)
+        logical_switch = OvnNetworkRow(
+            TestOvnNorth.NETWORK_ID11, name=TestOvnNorth.NETWORK_NAME11,
+            ports=[TestOvnNorth.PORT_1, TestOvnNorth.PORT_2]
         )
-        self.assert_port_equal(
-            ports[1], TestOvnNorth.PORT_2, str(TestOvnNorth.NETWORK_ID11)
+        first_port = NetworkPort(
+            lsp=TestOvnNorth.PORT_1,
+            ls=logical_switch,
+            dhcp_options=None,
+            lrp=None
         )
+        second_port = NetworkPort(
+            lsp=TestOvnNorth.PORT_2,
+            ls=logical_switch,
+            dhcp_options=None,
+            lrp=None
+        )
+
+        assert_port_equal(ports[0], first_port)
+        assert_port_equal(ports[1], second_port)
 
     @mock.patch('ovsdbapp.schema.ovn_northbound.commands.LspGetCommand.'
                 'execute',
