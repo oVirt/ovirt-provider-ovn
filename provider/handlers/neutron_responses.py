@@ -237,8 +237,10 @@ def put_add_router_inerface(nb_db, content, parameters):
 
 @rest(PUT, DELETE_ROUTER_INTERFACE, _responses)
 def put_remove_router_interface(nb_db, content, parameters):
-    nb_db.delete_router_interface(get_entity(content), parameters[ROUTER_ID])
-    return Response({"router": {}})
+    result = nb_db.delete_router_interface(
+        get_entity(content), parameters[ROUTER_ID]
+    )
+    return Response(result)
 
 
 @rest(GET, FLOATINGIPS, _responses)

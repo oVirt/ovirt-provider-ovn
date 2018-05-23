@@ -48,6 +48,7 @@ from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import RemoveRouterInterfaceMapper
 from ovndb.ovn_north_mappers import RestDataError
 from ovndb.ovn_north_mappers import Router
+from ovndb.ovn_north_mappers import RouterInterface
 from ovndb.ovn_north_mappers import RouterMapper
 from ovndb.ovn_north_mappers import SubnetConfigError
 from ovndb.ovn_north_mappers import SubnetMapper
@@ -943,7 +944,12 @@ class OvnNorth(object):
         if not subnet_id:
             subnet_id = str(self._get_dhcp_by_network_id(network_id).uuid)
         self._create_router_port(router_id, lrp_name, lrp_ip, mac)
-        return router_id, network_id, port_id, subnet_id
+        return RouterInterface(
+            id=router_id,
+            ls_id=network_id,
+            lsp_id=port_id,
+            dhcp_options_id=subnet_id,
+        )
 
     def _get_ip_from_subnet(self, subnet, network_id, router_id):
         validate.attach_network_to_router_by_subnet(
@@ -980,28 +986,33 @@ class OvnNorth(object):
 
     @RemoveRouterInterfaceMapper.validate_update
     @RemoveRouterInterfaceMapper.map_from_rest
+    @RemoveRouterInterfaceMapper.map_to_rest
     def delete_router_interface(self, router_id, subnet_id=None, port_id=None):
         if subnet_id and port_id:
-            self._delete_router_interface_by_subnet_and_port(
+            return self._delete_router_interface_by_subnet_and_port(
                 router_id, subnet_id, port_id
             )
         elif subnet_id:
-            self._delete_router_interface_by_subnet(router_id, subnet_id)
+            return self._delete_router_interface_by_subnet(
+                router_id, subnet_id
+            )
         else:
-            self._delete_router_interface_by_port(router_id, port_id)
+            return self._delete_router_interface_by_port(router_id, port_id)
 
     def _delete_router_interface_by_port(self, router_id, port_id):
         lsp = self._get_switch_port(port_id)
         validate.port_is_connected_to_router(lsp)
 
         subnet = self._get_subnet_from_port_id(port_id)
+        subnet_id = str(subnet.uuid)
         lrp = self._get_lrp_by_lsp_id(port_id)
         lrp_ip = ip_utils.get_ip_from_cidr(lrp.networks[0])
         lr = self._get_router(router_id)
+        ls_id = str(self._get_ls_by_dhcp(subnet).uuid)
 
         is_subnet_gateway = (
             subnet and
-            self._is_subnet_on_router(router_id, str(subnet.uuid)) and
+            self._is_subnet_on_router(router_id, subnet_id) and
             lrp_ip == subnet.options.get(SubnetMapper.OVN_GATEWAY, None)
         )
         self._delete_router_interface(router_id, port_id, lrp, lr)
@@ -1011,8 +1022,14 @@ class OvnNorth(object):
         lr_gw_port = lr.external_ids.get(RouterMapper.OVN_ROUTER_GATEWAY_PORT)
         if port_id == lr_gw_port:
             self._remove_lr_gw_port(
-                lr, str(self._get_ls_by_dhcp(subnet).uuid), lrp_ip
+                lr, ls_id, lrp_ip
             )
+        return RouterInterface(
+            id=router_id,
+            ls_id=ls_id,
+            lsp_id=port_id,
+            dhcp_options_id=subnet_id,
+        )
 
     def _remove_lr_gw_port(self, lr, ls_id, lrp_ip):
         self._execute(self.idl.db_remove(
@@ -1073,7 +1090,7 @@ class OvnNorth(object):
                 'Port {port} does not belong to subnet {subnet}.'
                 .format(port=port_id, subnet=subnet_id)
             )
-        self._delete_router_interface_by_port(router_id, port_id)
+        return self._delete_router_interface_by_port(router_id, port_id)
 
     def _delete_router_interface_by_subnet(self, router_id, subnet_id):
         lr = self._get_router(router_id)
@@ -1081,10 +1098,12 @@ class OvnNorth(object):
         network_id = subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
         network = self._get_ls(network_id)
         lr_gw_port = lr.external_ids.get(RouterMapper.OVN_ROUTER_GATEWAY_PORT)
+        deleted_lsp_id = None
         for lrp in lr.ports:
             lsp_id = self._lsp_id_by_lrp(lrp)
             lsp = self._get_switch_port(lsp_id)
             if lsp in network.ports:
+                deleted_lsp_id = lsp_id
                 self._delete_router_interface(
                     router_id, lsp_id, lrp=lrp, lr=lr
                 )
@@ -1096,6 +1115,18 @@ class OvnNorth(object):
         subnet_gw_router_id = self._get_subnet_gateway_router_id(subnet_id)
         if subnet_gw_router_id == router_id:
             self._clear_subnet_gateway_router(str(subnet.uuid))
+
+        if not deleted_lsp_id:
+            raise BadRequestError(
+                'Subnet {subnet_id} is not connected to router {router_id}'
+                .format(subnet_id=subnet_id, router_id=router_id)
+            )
+        return RouterInterface(
+            id=router_id,
+            ls_id=network_id,
+            lsp_id=deleted_lsp_id,
+            dhcp_options_id=subnet_id,
+        )
 
     def _get_lrp(self, lrp):
         try:

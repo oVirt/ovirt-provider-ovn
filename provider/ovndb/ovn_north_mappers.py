@@ -33,7 +33,11 @@ from handlers.base_handler import BadRequestError
 NetworkPort = namedtuple('NetworkPort', ['lsp', 'ls', 'dhcp_options', 'lrp'])
 Network = namedtuple('Network', ['ls', 'localnet_lsp'])
 Router = namedtuple(
-    'Router', ['lr', 'ext_gw_ls_id', 'ext_gw_dhcp_options_id', 'gw_ip'])
+    'Router', ['lr', 'ext_gw_ls_id', 'ext_gw_dhcp_options_id', 'gw_ip']
+)
+RouterInterface = namedtuple(
+    'RouterInterface', ['id', 'ls_id', 'lsp_id', 'dhcp_options_id']
+)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -672,6 +676,24 @@ class BaseRouterInterfaceMapper(Mapper):
         )
 
     @staticmethod
+    def row2rest(row):
+        if not row:
+            return {}
+
+        return {
+            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_ID: row.id,
+            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_NETWORK_ID:
+                row.network_id,
+            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_PORT_ID: row.port_id,
+            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_ID:
+                row.subnet_id,
+            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_IDS: [
+                row.subnet_id
+            ],
+            AddRouterInterfaceMapper.REST_TENANT_ID: tenant_id(),
+        }
+
+    @staticmethod
     def validate_add_rest_input(rest_data):
         raise MethodNotAllowedError(
             'add_router_interface POST requests are not supported'
@@ -697,27 +719,6 @@ class BaseRouterInterfaceMapper(Mapper):
 
 
 class AddRouterInterfaceMapper(BaseRouterInterfaceMapper):
-
-    @staticmethod
-    def row2rest(row):
-        if not row:
-            return {}
-
-        router_id, network_id, port_id, subnet_id = row
-
-        return {
-            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_ID: router_id,
-            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_NETWORK_ID:
-                network_id,
-            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_PORT_ID: port_id,
-            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_ID:
-                subnet_id,
-            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_IDS: [
-                subnet_id
-            ],
-            AddRouterInterfaceMapper.REST_TENANT_ID: tenant_id(),
-        }
-
     @staticmethod
     def validate_update_rest_input(rest_data):
         subnet, port = BaseRouterInterfaceMapper._validate_update(rest_data)
@@ -728,7 +729,6 @@ class AddRouterInterfaceMapper(BaseRouterInterfaceMapper):
 
 
 class RemoveRouterInterfaceMapper(BaseRouterInterfaceMapper):
-
     @staticmethod
     def validate_update_rest_input(rest_data):
         BaseRouterInterfaceMapper._validate_update(rest_data)
