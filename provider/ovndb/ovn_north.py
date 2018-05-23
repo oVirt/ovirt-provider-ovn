@@ -762,6 +762,12 @@ class OvnNorth(object):
             )
         ))
 
+    def _get_ls_by_dhcp(self, dhcp):
+        dhcp_ls_id = str(dhcp.external_ids.get(SubnetMapper.OVN_NETWORK_ID))
+        for ls in self._execute(self.idl.ls_list()):
+            if dhcp_ls_id == str(ls.uuid):
+                return ls
+
     def _clear_subnet_gateway_router(self, subnet_id):
         self._execute(self.idl.db_remove(
             ovnconst.TABLE_DHCP_Options,
@@ -865,6 +871,30 @@ class OvnNorth(object):
                 {ovnconst.LS_OPTION_EXCLUDE_IPS: new_values}
             )
         ))
+
+    def _release_network_ip(self, network_id, ip):
+        exclude_values = self._get_ls(network_id).other_config.get(
+            ovnconst.LS_OPTION_EXCLUDE_IPS, ''
+        )
+        values = exclude_values.split()
+        values.remove(ip)
+
+        if values:
+            self._execute(self.idl.db_set(
+                ovnconst.TABLE_LS,
+                network_id,
+                (
+                    ovnconst.ROW_LS_OTHER_CONFIG,
+                    {ovnconst.LS_OPTION_EXCLUDE_IPS: ' '.join(values)}
+                )
+            ))
+        else:
+            self._execute(self.idl.db_remove(
+                ovnconst.TABLE_LS,
+                network_id,
+                ovnconst.ROW_LS_OTHER_CONFIG,
+                ovnconst.LS_OPTION_EXCLUDE_IPS
+            ))
 
     def _add_external_gateway_interface(
         self, router_id, network_id, gateway_subnet_id, gateway_ip
@@ -980,9 +1010,11 @@ class OvnNorth(object):
 
         lr_gw_port = lr.external_ids.get(RouterMapper.OVN_ROUTER_GATEWAY_PORT)
         if port_id == lr_gw_port:
-            self._remove_lr_gw_port(lr)
+            self._remove_lr_gw_port(
+                lr, str(self._get_ls_by_dhcp(subnet).uuid), lrp_ip
+            )
 
-    def _remove_lr_gw_port(self, lr):
+    def _remove_lr_gw_port(self, lr, ls_id, lrp_ip):
         self._execute(self.idl.db_remove(
             ovnconst.TABLE_LR,
             str(lr.uuid),
@@ -997,6 +1029,7 @@ class OvnNorth(object):
                     ovnconst.ROW_LR_STATIC_ROUTES,
                     route
                 ))
+        self._release_network_ip(ls_id, lrp_ip)
 
     def _get_lrp_by_lsp_id(self, port_id):
         lsp = self._get_switch_port(port_id)
@@ -1056,10 +1089,13 @@ class OvnNorth(object):
                     router_id, lsp_id, lrp=lrp, lr=lr
                 )
                 if lsp_id == lr_gw_port:
-                    self._remove_lr_gw_port(lr)
+                    self._remove_lr_gw_port(
+                        lr, network_id,
+                        ip_utils.get_ip_from_cidr(lrp.networks[0])
+                    )
         subnet_gw_router_id = self._get_subnet_gateway_router_id(subnet_id)
         if subnet_gw_router_id == router_id:
-            self._clear_subnet_gateway_router(subnet_id)
+            self._clear_subnet_gateway_router(str(subnet.uuid))
 
     def _get_lrp(self, lrp):
         try:
