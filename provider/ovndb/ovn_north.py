@@ -1050,7 +1050,9 @@ class OvnNorth(object):
                 )
                 if lsp_id == lr_gw_port:
                     self._remove_lr_gw_port(lr)
-        self._clear_subnet_gateway_router(subnet_id)
+        subnet_gw_router_id = self._get_subnet_gateway_router_id(subnet_id)
+        if subnet_gw_router_id == router_id:
+            self._clear_subnet_gateway_router(subnet_id)
 
     def _get_lrp(self, lrp):
         try:
