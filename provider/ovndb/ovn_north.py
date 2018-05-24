@@ -386,14 +386,19 @@ class OvnNorth(object):
         self, port, router_port_name,
         router_id,
         name=None,
-        is_enabled=True
+        is_enabled=True,
+        is_external_gateway=False,
      ):
         self._update_port_values(
             port=port,
             name=name,
             is_enabled=is_enabled,
             device_id=router_id,
-            device_owner=PortMapper.DEVICE_OWNER_ROUTER
+            device_owner=(
+                PortMapper.DEVICE_OWNER_ROUTER_GATEWAY
+                if is_external_gateway else
+                PortMapper.DEVICE_OWNER_ROUTER
+            )
         )
 
         db_set_command = DbSetCommand(self.idl, ovnconst.TABLE_LSP, port.uuid)
@@ -461,8 +466,11 @@ class OvnNorth(object):
 
     def delete_port(self, port_id):
         lsp = self._get_switch_port(port_id)
-        if lsp.external_ids.get(PortMapper.OVN_DEVICE_OWNER) == \
-                PortMapper.DEVICE_OWNER_ROUTER:
+        device_owner = lsp.external_ids.get(PortMapper.OVN_DEVICE_OWNER)
+        if (
+            device_owner == PortMapper.DEVICE_OWNER_ROUTER or
+            device_owner == PortMapper.DEVICE_OWNER_ROUTER_GATEWAY
+        ):
             raise ConflictError(
                 'Port {port} cannot be deleted directly via the port API: '
                 'has device owner network:router_interface'.format(
@@ -921,7 +929,8 @@ class OvnNorth(object):
             lrp_name,
             router_id,
             name=ovnconst.ROUTER_SWITCH_PORT_NAME,
-            is_enabled=True
+            is_enabled=True,
+            is_external_gateway=True,
         )
 
         DbSetCommand(self.idl, ovnconst.TABLE_LR, router_id).add(

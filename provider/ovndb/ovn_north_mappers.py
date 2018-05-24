@@ -242,6 +242,7 @@ class PortMapper(Mapper):
     OVN_DEVICE_OWNER = 'ovirt_device_owner'
     OVN_REQUESTED_CHASSIS = 'requested-chassis'
     DEVICE_OWNER_ROUTER = 'network:router_interface'
+    DEVICE_OWNER_ROUTER_GATEWAY = 'network:router_gateway'
 
     @staticmethod
     def rest2row(wrapped_self, func, rest_data, port_id):
