@@ -38,6 +38,9 @@ from ovndb.ovn_north_mappers import UnsupportedDataValueError
 
 from ovntestlib import assert_network_equal
 from ovntestlib import assert_subnet_equal
+from ovntestlib import NetworkApiInputMaker
+from ovntestlib import PortApiInputMaker
+from ovntestlib import SubnetApiInputMaker
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
 from ovntestlib import OvnRouterPort
@@ -223,9 +226,7 @@ class TestOvnNorth(object):
             TestOvnNorth.NETWORK_10
         )
         ovn_north = OvnNorth()
-        rest_data = {
-            NetworkMapper.REST_NETWORK_NAME: TestOvnNorth.NETWORK_NAME10
-        }
+        rest_data = NetworkApiInputMaker(TestOvnNorth.NETWORK_NAME10).get()
         result = ovn_north.add_network(rest_data)
 
         network = Network(ls=TestOvnNorth.NETWORK_10, localnet_lsp=None)
@@ -250,15 +251,12 @@ class TestOvnNorth(object):
         mock_ls_add_command.return_value.execute.return_value = (
             TestOvnNorth.NETWORK_LOCALNET_12)
         ovn_north = OvnNorth()
-        rest_data = {
-            NetworkMapper.REST_NETWORK_NAME: TestOvnNorth.NETWORK_NAME12,
-            NetworkMapper.REST_PROVIDER_NETWORK_TYPE:
-                NetworkMapper.NETWORK_TYPE_VLAN,
-            NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK:
-                TestOvnNorth.LOCALNET_NAME,
-            NetworkMapper.REST_PROVIDER_SEGMENTATION_ID:
-                TestOvnNorth.LOCALNET_VLAN
-        }
+        rest_data = NetworkApiInputMaker(
+            TestOvnNorth.NETWORK_NAME12,
+            provider_type=NetworkMapper.NETWORK_TYPE_VLAN,
+            provider_physical_network=TestOvnNorth.LOCALNET_NAME,
+            vlan_tag=TestOvnNorth.LOCALNET_VLAN
+        ).get()
         result = ovn_north.add_network(rest_data)
 
         localnet_network = TestOvnNorth.NETWORK_LOCALNET_12
@@ -325,10 +323,9 @@ class TestOvnNorth(object):
             mock_connection
     ):
         ovn_north = OvnNorth()
-        network_rest_data = {
-            NetworkMapper.REST_NETWORK_NAME: TestOvnNorth.NETWORK_NAMEMTU,
-            NetworkMapper.REST_MTU: TestOvnNorth.VALUE_NETWORK_MTU
-        }
+        network_rest_data = NetworkApiInputMaker(
+            TestOvnNorth.NETWORK_NAMEMTU, mtu=TestOvnNorth.VALUE_NETWORK_MTU
+        ).get()
         network_creation_result = ovn_north.add_network(network_rest_data)
         assert_network_equal(
             network_creation_result,
@@ -336,17 +333,15 @@ class TestOvnNorth(object):
         )
 
         # create a subnet associated with the above network
-        subnet_rest_data = {
-            SubnetMapper.REST_SUBNET_NAME:
-                TestOvnNorth.SUBNET_102.external_ids.get(
-                    SubnetMapper.OVN_NAME
-                ),
-            SubnetMapper.REST_SUBNET_CIDR: TestOvnNorth.SUBNET_CIDR,
-            SubnetMapper.REST_SUBNET_NETWORK_ID:
-                str(TestOvnNorth.NETWORK_IDMTU),
-            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
-            SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
-        }
+        subnet_rest_data = SubnetApiInputMaker(
+            TestOvnNorth.SUBNET_102.external_ids.get(
+                SubnetMapper.OVN_NAME
+            ),
+            cidr=TestOvnNorth.SUBNET_CIDR,
+            network_id=str(TestOvnNorth.NETWORK_IDMTU),
+            dns_nameservers=['1.1.1.1'],
+            gateway_ip='1.1.1.0'
+        ).get()
 
         expected_options_call = mock.call(
             ovn_north.idl,
@@ -404,31 +399,27 @@ class TestOvnNorth(object):
         mock_dhcp_list_command.return_value.execute.return_value = []
 
         ovn_north = OvnNorth()
-        network_rest_data = {
-            NetworkMapper.REST_NETWORK_NAME: TestOvnNorth.NETWORK_NAMEMTU,
-            NetworkMapper.REST_MTU: TestOvnNorth.VALUE_NETWORK_MTU
-        }
+        network_rest_data = NetworkApiInputMaker(
+            TestOvnNorth.NETWORK_NAMEMTU, mtu=TestOvnNorth.VALUE_NETWORK_MTU
+        ).get()
         ovn_north.add_network(network_rest_data)
 
         # create a subnet associated with the above network
-        subnet_rest_data = {
-            SubnetMapper.REST_SUBNET_NAME:
-                TestOvnNorth.SUBNET_102.external_ids.get(
-                    SubnetMapper.OVN_NAME
-                ),
-            SubnetMapper.REST_SUBNET_CIDR: TestOvnNorth.SUBNET_CIDR,
-            SubnetMapper.REST_SUBNET_NETWORK_ID:
-                str(TestOvnNorth.SUBNET_IDMTU),
-            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
-            SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
-        }
+        subnet_rest_data = SubnetApiInputMaker(
+            TestOvnNorth.SUBNET_102.external_ids.get(
+                SubnetMapper.OVN_NAME
+            ),
+            cidr=TestOvnNorth.SUBNET_CIDR,
+            network_id=str(TestOvnNorth.NETWORK_IDMTU),
+            dns_nameservers=['1.1.1.1'],
+            gateway_ip='1.1.1.0'
+        ).get()
 
         ovn_north.add_subnet(subnet_rest_data)
         new_mtu = 14999
-        mtu_update = {
-            NetworkMapper.REST_NETWORK_NAME: TestOvnNorth.NETWORK_NAMEMTU,
-            NetworkMapper.REST_MTU: new_mtu
-        }
+        mtu_update = NetworkApiInputMaker(
+            TestOvnNorth.NETWORK_NAMEMTU, mtu=new_mtu
+        ).get()
 
         assert mock_setoptions_command.call_count == 1
         mock_dhcp_list_command.return_value.execute.return_value = [
@@ -471,9 +462,7 @@ class TestOvnNorth(object):
     )
     def test_update_network(self, mock_set_command, mock_connection):
         ovn_north = OvnNorth()
-        rest_data = {
-            NetworkMapper.REST_NETWORK_NAME: TestOvnNorth.NETWORK_NAME10
-        }
+        rest_data = NetworkApiInputMaker(TestOvnNorth.NETWORK_NAME10).get()
         result = ovn_north.update_network(rest_data, TestOvnNorth.NETWORK_ID10)
 
         network = Network(ls=TestOvnNorth.NETWORK_10, localnet_lsp=None)
@@ -495,15 +484,12 @@ class TestOvnNorth(object):
             TestOvnNorth.NETWORK_LOCALNET_12
         )
         ovn_north = OvnNorth()
-        rest_data = {
-            NetworkMapper.REST_NETWORK_NAME: TestOvnNorth.NETWORK_NAME12,
-            NetworkMapper.REST_PROVIDER_NETWORK_TYPE:
-                NetworkMapper.NETWORK_TYPE_VLAN,
-            NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK:
-                TestOvnNorth.LOCALNET_NAME,
-            NetworkMapper.REST_PROVIDER_SEGMENTATION_ID:
-                TestOvnNorth.LOCALNET_VLAN
-        }
+        rest_data = NetworkApiInputMaker(
+            TestOvnNorth.NETWORK_NAME12,
+            provider_type=NetworkMapper.NETWORK_TYPE_VLAN,
+            provider_physical_network=TestOvnNorth.LOCALNET_NAME,
+            vlan_tag=TestOvnNorth.LOCALNET_VLAN
+        ).get()
         result = ovn_north.update_network(rest_data, TestOvnNorth.NETWORK_ID12)
 
         localnet_network = TestOvnNorth.NETWORK_LOCALNET_12
@@ -580,15 +566,13 @@ class TestOvnNorth(object):
             TestOvnNorth.PORT_1
         )
         ovn_north = OvnNorth()
-        rest_data = {
-            PortMapper.REST_PORT_NAME: TestOvnNorth.PORT_NAME01,
-            PortMapper.REST_PORT_NETWORK_ID: str(TestOvnNorth.NETWORK_ID10),
-            PortMapper.REST_PORT_DEVICE_ID: TestOvnNorth.DEVICE_ID,
-            PortMapper.REST_PORT_DEVICE_OWNER: TestOvnNorth.DEVICE_OWNER_OVIRT,
-            PortMapper.REST_PORT_ADMIN_STATE_UP: True,
-            PortMapper.REST_PORT_MAC_ADDRESS: TestOvnNorth.MAC_ADDRESS,
-            PortMapper.REST_PORT_FIXED_IPS: TestOvnNorth.PORT_NAME01_FIXED_IPS
-        }
+        rest_data = PortApiInputMaker(
+            TestOvnNorth.PORT_NAME01, str(TestOvnNorth.NETWORK_ID10),
+            device_id=TestOvnNorth.DEVICE_ID,
+            device_owner=TestOvnNorth.DEVICE_OWNER_OVIRT, admin_state_up=True,
+            mac_address=TestOvnNorth.MAC_ADDRESS,
+            fixed_ips=TestOvnNorth.PORT_NAME01_FIXED_IPS
+        ).get()
         result = ovn_north.add_port(rest_data)
 
         # ID11 because this network has the port in TestOvnNorth.networks
@@ -802,17 +786,14 @@ class TestOvnNorth(object):
         add_execute = mock_add_command.return_value.execute
         add_execute.return_value = TestOvnNorth.SUBNET_102
         ovn_north = OvnNorth()
-        rest_data = {
-            SubnetMapper.REST_SUBNET_NAME:
-                TestOvnNorth.SUBNET_102.external_ids.get(
-                    SubnetMapper.OVN_NAME
-                ),
-            SubnetMapper.REST_SUBNET_CIDR: TestOvnNorth.SUBNET_CIDR,
-            SubnetMapper.REST_SUBNET_NETWORK_ID:
-                str(TestOvnNorth.NETWORK_ID10),
-            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
-            SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
-        }
+        rest_data = SubnetApiInputMaker(
+            TestOvnNorth.SUBNET_102.external_ids.get(
+                SubnetMapper.OVN_NAME
+            ),
+            cidr=TestOvnNorth.SUBNET_CIDR,
+            network_id=str(TestOvnNorth.NETWORK_ID10),
+            dns_nameservers=['1.1.1.1'], gateway_ip='1.1.1.0'
+        ).get()
         result = ovn_north.add_subnet(rest_data)
         assert_subnet_equal(result, TestOvnNorth.SUBNET_102)
         assert mock_dbset_command.call_count == 1
@@ -883,14 +864,11 @@ class TestOvnNorth(object):
         add_execute = mock_add_command.return_value.execute
         add_execute.return_value = TestOvnNorth.SUBNET_102
         ovn_north = OvnNorth()
-        rest_data = {
-            SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
-            SubnetMapper.REST_SUBNET_CIDR: TestOvnNorth.SUBNET_CIDR,
-            SubnetMapper.REST_SUBNET_NETWORK_ID:
-                str(TestOvnNorth.NETWORK_ID10),
-            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: [],
-            SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
-        }
+        rest_data = SubnetApiInputMaker(
+            'subnet_name', cidr=TestOvnNorth.SUBNET_CIDR,
+            network_id=str(TestOvnNorth.NETWORK_ID10), dns_nameservers=[],
+            gateway_ip='1.1.1.0'
+        ).get()
         result = ovn_north.add_subnet(rest_data)
         assert_subnet_equal(result, TestOvnNorth.SUBNET_102)
         assert mock_dbset_command.call_count == 1
@@ -1003,26 +981,20 @@ class TestOvnNorth(object):
     )
     def test_subnet_add_duplicate_network(self, mock_connection):
         ovn_north = OvnNorth()
-        rest_data = {
-            SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
-            SubnetMapper.REST_SUBNET_CIDR: TestOvnNorth.SUBNET_CIDR,
-            SubnetMapper.REST_SUBNET_NETWORK_ID:
-                str(TestOvnNorth.NETWORK_ID10),
-            SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
-        }
+        rest_data = SubnetApiInputMaker(
+            'subnet_name', cidr=TestOvnNorth.SUBNET_CIDR,
+            network_id=str(TestOvnNorth.NETWORK_ID10), gateway_ip='1.1.1.0'
+        ).get()
         with pytest.raises(SubnetConfigError):
             ovn_north.add_subnet(rest_data)
 
     def test_subnet_dhcp_enabled_false(self, mock_connection):
         ovn_north = OvnNorth()
-        rest_data = {
-            SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
-            SubnetMapper.REST_SUBNET_CIDR: TestOvnNorth.SUBNET_CIDR,
-            SubnetMapper.REST_SUBNET_NETWORK_ID: '',
-            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
-            SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
-            SubnetMapper.REST_SUBNET_ENABLE_DHCP: False
-        }
+        rest_data = SubnetApiInputMaker(
+            'subnet_name', cidr=TestOvnNorth.SUBNET_CIDR, network_id='',
+            dns_nameservers=['1.1.1.1'], gateway_ip='1.1.1.0',
+            enable_dhcp=False
+        ).get()
         with pytest.raises(UnsupportedDataValueError):
             ovn_north.add_subnet(rest_data)
 
@@ -1036,13 +1008,10 @@ class TestOvnNorth(object):
     )
     def test_subnet_add_invalid_network(self, mock_connection):
         ovn_north = OvnNorth()
-        rest_data = {
-            SubnetMapper.REST_SUBNET_NAME: 'subnet_name',
-            SubnetMapper.REST_SUBNET_CIDR: TestOvnNorth.SUBNET_CIDR,
-            SubnetMapper.REST_SUBNET_NETWORK_ID: 7,
-            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
-            SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
-        }
+        rest_data = SubnetApiInputMaker(
+            'subnet_name', cidr=TestOvnNorth.SUBNET_CIDR, network_id=7,
+            dns_nameservers=['1.1.1.1'], gateway_ip='1.1.1.0'
+        ).get()
         with pytest.raises(SubnetConfigError):
             ovn_north.add_subnet(rest_data)
 

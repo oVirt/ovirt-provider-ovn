@@ -151,3 +151,81 @@ class OvnRouterRow(OvnRow):
 
 class OvnRouterPort(object):
     pass
+
+
+class ApiInputMaker(object):
+    def get(self):
+        """
+        Creates dicts meant to be used in unit tests, where the only
+        present keys will feature non-null values.
+        Each subclass has to implement its constructor, defaulting the optional
+        values to None.
+        :return: a dict with all the non-null attributes key-value pairs
+        """
+        return {
+            v[0]: v[1] for (_, v) in self.__dict__.items()
+            if v[1] is not None
+        }
+
+
+class NetworkApiInputMaker(ApiInputMaker):
+    def __init__(
+            self,
+            name,
+            provider_type=None,
+            provider_physical_network=None,
+            vlan_tag=None,
+            mtu=None
+    ):
+        self._name = (NetworkMapper.REST_NETWORK_NAME, name)
+        self._provider_type = (
+            NetworkMapper.REST_PROVIDER_NETWORK_TYPE, provider_type
+        )
+        self._provider_network = (
+            NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK,
+            provider_physical_network
+        )
+        self._vlan_tag = (
+            NetworkMapper.REST_PROVIDER_SEGMENTATION_ID, vlan_tag
+        )
+        self.mtu = (NetworkMapper.REST_MTU, mtu)
+
+
+class SubnetApiInputMaker(ApiInputMaker):
+    def __init__(
+            self,
+            name,
+            cidr=None,
+            network_id=None,
+            dns_nameservers=None,
+            gateway_ip=None,
+            enable_dhcp=None
+    ):
+        self._name = (SubnetMapper.REST_SUBNET_NAME, name)
+        self._cidr = (SubnetMapper.REST_SUBNET_CIDR, cidr)
+        self._network_id = (SubnetMapper.REST_SUBNET_NETWORK_ID, network_id)
+        self._dns_servers = (
+            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS, dns_nameservers
+        )
+        self._gateway_ip = (SubnetMapper.REST_SUBNET_GATEWAY_IP, gateway_ip)
+        self._enable_dhcp = (SubnetMapper.REST_SUBNET_ENABLE_DHCP, enable_dhcp)
+
+
+class PortApiInputMaker(ApiInputMaker):
+    def __init__(
+            self,
+            name,
+            network_id,
+            device_id=None,
+            device_owner=None,
+            admin_state_up=None,
+            mac_address=None,
+            fixed_ips=None
+    ):
+        self._name = (PortMapper.REST_PORT_NAME, name)
+        self._network_id = (PortMapper.REST_PORT_NETWORK_ID, network_id)
+        self._device_id = (PortMapper.REST_PORT_DEVICE_ID, device_id)
+        self._device_owner = (PortMapper.REST_PORT_DEVICE_OWNER, device_owner)
+        self._port_up = (PortMapper.REST_PORT_ADMIN_STATE_UP, admin_state_up)
+        self._mac_address = (PortMapper.REST_PORT_MAC_ADDRESS, mac_address)
+        self._fixed_ips = (PortMapper.REST_PORT_FIXED_IPS, fixed_ips)
