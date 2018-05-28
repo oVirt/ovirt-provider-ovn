@@ -214,3 +214,21 @@ def no_default_gateway_in_routes(default_gateway_exists, routes):
                 'A default static route can not be added when an external '
                 ' gateway is defined on a router.'
             )
+
+
+def subnet_not_connected_to_router(router_id, subnet_id):
+    if router_id:
+        raise BadRequestError(
+            'Unable to delete subnet {subnet} because it is connected to '
+            'router {router}. Please disconnect the subnet from the router'
+            ' first.'
+            .format(subnet=subnet_id, router=router_id)
+        )
+
+
+def port_does_not_belong_to_subnet(lsp, ls, subnet_id):
+    if lsp not in ls.ports:
+        raise ConflictError(
+            'Port {port} does not belong to subnet {subnet}.'
+            .format(port=lsp.uuid, subnet=subnet_id)
+        )

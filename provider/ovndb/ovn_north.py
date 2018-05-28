@@ -26,7 +26,6 @@ import ovndb.ip as ip_utils
 import ovndb.validation as validate
 
 from handlers.base_handler import BadRequestError
-from handlers.base_handler import ConflictError
 from handlers.base_handler import ElementNotFoundError
 
 from ovirt_provider_config_common import ovn_remote
@@ -571,15 +570,10 @@ class OvnNorth(object):
 
     def delete_subnet(self, subnet_id):
         subnet = self.atomics.get_dhcp(dhcp_id=subnet_id)
-        router_id = self._get_subnet_gateway_router_id(subnet)
-        if router_id:
-            raise BadRequestError(
-                'Unable to delete subnet {subnet} because it is connected to '
-                'router {router}. Please disconnect the subnet from the router'
-                ' first.'
-                .format(subnet=subnet_id, router=router_id)
-
-            )
+        validate.subnet_not_connected_to_router(
+            self._get_subnet_gateway_router_id(subnet),
+            subnet_id
+        )
         network_id = subnet.external_ids.get(
             SubnetMapper.OVN_NETWORK_ID
         )
@@ -1110,11 +1104,7 @@ class OvnNorth(object):
         network_id = subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
         network = self.atomics.get_ls(ls_id=network_id)
         lsp = self.atomics.get_lsp(lsp_id=port_id)
-        if lsp not in network.ports:
-            raise ConflictError(
-                'Port {port} does not belong to subnet {subnet}.'
-                .format(port=port_id, subnet=subnet_id)
-            )
+        validate.port_does_not_belong_to_subnet(lsp, network, subnet_id)
         return self._delete_router_interface_by_port(router_id, port_id)
 
     def _delete_router_interface_by_subnet(self, router_id, subnet_id):
