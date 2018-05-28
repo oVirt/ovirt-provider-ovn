@@ -467,17 +467,7 @@ class OvnNorth(object):
 
     def delete_port(self, port_id):
         lsp = self.atomics.get_lsp(lsp_id=port_id)
-        device_owner = lsp.external_ids.get(PortMapper.OVN_DEVICE_OWNER)
-        if (
-            device_owner == PortMapper.DEVICE_OWNER_ROUTER or
-            device_owner == PortMapper.DEVICE_OWNER_ROUTER_GATEWAY
-        ):
-            raise ConflictError(
-                'Port {port} cannot be deleted directly via the port API: '
-                'has device owner network:router_interface'.format(
-                    port=port_id
-                )
-            )
+        validate.port_is_not_connected_to_router(lsp)
         self._delete_port(port_id)
 
     def _delete_port(self, port_id):

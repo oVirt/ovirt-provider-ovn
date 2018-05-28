@@ -24,6 +24,7 @@ import ovndb.constants as ovnconst
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
 
+import ovndb.validation as validate
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import SubnetMapper
 
@@ -86,11 +87,7 @@ class OvnNorthAtomics(object):
                 raise ElementNotFoundError(
                     'Subnet {subnet} does not exist'.format(subnet=dhcp_id)
                 )
-            if SubnetMapper.OVN_NETWORK_ID not in dhcp.external_ids:
-                raise ElementNotFoundError(
-                    'Subnet {subnet} is not an ovirt manager subnet'
-                    .format(subnet=dhcp_id)
-                )
+            validate.subnet_is_ovirt_managed(dhcp)
             return dhcp
 
         if lsp_id:

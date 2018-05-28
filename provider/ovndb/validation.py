@@ -24,6 +24,7 @@ from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
 
 from ovndb.ovn_north_mappers import PortMapper
+from ovndb.ovn_north_mappers import SubnetMapper
 from ovndb.ovn_north_mappers import RestDataError
 
 
@@ -177,4 +178,26 @@ def network_has_no_ports(ls_id, ls_ports, localnet_lsp):
         raise RestDataError(
             'Unable to delete network {}. Ports exist for the network'
             .format(ls_id)
+        )
+
+
+def port_is_not_connected_to_router(lsp):
+    device_owner = lsp.external_ids.get(PortMapper.OVN_DEVICE_OWNER)
+    if device_owner in (
+        PortMapper.DEVICE_OWNER_ROUTER,
+        PortMapper.DEVICE_OWNER_ROUTER_GATEWAY
+    ):
+        raise ConflictError(
+            'Port {port} cannot be deleted directly via the port API: '
+            'has device owner network:router_interface'.format(
+                port=lsp.uuid
+            )
+        )
+
+
+def subnet_is_ovirt_managed(subnet):
+    if SubnetMapper.OVN_NETWORK_ID not in subnet.external_ids:
+        raise ElementNotFoundError(
+            'Subnet {subnet} is not an ovirt manager subnet'
+            .format(subnet=subnet.uuid)
         )
