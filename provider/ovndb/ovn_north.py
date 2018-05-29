@@ -747,15 +747,54 @@ class OvnNorth(object):
         self._validate_external_gateway(
             gateway_ip, gateway_subnet, network_id
         )
+        lr = self._get_router(router_id)
+        existing_gw_lsp_id = lr.external_ids.get(
+            RouterMapper.OVN_ROUTER_GATEWAY_PORT
+        )
+        is_updated_gw_different_than_existing = \
+            self._is_updated_gw_different_than_existing(
+                lr, gateway_subnet, gateway_ip, existing_gw_lsp_id
+            )
+        if is_updated_gw_different_than_existing:
+            self._delete_router_interface_by_port(
+                router_id, existing_gw_lsp_id
+            )
         self._reserve_network_ip(network_id, gateway_ip)
+
         db_set_command = DbSetCommand(self.idl, ovnconst.TABLE_LR, router_id)
         db_set_command.add(ovnconst.ROW_LR_NAME, name, name)
         db_set_command.add(ovnconst.ROW_LR_ENABLED, enabled, enabled)
         db_set_command.execute()
-        self._add_external_gateway_to_router(
-            gateway_ip, gateway_subnet, network_id, router_id
+
+        should_external_gw_be_added = (
+            is_updated_gw_different_than_existing or
+            (gateway_subnet and not existing_gw_lsp_id)
         )
+
+        if should_external_gw_be_added:
+            self._add_external_gateway_to_router(
+                gateway_ip, gateway_subnet, network_id, router_id
+            )
         return self.get_router(router_id)
+
+    def _is_updated_gw_different_than_existing(
+        self, lr, new_gateway_subnet, new_gateway_ip, existing_lr_gw_lsp_id
+    ):
+        if not new_gateway_subnet:
+            return False
+        if not existing_lr_gw_lsp_id:
+            return False
+
+        existing_subnet = self._get_subnet_from_port_id(existing_lr_gw_lsp_id)
+        existing_ip = ip_utils.get_port_ip(
+            self._get_switch_port(existing_lr_gw_lsp_id),
+            self._get_lrp_by_lsp_id(existing_lr_gw_lsp_id)
+        )
+
+        return (
+            new_gateway_subnet != str(existing_subnet.uuid) or
+            new_gateway_ip != existing_ip
+        )
 
     def delete_router(self, router_id):
         validate.router_has_no_ports(self._get_router(router_id))
