@@ -935,6 +935,8 @@ class OvnNorth(object):
         ))
 
     def _reserve_network_ip(self, network_id, gateway_ip):
+        if not network_id:
+            return
         exclude_values = self._get_ls(network_id).other_config.get(
             ovnconst.LS_OPTION_EXCLUDE_IPS, {}
         )
