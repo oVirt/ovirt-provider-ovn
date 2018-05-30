@@ -797,6 +797,14 @@ class OvnNorth(object):
         )
 
     def delete_router(self, router_id):
+        existing_gw_lsp_id = self._get_router(router_id).external_ids.get(
+            RouterMapper.OVN_ROUTER_GATEWAY_PORT
+        )
+        if existing_gw_lsp_id:
+            self._delete_router_interface_by_port(
+                router_id, existing_gw_lsp_id
+            )
+
         validate.router_has_no_ports(self._get_router(router_id))
         self._execute(self.idl.lr_del(router_id))
 
