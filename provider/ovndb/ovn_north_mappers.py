@@ -684,12 +684,12 @@ class BaseRouterInterfaceMapper(Mapper):
         return {
             AddRouterInterfaceMapper.REST_ROUTERINTERFACE_ID: row.id,
             AddRouterInterfaceMapper.REST_ROUTERINTERFACE_NETWORK_ID:
-                row.network_id,
-            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_PORT_ID: row.port_id,
+                row.ls_id,
+            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_PORT_ID: row.lsp_id,
             AddRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_ID:
-                row.subnet_id,
+                row.dhcp_options_id,
             AddRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_IDS: [
-                row.subnet_id
+                row.dhcp_options_id
             ],
             AddRouterInterfaceMapper.REST_TENANT_ID: tenant_id(),
         }
