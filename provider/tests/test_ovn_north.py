@@ -366,6 +366,99 @@ class TestOvnNorth(object):
         assert_subnet_equal(subnet_creation_result, TestOvnNorth.SUBNET_MTU)
 
     @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
+        'execute',
+        lambda cmd, check_error: TestOvnNorth.SUBNET_MTU
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsAddCommand.'
+        'execute',
+        lambda cmd, check_error: TestOvnNorth.SUBNET_MTU
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsAddCommand.execute',
+        lambda cmd, check_error: TestOvnNorth.NETWORK_MTU
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
+        lambda cmd, check_error: TestOvnNorth.NETWORK_MTU
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsSetOptionsCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand'
+    )
+    def test_update_networks_mtu(
+            self,
+            mock_dhcp_list_command,
+            mock_setoptions_command,
+            mock_dbset_command,
+            mock_connection
+    ):
+        mock_dhcp_list_command.return_value.execute.return_value = []
+
+        ovn_north = OvnNorth()
+        network_rest_data = {
+            NetworkMapper.REST_NETWORK_NAME: TestOvnNorth.NETWORK_NAMEMTU,
+            NetworkMapper.REST_MTU: TestOvnNorth.VALUE_NETWORK_MTU
+        }
+        ovn_north.add_network(network_rest_data)
+
+        # create a subnet associated with the above network
+        subnet_rest_data = {
+            SubnetMapper.REST_SUBNET_NAME:
+                TestOvnNorth.SUBNET_102.external_ids.get(
+                    SubnetMapper.OVN_NAME
+                ),
+            SubnetMapper.REST_SUBNET_CIDR: TestOvnNorth.SUBNET_CIDR,
+            SubnetMapper.REST_SUBNET_NETWORK_ID:
+                str(TestOvnNorth.SUBNET_IDMTU),
+            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: ['1.1.1.1'],
+            SubnetMapper.REST_SUBNET_GATEWAY_IP: '1.1.1.0',
+        }
+
+        ovn_north.add_subnet(subnet_rest_data)
+        new_mtu = 14999
+        mtu_update = {
+            NetworkMapper.REST_NETWORK_NAME: TestOvnNorth.NETWORK_NAMEMTU,
+            NetworkMapper.REST_MTU: new_mtu
+        }
+
+        assert mock_setoptions_command.call_count == 1
+        mock_dhcp_list_command.return_value.execute.return_value = [
+            TestOvnNorth.SUBNET_MTU
+        ]
+
+        ovn_north.update_network(mtu_update, TestOvnNorth.NETWORK_IDMTU)
+        expected_external_ids_update = mock.call(
+            ovn_north.idl,
+            ovnconst.TABLE_LS,
+            TestOvnNorth.NETWORK_IDMTU,
+            (ovnconst.ROW_LSP_NAME, TestOvnNorth.NETWORK_NAMEMTU),
+            (
+                ovnconst.ROW_LSP_EXTERNAL_IDS,
+                {NetworkMapper.REST_MTU: str(new_mtu)},
+            ),
+        )
+        expected_network_mtu_update = mock.call(
+            ovn_north.idl,
+            ovnconst.TABLE_DHCP_Options,
+            TestOvnNorth.SUBNET_IDMTU,
+            (
+                ovnconst.ROW_DHCP_OPTIONS,
+                {SubnetMapper.OVN_DHCP_MTU: str(new_mtu)}
+            )
+        )
+        assert expected_external_ids_update in mock_dbset_command.mock_calls
+        assert expected_network_mtu_update in mock_dbset_command.mock_calls
+
+    @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
         lambda cmd, check_error: OvnNetworkRow(
             TestOvnNorth.NETWORK_ID10,

@@ -159,13 +159,20 @@ class OvnNorth(object):
             vlan=None,
             mtu=None
     ):
-        self._execute(self.idl.db_set(
-            ovnconst.TABLE_LS,
-            network_id,
-            (ovnconst.ROW_LS_NAME, name),
-        ))
+        self._update_network_data(network_id, name, mtu)
         self._update_localnet_on_network(network_id, localnet, vlan)
         return self.get_network(network_id)
+
+    def _update_network_data(self, network_id, name, mtu):
+        DbSetCommand(
+            self.idl, ovnconst.TABLE_LS, network_id
+        ).add(ovnconst.ROW_LS_NAME, name).add(
+            ovnconst.ROW_LSP_EXTERNAL_IDS,
+            {NetworkMapper.REST_MTU: str(mtu)},
+            mtu
+        ).execute()
+        if mtu:
+            self._update_networks_mtu(network_id, mtu)
 
     def _update_localnet_on_network(self, network_id, localnet, vlan):
         network = self._get_ls(network_id)
@@ -191,6 +198,16 @@ class OvnNorth(object):
         db_set_command.add(ovnconst.ROW_LSP_TYPE, ovnconst.LSP_TYPE_LOCALNET)
         db_set_command.add(ovnconst.ROW_LSP_TAG_REQUEST, vlan)
         db_set_command.execute()
+
+    def _update_networks_mtu(self, network_id, mtu):
+        subnet = self._get_subnet_by_network(network_id)
+        if subnet and subnet.options.get(NetworkMapper.REST_MTU) != mtu:
+            DbSetCommand(
+                self.idl, ovnconst.TABLE_DHCP_Options, subnet.uuid
+            ).add(
+                ovnconst.ROW_DHCP_OPTIONS,
+                {SubnetMapper.OVN_DHCP_MTU: str(mtu)}
+            ).execute()
 
     def delete_network(self, network_id):
         network = self._execute(self.idl.ls_get(network_id))
@@ -522,6 +539,15 @@ class OvnNorth(object):
                 .format(subnet=subnet_id)
             )
         return subnet
+
+    def _get_subnet_by_network(self, network_id):
+        return next((
+            subnet for subnet in self._list_subnets()
+            if subnet.external_ids[SubnetMapper.OVN_NETWORK_ID] == (
+                str(network_id)
+            )),
+            None
+        )
 
     @SubnetMapper.map_to_rest
     def get_subnet(self, subnet_id):
