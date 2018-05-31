@@ -180,18 +180,17 @@ class OvnNorth(object):
             self._delete_port(str(localnet_port.uuid))
 
     def _set_port_localnet_values(self, port, localnet, vlan):
-        db_set_command = DbSetCommand(self.idl, ovnconst.TABLE_LSP, port.uuid)
-        db_set_command.add(
+        DbSetCommand(
+            self.idl, ovnconst.TABLE_LSP, port.uuid
+        ).add(
             ovnconst.ROW_LSP_ADDRESSES,
             [ovnconst.LSP_ADDRESS_TYPE_UNKNOWN]
-        )
-        db_set_command.add(
+        ).add(
             ovnconst.ROW_LSP_OPTIONS,
             {ovnconst.LSP_OPTION_NETWORK_NAME: localnet}
-        )
-        db_set_command.add(ovnconst.ROW_LSP_TYPE, ovnconst.LSP_TYPE_LOCALNET)
-        db_set_command.add(ovnconst.ROW_LSP_TAG_REQUEST, vlan)
-        db_set_command.execute()
+        ).add(
+            ovnconst.ROW_LSP_TYPE, ovnconst.LSP_TYPE_LOCALNET
+        ).add(ovnconst.ROW_LSP_TAG_REQUEST, vlan).execute()
 
     def _update_networks_mtu(self, network_id, mtu):
         subnet = self.atomics.get_dhcp(ls_id=network_id)
@@ -325,28 +324,25 @@ class OvnNorth(object):
         #   txn.commit()
         # The ovsdbapp transactions seem to have synchronization issues at the
         # moment, hence we'll be using individual transactions for now.
-        db_set_command = DbSetCommand(self.idl, ovnconst.TABLE_LSP, port.uuid)
-        db_set_command.add(
+        DbSetCommand(
+            self.idl, ovnconst.TABLE_LSP, port.uuid
+        ).add(
             ovnconst.ROW_LSP_EXTERNAL_IDS,
             {PortMapper.OVN_DEVICE_ID: device_id},
             device_id
-        )
-        db_set_command.add(
+        ).add(
             ovnconst.ROW_LSP_EXTERNAL_IDS,
             {PortMapper.OVN_NIC_NAME: name},
             name
-        )
-        db_set_command.add(
+        ).add(
             ovnconst.ROW_LSP_EXTERNAL_IDS,
             {PortMapper.OVN_DEVICE_OWNER: device_owner},
             device_owner
-        )
-        db_set_command.add(
+        ).add(
             ovnconst.ROW_LSP_ENABLED,
             is_enabled,
             is_enabled
-        )
-        db_set_command.execute()
+        ).execute()
 
     def _update_port_address(self, port, network_id, mac=None, fixed_ips=None):
         if port.type == ovnconst.LSP_TYPE_ROUTER:
@@ -371,8 +367,7 @@ class OvnNorth(object):
                     ovnconst.ROW_LSP_DHCPV4_OPTIONS
                 ))
 
-            db_set_command.add(ovnconst.ROW_LSP_ADDRESSES, [mac])
-            db_set_command.execute()
+            db_set_command.add(ovnconst.ROW_LSP_ADDRESSES, [mac]).execute()
 
     def _get_port_addesses_suffix(self, network_id, fixed_ips):
         if not fixed_ips:
@@ -410,20 +405,18 @@ class OvnNorth(object):
             )
         )
 
-        db_set_command = DbSetCommand(self.idl, ovnconst.TABLE_LSP, port.uuid)
-        db_set_command.add(
+        DbSetCommand(
+            self.idl, ovnconst.TABLE_LSP, port.uuid
+        ).add(
             ovnconst.ROW_LSP_TYPE,
             ovnconst.LSP_TYPE_ROUTER,
-        )
-        db_set_command.add(
+        ).add(
             ovnconst.ROW_LSP_OPTIONS,
             {ovnconst.LSP_OPTION_ROUTER_PORT: router_port_name},
-        )
-        db_set_command.add(
+        ).add(
             ovnconst.ROW_LSP_ADDRESSES,
             [ovnconst.LSP_ADDRESS_TYPE_ROUTER]
-        )
-        db_set_command.execute()
+        ).execute()
 
         self._execute(self.idl.db_clear(
             ovnconst.TABLE_LSP, port.uuid, ovnconst.ROW_LSP_DHCPV4_OPTIONS
@@ -552,32 +545,27 @@ class OvnNorth(object):
         gateway=None,
         dns=None,
     ):
-        db_set_command = DbSetCommand(
-            self.idl, ovnconst.TABLE_DHCP_Options, subnet_id)
-        db_set_command.add(
+        DbSetCommand(
+            self.idl, ovnconst.TABLE_DHCP_Options, subnet_id
+        ).add(
             ovnconst.ROW_DHCP_EXTERNAL_IDS,
             {SubnetMapper.OVN_NAME: name},
             name
-        )
-        db_set_command.add(
+        ).add(
             ovnconst.ROW_DHCP_OPTIONS,
             {SubnetMapper.OVN_GATEWAY: gateway},
             gateway
-        )
-        db_set_command.add(
+        ).add(
             ovnconst.ROW_DHCP_OPTIONS,
             {SubnetMapper.OVN_DNS_SERVER: dns},
             dns
-        )
-        db_set_command.add(
+        ).add(
             ovnconst.ROW_DHCP_OPTIONS,
             {SubnetMapper.OVN_DHCP_LEASE_TIME: dhcp_lease_time()}
-        )
-        db_set_command.add(
+        ).add(
             ovnconst.ROW_DHCP_OPTIONS,
             {SubnetMapper.OVN_DHCP_SERVER_MAC: dhcp_server_mac()}
-        )
-        db_set_command.execute()
+        ).execute()
 
         return self.get_subnet(subnet_id)
 
@@ -726,10 +714,9 @@ class OvnNorth(object):
             )
         self._reserve_network_ip(network_id, gateway_ip)
 
-        db_set_command = DbSetCommand(self.idl, ovnconst.TABLE_LR, router_id)
-        db_set_command.add(ovnconst.ROW_LR_NAME, name, name)
-        db_set_command.add(ovnconst.ROW_LR_ENABLED, enabled, enabled)
-        db_set_command.execute()
+        DbSetCommand(self.idl, ovnconst.TABLE_LR, router_id).add(
+            ovnconst.ROW_LR_NAME, name, name
+        ).add(ovnconst.ROW_LR_ENABLED, enabled, enabled).execute()
 
         should_external_gw_be_added = (
             is_updated_gw_different_than_existing or
