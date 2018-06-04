@@ -113,6 +113,11 @@ DEFAULT_ENGINE_ADMIN_GROUP_ATTRIBUTE_NAME = \
   'AAA_AUTHZ_GROUP_NAME;java.lang.String;0eebe54f-b429-44f3-aa80-4704cbb16835'
 DEFAULT_ENGINE_ADMIN_GROUP_ATTRIBUTE_VALUE = 'NetAdmin'
 
+CONFIG_SECTION_VALIDATION = 'VALIDATION'
+KEY_VALIDATION_MAX_ALLOWED_MTU = 'validation-max-allowed-mtu'
+
+DEFAULT_VALIDATION_MAX_ALLOWED_MTU = 0
+
 
 DEFAULT_KEY_FILE = '/etc/pki/ovirt-engine/keys/ovirt-provider-ovn.pem'
 DEFAULT_CERT_FILE = '/etc/pki/ovirt-engine/certs/ovirt-provider-ovn.cer'

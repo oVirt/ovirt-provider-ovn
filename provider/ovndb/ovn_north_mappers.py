@@ -25,6 +25,7 @@ import six
 
 from ovirt_provider_config_common import dhcp_mtu
 from ovirt_provider_config_common import tenant_id
+from ovirt_provider_config_common import max_allowed_mtu
 import ovndb.constants as ovnconst
 import ovndb.ip as ip_utils
 from handlers.base_handler import MethodNotAllowedError
@@ -193,6 +194,9 @@ class NetworkMapper(Mapper):
         if NetworkMapper.REST_NETWORK_NAME not in rest_data:
             raise NetworkNameRequiredDataError()
         NetworkMapper._validate_rest_input_provider_network(rest_data)
+        NetworkMapper._validate_rest_input_max_mtu(
+            rest_data.get(NetworkMapper.REST_MTU)
+        )
 
     @staticmethod
     def _validate_rest_input_provider_network(rest_data):
@@ -228,6 +232,16 @@ class NetworkMapper(Mapper):
             raise PhysicalNetworkProviderDataError(
                 'provider:network_type [{}] is not supported'.format(
                     network_type))
+
+    @staticmethod
+    def _validate_rest_input_max_mtu(mtu):
+        configured_max_mtu = max_allowed_mtu()
+        if configured_max_mtu != 0 and mtu > configured_max_mtu:
+            raise InvalidMtuDataError(
+                'Requested MTU is too big, maximum is {max_mtu}'.format(
+                    max_mtu=configured_max_mtu
+                )
+            )
 
 
 class PortMapper(Mapper):
@@ -788,6 +802,10 @@ class NetworkNameRequiredDataError(RestDataError):
 
     def __init__(self):
         super(NetworkNameRequiredDataError, self).__init__(self.message)
+
+
+class InvalidMtuDataError(RestDataError):
+    pass
 
 
 class PhysicalNetworkProviderDataError(RestDataError):

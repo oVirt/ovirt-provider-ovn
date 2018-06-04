@@ -205,6 +205,15 @@ ovirt-admin-group-attribute-value:: The name of the group allowed to access the
   external network API. +
   _default:_ `NetAdmin`
 
+### Section [VALIDATION]
+This section configures data validation settings.
+
+validation-max-allowed-mtu:: The maximum allowed MTU. +
+  Attempts to set the MTU of a network to a value greater than the configured maximum will result in
+  an error. +
+  A value of 0 means that this MTU limiting feature is *not* used. +
+_default:_ `0`
+
 :idprefix:
 :idseparator: -
 ### User Names for Authentication

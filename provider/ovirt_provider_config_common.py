@@ -23,6 +23,7 @@ from ovirt_provider_config import CONFIG_SECTION_DHCP
 from ovirt_provider_config import CONFIG_SECTION_OVN_REMOTE
 from ovirt_provider_config import CONFIG_SECTION_PROVIDER
 from ovirt_provider_config import CONFIG_SECTION_SSL
+from ovirt_provider_config import CONFIG_SECTION_VALIDATION
 from ovirt_provider_config import DEFAULT_AUTH_PLUGIN
 from ovirt_provider_config import DEFAULT_AUTH_TOKEN_TIMEOUT
 from ovirt_provider_config import DEFAULT_DHCP_ENABLE_MTU
@@ -44,6 +45,7 @@ from ovirt_provider_config import DEFAULT_PROVIDER_HOST
 from ovirt_provider_config import DEFAULT_SSL_CERT_FILE
 from ovirt_provider_config import DEFAULT_SSL_ENABLED
 from ovirt_provider_config import DEFAULT_SSL_KEY_FILE
+from ovirt_provider_config import DEFAULT_VALIDATION_MAX_ALLOWED_MTU
 from ovirt_provider_config import KEY_AUTH_PLUGIN
 from ovirt_provider_config import KEY_AUTH_TOKEN_TIMEOUT
 from ovirt_provider_config import KEY_DHCP_ENABLE_MTU
@@ -66,6 +68,7 @@ from ovirt_provider_config import KEY_PROVIDER_HOST
 from ovirt_provider_config import KEY_SSL_CACERT_FILE
 from ovirt_provider_config import KEY_SSL_CERT_FILE
 from ovirt_provider_config import KEY_SSL_KEY_FILE
+from ovirt_provider_config import KEY_VALIDATION_MAX_ALLOWED_MTU
 
 
 PROTOCOL_HTTP = 'http'
@@ -288,4 +291,12 @@ def ovs_version_29():
         CONFIG_SECTION_PROVIDER,
         KEY_OVS_VERSION_29,
         DEFAULT_OVS_VERSION_29
+    )
+
+
+def max_allowed_mtu():
+    return ovirt_provider_config.getint(
+        CONFIG_SECTION_VALIDATION,
+        KEY_VALIDATION_MAX_ALLOWED_MTU,
+        DEFAULT_VALIDATION_MAX_ALLOWED_MTU
     )
