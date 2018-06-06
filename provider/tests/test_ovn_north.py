@@ -21,6 +21,7 @@ from uuid import UUID
 import mock
 import pytest
 
+from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 import ovndb.constants as ovnconst
 
 from handlers.base_handler import ConflictError
@@ -1007,14 +1008,12 @@ class TestOvnNorth(object):
             ovn_north.add_subnet(rest_data)
 
     @mock.patch(
-        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
-        lambda cmd, check_error: None
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute'
     )
-    @mock.patch(
-        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
-        lambda cmd, check_error: TestOvnNorth.NETWORK_10
-    )
-    def test_subnet_add_invalid_network(self, mock_connection):
+    def test_subnet_add_invalid_network(
+        self, mock_ls_get_cmd, mock_connection
+    ):
+        mock_ls_get_cmd.side_effect = RowNotFound()
         ovn_north = OvnNorth()
         rest_data = SubnetApiInputMaker(
             'subnet_name', cidr=TestOvnNorth.SUBNET_CIDR, network_id=7,

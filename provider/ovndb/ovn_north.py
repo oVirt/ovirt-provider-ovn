@@ -40,6 +40,8 @@ from ovirt_provider_config_common import ssl_cacert_file
 from ovirt_provider_config_common import ssl_cert_file
 
 from ovndb.db_set_command import DbSetCommand
+from ovndb.ovn_north_atomics import OvnNorthAtomics
+
 from ovndb.ovn_north_mappers import AddRouterInterfaceMapper
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import Network
@@ -69,6 +71,7 @@ class OvnNorth(object):
             idl=self.ovsidl,
             timeout=100)
         self.idl = OvnNbApiIdlImpl(ovsdb_connection)
+        self.atomics = OvnNorthAtomics(self.idl)
 
     def _configure_ssl_connection(self):
         if is_ovn_remote_ssl():
@@ -89,7 +92,7 @@ class OvnNorth(object):
 
     # TODO: could this be moved to ovsdbapp?
     def _get_port_network(self, port):
-        networks = self._execute(self.idl.ls_list())
+        networks = self.atomics.list_ls()
         return next(network for network in networks if port in network.ports)
 
     def _is_port_ovirt_controlled(self, port_row):
@@ -97,7 +100,7 @@ class OvnNorth(object):
 
     @NetworkMapper.map_to_rest
     def list_networks(self):
-        ls_rows = self._execute(self.idl.ls_list())
+        ls_rows = self.atomics.list_ls()
         return [self._get_network(ls) for ls in ls_rows]
 
     def _get_network(self, ls):
@@ -106,18 +109,10 @@ class OvnNorth(object):
             localnet_lsp=self._get_localnet_lsp(ls)
         )
 
-    def _get_ls(self, network_id):
-        network = self._execute(self.idl.ls_get(network_id))
-        if not network:
-            raise ElementNotFoundError(
-                'Network {network} does not exist'.format(network=network_id)
-            )
-        return network
-
     @NetworkMapper.map_to_rest
     def get_network(self, network_id):
         return self._get_network(
-            self._get_ls(network_id)
+            self.atomics.get_ls(ls_id=network_id)
         )
 
     @NetworkMapper.validate_add
@@ -146,7 +141,7 @@ class OvnNorth(object):
             ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid)
         )
         self._set_port_localnet_values(localnet_port, localnet, vlan)
-        updated_network = self._get_ls(str(network.uuid))
+        updated_network = self.atomics.get_ls(ls_id=str(network.uuid))
         return self._get_network(updated_network)
 
     @NetworkMapper.validate_update
@@ -175,7 +170,7 @@ class OvnNorth(object):
             self._update_networks_mtu(network_id, mtu)
 
     def _update_localnet_on_network(self, network_id, localnet, vlan):
-        network = self._get_ls(network_id)
+        network = self.atomics.get_ls(ls_id=network_id)
         localnet_port = self._get_localnet_lsp(network)
         if localnet:
             if not localnet_port:
@@ -200,7 +195,7 @@ class OvnNorth(object):
         db_set_command.execute()
 
     def _update_networks_mtu(self, network_id, mtu):
-        subnet = self._get_subnet_by_network(network_id)
+        subnet = self.atomics.get_dhcp(ls_id=network_id)
         if subnet and subnet.options.get(NetworkMapper.REST_MTU) != mtu:
             DbSetCommand(
                 self.idl, ovnconst.TABLE_DHCP_Options, subnet.uuid
@@ -210,7 +205,7 @@ class OvnNorth(object):
             ).execute()
 
     def delete_network(self, network_id):
-        network = self._execute(self.idl.ls_get(network_id))
+        network = self.atomics.get_ls(ls_id=network_id)
         if not network:
             raise RestDataError('Network %s does not exist' % network_id)
         if network.ports:
@@ -222,7 +217,7 @@ class OvnNorth(object):
                     % network_id
                 )
 
-        subnets = self._execute(self.idl.dhcp_options_list())
+        subnets = self.atomics.list_dhcp()
         for subnet in subnets:
             subnet_network_id = subnet.external_ids.get('ovirt_network_id')
             if subnet_network_id:
@@ -239,35 +234,23 @@ class OvnNorth(object):
 
     @PortMapper.map_to_rest
     def list_ports(self):
-        ports_rows = self._execute(self.idl.lsp_list())
+        ports_rows = self.atomics.list_lsp()
         return [self._get_network_port(port_row)
                 for port_row in ports_rows
                 if self._is_port_ovirt_controlled(port_row)]
 
     @PortMapper.map_to_rest
     def get_port(self, port_id):
-        return self._get_network_port(self._get_port(port_id))
+        return self._get_network_port(
+            self.atomics.get_lsp(ovirt_lsp_id=port_id)
+        )
 
     def _get_network_port(self, lsp):
         ls = self._get_port_network(lsp)
-        dhcp_options = self._get_subnet_from_port_id(str(lsp.uuid))
+        dhcp_options = self.atomics.get_dhcp(lsp_id=str(lsp.uuid))
         lrp_name = lsp.options.get(ovnconst.LSP_OPTION_ROUTER_PORT)
-        lrp = self._get_lrp(lrp_name) if lrp_name else None
+        lrp = self.atomics.get_lrp(lrp_name=lrp_name) if lrp_name else None
         return NetworkPort(lsp=lsp, ls=ls, dhcp_options=dhcp_options, lrp=lrp)
-
-    def _get_switch_port(self, port_id):
-        port = self._execute(self.idl.lsp_get(port_id))
-        if not port:
-            raise ElementNotFoundError(
-                'Port {port} does not exist'.format(port=port_id)
-            )
-        return port
-
-    def _get_port(self, port_id):
-        port = self._get_switch_port(port_id)
-        if not self._is_port_ovirt_controlled(port):
-            raise ValueError('Not an ovirt controller port')
-        return port
 
     @PortMapper.validate_add
     @PortMapper.map_from_rest
@@ -287,8 +270,8 @@ class OvnNorth(object):
             port, name, is_enabled, device_id, device_owner
         )
         mac = mac or ip_utils.random_unique_mac(
-            self._execute(self.idl.lsp_list()),
-            self._list_lrp()
+            self.atomics.list_lsp(),
+            self.atomics.list_lrp()
         )
         self._update_port_address(
             port, network_id=network_id, mac=mac, fixed_ips=fixed_ips)
@@ -308,7 +291,7 @@ class OvnNorth(object):
         fixed_ips=None,
         binding_host=None,
     ):
-        port = self._get_port(port_id)
+        port = self.atomics.get_lsp(ovirt_lsp_id=port_id)
         network_id = self._get_validated_port_network_id(port, network_id)
         self._update_port_values(
             port, name, is_enabled, device_id, device_owner
@@ -320,8 +303,8 @@ class OvnNorth(object):
     def _update_lsp_bound_lrp(self, port_id, fixed_ips):
         if not fixed_ips:
             return
-        lrp = self._get_lrp_by_lsp_id(port_id)
-        subnet = self._get_subnet_from_port_id(port_id)
+        lrp = self.atomics.get_lrp(lsp_id=port_id)
+        subnet = self.atomics.get_dhcp(lsp_id=port_id)
         validate.fixed_ip_matches_port_subnet(fixed_ips, subnet)
 
         new_lrp_ip = '{ip}/{netmask}'.format(
@@ -375,7 +358,7 @@ class OvnNorth(object):
             self._update_lsp_bound_lrp(str(port.uuid), fixed_ips)
             return
         mac = mac or ip_utils.get_port_mac(port)
-        subnet = self._get_dhcp_by_network_id(network_id)
+        subnet = self.atomics.get_dhcp(ls_id=network_id)
         validate.fixed_ip_matches_port_subnet(fixed_ips, subnet)
         if mac:
             db_set_command = DbSetCommand(
@@ -408,7 +391,9 @@ class OvnNorth(object):
         ip = fixed_ip.get(PortMapper.REST_PORT_IP_ADDRESS)
         if not ip:
             return ovnconst.LSP_ADDRESS_TYPE_DYNAMIC
-        validate.ip_available_in_network(self._get_ls(network_id), ip)
+        validate.ip_available_in_network(
+            self.atomics.get_ls(ls_id=network_id), ip
+        )
         return ip
 
     def _connect_port_to_router(
@@ -482,19 +467,11 @@ class OvnNorth(object):
         ))
         return port
 
-    def _get_dhcp_by_network_id(self, network_id):
-        dhcps = self._execute(self.idl.dhcp_options_list())
-        for row in dhcps:
-            if str(row.external_ids.get(
-                SubnetMapper.OVN_NETWORK_ID
-            )) == str(network_id):
-                return row
-
     def update_port_mac(self, port_id, macaddress):
         pass
 
     def delete_port(self, port_id):
-        lsp = self._get_switch_port(port_id)
+        lsp = self.atomics.get_lsp(lsp_id=port_id)
         device_owner = lsp.external_ids.get(PortMapper.OVN_DEVICE_OWNER)
         if (
             device_owner == PortMapper.DEVICE_OWNER_ROUTER or
@@ -513,45 +490,11 @@ class OvnNorth(object):
 
     @SubnetMapper.map_to_rest
     def list_subnets(self):
-        return self._list_subnets()
-
-    def _list_subnets(self):
-        subnets = self._execute(self.idl.dhcp_options_list())
-        return [
-            subnet for subnet in subnets
-            if SubnetMapper.OVN_NETWORK_ID in subnet.external_ids
-        ]
-
-    def _get_subnet(self, subnet_id):
-        subnet = self._execute(self.idl.dhcp_options_get(subnet_id))
-        # TODO: this: str(subnet.uuid) != str(subnet_id)
-        # is a workaround for an ovsdbapp problem returning
-        # random value for table with no indexing column specified when
-        # no record for the given UUID was found.
-        # Remove when issue is resolved.
-        if not subnet or str(subnet.uuid) != str(subnet_id):
-            raise ElementNotFoundError(
-                'Subnet {subnet} does not exist'.format(subnet=subnet_id)
-            )
-        if SubnetMapper.OVN_NETWORK_ID not in subnet.external_ids:
-            raise ElementNotFoundError(
-                'Subnet {subnet} is not an ovirt manager subnet'
-                .format(subnet=subnet_id)
-            )
-        return subnet
-
-    def _get_subnet_by_network(self, network_id):
-        return next((
-            subnet for subnet in self._list_subnets()
-            if subnet.external_ids[SubnetMapper.OVN_NETWORK_ID] == (
-                str(network_id)
-            )),
-            None
-        )
+        return self.atomics.list_dhcp()
 
     @SubnetMapper.map_to_rest
     def get_subnet(self, subnet_id):
-        return self._get_subnet(subnet_id)
+        return self.atomics.get_dhcp(dhcp_id=subnet_id)
 
     @SubnetMapper.validate_add
     @SubnetMapper.map_from_rest
@@ -564,12 +507,12 @@ class OvnNorth(object):
         dns=None,
     ):
         try:
-            network = self._get_ls(network_id)
+            network = self.atomics.get_ls(ls_id=network_id)
         except ElementNotFoundError:
             raise SubnetConfigError('Subnet can not be created, network {}'
                                     ' does not exist'.format(network_id))
 
-        if self._get_dhcp_by_network_id(network_id):
+        if self.atomics.get_dhcp(ls_id=network_id):
             raise SubnetConfigError('Unable to create more than one subnet'
                                     ' for network {}'.format(network_id))
 
@@ -654,7 +597,7 @@ class OvnNorth(object):
         return self.get_subnet(subnet_id)
 
     def delete_subnet(self, subnet_id):
-        subnet = self._get_subnet(subnet_id)
+        subnet = self.atomics.get_dhcp(dhcp_id=subnet_id)
         router_id = self._get_subnet_gateway_router_id(subnet_id)
         if router_id:
             raise BadRequestError(
@@ -667,7 +610,7 @@ class OvnNorth(object):
         network_id = subnet.external_ids.get(
             SubnetMapper.OVN_NETWORK_ID
         )
-        network = self._get_ls(network_id)
+        network = self.atomics.get_ls(ls_id=network_id)
         self._execute(self.idl.dhcp_options_del(subnet_id))
         for port in network.ports:
             if self._is_port_address_value_static(port.type):
@@ -700,8 +643,8 @@ class OvnNorth(object):
         ls = self._get_port_network(gw_port)
         ls_id = str(ls.uuid)
 
-        dhcp_options = self._get_dhcp_by_network_id(ls_id)
-        lrp = self._get_lrp_by_lsp_id(gw_port_id)
+        dhcp_options = self.atomics.get_dhcp(ls_id=ls_id)
+        lrp = self.atomics.get_lrp(lsp_id=gw_port_id)
         gw_ip = ip_utils.get_ip_from_cidr(lrp.networks[0])
 
         return Router(
@@ -746,7 +689,7 @@ class OvnNorth(object):
             self._add_external_gateway_interface(
                 router_id, network_id, gateway_subnet_id, gateway_ip
             )
-            subnet = self._get_subnet(gateway_subnet_id)
+            subnet = self.atomics.get_dhcp(dhcp_id=gateway_subnet_id)
             self._add_default_route_to_router(router_id, subnet)
 
     def _validate_external_gateway(
@@ -757,7 +700,7 @@ class OvnNorth(object):
                 network_id, gateway_subnet_id, is_external_gateway=True
             )
             validate.ip_available_in_network(
-                self._get_ls(network_id), gateway_ip
+                self.atomics.get_ls(ls_id=network_id), gateway_ip
             )
 
     def _add_default_route_to_router(self, router_id, subnet):
@@ -826,10 +769,10 @@ class OvnNorth(object):
         if not existing_lr_gw_lsp_id:
             return False
 
-        existing_subnet = self._get_subnet_from_port_id(existing_lr_gw_lsp_id)
+        existing_subnet = self.atomics.get_dhcp(lsp_id=existing_lr_gw_lsp_id)
         existing_ip = ip_utils.get_port_ip(
-            self._get_switch_port(existing_lr_gw_lsp_id),
-            self._get_lrp_by_lsp_id(existing_lr_gw_lsp_id)
+            self.atomics.get_lsp(lsp_id=existing_lr_gw_lsp_id),
+            self.atomics.get_lrp(lsp_id=existing_lr_gw_lsp_id)
         )
 
         return (
@@ -864,11 +807,8 @@ class OvnNorth(object):
         # We need the prefix due to an ovn issue in OVN lookup (bug pending)
         return ovnconst.ROUTER_PORT_NAME_PREFIX + str(port_id)
 
-    def _lsp_id_by_lrp(self, lrp):
-        return lrp.name[len(ovnconst.ROUTER_PORT_NAME_PREFIX):]
-
     def _get_subnet_gateway_router_id(self, subnet_id):
-        subnet = self._get_subnet(subnet_id)
+        subnet = self.atomics.get_dhcp(dhcp_id=subnet_id)
         return subnet.external_ids.get(SubnetMapper.OVN_GATEWAY_ROUTER_ID)
 
     def _set_subnet_gateway_router(self, subnet_id, router_id):
@@ -881,12 +821,6 @@ class OvnNorth(object):
             )
         ))
 
-    def _get_ls_by_dhcp(self, dhcp):
-        dhcp_ls_id = str(dhcp.external_ids.get(SubnetMapper.OVN_NETWORK_ID))
-        for ls in self._execute(self.idl.ls_list()):
-            if dhcp_ls_id == str(ls.uuid):
-                return ls
-
     def _clear_subnet_gateway_router(self, subnet_id):
         self._execute(self.idl.db_remove(
             ovnconst.TABLE_DHCP_Options,
@@ -898,7 +832,7 @@ class OvnNorth(object):
     def _validate_create_routing_lsp_by_subnet(
         self, network_id, subnet_id, router_id=None, is_external_gateway=False
     ):
-        existing_subnet_for_network = self._get_dhcp_by_network_id(network_id)
+        existing_subnet_for_network = self.atomics.get_dhcp(ls_id=network_id)
         existing_router_for_subnet = self._get_subnet_gateway_router_id(
             subnet_id
         )
@@ -911,7 +845,7 @@ class OvnNorth(object):
             self._validate_subnet_is_not_on_router(subnet_id, router_id)
 
     def _create_routing_lsp_by_subnet(self, subnet_id, router_id):
-        subnet = self._get_subnet(subnet_id)
+        subnet = self.atomics.get_dhcp(dhcp_id=subnet_id)
         network_id = subnet.external_ids.get(SubnetMapper.OVN_NETWORK_ID)
         self._validate_create_routing_lsp_by_subnet(
             network_id, subnet_id, router_id)
@@ -933,7 +867,7 @@ class OvnNorth(object):
             network_id,
             ip_utils.random_unique_mac(
                 self._execute(self.idl.lsp_list()),
-                self._list_lrp()
+                self.atomics.list_lrp()
             )
         )
 
@@ -945,13 +879,13 @@ class OvnNorth(object):
             )
 
     def _update_routing_lsp_by_port(self, port_id, router_id):
-        port = self._get_switch_port(port_id)
+        port = self.atomics.get_lsp(lsp_id=port_id)
         if port.type == ovnconst.LSP_TYPE_ROUTER:
             raise BadRequestError(
                 'Can not add {port} to router. Port is already connected to a'
                 ' router'.format(port=port_id)
             )
-        subnet = self._get_subnet_from_port_id(port_id)
+        subnet = self.atomics.get_dhcp(lsp_id=port_id)
         if subnet:
             self._validate_subnet_is_not_on_router(subnet.uuid, router_id)
         lrp_ip = self._get_ip_from_port(port, router_id)
@@ -978,7 +912,9 @@ class OvnNorth(object):
     def _reserve_network_ip(self, network_id, gateway_ip):
         if not network_id:
             return
-        exclude_values = self._get_ls(network_id).other_config.get(
+        exclude_values = self.atomics.get_ls(
+            ls_id=network_id
+        ).other_config.get(
             ovnconst.LS_OPTION_EXCLUDE_IPS, {}
         )
         new_values = (
@@ -995,7 +931,9 @@ class OvnNorth(object):
         ))
 
     def _release_network_ip(self, network_id, ip):
-        exclude_values = self._get_ls(network_id).other_config.get(
+        exclude_values = self.atomics.get_ls(
+            ls_id=network_id
+        ).other_config.get(
             ovnconst.LS_OPTION_EXCLUDE_IPS, ''
         )
         values = exclude_values.split()
@@ -1024,7 +962,7 @@ class OvnNorth(object):
         port_ip = '{ip}/{netmask}'.format(
             ip=gateway_ip,
             netmask=ip_utils.get_mask_from_subnet(
-                self._get_subnet(gateway_subnet_id)
+                self.atomics.get_dhcp(dhcp_id=gateway_subnet_id)
             )
         )
 
@@ -1034,7 +972,7 @@ class OvnNorth(object):
             router_id, lrp_name, port_ip,
             ip_utils.random_unique_mac(
                 self._execute(self.idl.lsp_list()),
-                self._list_lrp(),
+                self.atomics.list_lrp(),
             )
         )
         self._connect_port_to_router(
@@ -1064,7 +1002,7 @@ class OvnNorth(object):
             self._update_routing_lsp_by_port(port_id, router_id)
         )
         if not subnet_id:
-            subnet_id = str(self._get_dhcp_by_network_id(network_id).uuid)
+            subnet_id = str(self.atomics.get_dhcp(ls_id=network_id).uuid)
         self._create_router_port(router_id, lrp_name, lrp_ip, mac)
         return RouterInterface(
             id=router_id,
@@ -1122,15 +1060,15 @@ class OvnNorth(object):
             return self._delete_router_interface_by_port(router_id, port_id)
 
     def _delete_router_interface_by_port(self, router_id, port_id):
-        lsp = self._get_switch_port(port_id)
+        lsp = self.atomics.get_lsp(lsp_id=port_id)
         validate.port_is_connected_to_router(lsp)
 
-        subnet = self._get_subnet_from_port_id(port_id)
+        subnet = self.atomics.get_dhcp(lsp_id=port_id)
         subnet_id = str(subnet.uuid)
-        lrp = self._get_lrp_by_lsp_id(port_id)
+        lrp = self.atomics.get_lrp(lsp_id=port_id)
         lrp_ip = ip_utils.get_ip_from_cidr(lrp.networks[0])
         lr = self._get_router(router_id)
-        ls_id = str(self._get_ls_by_dhcp(subnet).uuid)
+        ls_id = str(self.atomics.get_ls(dhcp=subnet).uuid)
 
         is_subnet_gateway = (
             subnet and
@@ -1170,26 +1108,14 @@ class OvnNorth(object):
                 ))
         self._release_network_ip(ls_id, lrp_ip)
 
-    def _get_lrp_by_lsp_id(self, port_id):
-        lsp = self._get_switch_port(port_id)
-        lrp_name = lsp.options.get(ovnconst.LSP_OPTION_ROUTER_PORT)
-        return self._get_lrp(lrp_name) if lrp_name else None
-
     def _is_subnet_on_router(self, router_id, subnet_id):
         lr = self._get_router(router_id)
         for lrp in lr.ports:
-            lsp_id = self._lsp_id_by_lrp(lrp)
-            lrp_subnet = self._get_subnet_from_port_id(lsp_id)
+            lsp_id = self.atomics.get_lsp(lrp=lrp)
+            lrp_subnet = self.atomics.get_dhcp(lsp_id=lsp_id)
             if str(lrp_subnet.uuid) == subnet_id:
                 return True
         return False
-
-    def _get_subnet_from_port_id(self, port_id):
-        for subnet in self._list_subnets():
-            network_id = subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
-            network = self._get_ls(network_id)
-            if any(port.name == port_id for port in network.ports):
-                return subnet
 
     def _delete_router_interface(self, router_id, port_id, lrp, lr):
         if lrp not in lr.ports:
@@ -1203,10 +1129,10 @@ class OvnNorth(object):
     def _delete_router_interface_by_subnet_and_port(
         self, router_id, subnet_id, port_id
     ):
-        subnet = self._get_subnet(subnet_id)
+        subnet = self.atomics.get_dhcp(dhcp_id=subnet_id)
         network_id = subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
-        network = self._get_ls(network_id)
-        lsp = self._get_switch_port(port_id)
+        network = self.atomics.get_ls(ls_id=network_id)
+        lsp = self.atomics.get_lsp(lsp_id=port_id)
         if lsp not in network.ports:
             raise ConflictError(
                 'Port {port} does not belong to subnet {subnet}.'
@@ -1216,14 +1142,14 @@ class OvnNorth(object):
 
     def _delete_router_interface_by_subnet(self, router_id, subnet_id):
         lr = self._get_router(router_id)
-        subnet = self._get_subnet(subnet_id)
+        subnet = self.atomics.get_dhcp(dhcp_id=subnet_id)
         network_id = subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
-        network = self._get_ls(network_id)
+        network = self.atomics.get_ls(ls_id=network_id)
         lr_gw_port = lr.external_ids.get(RouterMapper.OVN_ROUTER_GATEWAY_PORT)
         deleted_lsp_id = None
         for lrp in lr.ports:
-            lsp_id = self._lsp_id_by_lrp(lrp)
-            lsp = self._get_switch_port(lsp_id)
+            lsp_id = self.atomics.get_lsp(lrp=lrp)
+            lsp = self.atomics.get_lsp(lsp_id=lsp_id)
             if lsp in network.ports:
                 deleted_lsp_id = lsp_id
                 self._delete_router_interface(
@@ -1250,26 +1176,11 @@ class OvnNorth(object):
             dhcp_options_id=subnet_id,
         )
 
-    def _get_lrp(self, lrp):
-        try:
-            return self.idl.lookup(ovnconst.TABLE_LRP, lrp)
-        except RowNotFound:
-            raise ElementNotFoundError(
-                'Logical router port {port} does not exist'
-                .format(port=lrp)
-            )
-
     def _is_port_address_value_static(self, type):
         return (
             type == ovnconst.LSP_TYPE_ROUTER or
             type == ovnconst.LSP_TYPE_LOCALNET
         )
-
-    def _list_lrp(self):
-        # TODO: ovsdbapp does not allow to retrieve all lrp's in one query,
-        # so we have to resort to using the generic query
-        # To be changed once lrp_list is modified
-        return self._execute(self.idl.db_list(ovnconst.TABLE_LRP))
 
     def __enter__(self):
         return self

@@ -1,0 +1,144 @@
+# Copyright 2018 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+
+
+from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
+
+import ovndb.constants as ovnconst
+
+from handlers.base_handler import BadRequestError
+from handlers.base_handler import ElementNotFoundError
+
+from ovndb.ovn_north_mappers import PortMapper
+from ovndb.ovn_north_mappers import SubnetMapper
+
+
+def accepts_single_arg(f):
+    def inner(self, **kwargs):
+        assert len(
+            filter(lambda (_, v,): v is not None, kwargs.items())  # NOQA: E999
+        ) == 1, 'Exactly one paramter must be specified'
+        return f(self, **kwargs)
+    return inner
+
+
+class OvnNorthAtomics(object):
+
+    def __init__(self, idl):
+        self.idl = idl
+
+    def _execute(self, command):
+        try:
+            return command.execute(check_error=True)
+        except (ValueError, TypeError) as e:
+            raise BadRequestError(e)
+        except RowNotFound as e:
+            raise ElementNotFoundError(e)
+
+    @accepts_single_arg
+    def get_ls(self, ls_id=None, dhcp=None):
+        if ls_id:
+            return self._execute(self.idl.ls_get(ls_id))
+        if dhcp:
+            dhcp_ls_id = str(
+                dhcp.external_ids.get(SubnetMapper.OVN_NETWORK_ID)
+            )
+            for ls in self.list_ls():
+                if dhcp_ls_id == str(ls.uuid):
+                    return ls
+
+    @accepts_single_arg
+    def get_dhcp(self, ls_id=None, dhcp_id=None, lsp_id=None):
+        if ls_id:
+            return next((
+                subnet for subnet in self.list_dhcp()
+                if subnet.external_ids[SubnetMapper.OVN_NETWORK_ID] == (
+                    str(ls_id)
+                )),
+                None
+            )
+        if dhcp_id:
+            dhcp = self._execute(self.idl.dhcp_options_get(dhcp_id))
+            # TODO: this: str(subnet.uuid) != str(subnet_id)
+            # is a workaround for an ovsdbapp problem returning
+            # random value for table with no indexing column specified when
+            # no record for the given UUID was found.
+            # Remove when issue is resolved.
+            if not dhcp or str(dhcp.uuid) != str(dhcp_id):
+                raise ElementNotFoundError(
+                    'Subnet {subnet} does not exist'.format(subnet=dhcp_id)
+                )
+            if SubnetMapper.OVN_NETWORK_ID not in dhcp.external_ids:
+                raise ElementNotFoundError(
+                    'Subnet {subnet} is not an ovirt manager subnet'
+                    .format(subnet=dhcp_id)
+                )
+            return dhcp
+
+        if lsp_id:
+            for dhcp in self.list_dhcp():
+                network_id = dhcp.external_ids[SubnetMapper.OVN_NETWORK_ID]
+                network = self.get_ls(ls_id=network_id)
+                if any(port.name == lsp_id for port in network.ports):
+                    return dhcp
+            return None
+
+    @accepts_single_arg
+    def get_lsp(self, lsp_id=None, ovirt_lsp_id=None, lrp=None):
+        if lsp_id:
+            return self._execute(self.idl.lsp_get(lsp_id))
+        if ovirt_lsp_id:
+            lsp = self._execute(self.idl.lsp_get(ovirt_lsp_id))
+            if not self._is_port_ovirt_controlled(lsp):
+                raise ValueError('Not an ovirt controller port')
+            return lsp
+        if lrp:
+            return lrp.name[len(ovnconst.ROUTER_PORT_NAME_PREFIX):]
+
+    @accepts_single_arg
+    def get_lrp(self, lrp_name=None, lsp_id=None):
+        if lrp_name:
+            return self.idl.lookup(ovnconst.TABLE_LRP, lrp_name)
+        if lsp_id:
+            lsp = self.get_lsp(lsp_id=lsp_id)
+            lrp_name = lsp.options.get(ovnconst.LSP_OPTION_ROUTER_PORT)
+            return self.get_lrp(
+                lrp_name=lrp_name
+            ) if lrp_name else None
+
+    def list_ls(self):
+        return self._execute(self.idl.ls_list())
+
+    def list_lrp(self):
+        # TODO: ovsdbapp does not allow to retrieve all lrp's in one query,
+        # so we have to resort to using the generic query
+        # To be changed once lrp_list is modified
+        return self._execute(self.idl.db_list(ovnconst.TABLE_LRP))
+
+    def list_dhcp(self):
+        dhcps = self._execute(self.idl.dhcp_options_list())
+        return [
+            dhcp for dhcp in dhcps
+            if SubnetMapper.OVN_NETWORK_ID in dhcp.external_ids
+        ]
+
+    def list_lsp(self):
+        return self._execute(self.idl.lsp_list())
+
+    def _is_port_ovirt_controlled(self, port_row):
+        return PortMapper.OVN_NIC_NAME in port_row.external_ids
