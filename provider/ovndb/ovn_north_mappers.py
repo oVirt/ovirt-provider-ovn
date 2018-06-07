@@ -109,6 +109,7 @@ class NetworkMapper(Mapper):
     REST_PROVIDER_PHYSICAL_NETWORK = 'provider:physical_network'
     REST_PROVIDER_SEGMENTATION_ID = 'provider:segmentation_id'
 
+    OVN_NETWORK_NAME = 'ovirt_network_name'
     NETWORK_TYPE_FLAT = 'flat'
     NETWORK_TYPE_VLAN = 'vlan'
 
@@ -146,9 +147,14 @@ class NetworkMapper(Mapper):
         if not network:
             return {}
         ls, localnet_lsp = network.ls, network.localnet_lsp
+        network_name = ls.external_ids.get(
+            NetworkMapper.OVN_NETWORK_NAME
+        )
         result = {
             NetworkMapper.REST_NETWORK_ID: str(ls.uuid),
-            NetworkMapper.REST_NETWORK_NAME: ls.name,
+            NetworkMapper.REST_NETWORK_NAME: str(
+                network_name or ls.name
+            ),
             NetworkMapper.REST_TENANT_ID: tenant_id(),
             NetworkMapper.REST_STATUS: NetworkMapper.NETWORK_STATUS_ACTIVE
         }

@@ -228,9 +228,13 @@ class TestOvnNorth(object):
         assert mock_add_command.call_count == 1
         assert mock_add_command.mock_calls[0] == mock.call(
             ovn_north.idl,
-            TestOvnNorth.NETWORK_NAME10,
+            mock.ANY,
             False,
-            external_ids={}
+            external_ids={
+                NetworkMapper.OVN_NETWORK_NAME: (
+                    TestOvnNorth.NETWORK_NAME10
+                )
+            }
         )
 
     @mock.patch('ovsdbapp.schema.ovn_northbound.commands.LsAddCommand')
@@ -263,9 +267,13 @@ class TestOvnNorth(object):
         assert mock_ls_add_command.call_count == 1
         assert mock_ls_add_command.mock_calls[0] == mock.call(
             ovn_north.idl,
-            TestOvnNorth.NETWORK_NAME12,
+            mock.ANY,
             False,
-            external_ids={}
+            external_ids={
+                NetworkMapper.OVN_NETWORK_NAME: (
+                    TestOvnNorth.NETWORK_NAME12
+                )
+            }
         )
         assert mock_lsp_add_command.call_count == 1
         assert mock_lsp_add_command.mock_calls[0] == mock.call(
@@ -425,10 +433,14 @@ class TestOvnNorth(object):
             ovn_north.idl,
             ovnconst.TABLE_LS,
             TestOvnNorth.NETWORK_IDMTU,
-            (ovnconst.ROW_LSP_NAME, TestOvnNorth.NETWORK_NAMEMTU),
             (
-                ovnconst.ROW_LSP_EXTERNAL_IDS,
-                {NetworkMapper.REST_MTU: str(new_mtu)},
+                ovnconst.ROW_LS_EXTERNAL_IDS,
+                {
+                    NetworkMapper.OVN_NETWORK_NAME: (
+                        TestOvnNorth.NETWORK_NAMEMTU
+                    ),
+                    NetworkMapper.REST_MTU: str(new_mtu)
+                },
             ),
         )
         expected_network_mtu_update = mock.call(
@@ -466,7 +478,11 @@ class TestOvnNorth(object):
             ovn_north.idl,
             ovnconst.TABLE_LS,
             TestOvnNorth.NETWORK_ID10,
-            (NetworkMapper.REST_NETWORK_NAME, TestOvnNorth.NETWORK_NAME10)
+            (ovnconst.ROW_LS_EXTERNAL_IDS, {
+                NetworkMapper.OVN_NETWORK_NAME: (
+                    TestOvnNorth.NETWORK_NAME10
+                )
+            })
         )
 
     @mock.patch('ovsdbapp.schema.ovn_northbound.commands.LsGetCommand')
@@ -498,9 +514,12 @@ class TestOvnNorth(object):
             ovn_north.idl,
             ovnconst.TABLE_LS,
             TestOvnNorth.NETWORK_ID12,
-            (NetworkMapper.REST_NETWORK_NAME, TestOvnNorth.NETWORK_NAME12)
+            (ovnconst.ROW_LS_EXTERNAL_IDS, {
+                NetworkMapper.OVN_NETWORK_NAME: (
+                    TestOvnNorth.NETWORK_NAME12
+                )
+            })
         )
-        assert mock_ls_get_command.call_count == 2
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',

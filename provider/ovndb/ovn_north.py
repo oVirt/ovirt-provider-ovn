@@ -16,6 +16,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 
+import uuid
+
 import ovs.stream
 import ovsdbapp.backend.ovs_idl.connection
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
@@ -128,11 +130,20 @@ class OvnNorth(object):
     def _create_network(self, name, mtu=None):
         return self._execute(
             self.idl.ls_add(
-                switch=name,
+                switch='ovirt-{name}-{gen_id}'.format(
+                    name=name, gen_id=uuid.uuid4()
+                ),
                 may_exist=False,
-                external_ids={'mtu': str(mtu)} if mtu is not None else {}
+                external_ids=self._create_network_external_ids(name, mtu)
             )
         )
+
+    @staticmethod
+    def _create_network_external_ids(name, mtu=None):
+        original_name_dict = {NetworkMapper.OVN_NETWORK_NAME: name}
+        if mtu is not None:
+            original_name_dict[ovnconst.LS_EXTERNAL_IDS_MTU] = str(mtu)
+        return original_name_dict
 
     def _add_localnet_network(self, name, localnet, vlan, mtu):
         network = self._create_network(name, mtu)
@@ -158,12 +169,17 @@ class OvnNorth(object):
         return self.get_network(network_id)
 
     def _update_network_data(self, network_id, name, mtu):
+        new_external_ids = self._create_network_external_ids(name, mtu)
+        old_mtu = self.atomics.get_ls(ls_id=network_id).external_ids.get(
+            ovnconst.LS_EXTERNAL_IDS_MTU
+        )
+        if mtu is None and old_mtu is not None:
+            new_external_ids[ovnconst.LS_EXTERNAL_IDS_MTU] = old_mtu
         DbSetCommand(
             self.idl, ovnconst.TABLE_LS, network_id
-        ).add(ovnconst.ROW_LS_NAME, name).add(
-            ovnconst.ROW_LSP_EXTERNAL_IDS,
-            {NetworkMapper.REST_MTU: str(mtu)},
-            mtu
+        ).add(
+            ovnconst.ROW_LS_EXTERNAL_IDS,
+            new_external_ids
         ).execute()
         if mtu:
             self._update_networks_mtu(network_id, mtu)
