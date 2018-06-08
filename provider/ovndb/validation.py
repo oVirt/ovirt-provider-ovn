@@ -158,3 +158,14 @@ def router_has_no_ports(lr):
                 router_id=lr.uuid
             )
         )
+
+
+def port_added_to_lr_must_have_subnet(network_cidr, lsp_id, lr_id):
+    if not network_cidr:
+        raise ElementNotFoundError(
+            'Unable to attach port {port_id} to router '
+            '{router_id}. '
+            'Attaching by port requires the port\'s network '
+            'to have a subnet attached.'
+            .format(port_id=lsp_id, router_id=lr_id)
+        )

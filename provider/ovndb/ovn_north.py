@@ -888,7 +888,8 @@ class OvnNorth(object):
         subnet = self.atomics.get_dhcp(lsp_id=port_id)
         if subnet:
             self._validate_subnet_is_not_on_router(subnet.uuid, router_id)
-        lrp_ip = self._get_ip_from_port(port, router_id)
+
+        lrp_ipmask = self._get_ip_netmask_for_lrp(port, router_id)
         lrp_name = self._create_router_port_name(port.uuid)
         mac = ip_utils.get_port_mac(port)
         self._connect_port_to_router(
@@ -898,9 +899,21 @@ class OvnNorth(object):
             is_enabled=True
         )
         return (
-            port_id, lrp_name, lrp_ip, str(self._get_port_network(port).uuid),
-            mac
+            port_id, lrp_name, lrp_ipmask,
+            str(self._get_port_network(port).uuid), mac
         )
+
+    def _get_ip_netmask_for_lrp(self, lsp, lr_id):
+        lsp_ip = ip_utils.get_port_ip(lsp)
+        validate.port_ip_for_router(lsp_ip, lsp, lr_id)
+
+        ls_cidr = self._get_port_network(lsp).other_config.get(
+            NetworkMapper.OVN_SUBNET
+        )
+        validate.port_added_to_lr_must_have_subnet(
+            ls_cidr, str(lsp.uuid), lr_id
+        )
+        return ip_utils.get_ip_with_mask(ip=lsp_ip, cidr=ls_cidr)
 
     def _create_router_port(self, router_id, lrp_name, lrp_ip, mac):
         self._execute(self.idl.lrp_add(
@@ -1026,23 +1039,6 @@ class OvnNorth(object):
             return None
         address_parts = addresses[0].split(' ')
         return address_parts[1] if len(address_parts) > 1 else None
-
-    def _get_ip_from_port(self, port, router_id):
-        port_ip = ip_utils.get_port_ip(port)
-        validate.port_ip_for_router(port_ip, port, router_id)
-        network = self._get_port_network(port)
-        network_cidr = network.other_config.get(NetworkMapper.OVN_SUBNET)
-        if not network_cidr:
-            raise ElementNotFoundError(
-                'Unable to attach port {port_id} to router '
-                '{router_id}. '
-                'Attaching by port requires the port\'s network '
-                'to have a subnet attached.'
-                .format(port_id=port.uuid, router_id=router_id)
-            )
-        network_netmask = network_cidr.split('/')[1]
-        return '{ip}/{netmask}'.format(
-            ip=port_ip, netmask=network_netmask)
 
     @RemoveRouterInterfaceMapper.validate_update
     @RemoveRouterInterfaceMapper.map_from_rest

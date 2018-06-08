@@ -148,3 +148,8 @@ def diff_routes(new_rest_routes, db_routes):
         dict([(s.split(':')[0], s.split(':')[1]) for s in added]),
         dict([(s.split(':')[0], s.split(':')[1]) for s in removed]),
     )
+
+
+def get_ip_with_mask(ip, cidr):
+    mask = cidr.split('/')[1]
+    return '{ip}/{netmask}'.format(ip=ip, netmask=mask)
