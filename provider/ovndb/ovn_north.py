@@ -690,7 +690,11 @@ class OvnNorth(object):
                 router_id, network_id, gateway_subnet_id, gateway_ip
             )
             subnet = self.atomics.get_dhcp(dhcp_id=gateway_subnet_id)
-            self._add_default_route_to_router(router_id, subnet)
+            self.atomics.add_route(
+                lrp_id=router_id,
+                cidr=ovnconst.DEFAULT_ROUTE,
+                default_gateway=subnet.options.get('router')
+            )
 
     def _validate_external_gateway(
         self, gateway_ip, gateway_subnet_id, network_id
@@ -702,14 +706,6 @@ class OvnNorth(object):
             validate.ip_available_in_network(
                 self.atomics.get_ls(ls_id=network_id), gateway_ip
             )
-
-    def _add_default_route_to_router(self, router_id, subnet):
-        default_gateway = subnet.options.get('router')
-        self.idl.lr_route_add(
-            router_id,
-            ovnconst.DEFAULT_ROUTE,
-            default_gateway
-        ).execute()
 
     @RouterMapper.validate_add
     @RouterMapper.map_from_rest

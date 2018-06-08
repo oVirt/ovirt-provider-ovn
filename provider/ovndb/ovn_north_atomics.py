@@ -50,6 +50,9 @@ class OvnNorthAtomics(object):
         except RowNotFound as e:
             raise ElementNotFoundError(e)
 
+    def add_route(self, lrp_id, prefix, nexthop):
+        self._execute(self.idl.lr_route_add(lrp_id, prefix, nexthop))
+
     @accepts_single_arg
     def get_ls(self, ls_id=None, dhcp=None):
         if ls_id:
