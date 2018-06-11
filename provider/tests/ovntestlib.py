@@ -18,6 +18,7 @@
 from __future__ import absolute_import
 
 from ovirt_provider_config_common import tenant_id
+from ovirt_provider_config_common import dhcp_mtu
 
 import ovndb.ip as ip_utils
 from ovndb.ovn_north_mappers import NetworkMapper
@@ -66,6 +67,9 @@ def assert_network_equal(rest_data, network):
     assert rest_data['id'] == str(network.ls.uuid)
     assert rest_data['name'] == network.ls.name
     assert rest_data['tenant_id'] == tenant_id()
+    assert rest_data['mtu'] == int(
+        network.ls.external_ids.get(ovnconst.LS_EXTERNAL_IDS_MTU, dhcp_mtu())
+    )
     if network.localnet_lsp:
         assert_lsp_equal(rest_data, network.localnet_lsp)
 

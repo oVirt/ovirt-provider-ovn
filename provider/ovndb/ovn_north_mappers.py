@@ -23,6 +23,7 @@ from functools import wraps
 from netaddr import IPNetwork
 import six
 
+from ovirt_provider_config_common import dhcp_mtu
 from ovirt_provider_config_common import tenant_id
 import ovndb.constants as ovnconst
 import ovndb.ip as ip_utils
@@ -150,9 +151,10 @@ class NetworkMapper(Mapper):
             NetworkMapper.REST_TENANT_ID: tenant_id(),
             NetworkMapper.REST_STATUS: NetworkMapper.NETWORK_STATUS_ACTIVE
         }
-        mtu_value = ls.external_ids.get(ovnconst.LS_EXTERNAL_IDS_MTU)
-        if mtu_value:
-            result[NetworkMapper.REST_MTU] = int(mtu_value)
+        result[NetworkMapper.REST_MTU] = int(
+            ls.external_ids[ovnconst.LS_EXTERNAL_IDS_MTU]
+            if ovnconst.LS_EXTERNAL_IDS_MTU in ls.external_ids else dhcp_mtu()
+        )
         result.update(NetworkMapper._row2rest_localnet(localnet_lsp))
         return result
 
