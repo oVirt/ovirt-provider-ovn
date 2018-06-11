@@ -20,6 +20,7 @@
 #
 from __future__ import print_function
 
+import errno
 import getopt
 import sys
 
@@ -49,7 +50,24 @@ def _get_open_vswitch_host_id():
     retcode, out, err = hooking.execCmd(CMD_LINE, sudo=True)
     if retcode == 0:
         return out[0].replace('"', '')
-    hooking.log('Failed to get Open VSwitch system-id . err = %s' % (err))
+
+    if _is_ovs_service_running():
+        hooking.log('Failed to get Open VSwitch system-id . err = %s' % (err))
+
+    return None
+
+
+def _is_ovs_service_running():
+    OVS_CTL = '/usr/share/openvswitch/scripts/ovs-ctl'
+    try:
+        rc, _, _ = hooking.execCmd([OVS_CTL, 'status'])
+    except OSError as err:
+        # Silently ignore the missing file and consider the service as down.
+        if err.errno == errno.ENOENT:
+            rc = errno.ENOENT
+        else:
+            raise
+    return rc == 0
 
 
 def _update_ovirt_provider_ovn_host_id(caps, host_id):
