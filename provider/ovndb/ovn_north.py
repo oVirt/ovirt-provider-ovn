@@ -590,20 +590,9 @@ class OvnNorth(object):
                 continue
             self._update_port_address(port, network_id=network_id)
 
-    def _get_router(self, router_id):
-        # TODO: LrGet is not yet implemented by ovsdbapp
-        # patch pending: https://review.openstack.org/#/c/505517/
-        # replace once patch is accepted
-        try:
-            return self.idl.lookup(ovnconst.TABLE_LR, router_id)
-        except RowNotFound:
-            raise ElementNotFoundError(
-                'Router {router} does not exist'.format(router=router_id)
-            )
-
     @RouterMapper.map_to_rest
     def get_router(self, router_id):
-        return self._get_router_from_lr(self._get_router(router_id))
+        return self._get_router_from_lr(self.atomics.get_lr(lr_id=router_id))
 
     def _get_router_from_lr(self, lr):
         gw_port_id = lr.external_ids.get(RouterMapper.OVN_ROUTER_GATEWAY_PORT)
@@ -634,11 +623,12 @@ class OvnNorth(object):
 
     def _add_router(
         self, name, enabled, network_id=None, gateway_subnet_id=None,
-        gateway_ip=None
+        gateway_ip=None, routes=None
     ):
         self._validate_external_gateway(
             gateway_ip, gateway_subnet_id, network_id
         )
+        validate.no_default_gateway_in_routes(network_id is not None, routes)
         self._reserve_network_ip(network_id, gateway_ip)
 
         router = self._execute(self.idl.lr_add(
@@ -649,11 +639,22 @@ class OvnNorth(object):
         self._add_external_gateway_to_router(
             gateway_ip, gateway_subnet_id, network_id, router_id
         )
-        router = self._get_router(router_id)
+        self._add_routes_to_router(router_id, routes)
+        router = self.atomics.get_lr(lr_id=router_id)
         return Router(
             lr=router, ext_gw_ls_id=network_id,
             ext_gw_dhcp_options_id=gateway_subnet_id, gw_ip=gateway_ip
         )
+
+    def _add_routes_to_router(self, router_id, routes):
+        if not routes:
+            return
+        for route in routes:
+            self.atomics.add_route(
+                lrp_id=router_id,
+                prefix=route[RouterMapper.REST_ROUTER_DESTINATION],
+                nexthop=route[RouterMapper.REST_ROUTER_NEXTHOP]
+            )
 
     def _add_external_gateway_to_router(
         self, gateway_ip, gateway_subnet_id, network_id, router_id
@@ -688,7 +689,7 @@ class OvnNorth(object):
         gateway_ip=None, routes=None
     ):
         return self._add_router(
-            name, enabled, network_id, gateway_subnet, gateway_ip
+            name, enabled, network_id, gateway_subnet, gateway_ip, routes
         )
 
     @RouterMapper.validate_update
@@ -700,7 +701,7 @@ class OvnNorth(object):
         self._validate_external_gateway(
             gateway_ip, gateway_subnet, network_id
         )
-        lr = self._get_router(router_id)
+        lr = self.atomics.get_lr(lr_id=router_id)
         existing_gw_lsp_id = lr.external_ids.get(
             RouterMapper.OVN_ROUTER_GATEWAY_PORT
         )
@@ -749,15 +750,16 @@ class OvnNorth(object):
         )
 
     def delete_router(self, router_id):
-        existing_gw_lsp_id = self._get_router(router_id).external_ids.get(
-            RouterMapper.OVN_ROUTER_GATEWAY_PORT
-        )
+        existing_gw_lsp_id = self.atomics.get_lr(
+            lr_id=router_id).external_ids.get(
+                RouterMapper.OVN_ROUTER_GATEWAY_PORT
+            )
         if existing_gw_lsp_id:
             self._delete_router_interface_by_port(
                 router_id, existing_gw_lsp_id
             )
 
-        validate.router_has_no_ports(self._get_router(router_id))
+        validate.router_has_no_ports(self.atomics.get_lr(lr_id=router_id))
         self._execute(self.idl.lr_del(router_id))
 
     def _validate_router_exists(self, router_id):
@@ -1030,7 +1032,7 @@ class OvnNorth(object):
         subnet_id = str(subnet.uuid)
         lrp = self.atomics.get_lrp(lsp_id=port_id)
         lrp_ip = ip_utils.get_ip_from_cidr(lrp.networks[0])
-        lr = self._get_router(router_id)
+        lr = self.atomics.get_lr(lr_id=router_id)
         ls_id = str(self.atomics.get_ls(dhcp=subnet).uuid)
 
         is_subnet_gateway = (
@@ -1072,7 +1074,7 @@ class OvnNorth(object):
         self._release_network_ip(ls_id, lrp_ip)
 
     def _is_subnet_on_router(self, router_id, subnet_id):
-        lr = self._get_router(router_id)
+        lr = self.atomics.get_lr(lr_id=router_id)
         for lrp in lr.ports:
             lsp_id = self.atomics.get_lsp(lrp=lrp)
             lrp_subnet = self.atomics.get_dhcp(lsp_id=lsp_id)
@@ -1104,7 +1106,7 @@ class OvnNorth(object):
         return self._delete_router_interface_by_port(router_id, port_id)
 
     def _delete_router_interface_by_subnet(self, router_id, subnet_id):
-        lr = self._get_router(router_id)
+        lr = self.atomics.get_lr(lr_id=router_id)
         subnet = self.atomics.get_dhcp(dhcp_id=subnet_id)
         network_id = subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
         network = self.atomics.get_ls(ls_id=network_id)

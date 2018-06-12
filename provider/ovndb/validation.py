@@ -26,6 +26,7 @@ from handlers.base_handler import ElementNotFoundError
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import SubnetMapper
 from ovndb.ovn_north_mappers import RestDataError
+from ovndb.ovn_north_mappers import RouterMapper
 
 
 def attach_network_to_router_by_subnet(subnet, network_id, router_id):
@@ -201,3 +202,15 @@ def subnet_is_ovirt_managed(subnet):
             'Subnet {subnet} is not an ovirt manager subnet'
             .format(subnet=subnet.uuid)
         )
+
+
+def no_default_gateway_in_routes(default_gateway_exists, routes):
+    if default_gateway_exists and routes:
+        if filter(
+            lambda r: r[RouterMapper.REST_ROUTER_DESTINATION]
+                == ovnconst.DEFAULT_ROUTE, routes
+        ):
+            raise BadRequestError(
+                'A default static route can not be added when an external '
+                ' gateway is defined on a router.'
+            )

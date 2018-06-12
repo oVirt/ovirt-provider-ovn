@@ -121,6 +121,17 @@ class OvnNorthAtomics(object):
                 lrp_name=lrp_name
             ) if lrp_name else None
 
+    @accepts_single_arg
+    def get_lr(self, lr_id=None):
+        if lr_id:
+            try:
+                # TODO: replace by command after moving to newer ovsdbapp ver
+                return self.idl.lookup(ovnconst.TABLE_LR, lr_id)
+            except RowNotFound:
+                raise ElementNotFoundError(
+                    'Router {router} does not exist'.format(router=lr_id)
+                )
+
     def list_ls(self):
         return self._execute(self.idl.ls_list())
 

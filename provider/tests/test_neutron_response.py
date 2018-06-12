@@ -359,5 +359,6 @@ class TestNeutronResponse(object):
             True,
             'ae34051f-aa6c-4c75-abf5-50dc9ac99ef3',
             'b930d7f6-ceb7-40a0-8b81-a425dd994ccf',
-            '172.24.4.6'
+            '172.24.4.6',
+            None
         )
