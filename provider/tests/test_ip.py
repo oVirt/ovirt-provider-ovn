@@ -62,3 +62,50 @@ def test_ip_in_cidr():
     assert ip_utils.ip_in_cidr('192.168.0.1', '0.0.0.0/0')
     assert ip_utils.ip_in_cidr('192.168.0.1', '192.168.0.1/32')
     assert not ip_utils.ip_in_cidr('192.168.0.1', '192.168.1.0/24')
+
+
+class Route(object):
+    def __init__(self, ip_prefix, nexhop):
+        self.ip_prefix = ip_prefix
+        self.nexthop = nexhop
+
+
+def test_diff_routes():
+    rest_routes = [
+        {'destination': '1.1.1.0/24', 'nexthop': '1.1.1.1'},
+        {'destination': '1.1.2.0/24', 'nexthop': '1.1.2.1'},
+        {'destination': '1.1.3.0/24', 'nexthop': '1.1.3.1'},
+    ]
+
+    db_routes = [
+        Route('1.1.2.0/24', '1.1.2.100'),
+        Route('1.1.3.0/24', '1.1.3.1'),
+        Route('1.1.4.0/24', '1.1.4.1')
+    ]
+
+    added, deleted = ip_utils.diff_routes(rest_routes, db_routes)
+    assert len(added) == 2
+    assert len(deleted) == 2
+    assert rest_routes[0]['destination'] in added
+    assert rest_routes[1]['destination'] in added
+    assert db_routes[0].ip_prefix in deleted
+    assert db_routes[2].ip_prefix in deleted
+
+
+def test_diff_routes_all_empty():
+    assert ({}, {}) == ip_utils.diff_routes(None, None)
+    assert ({}, {}) == ip_utils.diff_routes([], [])
+
+
+def test_diff_routes_only_new():
+    route = {'destination': '1.1.1.0/24', 'nexthop': '1.1.1.1'}
+    assert (
+        {route['destination']: route['nexthop']}, {}
+    ) == ip_utils.diff_routes([route], [])
+
+
+def test_diff_routes_only_db():
+    route = Route('1.1.2.0/24', '1.1.2.100')
+    assert (
+        {}, {route.ip_prefix: route.nexthop}
+    ) == ip_utils.diff_routes(None, [route])

@@ -131,3 +131,20 @@ def is_ip_available_in_network(network, ip):
         return False
     exclude_ips = get_network_exclude_ips(network)
     return ip not in exclude_ips
+
+
+def diff_routes(new_rest_routes, db_routes):
+    if new_rest_routes is None:
+        new_rest_routes = []
+    if db_routes is None:
+        db_routes = []
+    new_set = set([
+        ':'.join((d['destination'], d['nexthop'])) for d in new_rest_routes
+    ])
+    old_set = set([':'.join((d.ip_prefix, d.nexthop)) for d in db_routes])
+    added = new_set - old_set
+    removed = old_set - new_set
+    return (
+        dict([(s.split(':')[0], s.split(':')[1]) for s in added]),
+        dict([(s.split(':')[0], s.split(':')[1]) for s in removed]),
+    )
