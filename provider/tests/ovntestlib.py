@@ -19,6 +19,7 @@ from __future__ import absolute_import
 
 from ovirt_provider_config_common import tenant_id
 
+import ovndb.ip as ip_utils
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import SubnetMapper
@@ -159,12 +160,45 @@ def assert_subnet_equal(actual, subnet_row):
 
 
 class OvnRouterRow(OvnRow):
-    def __init__(self, uuid, name=None, external_ids=None, ports=None):
+    def __init__(self, uuid, name=None, external_ids=None, ports=None,
+                 static_routes=None):
         self.uuid = uuid
         self.name = name
         self.enabled = [True]
         self.external_ids = external_ids or {}
         self.ports = ports or []
+        self.static_routes = static_routes or []
+
+
+class StaticRouteRow(OvnRow):
+    def __init__(self, ip_prefix=None, nexthop=None):
+        self.ip_prefix = ip_prefix
+        self.nexthop = nexthop
+
+
+def assert_router_equal(rest_data, router):
+    lr = router.lr
+    assert lr
+    assert rest_data['id'] == str(lr.uuid)
+    assert rest_data['name'] == lr.name
+    rest_state = rest_data['admin_state_up']
+    assert rest_state == lr.enabled[0] if lr.enabled else rest_state is True
+    if router.ext_gw_ls_id:
+        gw_info = rest_data['external_gateway_info']
+
+        assert gw_info['network_id'] == router.ext_gw_ls_id
+        fixed_ips = gw_info['external_fixed_ips'][0]
+        assert fixed_ips['subnet_id'] == router.ext_gw_dhcp_options_id
+        assert fixed_ips['ip_address'] == router.gw_ip
+    if lr.static_routes:
+        assert_static_routes_equal(
+            rest_data['routes'], lr.static_routes)
+
+
+def assert_static_routes_equal(rest_data, routes):
+    new_routes, removed_routes = ip_utils.diff_routes(rest_data, routes)
+    assert not new_routes
+    assert not removed_routes
 
 
 class OvnRouterPort(object):

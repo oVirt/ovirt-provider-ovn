@@ -534,6 +534,10 @@ class RouterMapper(Mapper):
     REST_ROUTER_IP_ADDRESS = 'ip_address'
     REST_ROUTER_SUBNET_ID = 'subnet_id'
 
+    REST_ROUTER_ROUTES = 'routes'
+    REST_ROUTER_DESTINATION = 'destination'
+    REST_ROUTER_NEXTHOP = 'nexthop'
+
     OVN_ROUTER_GATEWAY_PORT = 'ovirt_gateway_port'
 
     ROUTER_STATUS_ACTIVE = 'ACTIVE'
@@ -543,6 +547,7 @@ class RouterMapper(Mapper):
     def rest2row(wrapped_self, func, rest_data, router_id):
         name = rest_data.get(RouterMapper.REST_ROUTER_NAME)
         enabled = rest_data.get(RouterMapper.REST_ROUTER_ADMIN_STATE_UP, True)
+        routes = rest_data.get(RouterMapper.REST_ROUTER_ROUTES)
 
         network, subnet, ip = RouterMapper._get_external_gateway_from_rest(
             rest_data
@@ -552,13 +557,13 @@ class RouterMapper(Mapper):
             return func(
                 wrapped_self, router_id=router_id, name=name, enabled=enabled,
                 network_id=network, gateway_subnet=subnet,
-                gateway_ip=ip
+                gateway_ip=ip, routes=routes
             )
         else:
             return func(
                 wrapped_self, name=name, enabled=enabled,
                 network_id=network, gateway_subnet=subnet,
-                gateway_ip=ip
+                gateway_ip=ip, routes=routes
             )
 
     @staticmethod
@@ -589,13 +594,26 @@ class RouterMapper(Mapper):
             RouterMapper.REST_ROUTER_STATUS:
                 RouterMapper.ROUTER_STATUS_ACTIVE
                 if row.enabled else RouterMapper.ROUTER_STATUS_INACTIVE,
-            RouterMapper.REST_ROUTER_ROUTES: [],
             RouterMapper.REST_TENANT_ID: tenant_id(),
             RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO:
                 RouterMapper._get_external_gateway_from_row(router),
+            RouterMapper.REST_ROUTER_ROUTES:
+                RouterMapper._get_routes_from_row(row.static_routes),
         }
 
         return result
+
+    @staticmethod
+    def _get_routes_from_row(routes):
+        return [
+            {
+                RouterMapper.REST_ROUTER_DESTINATION:
+                    route.ip_prefix,
+                RouterMapper.REST_ROUTER_NEXTHOP:
+                    route.nexthop
+            }
+            for route in routes
+        ]
 
     @staticmethod
     def _get_external_gateway_from_row(router):

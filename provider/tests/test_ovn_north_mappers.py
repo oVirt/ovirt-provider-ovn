@@ -25,13 +25,19 @@ from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import NetworkPort
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import SubnetMapper
+from ovndb.ovn_north_mappers import Router
+from ovndb.ovn_north_mappers import RouterMapper
+
 
 from ovntestlib import assert_network_equal
 from ovntestlib import assert_port_equal
 from ovntestlib import assert_subnet_equal
+from ovntestlib import assert_router_equal
 from ovntestlib import OvnSubnetRow
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
+from ovntestlib import OvnRouterRow
+from ovntestlib import StaticRouteRow
 
 
 FIXED_IP_ADDRESS = '1.1.1.1'
@@ -149,3 +155,31 @@ class TestOvnNorthMappers(object):
             options={LSP_OPTION_NETWORK_NAME: PORT_NAME}
         )
         self.__assert_port_data_equal(port_data)
+
+    def test_router_to_rest_minimal(self):
+        row = OvnRouterRow(SUBNET_ID102, external_ids={
+            SubnetMapper.OVN_NETWORK_ID: NETWORK_ID1
+        })
+        router = Router(
+            lr=row, ext_gw_ls_id=NETWORK_ID1,
+            ext_gw_dhcp_options_id=SUBNET_ID102, gw_ip='1.1.1.1'
+        )
+        router_rest = RouterMapper.row2rest(router)
+        assert_router_equal(router_rest, router)
+
+    def test_router_to_rest_with_routes(self):
+        row = OvnRouterRow(
+            SUBNET_ID102,
+            external_ids={
+                SubnetMapper.OVN_NETWORK_ID: NETWORK_ID1
+            },
+            static_routes=[
+                StaticRouteRow(ip_prefix='0.0.0.0/24', nexthop='1.1.1.1')
+            ]
+        )
+        router = Router(
+            lr=row, ext_gw_ls_id=NETWORK_ID1,
+            ext_gw_dhcp_options_id=SUBNET_ID102, gw_ip='1.1.1.1',
+        )
+        router_rest = RouterMapper.row2rest(router)
+        assert_router_equal(router_rest, router)

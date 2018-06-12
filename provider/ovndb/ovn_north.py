@@ -773,7 +773,7 @@ class OvnNorth(object):
     @RouterMapper.map_to_rest
     def add_router(
         self, name, enabled, network_id=None, gateway_subnet=None,
-        gateway_ip=None
+        gateway_ip=None, routes=None
     ):
         return self._add_router(
             name, enabled, network_id, gateway_subnet, gateway_ip
@@ -783,7 +783,7 @@ class OvnNorth(object):
     @RouterMapper.map_from_rest
     def update_router(
         self, router_id, name, enabled, network_id=None,
-        gateway_subnet=None, gateway_ip=None
+        gateway_subnet=None, gateway_ip=None, routes=None
     ):
         self._validate_external_gateway(
             gateway_ip, gateway_subnet, network_id
