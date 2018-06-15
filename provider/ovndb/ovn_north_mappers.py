@@ -682,6 +682,22 @@ class RouterMapper(Mapper):
                         key=RouterMapper.REST_ROUTER_ENABLE_SNAT
                     )
                 )
+        routes = rest_data.get(RouterMapper.REST_ROUTER_ROUTES)
+        if routes:
+            for route in routes:
+                has_required_fields = (
+                    type(route) is dict and
+                    route.get(RouterMapper.REST_ROUTER_NEXTHOP) is not None and
+                    route.get(RouterMapper.REST_ROUTER_DESTINATION) is not None
+                )
+                if not has_required_fields:
+                    raise RestDataError(
+                        'Static route must have {destination} and {nexthop} '
+                        'specified.'.format(
+                            destination=RouterMapper.REST_ROUTER_DESTINATION,
+                            nexthop=RouterMapper.REST_ROUTER_NEXTHOP
+                        )
+                    )
 
 
 class BaseRouterInterfaceMapper(Mapper):
