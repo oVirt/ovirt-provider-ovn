@@ -317,6 +317,8 @@ class TestNeutronResponse(object):
     def test_post_routers(self, mock_connection):
         nb_db = OvnNorth()
         nb_db._add_router = Mock()
+        nb_db.atomics.idl = Mock()
+
         nb_db._add_router.return_value = Router(OvnRouterRow(
             'uuid',
             'router1',

@@ -39,7 +39,6 @@ def accepts_single_arg(f):
 
 
 class OvnNorthAtomics(object):
-
     def __init__(self, idl):
         self.idl = idl
 
@@ -150,6 +149,16 @@ class OvnNorthAtomics(object):
 
     def list_lsp(self):
         return self._execute(self.idl.lsp_list())
+
+    def remove_static_route(self, lr, ip_prefix):
+        for route in lr.static_routes:
+            if route.ip_prefix == ip_prefix:
+                self._execute(self.idl.db_remove(
+                    ovnconst.TABLE_LR,
+                    str(lr.uuid),
+                    ovnconst.ROW_LR_STATIC_ROUTES,
+                    route
+                ))
 
     def _is_port_ovirt_controlled(self, port_row):
         return PortMapper.OVN_NIC_NAME in port_row.external_ids

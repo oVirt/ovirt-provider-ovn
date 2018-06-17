@@ -702,6 +702,25 @@ class OvnNorth(object):
             gateway_ip, gateway_subnet, network_id
         )
         lr = self.atomics.get_lr(lr_id=router_id)
+
+        if routes is not None:
+            # NOTE: we only validate default route and external gateway being
+            # both present for the rest difinition. We overwrite existing
+            # external gateway if a new default route is specified in rest
+            # request
+            validate.no_default_gateway_in_routes(network_id, routes)
+
+            added_routes, removed_routes = ip_utils.diff_routes(
+                routes, lr.static_routes
+            )
+
+            for destination in removed_routes:
+                self.atomics.remove_static_route(lr, destination)
+            for destination in added_routes:
+                self.atomics.add_route(
+                    router_id, destination, added_routes[destination]
+                )
+
         existing_gw_lsp_id = lr.external_ids.get(
             RouterMapper.OVN_ROUTER_GATEWAY_PORT
         )
@@ -1063,14 +1082,7 @@ class OvnNorth(object):
             ovnconst.ROW_LR_EXTERNAL_IDS,
             RouterMapper.OVN_ROUTER_GATEWAY_PORT
         ))
-        for route in lr.static_routes:
-            if route.ip_prefix == ovnconst.DEFAULT_ROUTE:
-                self._execute(self.idl.db_remove(
-                    ovnconst.TABLE_LR,
-                    str(lr.uuid),
-                    ovnconst.ROW_LR_STATIC_ROUTES,
-                    route
-                ))
+        self.atomics.remove_static_route(lr, ovnconst.DEFAULT_ROUTE)
         self._release_network_ip(ls_id, lrp_ip)
 
     def _is_subnet_on_router(self, router_id, subnet_id):
