@@ -128,22 +128,25 @@ class OvnNorth(object):
             return self._get_network(self._create_network(name, mtu))
 
     def _create_network(self, name, mtu=None):
+        external_ids_dict = {NetworkMapper.OVN_NETWORK_NAME: name}
+        if mtu is not None:
+            external_ids_dict[ovnconst.LS_EXTERNAL_IDS_MTU] = str(mtu)
         return self._execute(
             self.idl.ls_add(
                 switch='ovirt-{name}-{gen_id}'.format(
                     name=name, gen_id=uuid.uuid4()
                 ),
                 may_exist=False,
-                external_ids=self._create_network_external_ids(name, mtu)
+                external_ids=self._generate_external_ids(
+                    {},
+                    **external_ids_dict
+                )
             )
         )
 
     @staticmethod
-    def _create_network_external_ids(name, mtu=None):
-        original_name_dict = {NetworkMapper.OVN_NETWORK_NAME: name}
-        if mtu is not None:
-            original_name_dict[ovnconst.LS_EXTERNAL_IDS_MTU] = str(mtu)
-        return original_name_dict
+    def _generate_external_ids(current_external_ids, **kwargs):
+        return dict(current_external_ids, **kwargs)
 
     def _add_localnet_network(self, name, localnet, vlan, mtu):
         network = self._create_network(name, mtu)
@@ -169,12 +172,17 @@ class OvnNorth(object):
         return self.get_network(network_id)
 
     def _update_network_data(self, network_id, name, mtu):
-        new_external_ids = self._create_network_external_ids(name, mtu)
-        old_mtu = self.atomics.get_ls(ls_id=network_id).external_ids.get(
-            ovnconst.LS_EXTERNAL_IDS_MTU
+        current_external_ids = self.atomics.get_ls(
+            ls_id=network_id
+        ).external_ids
+
+        relevant_external_ids = {NetworkMapper.OVN_NETWORK_NAME: name}
+        if mtu is not None:
+            relevant_external_ids[ovnconst.LS_EXTERNAL_IDS_MTU] = str(mtu)
+        new_external_ids = self._generate_external_ids(
+            current_external_ids,
+            **relevant_external_ids
         )
-        if mtu is None and old_mtu is not None:
-            new_external_ids[ovnconst.LS_EXTERNAL_IDS_MTU] = old_mtu
         DbSetCommand(
             self.idl, ovnconst.TABLE_LS, network_id
         ).add(
