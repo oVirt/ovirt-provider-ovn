@@ -692,8 +692,8 @@ class OvnNorth(object):
             subnet = self.atomics.get_dhcp(dhcp_id=gateway_subnet_id)
             self.atomics.add_route(
                 lrp_id=router_id,
-                cidr=ovnconst.DEFAULT_ROUTE,
-                default_gateway=subnet.options.get('router')
+                prefix=ovnconst.DEFAULT_ROUTE,
+                nexthop=subnet.options.get('router')
             )
 
     def _validate_external_gateway(
