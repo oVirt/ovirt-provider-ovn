@@ -571,7 +571,7 @@ class OvnNorth(object):
 
     def delete_subnet(self, subnet_id):
         subnet = self.atomics.get_dhcp(dhcp_id=subnet_id)
-        router_id = self._get_subnet_gateway_router_id(subnet_id)
+        router_id = self._get_subnet_gateway_router_id(subnet)
         if router_id:
             raise BadRequestError(
                 'Unable to delete subnet {subnet} because it is connected to '
@@ -775,8 +775,7 @@ class OvnNorth(object):
         # We need the prefix due to an ovn issue in OVN lookup (bug pending)
         return ovnconst.ROUTER_PORT_NAME_PREFIX + str(port_id)
 
-    def _get_subnet_gateway_router_id(self, subnet_id):
-        subnet = self.atomics.get_dhcp(dhcp_id=subnet_id)
+    def _get_subnet_gateway_router_id(self, subnet):
         return subnet.external_ids.get(SubnetMapper.OVN_GATEWAY_ROUTER_ID)
 
     def _set_subnet_gateway_router(self, subnet_id, router_id):
@@ -802,7 +801,7 @@ class OvnNorth(object):
     ):
         existing_subnet_for_network = self.atomics.get_dhcp(ls_id=network_id)
         existing_router_for_subnet = self._get_subnet_gateway_router_id(
-            subnet_id
+            existing_subnet_for_network
         )
         validate.create_routing_lsp_by_subnet(
             network_id, subnet_id, existing_subnet_for_network,
@@ -1124,7 +1123,7 @@ class OvnNorth(object):
                         lr, network_id,
                         ip_utils.get_ip_from_cidr(lrp.networks[0])
                     )
-        subnet_gw_router_id = self._get_subnet_gateway_router_id(subnet_id)
+        subnet_gw_router_id = self._get_subnet_gateway_router_id(subnet)
         if subnet_gw_router_id == router_id:
             self._clear_subnet_gateway_router(str(subnet.uuid))
 
