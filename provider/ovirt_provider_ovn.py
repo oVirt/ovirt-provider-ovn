@@ -28,6 +28,8 @@ import ssl
 import sys
 import threading
 
+from ovsdbapp.backend.ovs_idl import vlog
+
 import auth
 import ovirt_provider_config
 import version
@@ -84,6 +86,11 @@ def _init_logging():
     sys.excepthook = uncaught_error_hook
     logging.info('Starting server')
     _log_rpm_version()
+    _init_ovs_logging()
+
+
+def _init_ovs_logging():
+    vlog.use_python_logger(max_level=vlog.DEBUG)
 
 
 def _log_rpm_version():
