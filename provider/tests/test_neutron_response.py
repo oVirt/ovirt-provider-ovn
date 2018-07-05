@@ -172,7 +172,7 @@ class TestNeutronResponse(object):
 
         response = handler(nb_db, NOT_RELEVANT, {NETWORK_ID: NETWORK_ID01})
 
-        response_json = json.loads(response.body)
+        response_json = response.body
         assert response_json['network']['id'] == str(NETWORK_ID01)
         assert response_json['network']['name'] == NETWORK_NAME1
 
@@ -188,7 +188,7 @@ class TestNeutronResponse(object):
         )
         response = handler(nb_db, NOT_RELEVANT, {PORT_ID: PORT_ID07})
 
-        response_json = json.loads(response.body)
+        response_json = response.body
         assert response_json['port']['id'] == str(PORT_ID07)
         assert response_json['port']['name'] == 'port_name'
         assert response_json['port']['security_groups'] == []
@@ -204,7 +204,7 @@ class TestNeutronResponse(object):
         )
         response = handler(nb_db, NOT_RELEVANT, NOT_RELEVANT)
 
-        response_json = json.loads(response.body)
+        response_json = response.body
         assert response_json['networks'][0]['id'] == str(NETWORK_ID01)
         assert response_json['networks'][0]['name'] == NETWORK_NAME1
 
@@ -221,7 +221,7 @@ class TestNeutronResponse(object):
 
         response = handler(nb_db, NOT_RELEVANT, NOT_RELEVANT)
 
-        response_json = json.loads(response.body)
+        response_json = response.body
         assert response_json['ports'][0]['id'] == str(PORT_ID07)
         assert response_json['ports'][0]['name'] == 'port_name'
         assert response_json['ports'][0]['security_groups'] == []
@@ -265,7 +265,7 @@ class TestNeutronResponse(object):
         )
         response = handler(nb_db, rest_input, NOT_RELEVANT)
 
-        response_json = json.loads(response.body)
+        response_json = response.body
         assert response_json['network']['id'] == str(NETWORK_ID01)
         assert response_json['network']['name'] == NETWORK_NAME1
 
@@ -290,7 +290,7 @@ class TestNeutronResponse(object):
         )
         response = handler(nb_db, rest_input, NOT_RELEVANT)
 
-        response_json = json.loads(response.body)
+        response_json = response.body
         assert response_json['port']['id'] == str(PORT_ID07)
         assert response_json['port']['name'] == 'port_name'
         assert response_json['port']['mac_address'] == 'mac'
@@ -310,7 +310,7 @@ class TestNeutronResponse(object):
             responses(), PUT, PORT_ENTITY.split('/')
         )
         response = handler(nb_db, '{"port" :{}}', {PORT_ID: str(PORT_ID07)})
-        response_json = json.loads(response.body)
+        response_json = response.body
         assert response_json['port']['id'] == str(PORT_ID07)
 
     @mock.patch('ovsdbapp.backend.ovs_idl.connection', autospec=False)
@@ -345,7 +345,7 @@ class TestNeutronResponse(object):
         )
         response = handler(nb_db, rest_input, NOT_RELEVANT)
 
-        response_json = json.loads(response.body)
+        response_json = response.body
         router = response_json['router']
         assert router[RouterMapper.REST_ROUTER_NAME] == 'router1'
         assert router[RouterMapper.REST_ROUTER_ID] == 'uuid'

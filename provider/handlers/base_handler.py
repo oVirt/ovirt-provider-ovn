@@ -30,6 +30,7 @@ from auth import BadGateway
 from auth import Forbidden
 from auth import Unauthorized
 from auth import Timeout
+from handlers.query_filter import filter_query_results
 
 GET = 'GET'
 DELETE = 'DELETE'
@@ -52,7 +53,7 @@ ERROR_CONTENT_TYPE = 'application/json'
 
 class Response(object):
     def __init__(self, json=None, code=None, headers=None):
-        self.body = libjson.dumps(json) if json else None
+        self.body = json
         self.code = code
         self.headers = headers
 
@@ -126,12 +127,17 @@ class BaseHandler(BaseHTTPRequestHandler):
     def _handle_request(self, method, code=httplib.OK, content=None):
         self._log_request(method, self.path, content)
         try:
-
-            path_parts = self._parse_request_path(self.path)
+            path_parts, query = self._parse_request_path(self.path)
             self._validate_request(method, id)
             response = self.handle_request(
-                method, path_parts, content)
-            self._process_response(response.body, response.code or code)
+                method, path_parts, content
+            )
+            result = filter_query_results(
+                response.body, query, path_parts
+            ) if method == GET else response.body
+
+            body = libjson.dumps(result) if result else None
+            self._process_response(body, response.code or code)
         except PathNotFoundError as e:
             message = 'Incorrect path: {}'.format(self.path)
             self._handle_response_exception(
@@ -225,12 +231,13 @@ class BaseHandler(BaseHTTPRequestHandler):
 
     @staticmethod
     def _parse_request_path(full_path):
-        full_path = urlparse.urlparse(full_path).path
-        full_path = BaseHandler._remove_json_extension(full_path)
-        elements = filter(None, full_path.split('/'))[1:]
+        parsed_path = urlparse.urlparse(full_path)
+        query = urlparse.parse_qs(parsed_path.query)
+        query_path = BaseHandler._remove_json_extension(parsed_path.path)
+        elements = filter(None, query_path.split('/'))[1:]
         if not elements:
             elements.append('')
-        return elements
+        return elements, query
 
     @staticmethod
     def _remove_json_extension(path):

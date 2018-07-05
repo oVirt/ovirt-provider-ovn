@@ -53,7 +53,7 @@ def test_post_tokens(mock_create_token, validate_token):
         user_at_domain='joeuser',
         user_password='secret')
     validate_token.assert_called_once_with(TOKEN)
-    assert json.loads(response.body)['access']['token']['id'] == TOKEN
+    assert response.body['access']['token']['id'] == TOKEN
     assert response.code == 200
 
 
