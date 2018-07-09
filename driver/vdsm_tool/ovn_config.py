@@ -27,8 +27,11 @@ from netaddr.core import AddrFormatError
 from vdsm.network.api import network_caps
 from vdsm.tool import expose, ExtraArgsError
 
-OVN_CONFIG_SCRIPT = \
-    '/usr/libexec/ovirt-provider-ovn/setup_ovn_controller.sh'
+
+OVN_SCRIPT_DIR = '/usr/libexec/ovirt-provider-ovn'
+OVN_CONFIG_SCRIPT = '{}/setup_ovn_controller.sh'.format(OVN_SCRIPT_DIR)
+OVN_UNCONFIGURE_SCRIPT = '{}/unconfigure_ovn_controller.sh'.format(OVN_SCRIPT_DIR)
+
 
 class NetworkNotFoundError(Exception):
     pass
@@ -59,7 +62,18 @@ def ovn_config(*args):
             raise IpAddressNotFoundError(net_name)
 
     cmd = [OVN_CONFIG_SCRIPT, args[1], ip_address]
-    exec_ovn_config(cmd)
+    exec_command(cmd, 'Failed to configure OVN controller.')
+
+
+@expose('ovn-unconfigure')
+def ovn_unconfigure(*args):
+    if len(args) != 1:
+        raise ExtraArgsError(n=0)
+
+    exec_command(
+        [OVN_UNCONFIGURE_SCRIPT],
+        'Failed to unconfigure OVN controller.'
+    )
 
 
 def is_ipaddress(candidate):
@@ -94,7 +108,7 @@ def get_ip_addr(net):
     return ip
 
 
-def exec_ovn_config(cmd):
+def exec_command(cmd, error_msg):
     rc = subprocess.call(cmd)
     if rc != 0:
-        raise EnvironmentError('Failed to configure OVN controller.')
+        raise EnvironmentError(error_msg)
