@@ -19,17 +19,19 @@
 
 
 def filter_query_results(response, query, path_parts):
-    return filter(
-        lambda e: all(
-            map(
-                lambda (k, v): _compare_query_values( # noqa E999
-                    e.get(k), v[0]
-                ),
-                query.items()
-            )
-        ),
-        response.values()[0]
-    ) if _should_be_filtered(response, query, path_parts) else response
+    return {response.keys()[0]:
+        filter(
+            lambda e: all(
+                map(
+                    lambda (k, v): _compare_query_values( # noqa E999
+                        e.get(k), v[0]
+                    ),
+                    query.items()
+                )
+            ),
+            response.values()[0]
+        )
+    } if _should_be_filtered(response, query, path_parts) else response
 
 
 def _should_be_filtered(response, query, path_parts):
