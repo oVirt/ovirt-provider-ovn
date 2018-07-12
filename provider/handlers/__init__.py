@@ -15,4 +15,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
-#
+
+
+GET = 'GET'
+DELETE = 'DELETE'
+POST = 'POST'
+PUT = 'PUT'

@@ -18,26 +18,28 @@
 #
 
 
-def filter_query_results(response, query, path_parts):
-    return {response.keys()[0]:
-        filter(
-            lambda e: all(
-                map(
-                    lambda (k, v): _compare_query_values( # noqa E999
-                        e.get(k), v[0]
-                    ),
-                    query.items()
-                )
-            ),
-            response.values()[0]
-        )
-    } if _should_be_filtered(response, query, path_parts) else response
+from handlers import GET
 
 
-def _should_be_filtered(response, query, path_parts):
+def filter_query_results(items, query):
+    return filter(
+        lambda e: all(
+            map(
+                lambda (k, v): _compare_query_values( # noqa E999
+                    e.get(k), v[0]
+                ),
+                query.items()
+            )
+        ),
+        items
+    )
+
+
+def should_be_filtered(response, query, path_parts, method):
     return (
         query and response and len(response.values()) == 1 and
-        len(path_parts) == 1 and isinstance(response.values()[0], list)
+        len(path_parts) == 1 and isinstance(response.values()[0], list) and
+        method == GET
     )
 
 

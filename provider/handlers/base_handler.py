@@ -31,11 +31,12 @@ from auth import Forbidden
 from auth import Unauthorized
 from auth import Timeout
 from handlers.query_filter import filter_query_results
+from handlers.query_filter import should_be_filtered
+from handlers import GET
+from handlers import POST
+from handlers import PUT
+from handlers import DELETE
 
-GET = 'GET'
-DELETE = 'DELETE'
-POST = 'POST'
-PUT = 'PUT'
 JSON_SUFFIX = '.json'
 
 ERROR_MESSAGE = """\
@@ -132,10 +133,13 @@ class BaseHandler(BaseHTTPRequestHandler):
             response = self.handle_request(
                 method, path_parts, content
             )
-            result = filter_query_results(
-                response.body, query, path_parts
-            ) if method == GET else response.body
-
+            result = (
+                self._filter_results(query, response)
+                if should_be_filtered(
+                    response.body, query, path_parts, method
+                )
+                else response.body
+            )
             body = libjson.dumps(result) if result else None
             self._process_response(body, response.code or code)
         except PathNotFoundError as e:
@@ -191,6 +195,13 @@ class BaseHandler(BaseHTTPRequestHandler):
             )
         except Exception as e:
             self._handle_response_exception(e, method, self.path, content)
+
+    @staticmethod
+    def _filter_results(query, response):
+        resource_name, resource_data = response.body.items()[0]
+        return {
+            resource_name: filter_query_results(resource_data, query)
+        }
 
     def _validate_request(self, method, id):
         if method in [DELETE, PUT] and not id:
