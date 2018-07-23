@@ -130,7 +130,7 @@ class OvnNorth(object):
     def _create_network(self, name, mtu=None):
         external_ids_dict = {NetworkMapper.OVN_NETWORK_NAME: name}
         if mtu is not None:
-            external_ids_dict[ovnconst.LS_EXTERNAL_IDS_MTU] = str(mtu)
+            external_ids_dict[NetworkMapper.OVN_MTU] = str(mtu)
         return self._execute(
             self.idl.ls_add(
                 switch='ovirt-{name}-{gen_id}'.format(
@@ -178,7 +178,7 @@ class OvnNorth(object):
 
         relevant_external_ids = {NetworkMapper.OVN_NETWORK_NAME: name}
         if mtu is not None:
-            relevant_external_ids[ovnconst.LS_EXTERNAL_IDS_MTU] = str(mtu)
+            relevant_external_ids[NetworkMapper.OVN_MTU] = str(mtu)
         new_external_ids = self._generate_external_ids(
             current_external_ids,
             **relevant_external_ids

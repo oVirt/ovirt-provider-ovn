@@ -24,7 +24,6 @@ ROW_LS_OTHER_CONFIG = 'other_config'
 ROW_LS_EXTERNAL_IDS = 'external_ids'
 LS_OPTION_EXCLUDE_IPS = 'exclude_ips'
 LS_EXCLUDED_IP_DELIMITER = '..'
-LS_EXTERNAL_IDS_MTU = 'mtu'
 
 TABLE_LSP = 'Logical_Switch_Port'
 ROW_LSP_NAME = 'name'

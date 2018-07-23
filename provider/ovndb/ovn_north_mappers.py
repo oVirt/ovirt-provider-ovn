@@ -109,6 +109,7 @@ class NetworkMapper(Mapper):
     REST_PROVIDER_PHYSICAL_NETWORK = 'provider:physical_network'
     REST_PROVIDER_SEGMENTATION_ID = 'provider:segmentation_id'
 
+    OVN_MTU = 'mtu'
     OVN_NETWORK_NAME = 'ovirt_network_name'
     NETWORK_TYPE_FLAT = 'flat'
     NETWORK_TYPE_VLAN = 'vlan'
@@ -159,8 +160,8 @@ class NetworkMapper(Mapper):
             NetworkMapper.REST_STATUS: NetworkMapper.NETWORK_STATUS_ACTIVE
         }
         result[NetworkMapper.REST_MTU] = int(
-            ls.external_ids[ovnconst.LS_EXTERNAL_IDS_MTU]
-            if ovnconst.LS_EXTERNAL_IDS_MTU in ls.external_ids else dhcp_mtu()
+            ls.external_ids[NetworkMapper.OVN_MTU]
+            if NetworkMapper.OVN_MTU in ls.external_ids else dhcp_mtu()
         )
         result.update(NetworkMapper._row2rest_localnet(localnet_lsp))
         return result

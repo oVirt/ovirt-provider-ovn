@@ -68,7 +68,7 @@ def assert_network_equal(rest_data, network):
     assert rest_data['name'] == network.ls.name
     assert rest_data['tenant_id'] == tenant_id()
     assert rest_data['mtu'] == int(
-        network.ls.external_ids.get(ovnconst.LS_EXTERNAL_IDS_MTU, dhcp_mtu())
+        network.ls.external_ids.get(NetworkMapper.OVN_MTU, dhcp_mtu())
     )
     if network.localnet_lsp:
         assert_lsp_equal(rest_data, network.localnet_lsp)
