@@ -877,7 +877,7 @@ class OvnNorth(object):
             lrp_ip,
             network_id,
             ip_utils.random_unique_mac(
-                self._execute(self.idl.lsp_list()),
+                self.atomics.list_lsp(),
                 self.atomics.list_lrp()
             )
         )
@@ -986,8 +986,8 @@ class OvnNorth(object):
         port = self._create_port(ovnconst.ROUTER_SWITCH_PORT_NAME, network_id)
         lrp_name = self._create_router_port_name(port.uuid)
         mac = ip_utils.random_unique_mac(
-            self._execute(self.idl.lsp_list()),
-            self.atomics.list_lrp(),
+            self.atomics.list_lsp(),
+            self.atomics.list_lrp()
         )
         self.atomics.add_lrp(router_id, lrp_name, mac=mac, lrp_ip=port_ip)
         self._connect_port_to_router(
