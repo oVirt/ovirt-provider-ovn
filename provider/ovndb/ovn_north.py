@@ -926,13 +926,6 @@ class OvnNorth(object):
         )
         return ip_utils.get_ip_with_mask(ip=lsp_ip, cidr=ls_cidr)
 
-    def _create_router_port(self, router_id, lrp_name, lrp_ip, mac):
-        self._execute(self.idl.lrp_add(
-            router=router_id, port=lrp_name,
-            mac=mac,
-            networks=[lrp_ip],
-        ))
-
     def _reserve_network_ip(self, network_id, gateway_ip):
         if not network_id:
             return
@@ -992,13 +985,11 @@ class OvnNorth(object):
 
         port = self._create_port(ovnconst.ROUTER_SWITCH_PORT_NAME, network_id)
         lrp_name = self._create_router_port_name(port.uuid)
-        self._create_router_port(
-            router_id, lrp_name, port_ip,
-            ip_utils.random_unique_mac(
-                self._execute(self.idl.lsp_list()),
-                self.atomics.list_lrp(),
-            )
+        mac = ip_utils.random_unique_mac(
+            self._execute(self.idl.lsp_list()),
+            self.atomics.list_lrp(),
         )
+        self.atomics.add_lrp(router_id, lrp_name, mac=mac, lrp_ip=port_ip)
         self._connect_port_to_router(
             port,
             lrp_name,
@@ -1027,7 +1018,7 @@ class OvnNorth(object):
         )
         if not subnet_id:
             subnet_id = str(self.atomics.get_dhcp(ls_id=network_id).uuid)
-        self._create_router_port(router_id, lrp_name, lrp_ip, mac)
+        self.atomics.add_lrp(router_id, lrp_name, mac=mac, lrp_ip=lrp_ip)
         return RouterInterface(
             id=router_id,
             ls_id=network_id,
