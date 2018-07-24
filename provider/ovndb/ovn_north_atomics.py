@@ -50,6 +50,11 @@ class OvnNorthAtomics(object):
         except RowNotFound as e:
             raise ElementNotFoundError(e)
 
+    def add_lr(self, name, enabled):
+        return self._execute(self.idl.lr_add(
+            router=name, may_exist=False, enabled=enabled
+        ))
+
     def add_lrp(self, lr_id, lrp_name, mac, lrp_ip):
         self._execute(self.idl.lrp_add(
             router=lr_id, port=lrp_name,

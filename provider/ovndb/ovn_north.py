@@ -654,9 +654,7 @@ class OvnNorth(object):
         validate.no_default_gateway_in_routes(network_id is not None, routes)
         self._reserve_network_ip(network_id, gateway_ip)
 
-        router = self._execute(self.idl.lr_add(
-            router=name, may_exist=False, enabled=enabled
-        ))
+        router = self.atomics.add_lr(name, enabled)
         router_id = str(router.uuid)
 
         self._add_external_gateway_to_router(
