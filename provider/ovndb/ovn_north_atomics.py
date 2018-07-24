@@ -157,6 +157,9 @@ class OvnNorthAtomics(object):
     def list_lsp(self):
         return self._execute(self.idl.lsp_list())
 
+    def list_lr(self):
+        return self._execute(self.idl.lr_list())
+
     def remove_static_route(self, lr, ip_prefix):
         for route in lr.static_routes:
             if route.ip_prefix == ip_prefix:

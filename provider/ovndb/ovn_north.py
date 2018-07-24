@@ -641,7 +641,7 @@ class OvnNorth(object):
     def list_routers(self):
         return [
             self._get_router_from_lr(lr)
-            for lr in self._execute(self.idl.lr_list())
+            for lr in self.atomics.list_lr()
         ]
 
     def _add_router(
