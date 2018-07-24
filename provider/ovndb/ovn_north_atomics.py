@@ -167,6 +167,9 @@ class OvnNorthAtomics(object):
                     route
                 ))
 
+    def remove_dhcp_options(self, id):
+        self._execute(self.idl.dhcp_options_del(id))
+
     def db_set(self, table, id, values):
         self._execute(self.idl.db_set(table, id, values))
 

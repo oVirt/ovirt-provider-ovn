@@ -240,7 +240,7 @@ class OvnNorth(object):
             subnet_network_id = subnet.external_ids.get('ovirt_network_id')
             if subnet_network_id:
                 if network_id == subnet_network_id:
-                    self._execute(self.idl.dhcp_options_del(subnet.uuid))
+                    self.atomics.remove_dhcp_options(subnet.uuid)
 
         self._execute(self.idl.ls_del(network_id))
 
@@ -607,7 +607,7 @@ class OvnNorth(object):
             SubnetMapper.OVN_NETWORK_ID
         )
         network = self.atomics.get_ls(ls_id=network_id)
-        self._execute(self.idl.dhcp_options_del(subnet_id))
+        self.atomics.remove_dhcp_options(subnet_id)
         for port in network.ports:
             if self._is_port_address_value_static(port.type):
                 continue
