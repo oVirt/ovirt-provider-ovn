@@ -167,5 +167,8 @@ class OvnNorthAtomics(object):
                     route
                 ))
 
+    def db_set(self, table, id, values):
+        self._execute(self.idl.db_set(table, id, values))
+
     def _is_port_ovirt_controlled(self, port_row):
         return PortMapper.OVN_NIC_NAME in port_row.external_ids

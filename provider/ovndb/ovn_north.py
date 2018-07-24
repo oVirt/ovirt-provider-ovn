@@ -330,11 +330,11 @@ class OvnNorth(object):
             netmask=ip_utils.get_mask_from_subnet(subnet)
         )
 
-        self._execute(self.idl.db_set(
+        self.atomics.db_set(
             ovnconst.TABLE_LRP,
             str(lrp.uuid),
             (ovnconst.ROW_LRP_NETWORKS, new_lrp_ip)
-        ))
+        )
 
     def _update_port_values(
         self, port, name=None, is_enabled=None, device_id=None,
@@ -476,11 +476,11 @@ class OvnNorth(object):
             may_exist=False
         ))
         port_id = str(port.uuid)
-        self._execute(self.idl.db_set(
+        self.atomics.db_set(
             ovnconst.TABLE_LSP,
             port_id,
             (ovnconst.ROW_LSP_NAME, str(port_id))
-        ))
+        )
         return port
 
     def update_port_mac(self, port_id, macaddress):
@@ -546,11 +546,11 @@ class OvnNorth(object):
         if dns:
             options[SubnetMapper.OVN_DNS_SERVER] = dns
 
-        self._execute(self.idl.db_set(
+        self.atomics.db_set(
             ovnconst.TABLE_LS,
             network_id,
             (ovnconst.ROW_LS_OTHER_CONFIG, {NetworkMapper.OVN_SUBNET: cidr}),
-        ))
+        )
 
         subnet = self._execute(self.idl.dhcp_options_add(cidr, **external_ids))
         self._execute(
@@ -823,14 +823,14 @@ class OvnNorth(object):
         return subnet.external_ids.get(SubnetMapper.OVN_GATEWAY_ROUTER_ID)
 
     def _set_subnet_gateway_router(self, subnet_id, router_id):
-        self._execute(self.idl.db_set(
+        self.atomics.db_set(
             ovnconst.TABLE_DHCP_Options,
             subnet_id,
             (
                 ovnconst.ROW_DHCP_EXTERNAL_IDS,
                 {SubnetMapper.OVN_GATEWAY_ROUTER_ID: router_id}
             )
-        ))
+        )
 
     def _clear_subnet_gateway_router(self, subnet_id):
         self._execute(self.idl.db_remove(
@@ -938,14 +938,14 @@ class OvnNorth(object):
             (exclude_values + ' ') if exclude_values else str()
          ) + gateway_ip
 
-        self._execute(self.idl.db_set(
+        self.atomics.db_set(
             ovnconst.TABLE_LS,
             network_id,
             (
                 ovnconst.ROW_LS_OTHER_CONFIG,
                 {ovnconst.LS_OPTION_EXCLUDE_IPS: new_values}
             )
-        ))
+        )
 
     def _release_network_ip(self, network_id, ip):
         exclude_values = self.atomics.get_ls(
@@ -957,14 +957,14 @@ class OvnNorth(object):
         values.remove(ip)
 
         if values:
-            self._execute(self.idl.db_set(
+            self.atomics.db_set(
                 ovnconst.TABLE_LS,
                 network_id,
                 (
                     ovnconst.ROW_LS_OTHER_CONFIG,
                     {ovnconst.LS_OPTION_EXCLUDE_IPS: ' '.join(values)}
                 )
-            ))
+            )
         else:
             self._execute(self.idl.db_remove(
                 ovnconst.TABLE_LS,
