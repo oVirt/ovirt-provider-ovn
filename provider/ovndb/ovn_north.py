@@ -234,8 +234,7 @@ class OvnNorth(object):
             if subnet_network_id:
                 if network_id == subnet_network_id:
                     self.atomics.remove_dhcp_options(subnet.uuid)
-
-        self._execute(self.idl.ls_del(network_id))
+        self.atomics.remove_ls(ls_id=network_id)
 
     def _get_localnet_lsp(self, ls):
         for lsp in ls.ports:
