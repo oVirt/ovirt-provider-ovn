@@ -104,7 +104,10 @@ class OvnNorthAtomics(object):
         if lsp_id:
             for dhcp in self.list_dhcp():
                 network_id = dhcp.external_ids[SubnetMapper.OVN_NETWORK_ID]
-                network = self.get_ls(ls_id=network_id)
+                try:
+                    network = self.get_ls(ls_id=network_id)
+                except ElementNotFoundError:
+                    continue
                 if any(port.name == lsp_id for port in network.ports):
                     return dhcp
             return None
