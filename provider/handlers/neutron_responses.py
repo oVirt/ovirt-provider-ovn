@@ -187,9 +187,13 @@ def put_subnets(nb_db, content, parameters):
 def get_debug(nb_db, content, parameters):
     networks = nb_db.list_networks()
     ports = nb_db.list_ports()
+    subnets = nb_db.list_subnets()
+    routers = nb_db.list_routers()
     return Response({
-        'networks': [network for network in networks],
-        'ports': [port for port in ports]
+        'networks': networks,
+        'ports': ports,
+        'subnets': subnets,
+        'routers': routers
     })
 
 
