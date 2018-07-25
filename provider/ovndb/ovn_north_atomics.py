@@ -50,6 +50,15 @@ class OvnNorthAtomics(object):
         except RowNotFound as e:
             raise ElementNotFoundError(e)
 
+    def add_ls(self, name, external_ids):
+        return self._execute(
+            self.idl.ls_add(
+                switch=name,
+                may_exist=False,
+                external_ids=external_ids
+            )
+        )
+
     def add_lr(self, name, enabled):
         return self._execute(self.idl.lr_add(
             router=name, may_exist=False, enabled=enabled

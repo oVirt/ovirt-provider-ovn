@@ -131,17 +131,10 @@ class OvnNorth(object):
         external_ids_dict = {NetworkMapper.OVN_NETWORK_NAME: name}
         if mtu is not None:
             external_ids_dict[NetworkMapper.OVN_MTU] = str(mtu)
-        return self._execute(
-            self.idl.ls_add(
-                switch='ovirt-{name}-{gen_id}'.format(
-                    name=name, gen_id=uuid.uuid4()
-                ),
-                may_exist=False,
-                external_ids=self._generate_external_ids(
-                    {},
-                    **external_ids_dict
-                )
-            )
+        name = 'ovirt-{name}-{gen_id}'.format(name=name, gen_id=uuid.uuid4())
+        return self.atomics.add_ls(
+            name=name,
+            external_ids=self._generate_external_ids({}, **external_ids_dict)
         )
 
     @staticmethod
