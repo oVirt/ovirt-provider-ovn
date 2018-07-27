@@ -114,7 +114,9 @@ def create_routing_lsp_by_subnet(
         existing_router_for_subnet, router_id, subnet_id
     )
 
-    if not is_external_gateway:
+    if is_external_gateway:
+        _validate_subnet_has_default_gateway(existing_subnet_for_network)
+    else:
         _validate_subnet_is_connected_to_another_router(
             existing_router_for_subnet, subnet_id, router_id
         )
@@ -141,6 +143,16 @@ def _validate_subnet_is_connected_to_another_router(
             ' already connected to router {old_router}'.format(
                 subnet=subnet_id, router=router_id,
                 old_router=existing_router_for_subnet
+            )
+        )
+
+
+def _validate_subnet_has_default_gateway(subnet):
+    if subnet.options.get('router') is None:
+        raise BadRequestError(
+            'Subnet {} cannot be used as external gateway, '
+            'since it does not have a default gateway defined'.format(
+                subnet.uuid
             )
         )
 
