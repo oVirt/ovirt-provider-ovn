@@ -334,7 +334,13 @@ class PortApiInputMaker(ApiInputMaker):
 
 
 class SecurityGroupApiInputMaker(ApiInputMaker):
-    def __init__(self, name, tenant_id, project_id, description=None):
+    def __init__(
+            self,
+            name,
+            tenant_id=None,
+            project_id=None,
+            description=None
+    ):
         self._name = (SecurityGroupMapper.REST_SEC_GROUP_NAME, name)
         self._description = (
             SecurityGroupMapper.REST_SEC_GROUP_NAME, description

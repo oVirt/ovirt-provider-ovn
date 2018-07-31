@@ -279,5 +279,14 @@ def delete_security_group(nb_db, content, parameters):
     return Response()
 
 
+@rest(PUT, SECURITY_GROUP_ENTITY, _responses)
+def put_security_group(nb_db, content, parameters):
+    received_security_group = get_entity(content, 'security_group')
+    sec_group = nb_db.update_security_group(
+        received_security_group, parameters[SECURITY_GROUP_ID]
+    )
+    return Response({'security_group': sec_group})
+
+
 def responses():
     return _responses

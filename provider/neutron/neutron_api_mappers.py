@@ -938,6 +938,7 @@ class SecurityGroupMapper(Mapper):
     _optional_add_data = set(
         [REST_SEC_GROUP_DESC, Mapper.REST_TENANT_ID, REST_PROJECT_ID]
     )
+    _valid_update_keys = set([REST_SEC_GROUP_NAME, REST_SEC_GROUP_DESC])
 
     @staticmethod
     def row2rest(security_group):
@@ -996,19 +997,29 @@ class SecurityGroupMapper(Mapper):
 
     @staticmethod
     def rest2row(wrapped_self, func, rest_sec_group_data, security_group_id):
-        return func(
-            wrapped_self,
-            rest_sec_group_data[SecurityGroupMapper.REST_SEC_GROUP_NAME],
-            rest_sec_group_data[
-                SecurityGroupMapper.REST_PROJECT_ID
-            ],
-            rest_sec_group_data[
-                SecurityGroupMapper.REST_TENANT_ID
-            ],
-            rest_sec_group_data.get(
-                SecurityGroupMapper.REST_SEC_GROUP_DESC
+        if security_group_id:
+            return func(
+                wrapped_self,
+                security_group_id,
+                rest_sec_group_data[SecurityGroupMapper.REST_SEC_GROUP_NAME],
+                rest_sec_group_data.get(
+                    SecurityGroupMapper.REST_SEC_GROUP_DESC
+                )
             )
-        )
+        else:
+            return func(
+                wrapped_self,
+                rest_sec_group_data[SecurityGroupMapper.REST_SEC_GROUP_NAME],
+                rest_sec_group_data[
+                    SecurityGroupMapper.REST_PROJECT_ID
+                ],
+                rest_sec_group_data[
+                    SecurityGroupMapper.REST_TENANT_ID
+                ],
+                rest_sec_group_data.get(
+                    SecurityGroupMapper.REST_SEC_GROUP_DESC
+                )
+            )
 
     @staticmethod
     def validate_add_rest_input(rest_data):
@@ -1023,3 +1034,10 @@ class SecurityGroupMapper(Mapper):
             raise SecurityGroupMandatoryDataMissing(missing_data)
         elif invalid_data:
             raise SecurityGroupInvalidRestData(invalid_data)
+
+    @staticmethod
+    def validate_update_rest_input(rest_data):
+        input_keys = set(rest_data.keys())
+        not_allowed_data = input_keys - SecurityGroupMapper._valid_update_keys
+        if not_allowed_data:
+            raise SecurityGroupInvalidRestData(not_allowed_data)

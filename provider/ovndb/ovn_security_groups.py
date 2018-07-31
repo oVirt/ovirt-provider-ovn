@@ -20,7 +20,15 @@
 import uuid
 from datetime import datetime
 
+from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
+
+import constants as ovnconst
+
+from handlers.base_handler import ElementNotFoundError
+
 from neutron.neutron_api_mappers import SecurityGroupMapper
+
+from ovndb.db_set_command import DbSetCommand
 
 
 class OvnSecurityGroupApi(object):
@@ -31,9 +39,7 @@ class OvnSecurityGroupApi(object):
     def create_security_group(
             self, name, project_id, tenant_id, description=None):
         now = datetime.utcnow().isoformat()
-        pg_name = 'ovirt-{name}-{gen_id}'.format(
-            name=name, gen_id=uuid.uuid4()
-        )
+        pg_name = self._generate_name(name)
         external_ids = {
             SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS: now,
             SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION: description,
@@ -49,3 +55,46 @@ class OvnSecurityGroupApi(object):
 
     def delete_security_group(self, port_group_id):
         return self._idl.pg_del(port_group_id)
+
+    def update_security_group(self, sec_group_id, name, description=None):
+        try:
+            sec_group = self._idl.lookup(
+                ovnconst.TABLE_PORT_GROUP, sec_group_id
+            )
+        except RowNotFound as e:
+            raise ElementNotFoundError(e)
+        now = datetime.utcnow().isoformat()
+        pg_name = self._generate_name(name)
+        external_ids = sec_group.external_ids
+
+        external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS] = now
+        external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER] = (
+            self._get_bumped_revision_number(sec_group)
+        )
+        external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_NAME] = name
+        if description:
+            external_ids[
+                SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION
+            ] = description
+
+        DbSetCommand(
+            self._idl, ovnconst.TABLE_PORT_GROUP, sec_group_id
+        ).add(ovnconst.ROW_PG_NAME, pg_name).add(
+            ovnconst.ROW_PG_EXTERNAL_IDS,
+            external_ids
+        ).execute()
+
+    @staticmethod
+    def _generate_name(name):
+        return 'ovirt-{name}-{gen_id}'.format(
+            name=name, gen_id=uuid.uuid4()
+        )
+
+    @staticmethod
+    def _get_bumped_revision_number(security_group):
+        current_revision = int(
+            security_group.external_ids[
+                SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER
+            ]
+        )
+        return str(current_revision + 1)

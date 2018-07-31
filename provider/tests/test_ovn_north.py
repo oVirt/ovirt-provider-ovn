@@ -1237,3 +1237,37 @@ class TestOvnNorth(object):
             ovn_north.idl, TestOvnNorth.SECURITY_GROUP_ID, if_exists=False
         )
         assert mock_pg_del_command.mock_calls[0] == expected_del_call
+
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
+        lambda self, table, the_id: TestOvnNorth.SECURITY_GROUP
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.PgAddCommand.execute',
+        lambda cmd, check_error: TestOvnNorth.SECURITY_GROUP
+    )
+    def test_update_security_group(self, mock_db_update, mock_connection):
+        ovn_north = NeutronApi()
+        rest_data = SecurityGroupApiInputMaker(
+            TestOvnNorth.SECURITY_GROUP_NAME, tenant_id(), tenant_id(),
+            description=TestOvnNorth.SECURITY_GROUP_DESCRIPTION
+        ).get()
+
+        ovn_north.add_security_group(rest_data)
+
+        # update the security group with other stuff
+        new_name = 'new_way_cuter_name'
+        new_description = 'this thing is waaaay better now'
+
+        ovn_north.update_security_group(
+            SecurityGroupApiInputMaker(
+                new_name, description=new_description
+            ).get(),
+            TestOvnNorth.SECURITY_GROUP_ID
+        )
+
+        assert mock_db_update.call_count == 1

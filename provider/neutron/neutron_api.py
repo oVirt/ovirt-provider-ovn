@@ -1189,6 +1189,15 @@ class NeutronApi(object):
     def delete_security_group(self, security_group_id):
         self.ovn_north.remove_security_group(security_group_id)
 
+    @SecurityGroupMapper.validate_update
+    @SecurityGroupMapper.map_from_rest
+    def update_security_group(self, sec_group_id, name, description=None):
+        self.ovn_north.update_security_group(sec_group_id, name, description)
+        return SecurityGroup(
+            sec_group=self.get_security_group(sec_group_id),
+            sec_group_rules=[]
+        )
+
     def __enter__(self):
         return self
 
