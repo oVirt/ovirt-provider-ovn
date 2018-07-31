@@ -273,5 +273,11 @@ def post_security_groups(nb_db, content, parameters):
     return Response({'security_group': sec_group_data})
 
 
+@rest(DELETE, SECURITY_GROUP_ENTITY, _responses)
+def delete_security_group(nb_db, content, parameters):
+    nb_db.delete_security_group(parameters[SECURITY_GROUP_ID])
+    return Response()
+
+
 def responses():
     return _responses

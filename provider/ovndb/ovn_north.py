@@ -253,3 +253,8 @@ class OvnNorth(object):
                 name, project_id, tenant_id, description
             )
         )
+
+    def remove_security_group(self, security_group_id):
+        ovn_connection.execute(
+            self._ovn_sec_group_api.delete_security_group(security_group_id)
+        )

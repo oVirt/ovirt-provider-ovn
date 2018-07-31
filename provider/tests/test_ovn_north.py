@@ -1225,3 +1225,15 @@ class TestOvnNorth(object):
             sec_group_rules=[]
         )
         assert_security_group_equal(result, security_group)
+
+    @mock.patch('ovsdbapp.schema.ovn_northbound.commands.PgDelCommand',
+                autospec=False)
+    def test_delete_security_group(self, mock_pg_del_command, mock_connection):
+        ovn_north = NeutronApi()
+
+        ovn_north.delete_security_group(TestOvnNorth.SECURITY_GROUP_ID)
+        assert mock_pg_del_command.call_count == 1
+        expected_del_call = mock.call(
+            ovn_north.idl, TestOvnNorth.SECURITY_GROUP_ID, if_exists=False
+        )
+        assert mock_pg_del_command.mock_calls[0] == expected_del_call

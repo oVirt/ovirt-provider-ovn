@@ -46,3 +46,6 @@ class OvnSecurityGroupApi(object):
         return self._idl.pg_add(
             pg_name, may_exist=False, external_ids=external_ids
         )
+
+    def delete_security_group(self, port_group_id):
+        return self._idl.pg_del(port_group_id)
