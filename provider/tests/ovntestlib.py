@@ -25,6 +25,7 @@ import neutron.ip as ip_utils
 
 from neutron.neutron_api_mappers import NetworkMapper
 from neutron.neutron_api_mappers import PortMapper
+from neutron.neutron_api_mappers import SecurityGroupMapper
 from neutron.neutron_api_mappers import SubnetMapper
 
 TABLES = [['table0', ['column0', 'column1']]]
@@ -212,6 +213,44 @@ class OvnRouterPort(object):
     pass
 
 
+class OvnSecurityGroupRow(OvnRow):
+    def __init__(self, uuid, name=None, external_ids=None):
+        self.uuid = uuid
+        self.name = name
+        self.external_ids = external_ids or {}
+
+
+def assert_security_group_equal(rest_data, security_group):
+    assert rest_data[SecurityGroupMapper.REST_SEC_GROUP_ID] == str(
+        security_group.sec_group.uuid
+    )
+    assert rest_data.get(SecurityGroupMapper.REST_SEC_GROUP_NAME) == (
+        security_group.sec_group.external_ids.get(
+            SecurityGroupMapper.OVN_SECURITY_GROUP_NAME
+        )
+    )
+    assert rest_data.get(SecurityGroupMapper.REST_SEC_GROUP_DESC) == (
+        security_group.sec_group.external_ids.get(
+            SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION
+        )
+    )
+    assert rest_data.get(SecurityGroupMapper.REST_SEC_GROUP_CREATED_AT) == (
+        security_group.sec_group.external_ids.get(
+            SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS
+        )
+    )
+    assert rest_data.get(SecurityGroupMapper.REST_SEC_GROUP_UPDATED_AT) == (
+        security_group.sec_group.external_ids.get(
+            SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS
+        )
+    )
+    assert rest_data.get(SecurityGroupMapper.REST_SEC_GROUP_REVISION_NR) == (
+        int(security_group.sec_group.external_ids.get(
+                SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER
+        ))
+    )
+
+
 class ApiInputMaker(object):
     def get(self):
         """
@@ -292,3 +331,13 @@ class PortApiInputMaker(ApiInputMaker):
         self._binding_host_id = (
             PortMapper.REST_PORT_BINDING_HOST, binding_host_id
         )
+
+
+class SecurityGroupApiInputMaker(ApiInputMaker):
+    def __init__(self, name, tenant_id, project_id, description=None):
+        self._name = (SecurityGroupMapper.REST_SEC_GROUP_NAME, name)
+        self._description = (
+            SecurityGroupMapper.REST_SEC_GROUP_NAME, description
+        )
+        self._tenant = (SecurityGroupMapper.REST_TENANT_ID, tenant_id)
+        self._project = (SecurityGroupMapper.REST_PROJECT_ID, project_id)

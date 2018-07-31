@@ -34,6 +34,7 @@ NETWORK_ID = 'network_id'
 PORT_ID = 'port_id'
 SUBNET_ID = 'subnet_id'
 ROUTER_ID = 'router_id'
+SECURITY_GROUP_ID = 'security_group_id'
 
 
 NETWORKS = 'networks'
@@ -44,11 +45,12 @@ SUBNETS = 'subnets'
 SUBNET_ENTITY = 'subnets/{subnet_id}'
 ROUTERS = 'routers'
 ROUTER_ENTITY = 'routers/{router_id}'
+SECURITY_GROUPS = 'security-groups'
+SECURITY_GROUP_ENTITY = 'security-groups/{security_group_id}'
 ADD_ROUTER_INTERFACE = 'routers/{router_id}/add_router_interface'
 DELETE_ROUTER_INTERFACE = 'routers/{router_id}/remove_router_interface'
 
 FLOATINGIPS = 'floatingips'
-SECURITY_GROUPS = 'security-groups'
 
 
 _responses = {}
@@ -255,6 +257,13 @@ def get_floating_ips(nb_db, content, parameters):
 @rest(GET, SECURITY_GROUPS, _responses)
 def get_security_groups(nb_db, content, parameters):
     return Response({'security_groups': nb_db.list_security_groups()})
+
+
+@rest(GET, SECURITY_GROUP_ENTITY, _responses)
+def show_security_group(nb_db, content, parameters):
+    return Response({'security_group': nb_db.get_security_group(
+        parameters[SECURITY_GROUP_ID])}
+    )
 
 
 def responses():

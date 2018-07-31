@@ -231,3 +231,15 @@ class OvnNorth(object):
         return ovn_connection.execute(
             self.idl.db_list_rows(ovnconst.TABLE_PORT_GROUP)
         )
+
+    def get_security_group(self, security_group_id):
+        try:
+            return self.idl.lookup(
+                ovnconst.TABLE_PORT_GROUP, security_group_id
+            )
+        except RowNotFound:
+            raise ElementNotFoundError(
+                'Security Group {sec_group_id} does not exist'.format(
+                    sec_group_id=security_group_id
+                )
+            )

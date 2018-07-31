@@ -28,6 +28,8 @@ from neutron.neutron_api_mappers import Network
 from neutron.neutron_api_mappers import NetworkMapper
 from neutron.neutron_api_mappers import NetworkPort
 from neutron.neutron_api_mappers import PortMapper
+from neutron.neutron_api_mappers import SecurityGroup
+from neutron.neutron_api_mappers import SecurityGroupMapper
 from neutron.neutron_api_mappers import SubnetConfigError
 from neutron.neutron_api_mappers import SubnetMapper
 from neutron.neutron_api_mappers import UnsupportedDataValueError
@@ -40,6 +42,7 @@ from ovirt_provider_config_common import tenant_id
 from ovntestlib import assert_network_equal
 from ovntestlib import assert_port_equal
 from ovntestlib import assert_subnet_equal
+from ovntestlib import assert_security_group_equal
 from ovntestlib import NetworkApiInputMaker
 from ovntestlib import PortApiInputMaker
 from ovntestlib import SubnetApiInputMaker
@@ -47,6 +50,7 @@ from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
 from ovntestlib import OvnRouterPort
 from ovntestlib import OvnRouterRow
+from ovntestlib import OvnSecurityGroupRow
 from ovntestlib import OvnSubnetRow
 
 
@@ -157,6 +161,23 @@ class TestOvnNorth(object):
     ROUTER_NAME20 = 'router20'
 
     ROUTER_20 = OvnRouterRow(ROUTER_ID20, ROUTER_NAME20)
+
+    SECURITY_GROUP_ID = UUID(int=666)
+    SECURITY_GROUP_NAME = 'ultra-mega-security'
+    SECURITY_GROUP_DESCRIPTION = 'as safe as it gets'
+    SECURITY_GROUP = OvnSecurityGroupRow(
+        SECURITY_GROUP_ID,
+        SECURITY_GROUP_NAME,
+        external_ids={
+            SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION:
+                SECURITY_GROUP_DESCRIPTION,
+            SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS: '',
+            SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS: '',
+            SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: '1',
+            SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id(),
+            SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT: tenant_id()
+        }
+    )
 
     ports = [PORT_1, PORT_2]
 
@@ -1170,3 +1191,18 @@ class TestOvnNorth(object):
             ovnconst.TABLE_LR, str(TestOvnNorth.ROUTER_ID20)
         )
         assert mock_del_command.call_count == 0
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
+        lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP
+    )
+    def test_get_security_group(self, mock_connection):
+        ovn_north = NeutronApi()
+        result = ovn_north.get_security_group(
+            TestOvnNorth.SECURITY_GROUP_ID
+        )
+        assert_security_group_equal(
+            result, SecurityGroup(
+                sec_group=TestOvnNorth.SECURITY_GROUP, sec_group_rules=[]
+            )
+        )

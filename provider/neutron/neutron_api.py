@@ -1166,6 +1166,13 @@ class NeutronApi(object):
             for group_data in self.ovn_north.list_security_groups()
         ]
 
+    @SecurityGroupMapper.map_to_rest
+    def get_security_group(self, sec_group_id):
+        return SecurityGroup(
+            sec_group=self.ovn_north.get_security_group(sec_group_id),
+            sec_group_rules=[]
+        )
+
     def __enter__(self):
         return self
 
