@@ -40,6 +40,7 @@ Router = namedtuple(
 RouterInterface = namedtuple(
     'RouterInterface', ['id', 'ls_id', 'lsp_id', 'dhcp_options_id']
 )
+SecurityGroup = namedtuple('SecurityGroup', ['sec_group', 'sec_group_rules'])
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -892,3 +893,80 @@ class UnsupportedDataValueError(RestDataError):
     def __init__(self, key, value):
         error_message = self.message.format(key=key, value=value)
         super(UnsupportedDataValueError, self).__init__(error_message)
+
+
+class SecurityGroupMapper(Mapper):
+    REST_SEC_GROUP_ID = 'id'
+    REST_SEC_GROUP_NAME = 'name'
+
+    REST_PROJECT_ID = 'project_id'
+    REST_SEC_GROUP_DESC = 'description'
+
+    REST_SEC_GROUP_CREATED_AT = 'created_at'
+    REST_SEC_GROUP_UPDATED_AT = 'updated_at'
+    REST_SEC_GROUP_REVISION_NR = 'revision_number'
+    REST_SEC_GROUP_RULES = 'security_group_rules'
+    REST_SEC_GROUP_TAGS = 'tags'
+
+    OVN_SECURITY_GROUP_CREATE_TS = 'ovirt_created_at'
+    OVN_SECURITY_GROUP_DESCRIPTION = 'ovirt_description'
+    OVN_SECURITY_GROUP_NAME = 'ovirt_sec_group_name'
+    OVN_SECURITY_GROUP_PROJECT = 'ovirt_project_id'
+    OVN_SECURITY_GROUP_REV_NUMBER = 'ovirt_revision_number'
+    OVN_SECURITY_GROUP_TENANT = 'ovirt_tenant_id'
+    OVN_SECURITY_GROUP_UPDATE_TS = 'ovirt_updated_at'
+
+    @staticmethod
+    def row2rest(security_group):
+        if not security_group:
+            return {}
+
+        group_data = security_group.sec_group
+        result = {
+            SecurityGroupMapper.REST_SEC_GROUP_ID: str(group_data.uuid),
+            SecurityGroupMapper.REST_SEC_GROUP_RULES: [],
+            SecurityGroupMapper.REST_SEC_GROUP_TAGS: [],
+            SecurityGroupMapper.REST_PROJECT_ID:
+                group_data.external_ids[
+                    SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT
+                ],
+            SecurityGroupMapper.REST_TENANT_ID:
+                group_data.external_ids[
+                    SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT
+                ],
+            SecurityGroupMapper.REST_SEC_GROUP_REVISION_NR: int(
+                group_data.external_ids[
+                    SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER
+                ]
+            )
+        }
+        if (
+                SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS
+                in group_data.external_ids
+        ):
+            result[
+                SecurityGroupMapper.REST_SEC_GROUP_CREATED_AT
+            ] = group_data.external_ids[
+                SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS
+            ]
+        if (
+                SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS
+                in group_data.external_ids
+        ):
+            result[
+                SecurityGroupMapper.REST_SEC_GROUP_UPDATED_AT
+            ] = group_data.external_ids[
+                SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS
+            ]
+        result[SecurityGroupMapper.REST_SEC_GROUP_NAME] = (
+            group_data.external_ids.get(
+                SecurityGroupMapper.OVN_SECURITY_GROUP_NAME
+            )
+        )
+
+        result[SecurityGroupMapper.REST_SEC_GROUP_DESC] = (
+            group_data.external_ids.get(
+                SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION
+            )
+        )
+        return result

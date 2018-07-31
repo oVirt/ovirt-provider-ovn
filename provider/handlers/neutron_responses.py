@@ -254,7 +254,7 @@ def get_floating_ips(nb_db, content, parameters):
 
 @rest(GET, SECURITY_GROUPS, _responses)
 def get_security_groups(nb_db, content, parameters):
-    return Response({'security_groups': []})
+    return Response({'security_groups': nb_db.list_security_groups()})
 
 
 def responses():

@@ -226,3 +226,8 @@ class OvnNorth(object):
         ovn_connection.execute(
             self.idl.dhcp_options_set_options(subnet_uuid, **options)
         )
+
+    def list_security_groups(self):
+        return ovn_connection.execute(
+            self.idl.db_list_rows(ovnconst.TABLE_PORT_GROUP)
+        )

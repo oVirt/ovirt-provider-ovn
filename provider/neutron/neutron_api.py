@@ -38,6 +38,8 @@ from neutron.neutron_api_mappers import RestDataError
 from neutron.neutron_api_mappers import Router
 from neutron.neutron_api_mappers import RouterInterface
 from neutron.neutron_api_mappers import RouterMapper
+from neutron.neutron_api_mappers import SecurityGroup
+from neutron.neutron_api_mappers import SecurityGroupMapper
 from neutron.neutron_api_mappers import SubnetConfigError
 from neutron.neutron_api_mappers import SubnetMapper
 
@@ -1156,6 +1158,13 @@ class NeutronApi(object):
                 NetworkMapper.OVN_NETWORK_PORT_SECURITY, False
             ))
         )
+
+    @SecurityGroupMapper.map_to_rest
+    def list_security_groups(self):
+        return [
+            SecurityGroup(sec_group=group_data, sec_group_rules=[])
+            for group_data in self.ovn_north.list_security_groups()
+        ]
 
     def __enter__(self):
         return self

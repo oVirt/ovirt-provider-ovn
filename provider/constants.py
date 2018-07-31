@@ -68,3 +68,5 @@ ROW_ROUTES_IP_PREFIX = 'ip_prefix'
 ROW_ROUTES_NEXTHOP = 'nexthop'
 
 DEFAULT_ROUTE = '0.0.0.0/0'
+
+TABLE_PORT_GROUP = 'Port_Group'
