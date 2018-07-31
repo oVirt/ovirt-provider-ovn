@@ -28,6 +28,8 @@ import neutron.validation as validate
 from neutron.neutron_api_mappers import PortMapper
 from neutron.neutron_api_mappers import SubnetMapper
 
+from ovndb.ovn_security_groups import OvnSecurityGroupApi
+
 
 def accepts_single_arg(f):
     def inner(self, **kwargs):
@@ -41,6 +43,7 @@ def accepts_single_arg(f):
 class OvnNorth(object):
     def __init__(self, idl):
         self.idl = idl
+        self._ovn_sec_group_api = OvnSecurityGroupApi(self.idl)
 
     def add_ls(self, name, external_ids):
         return ovn_connection.execute(
@@ -243,3 +246,10 @@ class OvnNorth(object):
                     sec_group_id=security_group_id
                 )
             )
+
+    def add_security_group(self, name, project_id, tenant_id, description):
+        return ovn_connection.execute(
+            self._ovn_sec_group_api.create_security_group(
+                name, project_id, tenant_id, description
+            )
+        )

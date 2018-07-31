@@ -266,5 +266,12 @@ def show_security_group(nb_db, content, parameters):
     )
 
 
+@rest(POST, SECURITY_GROUPS, _responses)
+def post_security_groups(nb_db, content, parameters):
+    sec_group = get_entity(content, 'security_group')
+    sec_group_data = nb_db.add_security_group(sec_group)
+    return Response({'security_group': sec_group_data})
+
+
 def responses():
     return _responses

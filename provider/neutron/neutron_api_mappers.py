@@ -895,6 +895,24 @@ class UnsupportedDataValueError(RestDataError):
         super(UnsupportedDataValueError, self).__init__(error_message)
 
 
+class SecurityGroupMandatoryDataMissing(RestDataError):
+    message = 'Mandatory data {} is missing'
+
+    def __init__(self, missing_elements):
+        super(SecurityGroupMandatoryDataMissing, self).__init__(
+            self.message.format(', '.join(missing_elements))
+        )
+
+
+class SecurityGroupInvalidRestData(RestDataError):
+    message = 'Invalid data found: {}'
+
+    def __init__(self, invalid_elements):
+        super(SecurityGroupInvalidRestData, self).__init__(
+            self.message.format(', '.join(invalid_elements))
+        )
+
+
 class SecurityGroupMapper(Mapper):
     REST_SEC_GROUP_ID = 'id'
     REST_SEC_GROUP_NAME = 'name'
@@ -915,6 +933,11 @@ class SecurityGroupMapper(Mapper):
     OVN_SECURITY_GROUP_REV_NUMBER = 'ovirt_revision_number'
     OVN_SECURITY_GROUP_TENANT = 'ovirt_tenant_id'
     OVN_SECURITY_GROUP_UPDATE_TS = 'ovirt_updated_at'
+
+    _mandatory_add_data = set([REST_SEC_GROUP_NAME])
+    _optional_add_data = set(
+        [REST_SEC_GROUP_DESC, Mapper.REST_TENANT_ID, REST_PROJECT_ID]
+    )
 
     @staticmethod
     def row2rest(security_group):
@@ -970,3 +993,33 @@ class SecurityGroupMapper(Mapper):
             )
         )
         return result
+
+    @staticmethod
+    def rest2row(wrapped_self, func, rest_sec_group_data, security_group_id):
+        return func(
+            wrapped_self,
+            rest_sec_group_data[SecurityGroupMapper.REST_SEC_GROUP_NAME],
+            rest_sec_group_data[
+                SecurityGroupMapper.REST_PROJECT_ID
+            ],
+            rest_sec_group_data[
+                SecurityGroupMapper.REST_TENANT_ID
+            ],
+            rest_sec_group_data.get(
+                SecurityGroupMapper.REST_SEC_GROUP_DESC
+            )
+        )
+
+    @staticmethod
+    def validate_add_rest_input(rest_data):
+        input_keys = set(rest_data.keys())
+        missing_data = SecurityGroupMapper._mandatory_add_data - input_keys
+        all_allowed_data = (
+                SecurityGroupMapper._mandatory_add_data |
+                SecurityGroupMapper._optional_add_data
+        )
+        invalid_data = input_keys - all_allowed_data
+        if missing_data:
+            raise SecurityGroupMandatoryDataMissing(missing_data)
+        elif invalid_data:
+            raise SecurityGroupInvalidRestData(invalid_data)

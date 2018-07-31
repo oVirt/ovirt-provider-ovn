@@ -1173,6 +1173,19 @@ class NeutronApi(object):
             sec_group_rules=[]
         )
 
+    @SecurityGroupMapper.validate_add
+    @SecurityGroupMapper.map_from_rest
+    @SecurityGroupMapper.map_to_rest
+    def add_security_group(
+            self, name, project_id, tenant_id, description=None
+    ):
+        return SecurityGroup(
+            sec_group=self.ovn_north.add_security_group(
+                name, project_id, tenant_id, description
+            ),
+            sec_group_rules=[]
+        )
+
     def __enter__(self):
         return self
 
