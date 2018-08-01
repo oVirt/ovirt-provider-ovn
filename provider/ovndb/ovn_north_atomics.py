@@ -208,6 +208,9 @@ class OvnNorthAtomics(object):
     def remove_lsp(self, lsp_id):
         self._execute(self.idl.lsp_del(lsp_id))
 
+    def remove_router(self, router_id):
+        self._execute(self.idl.lr_del(router_id))
+
     def db_set(self, table, id, values):
         self._execute(self.idl.db_set(table, id, values))
 

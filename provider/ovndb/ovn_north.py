@@ -783,7 +783,7 @@ class OvnNorth(object):
             )
 
         validate.router_has_no_ports(self.atomics.get_lr(lr_id=router_id))
-        self._execute(self.idl.lr_del(router_id))
+        self.atomics.remove_router(router_id)
 
     def _validate_router_exists(self, router_id):
         try:
