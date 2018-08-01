@@ -210,3 +210,6 @@ class OvnNorthAtomics(object):
 
     def _is_port_ovirt_controlled(self, port_row):
         return PortMapper.OVN_NIC_NAME in port_row.external_ids
+
+    def clear_row_column(self, table, row_id, column):
+        self._execute(self.idl.db_clear(table, row_id, column))

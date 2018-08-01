@@ -382,10 +382,10 @@ class OvnNorth(object):
                 mac += ' ' + self._get_port_addesses_suffix(
                     network_id, fixed_ips)
             else:
-                self._execute(self.idl.db_clear(
+                self.atomics.clear_row_column(
                     ovnconst.TABLE_LSP, port.uuid,
                     ovnconst.ROW_LSP_DHCPV4_OPTIONS
-                ))
+                )
 
             db_set_command.add(ovnconst.ROW_LSP_ADDRESSES, [mac]).execute()
 
@@ -438,9 +438,9 @@ class OvnNorth(object):
             [ovnconst.LSP_ADDRESS_TYPE_ROUTER]
         ).execute()
 
-        self._execute(self.idl.db_clear(
+        self.atomics.clear_row_column(
             ovnconst.TABLE_LSP, port.uuid, ovnconst.ROW_LSP_DHCPV4_OPTIONS
-        ))
+        )
 
     def _get_validated_port_network_id(self, port, network_id):
         """
