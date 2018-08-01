@@ -194,7 +194,7 @@ class OvnNorth(object):
                     ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid))
             self._set_port_localnet_values(localnet_port, localnet, vlan)
         elif localnet_port:
-            self._delete_port(str(localnet_port.uuid))
+            self.atomics.remove_lsp(str(localnet_port.uuid))
 
     def _set_port_localnet_values(self, port, localnet, vlan):
         DbSetCommand(
@@ -462,11 +462,7 @@ class OvnNorth(object):
         return network_id or old_network_id
 
     def _create_port(self, name, network_id):
-        port = self._execute(self.idl.lsp_add(
-            network_id,
-            name,
-            may_exist=False
-        ))
+        port = self.atomics.add_lsp(name, network_id)
         port_id = str(port.uuid)
         self.atomics.db_set(
             ovnconst.TABLE_LSP,
@@ -481,10 +477,7 @@ class OvnNorth(object):
     def delete_port(self, port_id):
         lsp = self.atomics.get_lsp(lsp_id=port_id)
         validate.port_is_not_connected_to_router(lsp)
-        self._delete_port(port_id)
-
-    def _delete_port(self, port_id):
-        self._execute(self.idl.lsp_del(port_id))
+        self.atomics.remove_lsp(port_id)
 
     @SubnetMapper.map_to_rest
     def list_subnets(self):
@@ -616,7 +609,7 @@ class OvnNorth(object):
                 lr=lr, ext_gw_ls_id=None, ext_gw_dhcp_options_id=None,
                 gw_ip=None
             )
-        gw_port = self._execute(self.idl.lsp_get(gw_port_id))
+        gw_port = self.atomics.get_lsp(lsp_id=gw_port_id)
         ls = self._get_port_network(gw_port)
         ls_id = str(ls.uuid)
 
@@ -1105,7 +1098,7 @@ class OvnNorth(object):
                 .format(port=port_id, router=router_id)
             )
         self._execute(self.idl.lrp_del(str(lrp.uuid)))
-        self._delete_port(port_id)
+        self.atomics.remove_lsp(port_id)
 
     def _delete_router_interface_by_subnet_and_port(
         self, router_id, subnet_id, port_id

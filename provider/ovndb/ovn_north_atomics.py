@@ -59,6 +59,15 @@ class OvnNorthAtomics(object):
             )
         )
 
+    def add_lsp(self, name, network_id):
+        return self._execute(
+            self.idl.lsp_add(
+                network_id,
+                name,
+                may_exist=False
+            )
+        )
+
     def add_lr(self, name, enabled):
         return self._execute(self.idl.lr_add(
             router=name, may_exist=False, enabled=enabled
@@ -192,6 +201,9 @@ class OvnNorthAtomics(object):
 
     def remove_dhcp_options(self, id):
         self._execute(self.idl.dhcp_options_del(id))
+
+    def remove_lsp(self, lsp_id):
+        self._execute(self.idl.lsp_del(lsp_id))
 
     def db_set(self, table, id, values):
         self._execute(self.idl.db_set(table, id, values))
