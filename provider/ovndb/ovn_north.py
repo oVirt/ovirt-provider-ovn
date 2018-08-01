@@ -537,7 +537,7 @@ class OvnNorth(object):
             (ovnconst.ROW_LS_OTHER_CONFIG, {NetworkMapper.OVN_SUBNET: cidr}),
         )
 
-        subnet = self._execute(self.idl.dhcp_options_add(cidr, **external_ids))
+        subnet = self.atomics.add_dhcp_options(cidr, external_ids)
         self._execute(
             self.idl.dhcp_options_set_options(subnet.uuid, **options)
         )

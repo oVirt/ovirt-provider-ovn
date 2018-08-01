@@ -83,6 +83,9 @@ class OvnNorthAtomics(object):
     def add_route(self, lrp_id, prefix, nexthop):
         self._execute(self.idl.lr_route_add(lrp_id, prefix, nexthop))
 
+    def add_dhcp_options(self, cidr, external_ids):
+        return self._execute(self.idl.dhcp_options_add(cidr, **external_ids))
+
     @accepts_single_arg
     def get_ls(self, ls_id=None, dhcp=None):
         if ls_id:
