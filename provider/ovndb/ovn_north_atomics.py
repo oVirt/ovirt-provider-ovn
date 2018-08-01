@@ -223,6 +223,9 @@ class OvnNorthAtomics(object):
     def clear_row_column(self, table, row_id, column):
         self._execute(self.idl.db_clear(table, row_id, column))
 
+    def remove_key_from_column(self, table, row_id, column_name, key):
+        self._execute(self.idl.db_remove(table, row_id, column_name, key))
+
     def set_dhcp_options_options_column(self, subnet_uuid, options):
         self._execute(
             self.idl.dhcp_options_set_options(subnet_uuid, **options)

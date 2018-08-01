@@ -814,12 +814,12 @@ class OvnNorth(object):
         )
 
     def _clear_subnet_gateway_router(self, subnet_id):
-        self._execute(self.idl.db_remove(
+        self.atomics.remove_key_from_column(
             ovnconst.TABLE_DHCP_Options,
             subnet_id,
             ovnconst.ROW_DHCP_EXTERNAL_IDS,
             SubnetMapper.OVN_GATEWAY_ROUTER_ID
-        ))
+        )
 
     def _validate_create_routing_lsp_by_subnet(
         self, network_id, subnet_id, router_id=None, is_external_gateway=False
@@ -947,12 +947,12 @@ class OvnNorth(object):
                 )
             )
         else:
-            self._execute(self.idl.db_remove(
+            self.atomics.remove_key_from_column(
                 ovnconst.TABLE_LS,
                 network_id,
                 ovnconst.ROW_LS_OTHER_CONFIG,
                 ovnconst.LS_OPTION_EXCLUDE_IPS
-            ))
+            )
 
     def _add_external_gateway_interface(
         self, router_id, network_id, gateway_subnet_id, gateway_ip
@@ -1071,12 +1071,12 @@ class OvnNorth(object):
         )
 
     def _remove_lr_gw_port(self, lr, ls_id, lrp_ip):
-        self._execute(self.idl.db_remove(
+        self.atomics.remove_key_from_column(
             ovnconst.TABLE_LR,
             str(lr.uuid),
             ovnconst.ROW_LR_EXTERNAL_IDS,
             RouterMapper.OVN_ROUTER_GATEWAY_PORT
-        ))
+        )
         self.atomics.remove_static_route(lr, ovnconst.DEFAULT_ROUTE)
         self._release_network_ip(ls_id, lrp_ip)
 
