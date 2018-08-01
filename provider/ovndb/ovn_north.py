@@ -538,9 +538,7 @@ class OvnNorth(object):
         )
 
         subnet = self.atomics.add_dhcp_options(cidr, external_ids)
-        self._execute(
-            self.idl.dhcp_options_set_options(subnet.uuid, **options)
-        )
+        self.atomics.set_dhcp_options_options_column(subnet.uuid, options)
 
         for port in network.ports:
             if self._is_port_address_value_static(port.type):
