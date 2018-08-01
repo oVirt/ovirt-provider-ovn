@@ -1095,7 +1095,7 @@ class OvnNorth(object):
                 'Port {port} is not connected to router {router}'
                 .format(port=port_id, router=router_id)
             )
-        self._execute(self.idl.lrp_del(str(lrp.uuid)))
+        self.atomics.remove_lrp(lrp.uuid)
         self.atomics.remove_lsp(port_id)
 
     def _delete_router_interface_by_subnet_and_port(
