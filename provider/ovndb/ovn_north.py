@@ -80,14 +80,6 @@ class OvnNorth(object):
             ovs.stream.Stream.ssl_set_certificate_file(ssl_cert_file())
             ovs.stream.Stream.ssl_set_ca_cert_file(ssl_cacert_file())
 
-    def _execute(self, command):
-        try:
-            return command.execute(check_error=True)
-        except (ValueError, TypeError) as e:
-            raise BadRequestError(e)
-        except RowNotFound as e:
-            raise ElementNotFoundError(e)
-
     def close(self):
         self.ovsidl.close()
 
