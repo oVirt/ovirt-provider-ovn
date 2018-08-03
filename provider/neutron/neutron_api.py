@@ -75,6 +75,9 @@ class NeutronApi(object):
         self.idl = OvnNbApiIdlImpl(ovsdb_connection)
         self.ovn_north = OvnNorth(self.idl)
 
+    def create_ovn_update_command(self, table_name, entity_uuid):
+        return DbSetCommand(self.idl, table_name, entity_uuid)
+
     def _configure_ssl_connection(self):
         if is_ovn_remote_ssl():
             ovs.stream.Stream.ssl_set_private_key_file(ssl_key_file())
@@ -169,9 +172,7 @@ class NeutronApi(object):
             current_external_ids,
             **relevant_external_ids
         )
-        DbSetCommand(
-            self.idl, ovnconst.TABLE_LS, network_id
-        ).add(
+        self.create_ovn_update_command(ovnconst.TABLE_LS, network_id).add(
             ovnconst.ROW_LS_EXTERNAL_IDS,
             new_external_ids
         ).execute()
@@ -190,9 +191,7 @@ class NeutronApi(object):
             self.ovn_north.remove_lsp(str(localnet_port.uuid))
 
     def _set_port_localnet_values(self, port, localnet, vlan):
-        DbSetCommand(
-            self.idl, ovnconst.TABLE_LSP, port.uuid
-        ).add(
+        self.create_ovn_update_command(ovnconst.TABLE_LSP, port.uuid).add(
             ovnconst.ROW_LSP_ADDRESSES,
             [ovnconst.LSP_ADDRESS_TYPE_UNKNOWN]
         ).add(
@@ -205,8 +204,8 @@ class NeutronApi(object):
     def _update_networks_mtu(self, network_id, mtu):
         subnet = self.ovn_north.get_dhcp(ls_id=network_id)
         if subnet and subnet.options.get(NetworkMapper.REST_MTU) != mtu:
-            DbSetCommand(
-                self.idl, ovnconst.TABLE_DHCP_Options, subnet.uuid
+            self.create_ovn_update_command(
+                ovnconst.TABLE_DHCP_Options, subnet.uuid
             ).add(
                 ovnconst.ROW_DHCP_OPTIONS,
                 {SubnetMapper.OVN_DHCP_MTU: str(mtu)}
@@ -333,9 +332,7 @@ class NeutronApi(object):
         #   txn.commit()
         # The ovsdbapp transactions seem to have synchronization issues at the
         # moment, hence we'll be using individual transactions for now.
-        DbSetCommand(
-            self.idl, ovnconst.TABLE_LSP, port.uuid
-        ).add(
+        self.create_ovn_update_command(ovnconst.TABLE_LSP, port.uuid).add(
             ovnconst.ROW_LSP_EXTERNAL_IDS,
             {PortMapper.OVN_DEVICE_ID: device_id},
             device_id
@@ -365,8 +362,8 @@ class NeutronApi(object):
         subnet = self.ovn_north.get_dhcp(ls_id=network_id)
         validate.fixed_ip_matches_port_subnet(fixed_ips, subnet)
         if mac:
-            db_set_command = DbSetCommand(
-                self.idl, ovnconst.TABLE_LSP, port.uuid
+            db_set_command = self.create_ovn_update_command(
+                ovnconst.TABLE_LSP, port.uuid
             )
             if subnet:
                 db_set_command.add(
@@ -418,9 +415,7 @@ class NeutronApi(object):
             )
         )
 
-        DbSetCommand(
-            self.idl, ovnconst.TABLE_LSP, port.uuid
-        ).add(
+        self.create_ovn_update_command(ovnconst.TABLE_LSP, port.uuid).add(
             ovnconst.ROW_LSP_TYPE,
             ovnconst.LSP_TYPE_ROUTER,
         ).add(
@@ -549,8 +544,8 @@ class NeutronApi(object):
         gateway=None,
         dns=None,
     ):
-        DbSetCommand(
-            self.idl, ovnconst.TABLE_DHCP_Options, subnet_id
+        self.create_ovn_update_command(
+            ovnconst.TABLE_DHCP_Options, subnet_id
         ).add(
             ovnconst.ROW_DHCP_EXTERNAL_IDS,
             {SubnetMapper.OVN_NAME: name},
@@ -731,7 +726,7 @@ class NeutronApi(object):
             )
         self._reserve_network_ip(network_id, gateway_ip)
 
-        DbSetCommand(self.idl, ovnconst.TABLE_LR, router_id).add(
+        self.create_ovn_update_command(ovnconst.TABLE_LR, router_id).add(
             ovnconst.ROW_LR_NAME, name, name
         ).add(ovnconst.ROW_LR_ENABLED, enabled, enabled).execute()
 
@@ -973,7 +968,7 @@ class NeutronApi(object):
             is_external_gateway=True,
         )
 
-        DbSetCommand(self.idl, ovnconst.TABLE_LR, router_id).add(
+        self.create_ovn_update_command(ovnconst.TABLE_LR, router_id).add(
             ovnconst.ROW_LR_EXTERNAL_IDS,
             {
                 RouterMapper.OVN_ROUTER_GATEWAY_PORT: str(port.uuid),
