@@ -53,7 +53,7 @@ from neutron.ovn_north_mappers import NetworkMapper
 from neutron.ovn_north_mappers import PortMapper
 from neutron.ovn_north_mappers import Router
 from neutron.ovn_north_mappers import RouterMapper
-from neutron.ovn_north import OvnNorth
+from neutron.neutron_api import OvnNorth
 
 from ovntestlib import OvnRouterRow
 

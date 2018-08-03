@@ -23,7 +23,7 @@ from auth import Forbidden
 from auth import TOKEN_HTTP_HEADER_FIELD_NAME
 from handlers.selecting_handler import SelectingHandler
 from handlers.neutron_responses import responses
-from neutron.ovn_north import OvnNorth
+from neutron.neutron_api import OvnNorth
 
 
 class NeutronHandler(SelectingHandler):

@@ -31,7 +31,7 @@ from neutron.ovn_north_mappers import PortMapper
 from neutron.ovn_north_mappers import SubnetConfigError
 from neutron.ovn_north_mappers import SubnetMapper
 from neutron.ovn_north_mappers import UnsupportedDataValueError
-from neutron.ovn_north import OvnNorth
+from neutron.neutron_api import OvnNorth
 from ovirt_provider_config_common import dhcp_lease_time
 from ovirt_provider_config_common import dhcp_mtu
 from ovirt_provider_config_common import dhcp_server_mac
@@ -574,7 +574,7 @@ class TestOvnNorth(object):
         autospec=False
     )
     @mock.patch(
-        'neutron.ovn_north.ovs_version_29',
+        'neutron.neutron_api.ovs_version_29',
         lambda: True
     )
     def test_add_port(self, mock_db_set, mock_add_command, mock_connection):
