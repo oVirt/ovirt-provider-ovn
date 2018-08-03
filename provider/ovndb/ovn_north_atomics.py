@@ -19,7 +19,7 @@
 
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 
-import ovndb.constants as ovnconst
+import constants as ovnconst
 
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError

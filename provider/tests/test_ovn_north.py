@@ -22,7 +22,7 @@ import mock
 import pytest
 
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
-import ovndb.constants as ovnconst
+import constants as ovnconst
 
 from handlers.base_handler import ConflictError
 from ovirt_provider_config_common import dhcp_lease_time

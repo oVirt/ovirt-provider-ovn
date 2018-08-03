@@ -23,10 +23,10 @@ from functools import wraps
 from netaddr import IPNetwork
 import six
 
+import constants as ovnconst
 from ovirt_provider_config_common import dhcp_mtu
 from ovirt_provider_config_common import tenant_id
 from ovirt_provider_config_common import max_allowed_mtu
-import ovndb.constants as ovnconst
 import ovndb.ip as ip_utils
 from handlers.base_handler import MethodNotAllowedError
 from handlers.base_handler import BadRequestError

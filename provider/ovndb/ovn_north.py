@@ -23,7 +23,7 @@ import ovsdbapp.backend.ovs_idl.connection
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 from ovsdbapp.schema.ovn_northbound.impl_idl import OvnNbApiIdlImpl
 
-import ovndb.constants as ovnconst
+import constants as ovnconst
 import ovndb.ip as ip_utils
 import ovndb.validation as validate
 

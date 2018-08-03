@@ -19,7 +19,7 @@
 
 import random
 
-import ovndb.constants as ovnconst
+import constants as ovnconst
 
 from netaddr import IPAddress
 from netaddr import IPNetwork

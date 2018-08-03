@@ -19,7 +19,7 @@ from __future__ import absolute_import
 
 from uuid import UUID
 
-from ovndb.constants import LSP_OPTION_NETWORK_NAME
+from constants import LSP_OPTION_NETWORK_NAME
 from ovndb.ovn_north_mappers import Network
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import NetworkPort

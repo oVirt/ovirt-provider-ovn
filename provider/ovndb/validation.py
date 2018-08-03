@@ -17,7 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 
 
-import ovndb.constants as ovnconst
+import constants as ovnconst
 import ovndb.ip as ip_utils
 from handlers.base_handler import ConflictError
 from handlers.base_handler import BadRequestError

@@ -20,11 +20,11 @@ from __future__ import absolute_import
 from ovirt_provider_config_common import tenant_id
 from ovirt_provider_config_common import dhcp_mtu
 
+import constants as ovnconst
 import ovndb.ip as ip_utils
 from ovndb.ovn_north_mappers import NetworkMapper
 from ovndb.ovn_north_mappers import PortMapper
 from ovndb.ovn_north_mappers import SubnetMapper
-import ovndb.constants as ovnconst
 import ovndb.ip as iputils
 
 TABLES = [['table0', ['column0', 'column1']]]
