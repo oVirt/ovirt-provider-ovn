@@ -55,7 +55,7 @@ from ovirt_provider_config_common import ssl_cacert_file
 from ovirt_provider_config_common import ssl_cert_file
 
 from ovndb.db_set_command import DbSetCommand
-from ovndb.ovn_north_atomics import OvnNorthAtomics
+from ovndb.ovn_north import OvnNorthAtomics
 
 
 class OvnNorth(object):
