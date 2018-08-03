@@ -30,18 +30,18 @@ import neutron.validation as validate
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
 
-from neutron.ovn_north_mappers import AddRouterInterfaceMapper
-from neutron.ovn_north_mappers import NetworkMapper
-from neutron.ovn_north_mappers import Network
-from neutron.ovn_north_mappers import NetworkPort
-from neutron.ovn_north_mappers import PortMapper
-from neutron.ovn_north_mappers import RemoveRouterInterfaceMapper
-from neutron.ovn_north_mappers import RestDataError
-from neutron.ovn_north_mappers import Router
-from neutron.ovn_north_mappers import RouterInterface
-from neutron.ovn_north_mappers import RouterMapper
-from neutron.ovn_north_mappers import SubnetConfigError
-from neutron.ovn_north_mappers import SubnetMapper
+from neutron.neutron_api_mappers import AddRouterInterfaceMapper
+from neutron.neutron_api_mappers import NetworkMapper
+from neutron.neutron_api_mappers import Network
+from neutron.neutron_api_mappers import NetworkPort
+from neutron.neutron_api_mappers import PortMapper
+from neutron.neutron_api_mappers import RemoveRouterInterfaceMapper
+from neutron.neutron_api_mappers import RestDataError
+from neutron.neutron_api_mappers import Router
+from neutron.neutron_api_mappers import RouterInterface
+from neutron.neutron_api_mappers import RouterMapper
+from neutron.neutron_api_mappers import SubnetConfigError
+from neutron.neutron_api_mappers import SubnetMapper
 
 from ovirt_provider_config_common import ovn_remote
 from ovirt_provider_config_common import dhcp_lease_time

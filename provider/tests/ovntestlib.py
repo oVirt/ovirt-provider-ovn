@@ -22,9 +22,10 @@ from ovirt_provider_config_common import dhcp_mtu
 
 import constants as ovnconst
 import neutron.ip as ip_utils
-from neutron.ovn_north_mappers import NetworkMapper
-from neutron.ovn_north_mappers import PortMapper
-from neutron.ovn_north_mappers import SubnetMapper
+
+from neutron.neutron_api_mappers import NetworkMapper
+from neutron.neutron_api_mappers import PortMapper
+from neutron.neutron_api_mappers import SubnetMapper
 
 TABLES = [['table0', ['column0', 'column1']]]
 REMOTE = 'address://url'

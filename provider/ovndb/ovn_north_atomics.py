@@ -25,8 +25,8 @@ from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
 
 import neutron.validation as validate
-from neutron.ovn_north_mappers import PortMapper
-from neutron.ovn_north_mappers import SubnetMapper
+from neutron.neutron_api_mappers import PortMapper
+from neutron.neutron_api_mappers import SubnetMapper
 
 
 def accepts_single_arg(f):
