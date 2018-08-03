@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,25 +16,3 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from __future__ import absolute_import
-
-from auth import validate_token
-from auth import Forbidden
-from auth import TOKEN_HTTP_HEADER_FIELD_NAME
-from handlers.selecting_handler import SelectingHandler
-from handlers.neutron_responses import responses
-from neutron.ovn_north import OvnNorth
-
-
-class NeutronHandler(SelectingHandler):
-
-    def call_response_handler(self, response_handler, content, parameters):
-        if not validate_token(self.headers.get(
-                TOKEN_HTTP_HEADER_FIELD_NAME, '')):
-            raise Forbidden()
-        with OvnNorth() as ovn_north:
-            return response_handler(ovn_north, content, parameters)
-
-    @staticmethod
-    def get_responses():
-        return responses()

@@ -21,11 +21,10 @@ from ovirt_provider_config_common import tenant_id
 from ovirt_provider_config_common import dhcp_mtu
 
 import constants as ovnconst
-import ovndb.ip as ip_utils
-from ovndb.ovn_north_mappers import NetworkMapper
-from ovndb.ovn_north_mappers import PortMapper
-from ovndb.ovn_north_mappers import SubnetMapper
-import ovndb.ip as iputils
+import neutron.ip as ip_utils
+from neutron.ovn_north_mappers import NetworkMapper
+from neutron.ovn_north_mappers import PortMapper
+from neutron.ovn_north_mappers import SubnetMapper
 
 TABLES = [['table0', ['column0', 'column1']]]
 REMOTE = 'address://url'
@@ -122,7 +121,7 @@ def assert_port_equal(rest_data, port):
     assert rest_data.get('fixed_ips') == PortMapper.get_fixed_ips(
         port.lsp, port.dhcp_options, port.lrp
     )
-    assert rest_data.get('mac_address') == iputils.get_port_mac(port.lsp)
+    assert rest_data.get('mac_address') == ip_utils.get_port_mac(port.lsp)
 
 
 class OvnSubnetRow(OvnRow):

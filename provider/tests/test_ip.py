@@ -18,7 +18,7 @@
 from __future__ import absolute_import
 
 from collections import namedtuple
-import ovndb.ip as ip_utils
+import neutron.ip as ip_utils
 
 Lsp = namedtuple('Lsp', ['addresses', 'dynamic_addresses'])
 Lrp = namedtuple('Lrp', ['networks'])

@@ -18,15 +18,15 @@
 
 
 import constants as ovnconst
-import ovndb.ip as ip_utils
+import neutron.ip as ip_utils
 from handlers.base_handler import ConflictError
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
 
-from ovndb.ovn_north_mappers import PortMapper
-from ovndb.ovn_north_mappers import SubnetMapper
-from ovndb.ovn_north_mappers import RestDataError
-from ovndb.ovn_north_mappers import RouterMapper
+from neutron.ovn_north_mappers import PortMapper
+from neutron.ovn_north_mappers import SubnetMapper
+from neutron.ovn_north_mappers import RestDataError
+from neutron.ovn_north_mappers import RouterMapper
 
 
 def attach_network_to_router_by_subnet(subnet, network_id, router_id):

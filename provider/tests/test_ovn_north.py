@@ -23,20 +23,19 @@ import pytest
 
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 import constants as ovnconst
-
 from handlers.base_handler import ConflictError
+from neutron.ovn_north_mappers import Network
+from neutron.ovn_north_mappers import NetworkMapper
+from neutron.ovn_north_mappers import NetworkPort
+from neutron.ovn_north_mappers import PortMapper
+from neutron.ovn_north_mappers import SubnetConfigError
+from neutron.ovn_north_mappers import SubnetMapper
+from neutron.ovn_north_mappers import UnsupportedDataValueError
+from neutron.ovn_north import OvnNorth
 from ovirt_provider_config_common import dhcp_lease_time
 from ovirt_provider_config_common import dhcp_mtu
 from ovirt_provider_config_common import dhcp_server_mac
 from ovirt_provider_config_common import tenant_id
-from ovndb.ovn_north import OvnNorth
-from ovndb.ovn_north_mappers import Network
-from ovndb.ovn_north_mappers import NetworkMapper
-from ovndb.ovn_north_mappers import NetworkPort
-from ovndb.ovn_north_mappers import PortMapper
-from ovndb.ovn_north_mappers import SubnetConfigError
-from ovndb.ovn_north_mappers import SubnetMapper
-from ovndb.ovn_north_mappers import UnsupportedDataValueError
 
 from ovntestlib import assert_network_equal
 from ovntestlib import assert_port_equal
@@ -575,7 +574,7 @@ class TestOvnNorth(object):
         autospec=False
     )
     @mock.patch(
-        'ovndb.ovn_north.ovs_version_29',
+        'neutron.ovn_north.ovs_version_29',
         lambda: True
     )
     def test_add_port(self, mock_db_set, mock_add_command, mock_connection):

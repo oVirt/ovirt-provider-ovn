@@ -20,13 +20,13 @@ from __future__ import absolute_import
 from uuid import UUID
 
 from constants import LSP_OPTION_NETWORK_NAME
-from ovndb.ovn_north_mappers import Network
-from ovndb.ovn_north_mappers import NetworkMapper
-from ovndb.ovn_north_mappers import NetworkPort
-from ovndb.ovn_north_mappers import PortMapper
-from ovndb.ovn_north_mappers import SubnetMapper
-from ovndb.ovn_north_mappers import Router
-from ovndb.ovn_north_mappers import RouterMapper
+from neutron.ovn_north_mappers import Network
+from neutron.ovn_north_mappers import NetworkMapper
+from neutron.ovn_north_mappers import NetworkPort
+from neutron.ovn_north_mappers import PortMapper
+from neutron.ovn_north_mappers import SubnetMapper
+from neutron.ovn_north_mappers import Router
+from neutron.ovn_north_mappers import RouterMapper
 
 
 from ovntestlib import assert_network_equal

@@ -24,9 +24,9 @@ import constants as ovnconst
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
 
-import ovndb.validation as validate
-from ovndb.ovn_north_mappers import PortMapper
-from ovndb.ovn_north_mappers import SubnetMapper
+import neutron.validation as validate
+from neutron.ovn_north_mappers import PortMapper
+from neutron.ovn_north_mappers import SubnetMapper
 
 
 def accepts_single_arg(f):

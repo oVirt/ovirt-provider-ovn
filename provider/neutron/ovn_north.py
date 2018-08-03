@@ -24,11 +24,24 @@ from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 from ovsdbapp.schema.ovn_northbound.impl_idl import OvnNbApiIdlImpl
 
 import constants as ovnconst
-import ovndb.ip as ip_utils
-import ovndb.validation as validate
+import neutron.ip as ip_utils
+import neutron.validation as validate
 
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
+
+from neutron.ovn_north_mappers import AddRouterInterfaceMapper
+from neutron.ovn_north_mappers import NetworkMapper
+from neutron.ovn_north_mappers import Network
+from neutron.ovn_north_mappers import NetworkPort
+from neutron.ovn_north_mappers import PortMapper
+from neutron.ovn_north_mappers import RemoveRouterInterfaceMapper
+from neutron.ovn_north_mappers import RestDataError
+from neutron.ovn_north_mappers import Router
+from neutron.ovn_north_mappers import RouterInterface
+from neutron.ovn_north_mappers import RouterMapper
+from neutron.ovn_north_mappers import SubnetConfigError
+from neutron.ovn_north_mappers import SubnetMapper
 
 from ovirt_provider_config_common import ovn_remote
 from ovirt_provider_config_common import dhcp_lease_time
@@ -43,18 +56,6 @@ from ovirt_provider_config_common import ssl_cert_file
 
 from ovndb.db_set_command import DbSetCommand
 from ovndb.ovn_north_atomics import OvnNorthAtomics
-from ovndb.ovn_north_mappers import AddRouterInterfaceMapper
-from ovndb.ovn_north_mappers import NetworkMapper
-from ovndb.ovn_north_mappers import Network
-from ovndb.ovn_north_mappers import NetworkPort
-from ovndb.ovn_north_mappers import PortMapper
-from ovndb.ovn_north_mappers import RemoveRouterInterfaceMapper
-from ovndb.ovn_north_mappers import RestDataError
-from ovndb.ovn_north_mappers import Router
-from ovndb.ovn_north_mappers import RouterInterface
-from ovndb.ovn_north_mappers import RouterMapper
-from ovndb.ovn_north_mappers import SubnetConfigError
-from ovndb.ovn_north_mappers import SubnetMapper
 
 
 class OvnNorth(object):

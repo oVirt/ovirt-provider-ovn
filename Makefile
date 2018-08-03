@@ -52,6 +52,8 @@ install:
 	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/ovirt provider/auth/plugins/ovirt/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/handlers/
 	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/handlers provider/handlers/*.py*
+	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/neutron/
+	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/neutron/ provider/neutron/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/
 	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/ provider/ovndb/*.py*
 	install -m 644 -D provider/scripts/ovirt-provider-ovn.service $(DESTDIR)/usr/lib/systemd/system/ovirt-provider-ovn.service

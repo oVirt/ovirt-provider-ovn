@@ -49,11 +49,11 @@ from handlers.neutron_responses import SUBNETS
 
 from handlers.selecting_handler import SelectingHandler
 
-from ovndb.ovn_north import OvnNorth
-from ovndb.ovn_north_mappers import NetworkMapper
-from ovndb.ovn_north_mappers import PortMapper
-from ovndb.ovn_north_mappers import Router
-from ovndb.ovn_north_mappers import RouterMapper
+from neutron.ovn_north_mappers import NetworkMapper
+from neutron.ovn_north_mappers import PortMapper
+from neutron.ovn_north_mappers import Router
+from neutron.ovn_north_mappers import RouterMapper
+from neutron.ovn_north import OvnNorth
 
 from ovntestlib import OvnRouterRow
 
