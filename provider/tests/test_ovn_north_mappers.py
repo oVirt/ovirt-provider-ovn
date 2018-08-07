@@ -18,10 +18,13 @@
 from __future__ import absolute_import
 
 from uuid import UUID
+from datetime import datetime
 
 import pytest
 
 from constants import LSP_OPTION_NETWORK_NAME
+from ovirt_provider_config_common import tenant_id
+
 from neutron.neutron_api_mappers import Network
 from neutron.neutron_api_mappers import NetworkMapper
 from neutron.neutron_api_mappers import NetworkPort
@@ -30,16 +33,20 @@ from neutron.neutron_api_mappers import SubnetMapper
 from neutron.neutron_api_mappers import RestDataError
 from neutron.neutron_api_mappers import Router
 from neutron.neutron_api_mappers import RouterMapper
+from neutron.neutron_api_mappers import SecurityGroup
+from neutron.neutron_api_mappers import SecurityGroupMapper
 
 
 from ovntestlib import assert_network_equal
 from ovntestlib import assert_port_equal
 from ovntestlib import assert_subnet_equal
 from ovntestlib import assert_router_equal
+from ovntestlib import assert_security_group_equal
 from ovntestlib import OvnSubnetRow
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
 from ovntestlib import OvnRouterRow
+from ovntestlib import OvnSecurityGroupRow
 from ovntestlib import StaticRouteRow
 
 
@@ -50,6 +57,7 @@ NETWORK_UUID = UUID(int=606)
 NETWORK_NAME = 'skynet'
 PORT_NAME = 'port1'
 PORT_UUID = UUID(int=101)
+SECURITY_GROUP_UUID = UUID(int=100)
 SUBNET_ID102 = UUID(int=102)
 SUBNET_CIDR = '1.1.1.0/24'
 
@@ -211,3 +219,23 @@ class TestOvnNorthMappers(object):
         with pytest.raises(RestDataError) as expected_exception:
             NetworkMapper._boolean_or_exception('attr2', [])
         assert expected_exception.value.message == 'attr2 must be of type bool'
+
+    def test_acl_to_rest_minimal(self):
+        name = 'sec1'
+        desc = 'lotsofsafety'
+        timestamp = datetime.utcnow().isoformat()
+        external_ids = {
+            SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION: desc,
+            SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS: timestamp,
+            SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS: timestamp,
+            SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: '1',
+            SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT: tenant_id(),
+            SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id()
+        }
+        row = OvnSecurityGroupRow(
+            SECURITY_GROUP_UUID, name=name, external_ids=external_ids
+        )
+
+        sec_group = SecurityGroup(row, [])
+        sec_group_rest = SecurityGroupMapper.row2rest(sec_group)
+        assert_security_group_equal(sec_group_rest, sec_group)
