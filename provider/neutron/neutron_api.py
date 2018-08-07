@@ -18,11 +18,9 @@
 
 import uuid
 
-import ovs.stream
-import ovsdbapp.backend.ovs_idl.connection
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
-from ovsdbapp.schema.ovn_northbound.impl_idl import OvnNbApiIdlImpl
 
+import ovn_connection
 import constants as ovnconst
 import neutron.ip as ip_utils
 import neutron.validation as validate
@@ -43,16 +41,11 @@ from neutron.neutron_api_mappers import RouterMapper
 from neutron.neutron_api_mappers import SubnetConfigError
 from neutron.neutron_api_mappers import SubnetMapper
 
-from ovirt_provider_config_common import ovn_remote
 from ovirt_provider_config_common import dhcp_lease_time
 from ovirt_provider_config_common import dhcp_server_mac
 from ovirt_provider_config_common import dhcp_enable_mtu
 from ovirt_provider_config_common import dhcp_mtu
-from ovirt_provider_config_common import is_ovn_remote_ssl
 from ovirt_provider_config_common import ovs_version_29
-from ovirt_provider_config_common import ssl_key_file
-from ovirt_provider_config_common import ssl_cacert_file
-from ovirt_provider_config_common import ssl_cert_file
 
 from ovndb.db_set_command import DbSetCommand
 from ovndb.ovn_north import OvnNorth
@@ -61,31 +54,11 @@ from ovndb.ovn_north import OvnNorth
 class NeutronApi(object):
 
     def __init__(self):
-        self._connect()
-
-    def _connect(self):
-        self._configure_ssl_connection()
-        self.ovsidl = ovsdbapp.backend.ovs_idl.connection.OvsdbIdl.from_server(
-            ovn_remote(),
-            ovnconst.OVN_NORTHBOUND
-        )
-        ovsdb_connection = ovsdbapp.backend.ovs_idl.connection.Connection(
-            idl=self.ovsidl,
-            timeout=100)
-        self.idl = OvnNbApiIdlImpl(ovsdb_connection)
+        self.ovsidl, self.idl = ovn_connection.connect()
         self.ovn_north = OvnNorth(self.idl)
 
     def create_ovn_update_command(self, table_name, entity_uuid):
         return DbSetCommand(self.idl, table_name, entity_uuid)
-
-    def _configure_ssl_connection(self):
-        if is_ovn_remote_ssl():
-            ovs.stream.Stream.ssl_set_private_key_file(ssl_key_file())
-            ovs.stream.Stream.ssl_set_certificate_file(ssl_cert_file())
-            ovs.stream.Stream.ssl_set_ca_cert_file(ssl_cacert_file())
-
-    def close(self):
-        self.ovsidl.close()
 
     # TODO: could this be moved to ovsdbapp?
     def _get_port_network(self, port):
@@ -1142,4 +1115,4 @@ class NeutronApi(object):
         return self
 
     def __exit__(self, type, value, tb):
-        self.close()
+        self.ovsidl.close()

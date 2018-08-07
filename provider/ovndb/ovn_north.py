@@ -19,9 +19,9 @@
 
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 
+import ovn_connection
 import constants as ovnconst
 
-from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
 
 import neutron.validation as validate
@@ -42,16 +42,8 @@ class OvnNorth(object):
     def __init__(self, idl):
         self.idl = idl
 
-    def _execute(self, command):
-        try:
-            return command.execute(check_error=True)
-        except (ValueError, TypeError) as e:
-            raise BadRequestError(e)
-        except RowNotFound as e:
-            raise ElementNotFoundError(e)
-
     def add_ls(self, name, external_ids):
-        return self._execute(
+        return ovn_connection.execute(
             self.idl.ls_add(
                 switch=name,
                 may_exist=False,
@@ -60,7 +52,7 @@ class OvnNorth(object):
         )
 
     def add_lsp(self, name, network_id):
-        return self._execute(
+        return ovn_connection.execute(
             self.idl.lsp_add(
                 network_id,
                 name,
@@ -69,27 +61,29 @@ class OvnNorth(object):
         )
 
     def add_lr(self, name, enabled):
-        return self._execute(self.idl.lr_add(
+        return ovn_connection.execute(self.idl.lr_add(
             router=name, may_exist=False, enabled=enabled
         ))
 
     def add_lrp(self, lr_id, lrp_name, mac, lrp_ip):
-        self._execute(self.idl.lrp_add(
+        ovn_connection.execute(self.idl.lrp_add(
             router=lr_id, port=lrp_name,
             mac=mac,
             networks=[lrp_ip],
         ))
 
     def add_route(self, lrp_id, prefix, nexthop):
-        self._execute(self.idl.lr_route_add(lrp_id, prefix, nexthop))
+        ovn_connection.execute(self.idl.lr_route_add(lrp_id, prefix, nexthop))
 
     def add_dhcp_options(self, cidr, external_ids):
-        return self._execute(self.idl.dhcp_options_add(cidr, **external_ids))
+        return ovn_connection.execute(
+            self.idl.dhcp_options_add(cidr, **external_ids)
+        )
 
     @accepts_single_arg
     def get_ls(self, ls_id=None, dhcp=None):
         if ls_id:
-            return self._execute(self.idl.ls_get(ls_id))
+            return ovn_connection.execute(self.idl.ls_get(ls_id))
         if dhcp:
             dhcp_ls_id = str(
                 dhcp.external_ids.get(SubnetMapper.OVN_NETWORK_ID)
@@ -109,7 +103,7 @@ class OvnNorth(object):
                 None
             )
         if dhcp_id:
-            dhcp = self._execute(self.idl.dhcp_options_get(dhcp_id))
+            dhcp = ovn_connection.execute(self.idl.dhcp_options_get(dhcp_id))
             # TODO: this: str(subnet.uuid) != str(subnet_id)
             # is a workaround for an ovsdbapp problem returning
             # random value for table with no indexing column specified when
@@ -136,9 +130,9 @@ class OvnNorth(object):
     @accepts_single_arg
     def get_lsp(self, lsp_id=None, ovirt_lsp_id=None, lrp=None):
         if lsp_id:
-            return self._execute(self.idl.lsp_get(lsp_id))
+            return ovn_connection.execute(self.idl.lsp_get(lsp_id))
         if ovirt_lsp_id:
-            lsp = self._execute(self.idl.lsp_get(ovirt_lsp_id))
+            lsp = ovn_connection.execute(self.idl.lsp_get(ovirt_lsp_id))
             if not self._is_port_ovirt_controlled(lsp):
                 raise ValueError('Not an ovirt controller port')
             return lsp
@@ -168,34 +162,34 @@ class OvnNorth(object):
                 )
 
     def list_ls(self):
-        return self._execute(self.idl.ls_list())
+        return ovn_connection.execute(self.idl.ls_list())
 
     def list_lrp(self):
         # TODO: ovsdbapp does not allow to retrieve all lrp's in one query,
         # so we have to resort to using the generic query
         # To be changed once lrp_list is modified
-        return self._execute(self.idl.db_list(ovnconst.TABLE_LRP))
+        return ovn_connection.execute(self.idl.db_list(ovnconst.TABLE_LRP))
 
     def list_dhcp(self):
-        dhcps = self._execute(self.idl.dhcp_options_list())
+        dhcps = ovn_connection.execute(self.idl.dhcp_options_list())
         return [
             dhcp for dhcp in dhcps
             if SubnetMapper.OVN_NETWORK_ID in dhcp.external_ids
         ]
 
     def list_lsp(self):
-        return self._execute(self.idl.lsp_list())
+        return ovn_connection.execute(self.idl.lsp_list())
 
     def list_lr(self):
-        return self._execute(self.idl.lr_list())
+        return ovn_connection.execute(self.idl.lr_list())
 
     def remove_ls(self, ls_id):
-        self._execute(self.idl.ls_del(ls_id))
+        ovn_connection.execute(self.idl.ls_del(ls_id))
 
     def remove_static_route(self, lr, ip_prefix):
         for route in lr.static_routes:
             if route.ip_prefix == ip_prefix:
-                self._execute(self.idl.db_remove(
+                ovn_connection.execute(self.idl.db_remove(
                     ovnconst.TABLE_LR,
                     str(lr.uuid),
                     ovnconst.ROW_LR_STATIC_ROUTES,
@@ -203,30 +197,32 @@ class OvnNorth(object):
                 ))
 
     def remove_dhcp_options(self, id):
-        self._execute(self.idl.dhcp_options_del(id))
+        ovn_connection.execute(self.idl.dhcp_options_del(id))
 
     def remove_lsp(self, lsp_id):
-        self._execute(self.idl.lsp_del(lsp_id))
+        ovn_connection.execute(self.idl.lsp_del(lsp_id))
 
     def remove_router(self, router_id):
-        self._execute(self.idl.lr_del(router_id))
+        ovn_connection.execute(self.idl.lr_del(router_id))
 
     def remove_lrp(self, lrp_id):
-        self._execute(self.idl.lrp_del(str(lrp_id)))
+        ovn_connection.execute(self.idl.lrp_del(str(lrp_id)))
 
     def db_set(self, table, id, values):
-        self._execute(self.idl.db_set(table, id, values))
+        ovn_connection.execute(self.idl.db_set(table, id, values))
 
     def _is_port_ovirt_controlled(self, port_row):
         return PortMapper.OVN_NIC_NAME in port_row.external_ids
 
     def clear_row_column(self, table, row_id, column):
-        self._execute(self.idl.db_clear(table, row_id, column))
+        ovn_connection.execute(self.idl.db_clear(table, row_id, column))
 
     def remove_key_from_column(self, table, row_id, column_name, key):
-        self._execute(self.idl.db_remove(table, row_id, column_name, key))
+        ovn_connection.execute(
+            self.idl.db_remove(table, row_id, column_name, key)
+        )
 
     def set_dhcp_options_options_column(self, subnet_uuid, options):
-        self._execute(
+        ovn_connection.execute(
             self.idl.dhcp_options_set_options(subnet_uuid, **options)
         )
