@@ -71,6 +71,11 @@ def ovn_config(*args):
 
 @expose('ovn-unconfigure')
 def ovn_unconfigure(*args):
+    """
+    ovn-unconfigure
+    Unconfigures the ovn-controller on the host.
+
+    """
     if len(args) != 1:
         raise ExtraArgsError(n=0)
 
