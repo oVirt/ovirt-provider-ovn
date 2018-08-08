@@ -17,6 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 
 
+from __future__ import absolute_import
+
 import constants as ovnconst
 import neutron.ip as ip_utils
 from handlers.base_handler import ConflictError

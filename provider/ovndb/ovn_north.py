@@ -17,6 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 
 
+from __future__ import absolute_import
+
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 
 import ovn_connection

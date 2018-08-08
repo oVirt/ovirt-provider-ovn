@@ -17,6 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 
 
+from __future__ import absolute_import
+
 import random
 
 import constants as ovnconst
@@ -153,3 +155,11 @@ def diff_routes(new_rest_routes, db_routes):
 def get_ip_with_mask(ip, cidr):
     mask = cidr.split('/')[1]
     return '{ip}/{netmask}'.format(ip=ip, netmask=mask)
+
+
+def is_valid_cidr(cidr):
+    try:
+        IPNetwork(cidr)
+        return True
+    except AddrFormatError:
+        return False
