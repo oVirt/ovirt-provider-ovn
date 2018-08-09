@@ -74,7 +74,7 @@ def response_code_201(nb_db, content, path_parts):
 @mock.patch('handlers.neutron_responses._responses', response_handlers)
 class TestNeutronHandler(object):
 
-    @mock.patch('handlers.neutron.OvnNorth', autospec=True)
+    @mock.patch('handlers.neutron.NeutronApi', autospec=True)
     @mock.patch('handlers.neutron.NeutronHandler.end_headers')
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
@@ -114,7 +114,7 @@ class TestNeutronHandler(object):
         assert mock_validate_token.call_count == 1
         assert mock_send_error.call_args[0][0] == 403
 
-    @mock.patch('handlers.neutron.OvnNorth', autospec=True)
+    @mock.patch('handlers.neutron.NeutronApi', autospec=True)
     @mock.patch('handlers.neutron.NeutronHandler.end_headers')
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
@@ -139,7 +139,7 @@ class TestNeutronHandler(object):
         assert mock_send_response.call_count == 1
         assert mock_validate_token.call_count == 1
 
-    @mock.patch('handlers.neutron.OvnNorth', autospec=True)
+    @mock.patch('handlers.neutron.NeutronApi', autospec=True)
     @mock.patch('handlers.neutron.NeutronHandler.end_headers')
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
@@ -162,7 +162,7 @@ class TestNeutronHandler(object):
         assert mock_send_response.call_count == 1
         assert mock_validate_token.call_count == 1
 
-    @mock.patch('handlers.neutron.OvnNorth', autospec=True)
+    @mock.patch('handlers.neutron.NeutronApi', autospec=True)
     @mock.patch('handlers.neutron.NeutronHandler.end_headers')
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_error')
@@ -180,7 +180,7 @@ class TestNeutronHandler(object):
         mock_call = mock.call(httplib.METHOD_NOT_ALLOWED)
         assert send_error.mock_calls[0] == mock_call
 
-    @mock.patch('handlers.neutron.OvnNorth', autospec=True)
+    @mock.patch('handlers.neutron.NeutronApi', autospec=True)
     @mock.patch('handlers.neutron.NeutronHandler.end_headers')
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
@@ -209,7 +209,7 @@ class TestNeutronHandler(object):
         assert mock_send_response.call_count == 1
         assert mock_validate_token.call_count == 1
 
-    @mock.patch('handlers.neutron.OvnNorth', autospec=True)
+    @mock.patch('handlers.neutron.NeutronApi', autospec=True)
     @mock.patch('handlers.neutron.NeutronHandler.end_headers')
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)

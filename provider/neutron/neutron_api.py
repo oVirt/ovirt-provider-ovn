@@ -58,7 +58,7 @@ from ovndb.db_set_command import DbSetCommand
 from ovndb.ovn_north import OvnNorthAtomics
 
 
-class OvnNorth(object):
+class NeutronApi(object):
 
     def __init__(self):
         self._connect()

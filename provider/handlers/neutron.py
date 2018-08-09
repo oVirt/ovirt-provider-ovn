@@ -23,7 +23,7 @@ from auth import Forbidden
 from auth import TOKEN_HTTP_HEADER_FIELD_NAME
 from handlers.selecting_handler import SelectingHandler
 from handlers.neutron_responses import responses
-from neutron.neutron_api import OvnNorth
+from neutron.neutron_api import NeutronApi
 
 
 class NeutronHandler(SelectingHandler):
@@ -32,7 +32,7 @@ class NeutronHandler(SelectingHandler):
         if not validate_token(self.headers.get(
                 TOKEN_HTTP_HEADER_FIELD_NAME, '')):
             raise Forbidden()
-        with OvnNorth() as ovn_north:
+        with NeutronApi() as ovn_north:
             return response_handler(ovn_north, content, parameters)
 
     @staticmethod

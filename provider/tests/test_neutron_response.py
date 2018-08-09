@@ -53,7 +53,7 @@ from neutron.neutron_api_mappers import NetworkMapper
 from neutron.neutron_api_mappers import PortMapper
 from neutron.neutron_api_mappers import Router
 from neutron.neutron_api_mappers import RouterMapper
-from neutron.neutron_api import OvnNorth
+from neutron.neutron_api import NeutronApi
 
 from ovntestlib import OvnRouterRow
 
@@ -315,7 +315,7 @@ class TestNeutronResponse(object):
 
     @mock.patch('ovsdbapp.backend.ovs_idl.connection', autospec=False)
     def test_post_routers(self, mock_connection):
-        nb_db = OvnNorth()
+        nb_db = NeutronApi()
         nb_db._add_router = Mock()
         nb_db.atomics.idl = Mock()
 

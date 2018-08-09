@@ -31,7 +31,7 @@ from neutron.neutron_api_mappers import PortMapper
 from neutron.neutron_api_mappers import SubnetConfigError
 from neutron.neutron_api_mappers import SubnetMapper
 from neutron.neutron_api_mappers import UnsupportedDataValueError
-from neutron.neutron_api import OvnNorth
+from neutron.neutron_api import NeutronApi
 from ovirt_provider_config_common import dhcp_lease_time
 from ovirt_provider_config_common import dhcp_mtu
 from ovirt_provider_config_common import dhcp_server_mac
@@ -171,7 +171,7 @@ class TestOvnNorth(object):
     def test_get_networks(self, mock_ls_list, mock_connection):
         mock_ls_list.return_value.execute.return_value = TestOvnNorth.networks
 
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         result = ovn_north.list_networks()
 
         assert len(result) == 3
@@ -199,7 +199,7 @@ class TestOvnNorth(object):
         mock_ls_get.return_value.execute.return_value = (
             TestOvnNorth.NETWORK_10
         )
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         result = ovn_north.get_network(str(TestOvnNorth.NETWORK_ID10))
 
         network = Network(ls=TestOvnNorth.NETWORK_10, localnet_lsp=None)
@@ -218,7 +218,7 @@ class TestOvnNorth(object):
         mock_add_command.return_value.execute.return_value = (
             TestOvnNorth.NETWORK_10
         )
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         rest_data = NetworkApiInputMaker(TestOvnNorth.NETWORK_NAME10).get()
         result = ovn_north.add_network(rest_data)
 
@@ -247,7 +247,7 @@ class TestOvnNorth(object):
             TestOvnNorth.NETWORK_LOCALNET_12)
         mock_ls_add_command.return_value.execute.return_value = (
             TestOvnNorth.NETWORK_LOCALNET_12)
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         rest_data = NetworkApiInputMaker(
             TestOvnNorth.NETWORK_NAME12,
             provider_type=NetworkMapper.NETWORK_TYPE_VLAN,
@@ -323,7 +323,7 @@ class TestOvnNorth(object):
             mock_dbset_command,
             mock_connection
     ):
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         network_rest_data = NetworkApiInputMaker(
             TestOvnNorth.NETWORK_NAMEMTU, mtu=TestOvnNorth.VALUE_NETWORK_MTU
         ).get()
@@ -399,7 +399,7 @@ class TestOvnNorth(object):
     ):
         mock_dhcp_list_command.return_value.execute.return_value = []
 
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         network_rest_data = NetworkApiInputMaker(
             TestOvnNorth.NETWORK_NAMEMTU, mtu=TestOvnNorth.VALUE_NETWORK_MTU
         ).get()
@@ -466,7 +466,7 @@ class TestOvnNorth(object):
         autospec=False
     )
     def test_update_network(self, mock_set_command, mock_connection):
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         rest_data = NetworkApiInputMaker(TestOvnNorth.NETWORK_NAME10).get()
         result = ovn_north.update_network(rest_data, TestOvnNorth.NETWORK_ID10)
 
@@ -492,7 +492,7 @@ class TestOvnNorth(object):
         mock_ls_get_command.return_value.execute.return_value = (
             TestOvnNorth.NETWORK_LOCALNET_12
         )
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         rest_data = NetworkApiInputMaker(
             TestOvnNorth.NETWORK_NAME12,
             provider_type=NetworkMapper.NETWORK_TYPE_VLAN,
@@ -534,7 +534,7 @@ class TestOvnNorth(object):
         lambda cmd, check_error: []
     )
     def test_delete_network(self, mock_del_command, mock_connection):
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         ovn_north.delete_network(TestOvnNorth.NETWORK_ID10)
         assert mock_del_command.call_count == 1
         expected_del_call = mock.call(
@@ -581,7 +581,7 @@ class TestOvnNorth(object):
         mock_add_command.return_value.execute.return_value = (
             TestOvnNorth.PORT_1
         )
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         rest_data = PortApiInputMaker(
             TestOvnNorth.PORT_NAME01, str(TestOvnNorth.NETWORK_ID10),
             device_id=TestOvnNorth.DEVICE_ID,
@@ -680,7 +680,7 @@ class TestOvnNorth(object):
         lambda cmd, check_error: TestOvnNorth.ports
     )
     def test_list_ports(self, mock_connection):
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         ports = ovn_north.list_ports()
         assert len(ports) == 2
         logical_switch = OvnNetworkRow(
@@ -717,7 +717,7 @@ class TestOvnNorth(object):
         autospec=False
     )
     def test_delete_port(self, mock_del_command, mock_connection):
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         ovn_north.delete_port(TestOvnNorth.PORT_ID01)
         assert mock_del_command.call_count == 1
         expected_del_call = mock.call(
@@ -742,7 +742,7 @@ class TestOvnNorth(object):
         autospec=False
     )
     def test_delete_router_port(self, mock_del_command, mock_connection):
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         with pytest.raises(ConflictError):
             ovn_north.delete_port(TestOvnNorth.PORT_ID01)
         assert mock_del_command.call_count == 0
@@ -753,7 +753,7 @@ class TestOvnNorth(object):
         lambda cmd, check_error: TestOvnNorth.subnets
     )
     def test_list_subnets(self, mock_connection):
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         result = ovn_north.list_subnets()
         assert len(result) == 2
         assert result[0]['id'] == str(TestOvnNorth.SUBNET_ID101)
@@ -766,7 +766,7 @@ class TestOvnNorth(object):
         lambda cmd, check_error: TestOvnNorth.SUBNET_101
     )
     def test_get_subnet(self, mock_connection):
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         result = ovn_north.get_subnet(TestOvnNorth.SUBNET_ID101)
         assert result['id'] == str(TestOvnNorth.SUBNET_ID101)
         assert result['network_id'] == str(TestOvnNorth.NETWORK_ID10)
@@ -787,7 +787,7 @@ class TestOvnNorth(object):
         lambda cmd, check_error: TestOvnNorth.NETWORK_10
     )
     def test_delete_subnet(self, mock_del_command, mock_connection):
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         ovn_north.delete_subnet(TestOvnNorth.SUBNET_ID101)
         assert mock_del_command.call_count == 1
         expected_del_call = mock.call(
@@ -826,7 +826,7 @@ class TestOvnNorth(object):
                         mock_dbset_command, mock_connection):
         add_execute = mock_add_command.return_value.execute
         add_execute.return_value = TestOvnNorth.SUBNET_102
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         rest_data = SubnetApiInputMaker(
             TestOvnNorth.SUBNET_102.external_ids.get(
                 SubnetMapper.OVN_NAME
@@ -904,7 +904,7 @@ class TestOvnNorth(object):
                                mock_dbset_command, mock_connection):
         add_execute = mock_add_command.return_value.execute
         add_execute.return_value = TestOvnNorth.SUBNET_102
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         rest_data = SubnetApiInputMaker(
             'subnet_name', cidr=TestOvnNorth.SUBNET_CIDR,
             network_id=str(TestOvnNorth.NETWORK_ID10), dns_nameservers=[],
@@ -1021,7 +1021,7 @@ class TestOvnNorth(object):
         lambda cmd, check_error: TestOvnNorth.subnets
     )
     def test_subnet_add_duplicate_network(self, mock_connection):
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         rest_data = SubnetApiInputMaker(
             'subnet_name', cidr=TestOvnNorth.SUBNET_CIDR,
             network_id=str(TestOvnNorth.NETWORK_ID10), gateway_ip='1.1.1.0'
@@ -1030,7 +1030,7 @@ class TestOvnNorth(object):
             ovn_north.add_subnet(rest_data)
 
     def test_subnet_dhcp_enabled_false(self, mock_connection):
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         rest_data = SubnetApiInputMaker(
             'subnet_name', cidr=TestOvnNorth.SUBNET_CIDR, network_id='',
             dns_nameservers=['1.1.1.1'], gateway_ip='1.1.1.0',
@@ -1046,7 +1046,7 @@ class TestOvnNorth(object):
         self, mock_ls_get_cmd, mock_connection
     ):
         mock_ls_get_cmd.side_effect = RowNotFound()
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         rest_data = SubnetApiInputMaker(
             'subnet_name', cidr=TestOvnNorth.SUBNET_CIDR, network_id=7,
             dns_nameservers=['1.1.1.1'], gateway_ip='1.1.1.0'
@@ -1101,7 +1101,7 @@ class TestOvnNorth(object):
             OvnNetworkRow(TestOvnNorth.NETWORK_ID11, ports=[port_row])
         ]
 
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         port = ovn_north.get_port(TestOvnNorth.PORT_ID01)
         assert port[PortMapper.REST_PORT_ADMIN_STATE_UP] == result
 
@@ -1110,7 +1110,7 @@ class TestOvnNorth(object):
     )
     def test_get_router(self, mock_lookup, mock_connection):
         mock_lookup.return_value = TestOvnNorth.ROUTER_20
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         result = ovn_north.get_router(str(TestOvnNorth.ROUTER_ID20))
 
         assert result['id'] == str(TestOvnNorth.ROUTER_ID20)
@@ -1130,7 +1130,7 @@ class TestOvnNorth(object):
     def test_delete_router(self, mock_lookup, mock_del_command,
                            mock_connection):
         mock_lookup.return_value = TestOvnNorth.ROUTER_20
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
 
         ovn_north.delete_router(str(TestOvnNorth.ROUTER_ID20))
 
@@ -1159,7 +1159,7 @@ class TestOvnNorth(object):
             TestOvnNorth.ROUTER_ID20,
             ports=[OvnRouterPort()]
         )
-        ovn_north = OvnNorth()
+        ovn_north = NeutronApi()
         with pytest.raises(ConflictError):
             ovn_north.delete_router(str(TestOvnNorth.ROUTER_ID20))
 
