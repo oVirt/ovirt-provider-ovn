@@ -38,7 +38,7 @@ def accepts_single_arg(f):
     return inner
 
 
-class OvnNorthAtomics(object):
+class OvnNorth(object):
     def __init__(self, idl):
         self.idl = idl
 

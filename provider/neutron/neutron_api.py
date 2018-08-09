@@ -55,7 +55,7 @@ from ovirt_provider_config_common import ssl_cacert_file
 from ovirt_provider_config_common import ssl_cert_file
 
 from ovndb.db_set_command import DbSetCommand
-from ovndb.ovn_north import OvnNorthAtomics
+from ovndb.ovn_north import OvnNorth
 
 
 class NeutronApi(object):
@@ -73,7 +73,7 @@ class NeutronApi(object):
             idl=self.ovsidl,
             timeout=100)
         self.idl = OvnNbApiIdlImpl(ovsdb_connection)
-        self.atomics = OvnNorthAtomics(self.idl)
+        self.ovn_north = OvnNorth(self.idl)
 
     def _configure_ssl_connection(self):
         if is_ovn_remote_ssl():
@@ -86,7 +86,7 @@ class NeutronApi(object):
 
     # TODO: could this be moved to ovsdbapp?
     def _get_port_network(self, port):
-        networks = self.atomics.list_ls()
+        networks = self.ovn_north.list_ls()
         return next(network for network in networks if port in network.ports)
 
     def _is_port_ovirt_controlled(self, port_row):
@@ -94,7 +94,7 @@ class NeutronApi(object):
 
     @NetworkMapper.map_to_rest
     def list_networks(self):
-        ls_rows = self.atomics.list_ls()
+        ls_rows = self.ovn_north.list_ls()
         return [self._get_network(ls) for ls in ls_rows]
 
     def _get_network(self, ls):
@@ -106,7 +106,7 @@ class NeutronApi(object):
     @NetworkMapper.map_to_rest
     def get_network(self, network_id):
         return self._get_network(
-            self.atomics.get_ls(ls_id=network_id)
+            self.ovn_north.get_ls(ls_id=network_id)
         )
 
     @NetworkMapper.validate_add
@@ -125,7 +125,7 @@ class NeutronApi(object):
         if mtu is not None:
             external_ids_dict[NetworkMapper.OVN_MTU] = str(mtu)
         name = 'ovirt-{name}-{gen_id}'.format(name=name, gen_id=uuid.uuid4())
-        return self.atomics.add_ls(
+        return self.ovn_north.add_ls(
             name=name,
             external_ids=self._generate_external_ids({}, **external_ids_dict)
         )
@@ -140,7 +140,7 @@ class NeutronApi(object):
             ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid)
         )
         self._set_port_localnet_values(localnet_port, localnet, vlan)
-        updated_network = self.atomics.get_ls(ls_id=str(network.uuid))
+        updated_network = self.ovn_north.get_ls(ls_id=str(network.uuid))
         return self._get_network(updated_network)
 
     @NetworkMapper.validate_update
@@ -158,7 +158,7 @@ class NeutronApi(object):
         return self.get_network(network_id)
 
     def _update_network_data(self, network_id, name, mtu):
-        current_external_ids = self.atomics.get_ls(
+        current_external_ids = self.ovn_north.get_ls(
             ls_id=network_id
         ).external_ids
 
@@ -179,7 +179,7 @@ class NeutronApi(object):
             self._update_networks_mtu(network_id, mtu)
 
     def _update_localnet_on_network(self, network_id, localnet, vlan):
-        network = self.atomics.get_ls(ls_id=network_id)
+        network = self.ovn_north.get_ls(ls_id=network_id)
         localnet_port = self._get_localnet_lsp(network)
         if localnet:
             if not localnet_port:
@@ -187,7 +187,7 @@ class NeutronApi(object):
                     ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid))
             self._set_port_localnet_values(localnet_port, localnet, vlan)
         elif localnet_port:
-            self.atomics.remove_lsp(str(localnet_port.uuid))
+            self.ovn_north.remove_lsp(str(localnet_port.uuid))
 
     def _set_port_localnet_values(self, port, localnet, vlan):
         DbSetCommand(
@@ -203,7 +203,7 @@ class NeutronApi(object):
         ).add(ovnconst.ROW_LSP_TAG_REQUEST, vlan).execute()
 
     def _update_networks_mtu(self, network_id, mtu):
-        subnet = self.atomics.get_dhcp(ls_id=network_id)
+        subnet = self.ovn_north.get_dhcp(ls_id=network_id)
         if subnet and subnet.options.get(NetworkMapper.REST_MTU) != mtu:
             DbSetCommand(
                 self.idl, ovnconst.TABLE_DHCP_Options, subnet.uuid
@@ -213,7 +213,7 @@ class NeutronApi(object):
             ).execute()
 
     def delete_network(self, network_id):
-        network = self.atomics.get_ls(ls_id=network_id)
+        network = self.ovn_north.get_ls(ls_id=network_id)
         if not network:
             raise RestDataError('Network %s does not exist' % network_id)
         validate.network_has_no_ports(
@@ -221,13 +221,13 @@ class NeutronApi(object):
             self._get_localnet_lsp(network)
         )
 
-        subnets = self.atomics.list_dhcp()
+        subnets = self.ovn_north.list_dhcp()
         for subnet in subnets:
             subnet_network_id = subnet.external_ids.get('ovirt_network_id')
             if subnet_network_id:
                 if network_id == subnet_network_id:
-                    self.atomics.remove_dhcp_options(subnet.uuid)
-        self.atomics.remove_ls(ls_id=network_id)
+                    self.ovn_north.remove_dhcp_options(subnet.uuid)
+        self.ovn_north.remove_ls(ls_id=network_id)
 
     def _get_localnet_lsp(self, ls):
         for lsp in ls.ports:
@@ -237,7 +237,7 @@ class NeutronApi(object):
 
     @PortMapper.map_to_rest
     def list_ports(self):
-        ports_rows = self.atomics.list_lsp()
+        ports_rows = self.ovn_north.list_lsp()
         return [self._get_network_port(port_row)
                 for port_row in ports_rows
                 if self._is_port_ovirt_controlled(port_row)]
@@ -245,14 +245,14 @@ class NeutronApi(object):
     @PortMapper.map_to_rest
     def get_port(self, port_id):
         return self._get_network_port(
-            self.atomics.get_lsp(ovirt_lsp_id=port_id)
+            self.ovn_north.get_lsp(ovirt_lsp_id=port_id)
         )
 
     def _get_network_port(self, lsp):
         ls = self._get_port_network(lsp)
-        dhcp_options = self.atomics.get_dhcp(lsp_id=str(lsp.uuid))
+        dhcp_options = self.ovn_north.get_dhcp(lsp_id=str(lsp.uuid))
         lrp_name = lsp.options.get(ovnconst.LSP_OPTION_ROUTER_PORT)
-        lrp = self.atomics.get_lrp(lrp_name=lrp_name) if lrp_name else None
+        lrp = self.ovn_north.get_lrp(lrp_name=lrp_name) if lrp_name else None
         return NetworkPort(lsp=lsp, ls=ls, dhcp_options=dhcp_options, lrp=lrp)
 
     @PortMapper.validate_add
@@ -273,8 +273,8 @@ class NeutronApi(object):
             port, name, is_enabled, device_id, device_owner, binding_host
         )
         mac = mac or ip_utils.random_unique_mac(
-            self.atomics.list_lsp(),
-            self.atomics.list_lrp()
+            self.ovn_north.list_lsp(),
+            self.ovn_north.list_lrp()
         )
         self._update_port_address(
             port, network_id=network_id, mac=mac, fixed_ips=fixed_ips)
@@ -294,7 +294,7 @@ class NeutronApi(object):
         fixed_ips=None,
         binding_host=None,
     ):
-        port = self.atomics.get_lsp(ovirt_lsp_id=port_id)
+        port = self.ovn_north.get_lsp(ovirt_lsp_id=port_id)
         network_id = self._get_validated_port_network_id(port, network_id)
         self._update_port_values(
             port, name, is_enabled, device_id, device_owner, binding_host
@@ -306,8 +306,8 @@ class NeutronApi(object):
     def _update_lsp_bound_lrp(self, port_id, fixed_ips):
         if not fixed_ips:
             return
-        lrp = self.atomics.get_lrp(lsp_id=port_id)
-        subnet = self.atomics.get_dhcp(lsp_id=port_id)
+        lrp = self.ovn_north.get_lrp(lsp_id=port_id)
+        subnet = self.ovn_north.get_dhcp(lsp_id=port_id)
         validate.fixed_ip_matches_port_subnet(fixed_ips, subnet)
 
         new_lrp_ip = '{ip}/{netmask}'.format(
@@ -315,7 +315,7 @@ class NeutronApi(object):
             netmask=ip_utils.get_mask_from_subnet(subnet)
         )
 
-        self.atomics.db_set(
+        self.ovn_north.db_set(
             ovnconst.TABLE_LRP,
             str(lrp.uuid),
             (ovnconst.ROW_LRP_NETWORKS, new_lrp_ip)
@@ -362,7 +362,7 @@ class NeutronApi(object):
             self._update_lsp_bound_lrp(str(port.uuid), fixed_ips)
             return
         mac = mac or ip_utils.get_port_mac(port)
-        subnet = self.atomics.get_dhcp(ls_id=network_id)
+        subnet = self.ovn_north.get_dhcp(ls_id=network_id)
         validate.fixed_ip_matches_port_subnet(fixed_ips, subnet)
         if mac:
             db_set_command = DbSetCommand(
@@ -375,7 +375,7 @@ class NeutronApi(object):
                 mac += ' ' + self._get_port_addesses_suffix(
                     network_id, fixed_ips)
             else:
-                self.atomics.clear_row_column(
+                self.ovn_north.clear_row_column(
                     ovnconst.TABLE_LSP, port.uuid,
                     ovnconst.ROW_LSP_DHCPV4_OPTIONS
                 )
@@ -395,7 +395,7 @@ class NeutronApi(object):
         if not ip:
             return ovnconst.LSP_ADDRESS_TYPE_DYNAMIC
         validate.ip_available_in_network(
-            self.atomics.get_ls(ls_id=network_id), ip
+            self.ovn_north.get_ls(ls_id=network_id), ip
         )
         return ip
 
@@ -431,7 +431,7 @@ class NeutronApi(object):
             [ovnconst.LSP_ADDRESS_TYPE_ROUTER]
         ).execute()
 
-        self.atomics.clear_row_column(
+        self.ovn_north.clear_row_column(
             ovnconst.TABLE_LSP, port.uuid, ovnconst.ROW_LSP_DHCPV4_OPTIONS
         )
 
@@ -455,9 +455,9 @@ class NeutronApi(object):
         return network_id or old_network_id
 
     def _create_port(self, name, network_id):
-        port = self.atomics.add_lsp(name, network_id)
+        port = self.ovn_north.add_lsp(name, network_id)
         port_id = str(port.uuid)
-        self.atomics.db_set(
+        self.ovn_north.db_set(
             ovnconst.TABLE_LSP,
             port_id,
             (ovnconst.ROW_LSP_NAME, str(port_id))
@@ -468,17 +468,17 @@ class NeutronApi(object):
         pass
 
     def delete_port(self, port_id):
-        lsp = self.atomics.get_lsp(lsp_id=port_id)
+        lsp = self.ovn_north.get_lsp(lsp_id=port_id)
         validate.port_is_not_connected_to_router(lsp)
-        self.atomics.remove_lsp(port_id)
+        self.ovn_north.remove_lsp(port_id)
 
     @SubnetMapper.map_to_rest
     def list_subnets(self):
-        return self.atomics.list_dhcp()
+        return self.ovn_north.list_dhcp()
 
     @SubnetMapper.map_to_rest
     def get_subnet(self, subnet_id):
-        return self.atomics.get_dhcp(dhcp_id=subnet_id)
+        return self.ovn_north.get_dhcp(dhcp_id=subnet_id)
 
     @SubnetMapper.validate_add
     @SubnetMapper.map_from_rest
@@ -491,12 +491,12 @@ class NeutronApi(object):
         dns=None,
     ):
         try:
-            network = self.atomics.get_ls(ls_id=network_id)
+            network = self.ovn_north.get_ls(ls_id=network_id)
         except ElementNotFoundError:
             raise SubnetConfigError('Subnet can not be created, network {}'
                                     ' does not exist'.format(network_id))
 
-        if self.atomics.get_dhcp(ls_id=network_id):
+        if self.ovn_north.get_dhcp(ls_id=network_id):
             raise SubnetConfigError('Unable to create more than one subnet'
                                     ' for network {}'.format(network_id))
 
@@ -524,14 +524,14 @@ class NeutronApi(object):
         if dns:
             options[SubnetMapper.OVN_DNS_SERVER] = dns
 
-        self.atomics.db_set(
+        self.ovn_north.db_set(
             ovnconst.TABLE_LS,
             network_id,
             (ovnconst.ROW_LS_OTHER_CONFIG, {NetworkMapper.OVN_SUBNET: cidr}),
         )
 
-        subnet = self.atomics.add_dhcp_options(cidr, external_ids)
-        self.atomics.set_dhcp_options_options_column(subnet.uuid, options)
+        subnet = self.ovn_north.add_dhcp_options(cidr, external_ids)
+        self.ovn_north.set_dhcp_options_options_column(subnet.uuid, options)
 
         for port in network.ports:
             if self._is_port_address_value_static(port.type):
@@ -574,7 +574,7 @@ class NeutronApi(object):
         return self.get_subnet(subnet_id)
 
     def delete_subnet(self, subnet_id):
-        subnet = self.atomics.get_dhcp(dhcp_id=subnet_id)
+        subnet = self.ovn_north.get_dhcp(dhcp_id=subnet_id)
         validate.subnet_not_connected_to_router(
             self._get_subnet_gateway_router_id(subnet),
             subnet_id
@@ -582,8 +582,8 @@ class NeutronApi(object):
         network_id = subnet.external_ids.get(
             SubnetMapper.OVN_NETWORK_ID
         )
-        network = self.atomics.get_ls(ls_id=network_id)
-        self.atomics.remove_dhcp_options(subnet_id)
+        network = self.ovn_north.get_ls(ls_id=network_id)
+        self.ovn_north.remove_dhcp_options(subnet_id)
         for port in network.ports:
             if self._is_port_address_value_static(port.type):
                 continue
@@ -591,7 +591,7 @@ class NeutronApi(object):
 
     @RouterMapper.map_to_rest
     def get_router(self, router_id):
-        return self._get_router_from_lr(self.atomics.get_lr(lr_id=router_id))
+        return self._get_router_from_lr(self.ovn_north.get_lr(lr_id=router_id))
 
     def _get_router_from_lr(self, lr):
         gw_port_id = lr.external_ids.get(RouterMapper.OVN_ROUTER_GATEWAY_PORT)
@@ -600,12 +600,12 @@ class NeutronApi(object):
                 lr=lr, ext_gw_ls_id=None, ext_gw_dhcp_options_id=None,
                 gw_ip=None
             )
-        gw_port = self.atomics.get_lsp(lsp_id=gw_port_id)
+        gw_port = self.ovn_north.get_lsp(lsp_id=gw_port_id)
         ls = self._get_port_network(gw_port)
         ls_id = str(ls.uuid)
 
-        dhcp_options = self.atomics.get_dhcp(ls_id=ls_id)
-        lrp = self.atomics.get_lrp(lsp_id=gw_port_id)
+        dhcp_options = self.ovn_north.get_dhcp(ls_id=ls_id)
+        lrp = self.ovn_north.get_lrp(lsp_id=gw_port_id)
         gw_ip = ip_utils.get_ip_from_cidr(lrp.networks[0])
 
         return Router(
@@ -617,7 +617,7 @@ class NeutronApi(object):
     def list_routers(self):
         return [
             self._get_router_from_lr(lr)
-            for lr in self.atomics.list_lr()
+            for lr in self.ovn_north.list_lr()
         ]
 
     def _add_router(
@@ -630,14 +630,14 @@ class NeutronApi(object):
         validate.no_default_gateway_in_routes(network_id is not None, routes)
         self._reserve_network_ip(network_id, gateway_ip)
 
-        router = self.atomics.add_lr(name, enabled)
+        router = self.ovn_north.add_lr(name, enabled)
         router_id = str(router.uuid)
 
         self._add_external_gateway_to_router(
             gateway_ip, gateway_subnet_id, network_id, router_id
         )
         self._add_routes_to_router(router_id, routes)
-        router = self.atomics.get_lr(lr_id=router_id)
+        router = self.ovn_north.get_lr(lr_id=router_id)
         return Router(
             lr=router, ext_gw_ls_id=network_id,
             ext_gw_dhcp_options_id=gateway_subnet_id, gw_ip=gateway_ip
@@ -647,7 +647,7 @@ class NeutronApi(object):
         if not routes:
             return
         for route in routes:
-            self.atomics.add_route(
+            self.ovn_north.add_route(
                 lrp_id=router_id,
                 prefix=route[RouterMapper.REST_ROUTER_DESTINATION],
                 nexthop=route[RouterMapper.REST_ROUTER_NEXTHOP]
@@ -660,8 +660,8 @@ class NeutronApi(object):
             self._add_external_gateway_interface(
                 router_id, network_id, gateway_subnet_id, gateway_ip
             )
-            subnet = self.atomics.get_dhcp(dhcp_id=gateway_subnet_id)
-            self.atomics.add_route(
+            subnet = self.ovn_north.get_dhcp(dhcp_id=gateway_subnet_id)
+            self.ovn_north.add_route(
                 lrp_id=router_id,
                 prefix=ovnconst.DEFAULT_ROUTE,
                 nexthop=subnet.options.get('router')
@@ -675,7 +675,7 @@ class NeutronApi(object):
                 network_id, gateway_subnet_id, is_external_gateway=True
             )
             validate.ip_available_in_network(
-                self.atomics.get_ls(ls_id=network_id), gateway_ip
+                self.ovn_north.get_ls(ls_id=network_id), gateway_ip
             )
 
     @RouterMapper.validate_add
@@ -698,7 +698,7 @@ class NeutronApi(object):
         self._validate_external_gateway(
             gateway_ip, gateway_subnet, network_id
         )
-        lr = self.atomics.get_lr(lr_id=router_id)
+        lr = self.ovn_north.get_lr(lr_id=router_id)
 
         if routes is not None:
             # NOTE: we only validate default route and external gateway being
@@ -712,9 +712,9 @@ class NeutronApi(object):
             )
 
             for destination in removed_routes:
-                self.atomics.remove_static_route(lr, destination)
+                self.ovn_north.remove_static_route(lr, destination)
             for destination in added_routes:
-                self.atomics.add_route(
+                self.ovn_north.add_route(
                     router_id, destination, added_routes[destination]
                 )
 
@@ -754,10 +754,10 @@ class NeutronApi(object):
         if not existing_lr_gw_lsp_id:
             return False
 
-        existing_subnet = self.atomics.get_dhcp(lsp_id=existing_lr_gw_lsp_id)
+        existing_subnet = self.ovn_north.get_dhcp(lsp_id=existing_lr_gw_lsp_id)
         existing_ip = ip_utils.get_port_ip(
-            self.atomics.get_lsp(lsp_id=existing_lr_gw_lsp_id),
-            self.atomics.get_lrp(lsp_id=existing_lr_gw_lsp_id)
+            self.ovn_north.get_lsp(lsp_id=existing_lr_gw_lsp_id),
+            self.ovn_north.get_lrp(lsp_id=existing_lr_gw_lsp_id)
         )
 
         return (
@@ -766,7 +766,7 @@ class NeutronApi(object):
         )
 
     def delete_router(self, router_id):
-        existing_gw_lsp_id = self.atomics.get_lr(
+        existing_gw_lsp_id = self.ovn_north.get_lr(
             lr_id=router_id).external_ids.get(
                 RouterMapper.OVN_ROUTER_GATEWAY_PORT
             )
@@ -775,8 +775,8 @@ class NeutronApi(object):
                 router_id, existing_gw_lsp_id
             )
 
-        validate.router_has_no_ports(self.atomics.get_lr(lr_id=router_id))
-        self.atomics.remove_router(router_id)
+        validate.router_has_no_ports(self.ovn_north.get_lr(lr_id=router_id))
+        self.ovn_north.remove_router(router_id)
 
     def _validate_router_exists(self, router_id):
         try:
@@ -797,7 +797,7 @@ class NeutronApi(object):
         return subnet.external_ids.get(SubnetMapper.OVN_GATEWAY_ROUTER_ID)
 
     def _set_subnet_gateway_router(self, subnet_id, router_id):
-        self.atomics.db_set(
+        self.ovn_north.db_set(
             ovnconst.TABLE_DHCP_Options,
             subnet_id,
             (
@@ -807,7 +807,7 @@ class NeutronApi(object):
         )
 
     def _clear_subnet_gateway_router(self, subnet_id):
-        self.atomics.remove_key_from_column(
+        self.ovn_north.remove_key_from_column(
             ovnconst.TABLE_DHCP_Options,
             subnet_id,
             ovnconst.ROW_DHCP_EXTERNAL_IDS,
@@ -817,7 +817,7 @@ class NeutronApi(object):
     def _validate_create_routing_lsp_by_subnet(
         self, network_id, subnet_id, router_id=None, is_external_gateway=False
     ):
-        existing_subnet_for_network = self.atomics.get_dhcp(ls_id=network_id)
+        existing_subnet_for_network = self.ovn_north.get_dhcp(ls_id=network_id)
         existing_router_for_subnet = self._get_subnet_gateway_router_id(
             existing_subnet_for_network
         )
@@ -830,7 +830,7 @@ class NeutronApi(object):
             self._validate_subnet_is_not_on_router(subnet_id, router_id)
 
     def _create_routing_lsp_by_subnet(self, subnet_id, router_id):
-        subnet = self.atomics.get_dhcp(dhcp_id=subnet_id)
+        subnet = self.ovn_north.get_dhcp(dhcp_id=subnet_id)
         network_id = subnet.external_ids.get(SubnetMapper.OVN_NETWORK_ID)
         self._validate_create_routing_lsp_by_subnet(
             network_id, subnet_id, router_id)
@@ -851,8 +851,8 @@ class NeutronApi(object):
             lrp_ip,
             network_id,
             ip_utils.random_unique_mac(
-                self.atomics.list_lsp(),
-                self.atomics.list_lrp()
+                self.ovn_north.list_lsp(),
+                self.ovn_north.list_lrp()
             )
         )
 
@@ -864,13 +864,13 @@ class NeutronApi(object):
             )
 
     def _update_routing_lsp_by_port(self, port_id, router_id):
-        port = self.atomics.get_lsp(lsp_id=port_id)
+        port = self.ovn_north.get_lsp(lsp_id=port_id)
         if port.type == ovnconst.LSP_TYPE_ROUTER:
             raise BadRequestError(
                 'Can not add {port} to router. Port is already connected to a'
                 ' router'.format(port=port_id)
             )
-        subnet = self.atomics.get_dhcp(lsp_id=port_id)
+        subnet = self.ovn_north.get_dhcp(lsp_id=port_id)
         if subnet:
             self._validate_subnet_is_not_on_router(subnet.uuid, router_id)
 
@@ -903,7 +903,7 @@ class NeutronApi(object):
     def _reserve_network_ip(self, network_id, gateway_ip):
         if not network_id:
             return
-        exclude_values = self.atomics.get_ls(
+        exclude_values = self.ovn_north.get_ls(
             ls_id=network_id
         ).other_config.get(
             ovnconst.LS_OPTION_EXCLUDE_IPS, {}
@@ -912,7 +912,7 @@ class NeutronApi(object):
             (exclude_values + ' ') if exclude_values else str()
          ) + gateway_ip
 
-        self.atomics.db_set(
+        self.ovn_north.db_set(
             ovnconst.TABLE_LS,
             network_id,
             (
@@ -922,7 +922,7 @@ class NeutronApi(object):
         )
 
     def _release_network_ip(self, network_id, ip):
-        exclude_values = self.atomics.get_ls(
+        exclude_values = self.ovn_north.get_ls(
             ls_id=network_id
         ).other_config.get(
             ovnconst.LS_OPTION_EXCLUDE_IPS, ''
@@ -931,7 +931,7 @@ class NeutronApi(object):
         values.remove(ip)
 
         if values:
-            self.atomics.db_set(
+            self.ovn_north.db_set(
                 ovnconst.TABLE_LS,
                 network_id,
                 (
@@ -940,7 +940,7 @@ class NeutronApi(object):
                 )
             )
         else:
-            self.atomics.remove_key_from_column(
+            self.ovn_north.remove_key_from_column(
                 ovnconst.TABLE_LS,
                 network_id,
                 ovnconst.ROW_LS_OTHER_CONFIG,
@@ -953,17 +953,17 @@ class NeutronApi(object):
         port_ip = '{ip}/{netmask}'.format(
             ip=gateway_ip,
             netmask=ip_utils.get_mask_from_subnet(
-                self.atomics.get_dhcp(dhcp_id=gateway_subnet_id)
+                self.ovn_north.get_dhcp(dhcp_id=gateway_subnet_id)
             )
         )
 
         port = self._create_port(ovnconst.ROUTER_SWITCH_PORT_NAME, network_id)
         lrp_name = self._create_router_port_name(port.uuid)
         mac = ip_utils.random_unique_mac(
-            self.atomics.list_lsp(),
-            self.atomics.list_lrp()
+            self.ovn_north.list_lsp(),
+            self.ovn_north.list_lrp()
         )
-        self.atomics.add_lrp(router_id, lrp_name, mac=mac, lrp_ip=port_ip)
+        self.ovn_north.add_lrp(router_id, lrp_name, mac=mac, lrp_ip=port_ip)
         self._connect_port_to_router(
             port,
             lrp_name,
@@ -991,8 +991,8 @@ class NeutronApi(object):
             self._update_routing_lsp_by_port(port_id, router_id)
         )
         if not subnet_id:
-            subnet_id = str(self.atomics.get_dhcp(ls_id=network_id).uuid)
-        self.atomics.add_lrp(router_id, lrp_name, mac=mac, lrp_ip=lrp_ip)
+            subnet_id = str(self.ovn_north.get_dhcp(ls_id=network_id).uuid)
+        self.ovn_north.add_lrp(router_id, lrp_name, mac=mac, lrp_ip=lrp_ip)
         return RouterInterface(
             id=router_id,
             ls_id=network_id,
@@ -1032,15 +1032,15 @@ class NeutronApi(object):
             return self._delete_router_interface_by_port(router_id, port_id)
 
     def _delete_router_interface_by_port(self, router_id, port_id):
-        lsp = self.atomics.get_lsp(lsp_id=port_id)
+        lsp = self.ovn_north.get_lsp(lsp_id=port_id)
         validate.port_is_connected_to_router(lsp)
 
-        subnet = self.atomics.get_dhcp(lsp_id=port_id)
+        subnet = self.ovn_north.get_dhcp(lsp_id=port_id)
         subnet_id = str(subnet.uuid)
-        lrp = self.atomics.get_lrp(lsp_id=port_id)
+        lrp = self.ovn_north.get_lrp(lsp_id=port_id)
         lrp_ip = ip_utils.get_ip_from_cidr(lrp.networks[0])
-        lr = self.atomics.get_lr(lr_id=router_id)
-        ls_id = str(self.atomics.get_ls(dhcp=subnet).uuid)
+        lr = self.ovn_north.get_lr(lr_id=router_id)
+        ls_id = str(self.ovn_north.get_ls(dhcp=subnet).uuid)
 
         is_subnet_gateway = (
             subnet and
@@ -1064,20 +1064,20 @@ class NeutronApi(object):
         )
 
     def _remove_lr_gw_port(self, lr, ls_id, lrp_ip):
-        self.atomics.remove_key_from_column(
+        self.ovn_north.remove_key_from_column(
             ovnconst.TABLE_LR,
             str(lr.uuid),
             ovnconst.ROW_LR_EXTERNAL_IDS,
             RouterMapper.OVN_ROUTER_GATEWAY_PORT
         )
-        self.atomics.remove_static_route(lr, ovnconst.DEFAULT_ROUTE)
+        self.ovn_north.remove_static_route(lr, ovnconst.DEFAULT_ROUTE)
         self._release_network_ip(ls_id, lrp_ip)
 
     def _is_subnet_on_router(self, router_id, subnet_id):
-        lr = self.atomics.get_lr(lr_id=router_id)
+        lr = self.ovn_north.get_lr(lr_id=router_id)
         for lrp in lr.ports:
-            lsp_id = self.atomics.get_lsp(lrp=lrp)
-            lrp_subnet = self.atomics.get_dhcp(lsp_id=lsp_id)
+            lsp_id = self.ovn_north.get_lsp(lrp=lrp)
+            lrp_subnet = self.ovn_north.get_dhcp(lsp_id=lsp_id)
             if str(lrp_subnet.uuid) == subnet_id:
                 return True
         return False
@@ -1088,29 +1088,29 @@ class NeutronApi(object):
                 'Port {port} is not connected to router {router}'
                 .format(port=port_id, router=router_id)
             )
-        self.atomics.remove_lrp(lrp.uuid)
-        self.atomics.remove_lsp(port_id)
+        self.ovn_north.remove_lrp(lrp.uuid)
+        self.ovn_north.remove_lsp(port_id)
 
     def _delete_router_interface_by_subnet_and_port(
         self, router_id, subnet_id, port_id
     ):
-        subnet = self.atomics.get_dhcp(dhcp_id=subnet_id)
+        subnet = self.ovn_north.get_dhcp(dhcp_id=subnet_id)
         network_id = subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
-        network = self.atomics.get_ls(ls_id=network_id)
-        lsp = self.atomics.get_lsp(lsp_id=port_id)
+        network = self.ovn_north.get_ls(ls_id=network_id)
+        lsp = self.ovn_north.get_lsp(lsp_id=port_id)
         validate.port_does_not_belong_to_subnet(lsp, network, subnet_id)
         return self._delete_router_interface_by_port(router_id, port_id)
 
     def _delete_router_interface_by_subnet(self, router_id, subnet_id):
-        lr = self.atomics.get_lr(lr_id=router_id)
-        subnet = self.atomics.get_dhcp(dhcp_id=subnet_id)
+        lr = self.ovn_north.get_lr(lr_id=router_id)
+        subnet = self.ovn_north.get_dhcp(dhcp_id=subnet_id)
         network_id = subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
-        network = self.atomics.get_ls(ls_id=network_id)
+        network = self.ovn_north.get_ls(ls_id=network_id)
         lr_gw_port = lr.external_ids.get(RouterMapper.OVN_ROUTER_GATEWAY_PORT)
         deleted_lsp_id = None
         for lrp in lr.ports:
-            lsp_id = self.atomics.get_lsp(lrp=lrp)
-            lsp = self.atomics.get_lsp(lsp_id=lsp_id)
+            lsp_id = self.ovn_north.get_lsp(lrp=lrp)
+            lsp = self.ovn_north.get_lsp(lsp_id=lsp_id)
             if lsp in network.ports:
                 deleted_lsp_id = lsp_id
                 self._delete_router_interface(
