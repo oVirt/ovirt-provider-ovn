@@ -24,6 +24,7 @@ import atexit
 import logging
 import logging.config
 import os
+import socket
 import ssl
 import sys
 import threading
@@ -118,11 +119,11 @@ def main():
     ovirt_provider_config.load()
     auth.init()
 
-    server_keystone = HTTPServer(('', keystone_port()), TokenHandler)
+    server_keystone = HTTPServerIPv6(('', keystone_port()), TokenHandler)
     _ssl_wrap(server_keystone)
     Thread(target=server_keystone.serve_forever).start()
 
-    server_neutron = HTTPServer(('', neturon_port()), NeutronHandler)
+    server_neutron = HTTPServerIPv6(('', neturon_port()), NeutronHandler)
     _ssl_wrap(server_neutron)
     Thread(target=server_neutron.serve_forever).start()
 
@@ -134,6 +135,10 @@ def main():
         logging.shutdown()
 
     atexit.register(kill_handler)
+
+
+class HTTPServerIPv6(HTTPServer):
+    address_family = socket.AF_INET6
 
 
 def _ssl_wrap(server):
