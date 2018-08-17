@@ -22,6 +22,7 @@ import subprocess
 import sys
 
 from netaddr import IPAddress
+from netaddr.core import AddrConversionError
 from netaddr.core import AddrFormatError
 
 from vdsm.network.api import network_caps
@@ -61,7 +62,7 @@ def ovn_config(*args):
         if not ip_address:
             raise IpAddressNotFoundError(net_name)
 
-    cmd = [OVN_CONFIG_SCRIPT, args[1], ip_address]
+    cmd = [OVN_CONFIG_SCRIPT, format_literal_ipaddress(args[1]), ip_address]
     exec_command(cmd, 'Failed to configure OVN controller.')
 
 
@@ -82,6 +83,23 @@ def is_ipaddress(candidate):
     except AddrFormatError:
         return False
     return True
+
+
+def format_literal_ipaddress(ip_address):
+    """
+    Formats a literal IP address according to rfc 2732
+    """
+    if is_ipv6(ip_address):
+        return '[{ip_address}]'.format(ip_address=ip_address)
+    return ip_address
+
+
+def is_ipv6(candidate):
+    try:
+        IPAddress(candidate).ipv4()
+        return False
+    except AddrConversionError:
+        return True
 
 
 def get_network(net_caps, net_name):
