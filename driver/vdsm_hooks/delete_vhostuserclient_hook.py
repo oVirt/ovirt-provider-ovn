@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import os
-import subprocess
 import hooking
 
 

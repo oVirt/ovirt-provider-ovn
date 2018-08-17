@@ -19,7 +19,6 @@
 
 from __future__ import absolute_import
 import subprocess
-import sys
 
 from netaddr import IPAddress
 from netaddr.core import AddrConversionError
@@ -31,14 +30,18 @@ from vdsm.tool import expose, ExtraArgsError
 
 OVN_SCRIPT_DIR = '/usr/libexec/ovirt-provider-ovn'
 OVN_CONFIG_SCRIPT = '{}/setup_ovn_controller.sh'.format(OVN_SCRIPT_DIR)
-OVN_UNCONFIGURE_SCRIPT = '{}/unconfigure_ovn_controller.sh'.format(OVN_SCRIPT_DIR)
+OVN_UNCONFIGURE_SCRIPT = '{}/unconfigure_ovn_controller.sh'.format(
+    OVN_SCRIPT_DIR
+)
 
 
 class NetworkNotFoundError(Exception):
     pass
 
+
 class IpAddressNotFoundError(Exception):
     pass
+
 
 @expose('ovn-config')
 def ovn_config(*args):
@@ -49,7 +52,7 @@ def ovn_config(*args):
     Parameters:
     IP-central - the IP of the engine (the host where OVN central is located)
     tunneling-IP - the local IP which is to be used for OVN tunneling
-    tunneling-network - the vdsm network name which is to be used for OVN tunneling
+    tunneling-network - the vdsm network meant to be used for OVN tunneling
     """
     if len(args) != 3:
         raise ExtraArgsError(n=2)

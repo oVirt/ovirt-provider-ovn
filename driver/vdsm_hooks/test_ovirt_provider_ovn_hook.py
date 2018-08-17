@@ -25,11 +25,12 @@ import sys
 from mock import Mock
 import mock
 
+from ovirt_provider_ovn_hook import VNIC_ID_KEY
+import ovirt_provider_ovn_hook
+
 hooking_mock = Mock(name='hooking')
 hooking_mock.__name__ = 'hooking'
 sys.modules['hooking'] = hooking_mock
-from ovirt_provider_ovn_hook import VNIC_ID_KEY
-import ovirt_provider_ovn_hook
 
 
 INPUT_XML_1 = """<?xml version="1.0" encoding="utf-8"?>
