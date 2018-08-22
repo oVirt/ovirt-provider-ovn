@@ -94,6 +94,16 @@ class Mapper(object):
         raise NotImplementedError()
 
     @staticmethod
+    def validate_keys(input_keys, mandatory_data, optional_data):
+        missing_data = mandatory_data - input_keys
+        all_allowed_data = mandatory_data | optional_data
+        invalid_data = input_keys - all_allowed_data
+        if missing_data:
+            raise MandatoryDataMissing(missing_data)
+        elif invalid_data:
+            raise InvalidRestData(invalid_data)
+
+    @staticmethod
     def validate_add_rest_input(rest_data):
         raise NotImplementedError()
 
@@ -842,6 +852,28 @@ class RestDataError(BadRequestError):
         self.message = message
 
 
+class MandatoryDataMissing(RestDataError):
+    message = 'Mandatory data {attributes} is missing'
+
+    def __init__(self, missing_elements):
+        super(MandatoryDataMissing, self).__init__(
+            self.message.format(
+                attributes=', '.join(missing_elements)
+            )
+        )
+
+
+class InvalidRestData(RestDataError):
+    message = 'Invalid data found: {attributes}'
+
+    def __init__(self, invalid_elements):
+        super(InvalidRestData, self).__init__(
+            self.message.format(
+                attributes=', '.join(invalid_elements)
+            )
+        )
+
+
 class NetworkNameRequiredDataError(RestDataError):
     message = 'Network name is a required parameter'
 
@@ -940,7 +972,8 @@ class SecurityGroupMapper(Mapper):
     _optional_add_data = set(
         [REST_SEC_GROUP_DESC, Mapper.REST_TENANT_ID, REST_PROJECT_ID]
     )
-    _valid_update_keys = set([REST_SEC_GROUP_NAME, REST_SEC_GROUP_DESC])
+    _mandatory_update_data = set()
+    _optional_update_data = set([REST_SEC_GROUP_NAME, REST_SEC_GROUP_DESC])
     _optional_attr_ext_id_mapper = {
         REST_SEC_GROUP_CREATED_AT: OVN_SECURITY_GROUP_CREATE_TS,
         REST_SEC_GROUP_UPDATED_AT: OVN_SECURITY_GROUP_UPDATE_TS,
@@ -1011,23 +1044,18 @@ class SecurityGroupMapper(Mapper):
                 )
             )
 
-    @staticmethod
-    def validate_add_rest_input(rest_data):
-        input_keys = set(rest_data.keys())
-        missing_data = SecurityGroupMapper._mandatory_add_data - input_keys
-        all_allowed_data = (
-                SecurityGroupMapper._mandatory_add_data |
-                SecurityGroupMapper._optional_add_data
+    @classmethod
+    def validate_add_rest_input(cls, rest_data):
+        cls.validate_keys(
+            set(rest_data.keys()),
+            cls._mandatory_add_data,
+            cls._optional_add_data
         )
-        invalid_data = input_keys - all_allowed_data
-        if missing_data:
-            raise SecurityGroupMandatoryDataMissing(missing_data)
-        elif invalid_data:
-            raise SecurityGroupInvalidRestData(invalid_data)
 
-    @staticmethod
-    def validate_update_rest_input(rest_data):
-        input_keys = set(rest_data.keys())
-        not_allowed_data = input_keys - SecurityGroupMapper._valid_update_keys
-        if not_allowed_data:
-            raise SecurityGroupInvalidRestData(not_allowed_data)
+    @classmethod
+    def validate_update_rest_input(cls, rest_data):
+        cls.validate_keys(
+            set(rest_data.keys()),
+            cls._mandatory_update_data,
+            cls._optional_update_data
+        )

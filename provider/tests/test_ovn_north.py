@@ -24,6 +24,8 @@ import pytest
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 import constants as ovnconst
 from handlers.base_handler import ConflictError
+from neutron.neutron_api_mappers import InvalidRestData
+from neutron.neutron_api_mappers import MandatoryDataMissing
 from neutron.neutron_api_mappers import Network
 from neutron.neutron_api_mappers import NetworkMapper
 from neutron.neutron_api_mappers import NetworkPort
@@ -1242,6 +1244,36 @@ class TestOvnNorth(object):
             sec_group_rules=[]
         )
         assert_security_group_equal(result, security_group)
+
+    def test_add_security_group_validator(self, mock_connection):
+        ovn_north = NeutronApi()
+        rest_data = SecurityGroupApiInputMaker(
+            TestOvnNorth.SECURITY_GROUP_NAME, tenant_id(), tenant_id(),
+            description=TestOvnNorth.SECURITY_GROUP_DESCRIPTION
+        ).get()
+
+        with pytest.raises(InvalidRestData) as invalid_data:
+            rest_data.update({'peanut-butter': 32})
+            ovn_north.add_security_group(rest_data)
+        assert (
+                'Invalid data found: peanut-butter'
+                == invalid_data.value.message
+        )
+
+    def test_add_security_group_validator_data_missing(self, mock_connection):
+        ovn_north = NeutronApi()
+        rest_data = SecurityGroupApiInputMaker(
+            TestOvnNorth.SECURITY_GROUP_NAME, tenant_id(), tenant_id(),
+            description=TestOvnNorth.SECURITY_GROUP_DESCRIPTION
+        ).get()
+
+        with pytest.raises(MandatoryDataMissing) as invalid_data:
+            rest_data.pop('name')
+            ovn_north.add_security_group(rest_data)
+        assert (
+                'Mandatory data name is missing'
+                == invalid_data.value.message
+        )
 
     @mock.patch('ovsdbapp.schema.ovn_northbound.commands.PgDelCommand',
                 autospec=False)
