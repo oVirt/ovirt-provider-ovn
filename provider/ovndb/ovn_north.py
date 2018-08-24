@@ -277,7 +277,7 @@ class OvnNorth(object):
             else filter(
                 lambda sec_group_rule: sec_group_rule.external_ids.get(
                     SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
-                ) == sec_group_id, all_rules
+                ) == str(sec_group_id), all_rules
             )
         )
 

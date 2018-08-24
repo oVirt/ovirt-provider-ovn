@@ -1362,3 +1362,23 @@ class TestOvnNorth(object):
         assert_security_group_rule_equal(
             result, TestOvnNorth.SECURITY_GROUP_RULE_01
         )
+
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbListCommand.execute',
+        lambda command, check_error: [TestOvnNorth.SECURITY_GROUP_RULE_01]
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
+        lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP
+    )
+    def test_get_security_group_with_rules(self, mock_connection):
+        ovn_north = NeutronApi()
+        result = ovn_north.get_security_group(
+            TestOvnNorth.SECURITY_GROUP_ID
+        )
+        assert_security_group_equal(
+            result, SecurityGroup(
+                sec_group=TestOvnNorth.SECURITY_GROUP,
+                sec_group_rules=[TestOvnNorth.SECURITY_GROUP_RULE_01]
+            )
+        )
