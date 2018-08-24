@@ -1215,6 +1215,10 @@ class TestOvnNorth(object):
         assert mock_del_command.call_count == 0
 
     @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbListCommand.execute',
+        lambda command, check_error: []
+    )
+    @mock.patch(
         'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
         lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP
     )
@@ -1309,6 +1313,10 @@ class TestOvnNorth(object):
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
         autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbListCommand.execute',
+        lambda command, check_error: []
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',

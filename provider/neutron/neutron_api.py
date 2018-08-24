@@ -1175,7 +1175,9 @@ class NeutronApi(object):
     def get_security_group(self, sec_group_id):
         return SecurityGroup(
             sec_group=self.ovn_north.get_security_group(sec_group_id),
-            sec_group_rules=[]
+            sec_group_rules=self.ovn_north.list_security_group_rules(
+                sec_group_id
+            )
         )
 
     @SecurityGroupMapper.validate_add

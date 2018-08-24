@@ -28,6 +28,7 @@ from handlers.base_handler import ElementNotFoundError
 
 import neutron.validation as validate
 from neutron.neutron_api_mappers import PortMapper
+from neutron.neutron_api_mappers import SecurityGroupRuleMapper
 from neutron.neutron_api_mappers import SubnetMapper
 
 from ovndb.ovn_security_groups import OvnSecurityGroupApi
@@ -266,9 +267,18 @@ class OvnNorth(object):
             sec_group_id, name, description
         )
 
-    def list_security_group_rules(self):
-        return ovn_connection.execute(
+    def list_security_group_rules(self, sec_group_id=None):
+        all_rules = ovn_connection.execute(
             self.idl.db_list_rows(ovnconst.TABLE_ACL)
+        )
+
+        return (
+            all_rules if sec_group_id is None
+            else filter(
+                lambda sec_group_rule: sec_group_rule.external_ids.get(
+                    SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
+                ) == sec_group_id, all_rules
+            )
         )
 
     def get_security_group_rule(self, security_group_rule_id):

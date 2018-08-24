@@ -999,7 +999,10 @@ class SecurityGroupMapper(Mapper):
         group_data = security_group.sec_group
         result = {
             SecurityGroupMapper.REST_SEC_GROUP_ID: str(group_data.uuid),
-            SecurityGroupMapper.REST_SEC_GROUP_RULES: [],
+            SecurityGroupMapper.REST_SEC_GROUP_RULES: [
+                SecurityGroupRuleMapper.row2rest(rule)
+                for rule in security_group.sec_group_rules
+            ],
             SecurityGroupMapper.REST_SEC_GROUP_TAGS: [],
             SecurityGroupMapper.REST_SEC_GROUP_REVISION_NR: int(
                 group_data.external_ids[

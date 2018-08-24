@@ -265,3 +265,39 @@ class TestOvnNorthMappers(object):
             SecurityGroupRuleMapper.row2rest(security_group_rule),
             security_group_rule
         )
+
+    def test_port_group_to_rest_with_rules(self):
+        name = 'sec1'
+        desc = 'lotsofsafety'
+        timestamp = datetime.utcnow().isoformat()
+        external_ids = {
+            SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION: desc,
+            SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS: timestamp,
+            SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS: timestamp,
+            SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: '1',
+            SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT: tenant_id(),
+            SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id()
+        }
+        row = OvnSecurityGroupRow(
+            SECURITY_GROUP_UUID, name=name, external_ids=external_ids
+        )
+        rule_id = str(UUID(int=1))
+        acl_external_ids = {
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID:
+                SECURITY_GROUP_UUID,
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE:
+                neutron_constants.IPV4_ETHERTYPE,
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_PROTOCOL:
+                neutron_constants.PROTO_NAME_UDP,
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_MIN_PORT: 6780,
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_MAX_PORT: 6799,
+        }
+        security_group_rule = OvnSecurityGroupRuleRow(
+            rule_id,
+            'to-lport', 'ip4 && udp && ', 1001, SECURITY_GROUP_UUID,
+            acl_external_ids
+        )
+
+        sec_group = SecurityGroup(row, [security_group_rule])
+        sec_group_rest = SecurityGroupMapper.row2rest(sec_group)
+        assert_security_group_equal(sec_group_rest, sec_group)
