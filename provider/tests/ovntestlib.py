@@ -93,7 +93,7 @@ def assert_lsp_equal(rest_data, localnet_lsp):
 class OvnPortRow(OvnRow):
     def __init__(self, uuid, name=None, external_ids=None, device_id=None,
                  addresses=None, port_type=None, options=None,
-                 tag=None):
+                 tag=None, port_security=None):
         self.uuid = uuid
         self.name = name
         self.external_ids = external_ids or {
@@ -106,6 +106,7 @@ class OvnPortRow(OvnRow):
         self.type = port_type
         self.options = options if options else {}
         self.tag = [tag] if tag else []
+        self.port_security = [port_security] if port_security else []
 
 
 def assert_port_equal(rest_data, port):
@@ -117,12 +118,14 @@ def assert_port_equal(rest_data, port):
     device_id = port.lsp.external_ids[PortMapper.OVN_DEVICE_ID]
     assert rest_data['device_id'] == device_id
     assert rest_data['security_groups'] == []
-    assert rest_data['port_security_enabled'] is False
     assert rest_data['tenant_id'] == tenant_id()
     assert rest_data.get('fixed_ips') == PortMapper.get_fixed_ips(
         port.lsp, port.dhcp_options, port.lrp
     )
     assert rest_data.get('mac_address') == ip_utils.get_port_mac(port.lsp)
+    assert rest_data.get(
+        'port_security_enabled'
+    ) == (len(port.lsp.port_security) > 0)
 
 
 class OvnSubnetRow(OvnRow):

@@ -118,6 +118,7 @@ class NetworkMapper(Mapper):
 
     OVN_MTU = 'mtu'
     OVN_NETWORK_NAME = 'ovirt_network_name'
+    OVN_NETWORK_PORT_SECURITY = 'ovirt_port_security'
     NETWORK_TYPE_FLAT = 'flat'
     NETWORK_TYPE_VLAN = 'vlan'
 
@@ -290,6 +291,7 @@ class PortMapper(Mapper):
         device_owner = rest_data.get(PortMapper.REST_PORT_DEVICE_OWNER)
         fixed_ips = rest_data.get(PortMapper.REST_PORT_FIXED_IPS)
         binding_host = rest_data.get(PortMapper.REST_PORT_BINDING_HOST)
+        port_security = rest_data.get(PortMapper.REST_PORT_SECURITY_ENABLED)
 
         if port_id:
             return func(
@@ -303,6 +305,7 @@ class PortMapper(Mapper):
                 device_owner=device_owner,
                 fixed_ips=fixed_ips,
                 binding_host=binding_host,
+                port_security=port_security
             )
         else:
             return func(
@@ -315,6 +318,7 @@ class PortMapper(Mapper):
                 device_owner=device_owner,
                 fixed_ips=fixed_ips,
                 binding_host=binding_host,
+                port_security=port_security
             )
 
     @staticmethod
@@ -337,7 +341,7 @@ class PortMapper(Mapper):
                 lsp.external_ids[PortMapper.OVN_NIC_NAME],
             PortMapper.REST_PORT_NETWORK_ID: str(ls.uuid),
             PortMapper.REST_PORT_SECURITY_GROUPS: [],
-            PortMapper.REST_PORT_SECURITY_ENABLED: False,
+            PortMapper.REST_PORT_SECURITY_ENABLED: len(lsp.port_security) > 0,
             PortMapper.REST_TENANT_ID: tenant_id(),
             PortMapper.REST_PORT_FIXED_IPS: PortMapper.get_fixed_ips(
                 lsp,
@@ -394,12 +398,13 @@ class PortMapper(Mapper):
         if sec_groups and sec_groups != []:
             raise SecurityGroupsNotSupportedDataError()
 
-        sec_enabled = rest_data.get(PortMapper.REST_PORT_SECURITY_ENABLED)
-        if sec_enabled:
-            raise PortSecurityNotSupportedDataError()
         Mapper._boolean_or_exception(
             PortMapper.REST_PORT_ADMIN_STATE_UP,
             rest_data.get(PortMapper.REST_PORT_ADMIN_STATE_UP, False)
+        )
+        Mapper._boolean_or_exception(
+            PortMapper.REST_PORT_SECURITY_ENABLED,
+            rest_data.get(PortMapper.REST_PORT_SECURITY_ENABLED, False)
         )
 
         fixed_ips = rest_data.get(PortMapper.REST_PORT_FIXED_IPS)

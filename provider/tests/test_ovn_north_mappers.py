@@ -159,6 +159,21 @@ class TestOvnNorthMappers(object):
         )
         self.__assert_port_data_equal(port_data)
 
+    def test_port_to_rest_port_security(self):
+        port_data = OvnPortRow(
+            PORT_UUID,
+            addresses=['{} {}'.format(MAC_ADDRESS, FIXED_IP_ADDRESS)],
+            name=PORT_NAME,
+            external_ids={
+                PortMapper.OVN_NIC_NAME: PORT_NAME,
+                PortMapper.OVN_DEVICE_ID: str(PORT_UUID),
+                PortMapper.OVN_DEVICE_OWNER: 'ovirt',
+            },
+            options={LSP_OPTION_NETWORK_NAME: PORT_NAME},
+            port_security=[MAC_ADDRESS]
+        )
+        self.__assert_port_data_equal(port_data)
+
     def test_router_to_rest_minimal(self):
         row = OvnRouterRow(SUBNET_ID102, external_ids={
             SubnetMapper.OVN_NETWORK_ID: NETWORK_ID1

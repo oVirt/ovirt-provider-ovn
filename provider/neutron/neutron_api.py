@@ -237,6 +237,7 @@ class NeutronApi(object):
         device_owner=None,
         fixed_ips=None,
         binding_host=None,
+        port_security=None,
     ):
         port = self._create_port(name, network_id)
         self._update_port_values(
@@ -247,7 +248,13 @@ class NeutronApi(object):
             self.ovn_north.list_lrp()
         )
         self._update_port_address(
-            port, network_id=network_id, mac=mac, fixed_ips=fixed_ips)
+            port, network_id=network_id, mac=mac, fixed_ips=fixed_ips,
+            port_security=(
+                port_security or self._get_port_security_from_network(
+                    network_id
+                )
+            )
+        )
         return self.get_port(port.uuid)
 
     @PortMapper.validate_update
@@ -263,6 +270,7 @@ class NeutronApi(object):
         device_owner=None,
         fixed_ips=None,
         binding_host=None,
+        port_security=None,
     ):
         port = self.ovn_north.get_lsp(ovirt_lsp_id=port_id)
         network_id = self._get_validated_port_network_id(port, network_id)
@@ -270,7 +278,9 @@ class NeutronApi(object):
             port, name, is_enabled, device_id, device_owner, binding_host
         )
         self._update_port_address(
-            port, network_id=network_id, mac=mac, fixed_ips=fixed_ips)
+            port, network_id=network_id, mac=mac, fixed_ips=fixed_ips,
+            port_security=port_security
+        )
         return self.get_port(port_id)
 
     def _update_lsp_bound_lrp(self, port_id, fixed_ips):
@@ -325,7 +335,10 @@ class NeutronApi(object):
             ovs_version_29() and binding_host
         ).execute()
 
-    def _update_port_address(self, port, network_id, mac=None, fixed_ips=None):
+    def _update_port_address(
+            self, port, network_id, mac=None, fixed_ips=None,
+            port_security=None
+    ):
         if port.type == ovnconst.LSP_TYPE_ROUTER:
             self._update_lsp_bound_lrp(str(port.uuid), fixed_ips)
             return
@@ -347,8 +360,15 @@ class NeutronApi(object):
                     ovnconst.TABLE_LSP, port.uuid,
                     ovnconst.ROW_LSP_DHCPV4_OPTIONS
                 )
-
+            if port_security is True:
+                db_set_command.add(ovnconst.ROW_LSP_PORT_SECURITY, [mac])
+            elif port_security is False:
+                db_set_command.add(ovnconst.ROW_LSP_PORT_SECURITY, [])
             db_set_command.add(ovnconst.ROW_LSP_ADDRESSES, [mac]).execute()
+        elif port_security is False:
+            self.create_ovn_update_command(
+                ovnconst.TABLE_LSP, port.uuid
+            ).add(ovnconst.ROW_LSP_PORT_SECURITY, []).execute()
 
     def _get_port_addesses_suffix(self, network_id, fixed_ips):
         if not fixed_ips:
@@ -1108,6 +1128,13 @@ class NeutronApi(object):
             type == ovnconst.LSP_TYPE_ROUTER or
             type == ovnconst.LSP_TYPE_LOCALNET
         )
+
+    def _get_port_security_from_network(self, network_id):
+            return self.ovn_north.get_ls(
+                ls_id=network_id
+            ).external_ids.get(
+                NetworkMapper.OVN_NETWORK_PORT_SECURITY
+            )
 
     def __enter__(self):
         return self
