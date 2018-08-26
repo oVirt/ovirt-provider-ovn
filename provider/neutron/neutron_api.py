@@ -89,8 +89,6 @@ class NeutronApi(object):
     @NetworkMapper.map_from_rest
     @NetworkMapper.map_to_rest
     def add_network(self, name, localnet=None, vlan=None, mtu=None):
-        # TODO: ovirt allows multiple networks with the same name
-        # in oVirt, but OVS does not (may_exist=False will cause early fail)
         if localnet:
             return self._add_localnet_network(name, localnet, vlan, mtu)
         else:
