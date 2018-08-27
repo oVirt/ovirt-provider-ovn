@@ -160,8 +160,7 @@ class NetworkMapper(Mapper):
             NetworkMapper.REST_STATUS: NetworkMapper.NETWORK_STATUS_ACTIVE
         }
         result[NetworkMapper.REST_MTU] = int(
-            ls.external_ids[NetworkMapper.OVN_MTU]
-            if NetworkMapper.OVN_MTU in ls.external_ids else dhcp_mtu()
+            ls.external_ids.get(NetworkMapper.OVN_MTU, dhcp_mtu())
         )
         result.update(NetworkMapper._row2rest_localnet(localnet_lsp))
         return result
