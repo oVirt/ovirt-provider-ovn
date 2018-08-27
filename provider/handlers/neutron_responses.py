@@ -319,5 +319,11 @@ def post_security_group_rule(nb_db, content, parameters):
     )
 
 
+@rest(DELETE, SECURITY_GROUP_RULE_ENTITY, _responses)
+def delete_security_group_rule(nb_db, content, parameters):
+    nb_db.delete_security_group_rule(parameters[SECURITY_GROUP_RULE_ID])
+    return Response()
+
+
 def responses():
     return _responses

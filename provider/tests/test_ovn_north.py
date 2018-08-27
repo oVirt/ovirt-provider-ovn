@@ -1399,3 +1399,27 @@ class TestOvnNorth(object):
         assert_security_group_rule_equal(
             result, TestOvnNorth.SECURITY_GROUP_RULE_01
         )
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup'
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.PgAclDelCommand',
+        autospec=False
+    )
+    def test_delete_security_group_rule(
+            self, mock_delete_rule, mock_ovn_getter, mock_connection
+    ):
+        mock_ovn_getter.side_effect = [
+            TestOvnNorth.SECURITY_GROUP_RULE_01, TestOvnNorth.SECURITY_GROUP
+        ]
+        ovn_north = NeutronApi()
+        ovn_north.delete_security_group_rule(
+            TestOvnNorth.SECURITY_GROUP_RULE_ID_01
+        )
+        assert mock_delete_rule.call_count == 1
+        expected_del_call = mock.call(
+            ovn_north.idl, TestOvnNorth.SECURITY_GROUP_ID, 'from-lport', 1001,
+            'ip4 && tcp'
+        )
+        assert mock_delete_rule.mock_calls[0] == expected_del_call

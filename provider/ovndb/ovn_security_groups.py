@@ -129,3 +129,8 @@ class OvnSecurityGroupApi(object):
         )
 
         return acl_command
+
+    def delete_security_group_rule(
+            self, port_group, direction, priority, match
+    ):
+        return self._idl.pg_acl_del(port_group, direction, priority, match)

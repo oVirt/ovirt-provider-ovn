@@ -1241,6 +1241,9 @@ class NeutronApi(object):
 
         return sec_group_rule
 
+    def delete_security_group_rule(self, security_group_rule_id):
+        self.ovn_north.remove_security_group_rule(security_group_rule_id)
+
     def __enter__(self):
         return self
 

@@ -326,3 +326,31 @@ class OvnNorth(object):
         ).execute()
 
         return add_sec_group_rule_result
+
+    def remove_security_group_rule(self, security_group_rule_id):
+        sec_group_rule = self.get_security_group_rule(security_group_rule_id)
+        security_group_id = self.get_security_group_id(
+            sec_group_rule
+        )
+        ovn_connection.execute(
+            self._ovn_sec_group_api.delete_security_group_rule(
+                security_group_id, sec_group_rule.direction,
+                sec_group_rule.priority, sec_group_rule.match
+            )
+        )
+        sec_group = self.get_security_group(security_group_id)
+        new_rev_number = self._ovn_sec_group_api.get_bumped_revision_number(
+            sec_group
+        )
+        self.create_ovn_update_command(
+            ovnconst.TABLE_PORT_GROUP, security_group_id
+        ).add(
+            ovnconst.ROW_PG_EXTERNAL_IDS,
+            {SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: new_rev_number}
+        ).execute()
+
+    @staticmethod
+    def get_security_group_id(sec_group_rule):
+        return sec_group_rule.external_ids[
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
+        ]
