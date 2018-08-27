@@ -49,6 +49,7 @@ from ovirt_provider_config_common import dhcp_lease_time
 from ovirt_provider_config_common import dhcp_server_mac
 from ovirt_provider_config_common import dhcp_enable_mtu
 from ovirt_provider_config_common import dhcp_mtu
+from ovirt_provider_config_common import default_port_security_enabled
 from ovirt_provider_config_common import ovs_version_29
 
 from ovndb.db_set_command import DbSetCommand
@@ -111,7 +112,7 @@ class NeutronApi(object):
             external_ids_dict[NetworkMapper.OVN_MTU] = str(mtu)
         external_ids_dict[NetworkMapper.OVN_NETWORK_PORT_SECURITY] = str(
             port_security if port_security is not None
-            else False
+            else default_port_security_enabled()
         )
         name = 'ovirt-{name}-{gen_id}'.format(name=name, gen_id=uuid.uuid4())
         return self.ovn_north.add_ls(
@@ -1157,7 +1158,8 @@ class NeutronApi(object):
         )
         return NetworkMapper._str2bool(
             str(network.external_ids.get(
-                NetworkMapper.OVN_NETWORK_PORT_SECURITY, False
+                NetworkMapper.OVN_NETWORK_PORT_SECURITY,
+                default_port_security_enabled()
             ))
         )
 

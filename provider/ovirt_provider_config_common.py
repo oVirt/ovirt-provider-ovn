@@ -20,6 +20,7 @@ from __future__ import absolute_import
 import ovirt_provider_config
 from ovirt_provider_config import CONFIG_SECTION_AUTH
 from ovirt_provider_config import CONFIG_SECTION_DHCP
+from ovirt_provider_config import CONFIG_SECTION_NETWORK
 from ovirt_provider_config import CONFIG_SECTION_OVN_REMOTE
 from ovirt_provider_config import CONFIG_SECTION_PROVIDER
 from ovirt_provider_config import CONFIG_SECTION_SSL
@@ -31,6 +32,7 @@ from ovirt_provider_config import DEFAULT_DHCP_LEASE_TIME
 from ovirt_provider_config import DEFAULT_DHCP_MTU
 from ovirt_provider_config import DEFAULT_DHCP_SERVER_MAC
 from ovirt_provider_config import DEFAULT_KEYSTONE_PORT
+from ovirt_provider_config import DEFAULT_NETWORK_PORT_SECURITY_ENABLED
 from ovirt_provider_config import DEFAULT_NEUTRON_PORT
 from ovirt_provider_config import DEFAULT_NOVA_PORT
 from ovirt_provider_config import DEFAULT_OPENSTACK_KEYSTONE_ID
@@ -54,6 +56,7 @@ from ovirt_provider_config import KEY_DHCP_MTU
 from ovirt_provider_config import KEY_DHCP_SERVER_MAC
 from ovirt_provider_config import KEY_HTTPS_ENABLED
 from ovirt_provider_config import KEY_KEYSTONE_PORT
+from ovirt_provider_config import KEY_NETWORK_PORT_SECURITY_ENABLED
 from ovirt_provider_config import KEY_NEUTRON_PORT
 from ovirt_provider_config import KEY_NOVA_PORT
 from ovirt_provider_config import KEY_OPENSTACK_KEYSTONE_ID
@@ -299,4 +302,12 @@ def max_allowed_mtu():
         CONFIG_SECTION_VALIDATION,
         KEY_VALIDATION_MAX_ALLOWED_MTU,
         DEFAULT_VALIDATION_MAX_ALLOWED_MTU
+    )
+
+
+def default_port_security_enabled():
+    return ovirt_provider_config.getboolean(
+        CONFIG_SECTION_NETWORK,
+        KEY_NETWORK_PORT_SECURITY_ENABLED,
+        DEFAULT_NETWORK_PORT_SECURITY_ENABLED
     )

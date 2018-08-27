@@ -40,6 +40,20 @@ ovn-remote:: The address used to connect to the OVN Northbound Database server. 
   `[tcp|ssl]:<ovn central ip>:<north db port, 6641 by default>` +
   _default:_ `tcp:127.0.0.1:6641`
 
+### Section [NETWORK]
+This section specifies the default behaviors for Networking API L2 networks.
+
+port-security-enabled-default:: The default value for the port_security_enabled for created
+Networking API networks. +
+  When port_security is enabled on a port, anti-spoofing rules are added to that port,
+only allowing ARP whose source MAC address matches the MAC address assigned to the
+port. This prevents MAC spoofing. +
+  Rules only allowing ICMP requests / replies originating from the MAC address assigned to
+that port are also installed. +
+  A newly created port will inherit the _port_security_enabled_ value from the network it is
+attached to *unless* the port itself overrides that attribute. +
+_default:_ `false`
+
 ### Section [DHCP]
 If subnets are defined, OVN will provide an internal DHCP server.
 See documentation of OVN Northbound Database for more details.
