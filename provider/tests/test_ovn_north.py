@@ -232,7 +232,8 @@ class TestOvnNorth(object):
             external_ids={
                 NetworkMapper.OVN_NETWORK_NAME: (
                     TestOvnNorth.NETWORK_NAME10
-                )
+                ),
+                NetworkMapper.OVN_NETWORK_PORT_SECURITY: 'False'
             }
         )
 
@@ -271,7 +272,8 @@ class TestOvnNorth(object):
             external_ids={
                 NetworkMapper.OVN_NETWORK_NAME: (
                     TestOvnNorth.NETWORK_NAME12
-                )
+                ),
+                NetworkMapper.OVN_NETWORK_PORT_SECURITY: 'False'
             }
         )
         assert mock_lsp_add_command.call_count == 1
@@ -657,6 +659,7 @@ class TestOvnNorth(object):
             ovnconst.TABLE_LSP,
             TestOvnNorth.PORT_ID01,
             (ovnconst.ROW_LSP_DHCPV4_OPTIONS, TestOvnNorth.SUBNET_ID101),
+            (ovnconst.ROW_LSP_PORT_SECURITY, []),
             (
                 ovnconst.ROW_LSP_ADDRESSES,
                 ['{mac_address} {ip_address}'.format(

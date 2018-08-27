@@ -105,6 +105,10 @@ class Mapper(object):
                 attr=attribute_name
             ))
 
+    @staticmethod
+    def _str2bool(boolean_string):
+        return boolean_string.lower() == 'true'
+
 
 class NetworkMapper(Mapper):
     # The names of properties received/sent in a REST request
@@ -115,6 +119,7 @@ class NetworkMapper(Mapper):
     REST_PROVIDER_NETWORK_TYPE = 'provider:network_type'
     REST_PROVIDER_PHYSICAL_NETWORK = 'provider:physical_network'
     REST_PROVIDER_SEGMENTATION_ID = 'provider:segmentation_id'
+    REST_PORT_SECURITY_ENABLED = 'port_security_enabled'
 
     OVN_MTU = 'mtu'
     OVN_NETWORK_NAME = 'ovirt_network_name'
@@ -134,6 +139,9 @@ class NetworkMapper(Mapper):
         provider_segmentation_id = rest_network_data.get(
             NetworkMapper.REST_PROVIDER_SEGMENTATION_ID)
         mtu = rest_network_data.get(NetworkMapper.REST_MTU)
+        port_security = rest_network_data.get(
+            NetworkMapper.REST_PORT_SECURITY_ENABLED
+        )
         if network_id:
             return func(
                 wrapped_self,
@@ -141,14 +149,16 @@ class NetworkMapper(Mapper):
                 name=network_name,
                 localnet=provider_physical_network,
                 vlan=provider_segmentation_id,
-                mtu=mtu
+                mtu=mtu,
+                port_security_enabled=port_security
             )
         return func(
             wrapped_self,
             name=network_name,
             localnet=provider_physical_network,
             vlan=provider_segmentation_id,
-            mtu=mtu
+            mtu=mtu,
+            port_security_enabled=port_security
         )
 
     @staticmethod
@@ -165,7 +175,12 @@ class NetworkMapper(Mapper):
                 network_name or ls.name
             ),
             NetworkMapper.REST_TENANT_ID: tenant_id(),
-            NetworkMapper.REST_STATUS: NetworkMapper.NETWORK_STATUS_ACTIVE
+            NetworkMapper.REST_STATUS: NetworkMapper.NETWORK_STATUS_ACTIVE,
+            NetworkMapper.REST_PORT_SECURITY_ENABLED: Mapper._str2bool(
+                str(ls.external_ids.get(
+                    NetworkMapper.OVN_NETWORK_PORT_SECURITY, False
+                ))
+            )
         }
         result[NetworkMapper.REST_MTU] = int(
             ls.external_ids.get(NetworkMapper.OVN_MTU, dhcp_mtu())
@@ -207,6 +222,10 @@ class NetworkMapper(Mapper):
     def _validate_rest_input(rest_data):
         if NetworkMapper.REST_NETWORK_NAME not in rest_data:
             raise NetworkNameRequiredDataError()
+        Mapper._boolean_or_exception(
+            NetworkMapper.REST_PORT_SECURITY_ENABLED,
+            rest_data.get(NetworkMapper.REST_PORT_SECURITY_ENABLED, False)
+        )
         NetworkMapper._validate_rest_input_provider_network(rest_data)
         NetworkMapper._validate_rest_input_max_mtu(
             rest_data.get(NetworkMapper.REST_MTU)

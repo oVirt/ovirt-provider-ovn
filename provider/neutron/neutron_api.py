@@ -88,16 +88,27 @@ class NeutronApi(object):
     @NetworkMapper.validate_add
     @NetworkMapper.map_from_rest
     @NetworkMapper.map_to_rest
-    def add_network(self, name, localnet=None, vlan=None, mtu=None):
+    def add_network(
+            self, name, localnet=None, vlan=None, mtu=None,
+            port_security_enabled=None
+    ):
         if localnet:
-            return self._add_localnet_network(name, localnet, vlan, mtu)
+            return self._add_localnet_network(
+                name, localnet, vlan, mtu, port_security_enabled
+            )
         else:
-            return self._get_network(self._create_network(name, mtu))
+            return self._get_network(
+                self._create_network(name, mtu, port_security_enabled)
+            )
 
-    def _create_network(self, name, mtu=None):
+    def _create_network(self, name, mtu=None, port_security=None):
         external_ids_dict = {NetworkMapper.OVN_NETWORK_NAME: name}
         if mtu is not None:
             external_ids_dict[NetworkMapper.OVN_MTU] = str(mtu)
+        external_ids_dict[NetworkMapper.OVN_NETWORK_PORT_SECURITY] = str(
+            port_security if port_security is not None
+            else False
+        )
         name = 'ovirt-{name}-{gen_id}'.format(name=name, gen_id=uuid.uuid4())
         return self.ovn_north.add_ls(
             name=name,
@@ -108,8 +119,10 @@ class NeutronApi(object):
     def _generate_external_ids(current_external_ids, **kwargs):
         return dict(current_external_ids, **kwargs)
 
-    def _add_localnet_network(self, name, localnet, vlan, mtu):
-        network = self._create_network(name, mtu)
+    def _add_localnet_network(
+            self, name, localnet, vlan, mtu, port_security_enabled
+    ):
+        network = self._create_network(name, mtu, port_security_enabled)
         localnet_port = self._create_port(
             ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid)
         )
@@ -125,13 +138,14 @@ class NeutronApi(object):
             name,
             localnet=None,
             vlan=None,
-            mtu=None
+            mtu=None,
+            port_security_enabled=None
     ):
-        self._update_network_data(network_id, name, mtu)
+        self._update_network_data(network_id, name, mtu, port_security_enabled)
         self._update_localnet_on_network(network_id, localnet, vlan)
         return self.get_network(network_id)
 
-    def _update_network_data(self, network_id, name, mtu):
+    def _update_network_data(self, network_id, name, mtu, port_security):
         current_external_ids = self.ovn_north.get_ls(
             ls_id=network_id
         ).external_ids
@@ -139,6 +153,10 @@ class NeutronApi(object):
         relevant_external_ids = {NetworkMapper.OVN_NETWORK_NAME: name}
         if mtu is not None:
             relevant_external_ids[NetworkMapper.OVN_MTU] = str(mtu)
+        if port_security is not None:
+            relevant_external_ids[
+                NetworkMapper.OVN_NETWORK_PORT_SECURITY
+            ] = str(port_security)
         new_external_ids = self._generate_external_ids(
             current_external_ids,
             **relevant_external_ids
@@ -1130,11 +1148,14 @@ class NeutronApi(object):
         )
 
     def _get_port_security_from_network(self, network_id):
-            return self.ovn_north.get_ls(
-                ls_id=network_id
-            ).external_ids.get(
-                NetworkMapper.OVN_NETWORK_PORT_SECURITY
-            )
+        network = self.ovn_north.get_ls(
+            ls_id=network_id
+        )
+        return NetworkMapper._str2bool(
+            str(network.external_ids.get(
+                NetworkMapper.OVN_NETWORK_PORT_SECURITY, False
+            ))
+        )
 
     def __enter__(self):
         return self
