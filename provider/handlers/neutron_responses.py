@@ -168,17 +168,6 @@ def put_ports(nb_db, content, parameters):
     port = nb_db.update_port(received_port, parameters[PORT_ID])
     return Response({'port': port})
 
-    # if not id:
-    #    raise Exception('No port id in POST request')
-
-    # REQUIRED_FOR Engine < 4.1
-    # older Engine does not pass mac_address here
-    # mac = json.loads(content)['port'].get('mac_address')
-    # if mac:
-    #    nb_db.update_port_mac(id, mac)
-    # result = nb_db.get_port(id)
-    # return json.dumps({'port': result})
-
 
 @rest(PUT, SUBNET_ENTITY, _responses)
 def put_subnets(nb_db, content, parameters):
