@@ -98,6 +98,13 @@ class Mapper(object):
     def validate_update_rest_input(rest_data):
         raise NotImplementedError()
 
+    @staticmethod
+    def _boolean_or_exception(attribute_name, boolean_value):
+        if not isinstance(boolean_value, bool):
+            raise RestDataError('{attr} must be of type bool'.format(
+                attr=attribute_name
+            ))
+
 
 class NetworkMapper(Mapper):
     # The names of properties received/sent in a REST request
@@ -390,6 +397,11 @@ class PortMapper(Mapper):
         sec_enabled = rest_data.get(PortMapper.REST_PORT_SECURITY_ENABLED)
         if sec_enabled:
             raise PortSecurityNotSupportedDataError()
+        Mapper._boolean_or_exception(
+            PortMapper.REST_PORT_ADMIN_STATE_UP,
+            rest_data.get(PortMapper.REST_PORT_ADMIN_STATE_UP, False)
+        )
+
         fixed_ips = rest_data.get(PortMapper.REST_PORT_FIXED_IPS)
         if fixed_ips:
             if type(fixed_ips) is not list:

@@ -19,12 +19,15 @@ from __future__ import absolute_import
 
 from uuid import UUID
 
+import pytest
+
 from constants import LSP_OPTION_NETWORK_NAME
 from neutron.neutron_api_mappers import Network
 from neutron.neutron_api_mappers import NetworkMapper
 from neutron.neutron_api_mappers import NetworkPort
 from neutron.neutron_api_mappers import PortMapper
 from neutron.neutron_api_mappers import SubnetMapper
+from neutron.neutron_api_mappers import RestDataError
 from neutron.neutron_api_mappers import Router
 from neutron.neutron_api_mappers import RouterMapper
 
@@ -183,3 +186,13 @@ class TestOvnNorthMappers(object):
         )
         router_rest = RouterMapper.row2rest(router)
         assert_router_equal(router_rest, router)
+
+    def test_is_bool(self):
+        NetworkMapper._boolean_or_exception('', True)
+        NetworkMapper._boolean_or_exception('', False)
+        with pytest.raises(RestDataError) as expected_exception:
+            NetworkMapper._boolean_or_exception('attr1', 'boloni')
+        assert expected_exception.value.message == 'attr1 must be of type bool'
+        with pytest.raises(RestDataError) as expected_exception:
+            NetworkMapper._boolean_or_exception('attr2', [])
+        assert expected_exception.value.message == 'attr2 must be of type bool'
