@@ -31,6 +31,7 @@ from neutron.neutron_api_mappers import PortMapper
 from neutron.neutron_api_mappers import SecurityGroupRuleMapper
 from neutron.neutron_api_mappers import SubnetMapper
 
+from ovndb.db_set_command import DbSetCommand
 from ovndb.ovn_security_groups import OvnSecurityGroupApi
 
 
@@ -47,6 +48,9 @@ class OvnNorth(object):
     def __init__(self, idl):
         self.idl = idl
         self._ovn_sec_group_api = OvnSecurityGroupApi(self.idl)
+
+    def create_ovn_update_command(self, table_name, entity_uuid):
+        return DbSetCommand(self.idl, table_name, entity_uuid)
 
     def add_ls(self, name, external_ids):
         return ovn_connection.execute(

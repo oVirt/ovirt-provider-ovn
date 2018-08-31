@@ -53,7 +53,6 @@ from ovirt_provider_config_common import dhcp_mtu
 from ovirt_provider_config_common import default_port_security_enabled
 from ovirt_provider_config_common import ovs_version_29
 
-from ovndb.db_set_command import DbSetCommand
 from ovndb.ovn_north import OvnNorth
 
 
@@ -62,9 +61,6 @@ class NeutronApi(object):
     def __init__(self):
         self.ovsidl, self.idl = ovn_connection.connect()
         self.ovn_north = OvnNorth(self.idl)
-
-    def create_ovn_update_command(self, table_name, entity_uuid):
-        return DbSetCommand(self.idl, table_name, entity_uuid)
 
     # TODO: could this be moved to ovsdbapp?
     def _get_port_network(self, port):
@@ -167,7 +163,8 @@ class NeutronApi(object):
             current_external_ids,
             **relevant_external_ids
         )
-        self.create_ovn_update_command(ovnconst.TABLE_LS, network_id).add(
+        self.ovn_north.create_ovn_update_command(
+            ovnconst.TABLE_LS, network_id).add(
             ovnconst.ROW_LS_EXTERNAL_IDS,
             new_external_ids
         ).execute()
@@ -186,7 +183,9 @@ class NeutronApi(object):
             self.ovn_north.remove_lsp(str(localnet_port.uuid))
 
     def _set_port_localnet_values(self, port, localnet, vlan):
-        self.create_ovn_update_command(ovnconst.TABLE_LSP, port.uuid).add(
+        self.ovn_north.create_ovn_update_command(
+            ovnconst.TABLE_LSP, port.uuid
+        ).add(
             ovnconst.ROW_LSP_ADDRESSES,
             [ovnconst.LSP_ADDRESS_TYPE_UNKNOWN]
         ).add(
@@ -199,7 +198,7 @@ class NeutronApi(object):
     def _update_networks_mtu(self, network_id, mtu):
         subnet = self.ovn_north.get_dhcp(ls_id=network_id)
         if subnet and subnet.options.get(NetworkMapper.REST_MTU) != mtu:
-            self.create_ovn_update_command(
+            self.ovn_north.create_ovn_update_command(
                 ovnconst.TABLE_DHCP_Options, subnet.uuid
             ).add(
                 ovnconst.ROW_DHCP_OPTIONS,
@@ -337,7 +336,9 @@ class NeutronApi(object):
         #   txn.commit()
         # The ovsdbapp transactions seem to have synchronization issues at the
         # moment, hence we'll be using individual transactions for now.
-        self.create_ovn_update_command(ovnconst.TABLE_LSP, port.uuid).add(
+        self.ovn_north.create_ovn_update_command(
+            ovnconst.TABLE_LSP, port.uuid
+        ).add(
             ovnconst.ROW_LSP_EXTERNAL_IDS,
             {PortMapper.OVN_DEVICE_ID: device_id},
             device_id
@@ -370,7 +371,7 @@ class NeutronApi(object):
         subnet = self.ovn_north.get_dhcp(ls_id=network_id)
         validate.fixed_ip_matches_port_subnet(fixed_ips, subnet)
         if mac:
-            db_set_command = self.create_ovn_update_command(
+            db_set_command = self.ovn_north.create_ovn_update_command(
                 ovnconst.TABLE_LSP, port.uuid
             )
             if subnet:
@@ -390,7 +391,7 @@ class NeutronApi(object):
                 db_set_command.add(ovnconst.ROW_LSP_PORT_SECURITY, [])
             db_set_command.add(ovnconst.ROW_LSP_ADDRESSES, [mac]).execute()
         elif port_security is False:
-            self.create_ovn_update_command(
+            self.ovn_north.create_ovn_update_command(
                 ovnconst.TABLE_LSP, port.uuid
             ).add(ovnconst.ROW_LSP_PORT_SECURITY, []).execute()
 
@@ -430,7 +431,9 @@ class NeutronApi(object):
             )
         )
 
-        self.create_ovn_update_command(ovnconst.TABLE_LSP, port.uuid).add(
+        self.ovn_north.create_ovn_update_command(
+            ovnconst.TABLE_LSP, port.uuid
+        ).add(
             ovnconst.ROW_LSP_TYPE,
             ovnconst.LSP_TYPE_ROUTER,
         ).add(
@@ -559,7 +562,7 @@ class NeutronApi(object):
         gateway=None,
         dns=None,
     ):
-        self.create_ovn_update_command(
+        self.ovn_north.create_ovn_update_command(
             ovnconst.TABLE_DHCP_Options, subnet_id
         ).add(
             ovnconst.ROW_DHCP_EXTERNAL_IDS,
@@ -741,7 +744,9 @@ class NeutronApi(object):
             )
         self._reserve_network_ip(network_id, gateway_ip)
 
-        self.create_ovn_update_command(ovnconst.TABLE_LR, router_id).add(
+        self.ovn_north.create_ovn_update_command(
+            ovnconst.TABLE_LR, router_id
+        ).add(
             ovnconst.ROW_LR_NAME, name, name
         ).add(ovnconst.ROW_LR_ENABLED, enabled, enabled).execute()
 
@@ -983,7 +988,9 @@ class NeutronApi(object):
             is_external_gateway=True,
         )
 
-        self.create_ovn_update_command(ovnconst.TABLE_LR, router_id).add(
+        self.ovn_north.create_ovn_update_command(
+            ovnconst.TABLE_LR, router_id
+        ).add(
             ovnconst.ROW_LR_EXTERNAL_IDS,
             {
                 RouterMapper.OVN_ROUTER_GATEWAY_PORT: str(port.uuid),
