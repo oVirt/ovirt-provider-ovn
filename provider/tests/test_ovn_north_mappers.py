@@ -25,6 +25,7 @@ import pytest
 from constants import LSP_OPTION_NETWORK_NAME
 from ovirt_provider_config_common import tenant_id
 
+import neutron.constants as neutron_constants
 from neutron.neutron_api_mappers import Network
 from neutron.neutron_api_mappers import NetworkMapper
 from neutron.neutron_api_mappers import NetworkPort
@@ -35,6 +36,7 @@ from neutron.neutron_api_mappers import Router
 from neutron.neutron_api_mappers import RouterMapper
 from neutron.neutron_api_mappers import SecurityGroup
 from neutron.neutron_api_mappers import SecurityGroupMapper
+from neutron.neutron_api_mappers import SecurityGroupRuleMapper
 
 
 from ovntestlib import assert_network_equal
@@ -42,11 +44,13 @@ from ovntestlib import assert_port_equal
 from ovntestlib import assert_subnet_equal
 from ovntestlib import assert_router_equal
 from ovntestlib import assert_security_group_equal
+from ovntestlib import assert_security_group_rule_equal
 from ovntestlib import OvnSubnetRow
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
 from ovntestlib import OvnRouterRow
 from ovntestlib import OvnSecurityGroupRow
+from ovntestlib import OvnSecurityGroupRuleRow
 from ovntestlib import StaticRouteRow
 
 
@@ -239,3 +243,25 @@ class TestOvnNorthMappers(object):
         sec_group = SecurityGroup(row, [])
         sec_group_rest = SecurityGroupMapper.row2rest(sec_group)
         assert_security_group_equal(sec_group_rest, sec_group)
+
+    def test_acl_to_rest_with_optionals(self):
+        rule_id = str(UUID(int=1))
+        group_id = str(UUID(int=3))
+        acl_external_ids = {
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID: group_id,
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE:
+                neutron_constants.IPV4_ETHERTYPE,
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_PROTOCOL:
+                neutron_constants.PROTO_NAME_UDP,
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_MIN_PORT: 6780,
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_MAX_PORT: 6799,
+        }
+        security_group_rule = OvnSecurityGroupRuleRow(
+            rule_id,
+            'from-lport', 'ip4 && udp && ', 1001, group_id,
+            acl_external_ids
+        )
+        assert_security_group_rule_equal(
+            SecurityGroupRuleMapper.row2rest(security_group_rule),
+            security_group_rule
+        )

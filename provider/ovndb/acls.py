@@ -50,14 +50,14 @@ def acl_ethertype(ether_type):
     match = ''
     ip_version = None
     icmp = None
-    if ether_type == 'IPv4':
-        match = ' && ip4'
-        ip_version = 'ip4'
-        icmp = 'icmp4'
-    elif ether_type == 'IPv6':
-        match = ' && ip6'
-        ip_version = 'ip6'
-        icmp = 'icmp6'
+    if ether_type == neutron_constants.IPV4_ETHERTYPE:
+        match = ' && {}'.format(neutron_constants.OVN_IPV4_ETHERTYPE)
+        ip_version = neutron_constants.OVN_IPV4_ETHERTYPE
+        icmp = neutron_constants.ICMP_V4
+    elif ether_type == neutron_constants.IPV6_ETHERTYPE:
+        match = ' && {}'.format(neutron_constants.OVN_IPV6_ETHERTYPE)
+        ip_version = neutron_constants.OVN_IPV6_ETHERTYPE
+        icmp = neutron_constants.ICMP_V6
     return match, ip_version, icmp
 
 

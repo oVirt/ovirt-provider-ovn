@@ -297,5 +297,16 @@ def get_security_group_rules(nb_db, content, parameters):
     )
 
 
+@rest(GET, SECURITY_GROUP_RULE_ENTITY, _responses)
+def show_security_group_rule(nb_db, content, parameters):
+    return Response(
+        {
+            'security_group_rule': nb_db.get_security_group_rule(
+                parameters[SECURITY_GROUP_RULE_ID]
+            )
+        }
+    )
+
+
 def responses():
     return _responses

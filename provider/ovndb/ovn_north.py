@@ -270,3 +270,13 @@ class OvnNorth(object):
         return ovn_connection.execute(
             self.idl.db_list_rows(ovnconst.TABLE_ACL)
         )
+
+    def get_security_group_rule(self, security_group_rule_id):
+        try:
+            return self.idl.lookup(ovnconst.TABLE_ACL, security_group_rule_id)
+        except RowNotFound:
+            raise ElementNotFoundError(
+                'Security Group Rule {rule_id} does not exist'.format(
+                    rule_id=security_group_rule_id
+                )
+            )

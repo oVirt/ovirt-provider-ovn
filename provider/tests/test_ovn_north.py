@@ -24,6 +24,7 @@ import pytest
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 import constants as ovnconst
 from handlers.base_handler import ConflictError
+import neutron.constants as neutron_constants
 from neutron.neutron_api_mappers import InvalidRestData
 from neutron.neutron_api_mappers import MandatoryDataMissing
 from neutron.neutron_api_mappers import Network
@@ -32,6 +33,7 @@ from neutron.neutron_api_mappers import NetworkPort
 from neutron.neutron_api_mappers import PortMapper
 from neutron.neutron_api_mappers import SecurityGroup
 from neutron.neutron_api_mappers import SecurityGroupMapper
+from neutron.neutron_api_mappers import SecurityGroupRuleMapper
 from neutron.neutron_api_mappers import SubnetConfigError
 from neutron.neutron_api_mappers import SubnetMapper
 from neutron.neutron_api_mappers import UnsupportedDataValueError
@@ -44,6 +46,7 @@ from ovirt_provider_config_common import tenant_id
 from ovntestlib import assert_network_equal
 from ovntestlib import assert_port_equal
 from ovntestlib import assert_security_group_equal
+from ovntestlib import assert_security_group_rule_equal
 from ovntestlib import assert_subnet_equal
 from ovntestlib import NetworkApiInputMaker
 from ovntestlib import PortApiInputMaker
@@ -54,6 +57,7 @@ from ovntestlib import OvnPortRow
 from ovntestlib import OvnRouterPort
 from ovntestlib import OvnRouterRow
 from ovntestlib import OvnSecurityGroupRow
+from ovntestlib import OvnSecurityGroupRuleRow
 from ovntestlib import OvnSubnetRow
 
 
@@ -180,6 +184,21 @@ class TestOvnNorth(object):
             SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id(),
             SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT: tenant_id()
         }
+    )
+
+    SECURITY_GROUP_RULE_ID_01 = UUID(int=1)
+    SECURITY_GROUP_RULE_01_EXT_IDS = {
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID:
+            SECURITY_GROUP_ID,
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_PROTOCOL:
+            neutron_constants.PROTO_NAME_TCP,
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE:
+            neutron_constants.IPV4_ETHERTYPE
+    }
+    SECURITY_GROUP_RULE_01 = OvnSecurityGroupRuleRow(
+        SECURITY_GROUP_RULE_ID_01,
+        'from-lport', 'ip4 && tcp', 1001, SECURITY_GROUP_ID,
+        SECURITY_GROUP_RULE_01_EXT_IDS
     )
 
     ports = [PORT_1, PORT_2]
@@ -1320,3 +1339,18 @@ class TestOvnNorth(object):
         )
 
         assert mock_db_update.call_count == 1
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
+        lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP_RULE_01
+    )
+    def test_get_security_group_rule(
+            self, mock_connection
+    ):
+        ovn_north = NeutronApi()
+        result = ovn_north.get_security_group_rule(
+            TestOvnNorth.SECURITY_GROUP_RULE_ID_01
+        )
+        assert_security_group_rule_equal(
+            result, TestOvnNorth.SECURITY_GROUP_RULE_01
+        )

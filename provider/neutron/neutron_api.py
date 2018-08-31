@@ -1207,6 +1207,10 @@ class NeutronApi(object):
     def list_security_group_rules(self):
         return self.ovn_north.list_security_group_rules()
 
+    @SecurityGroupRuleMapper.map_to_rest
+    def get_security_group_rule(self, security_group_rule_id):
+        return self.ovn_north.get_security_group_rule(security_group_rule_id)
+
     def __enter__(self):
         return self
 
