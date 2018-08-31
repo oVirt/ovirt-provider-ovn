@@ -21,11 +21,13 @@ from ovirt_provider_config_common import tenant_id
 from ovirt_provider_config_common import dhcp_mtu
 
 import constants as ovnconst
+import neutron.constants as neutron_constants
 import neutron.ip as ip_utils
 
 from neutron.neutron_api_mappers import NetworkMapper
 from neutron.neutron_api_mappers import PortMapper
 from neutron.neutron_api_mappers import SecurityGroupMapper
+from neutron.neutron_api_mappers import SecurityGroupRuleMapper
 from neutron.neutron_api_mappers import SubnetMapper
 
 TABLES = [['table0', ['column0', 'column1']]]
@@ -251,6 +253,60 @@ def assert_security_group_equal(rest_data, security_group):
     )
 
 
+class OvnSecurityGroupRuleRow(OvnRow):
+    def __init__(
+            self, uuid, direction, match, priority, security_group_id,
+            external_ids=None
+    ):
+        self.uuid = uuid
+        self.sec_group_id = security_group_id
+        self.direction = direction
+        self.match = match
+        self.priority = priority
+        self.external_ids = external_ids
+
+
+def assert_security_group_rule_equal(rest_data, security_group_rule):
+    assert rest_data[SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ID] == str(
+        security_group_rule.uuid
+    )
+    assert rest_data[
+               SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_DIRECTION
+           ] == neutron_constants.OVN_TO_API_DIRECTION_MAPPER[
+        security_group_rule.direction
+    ]
+    assert rest_data[
+               SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_SEC_GROUP_ID
+           ] == security_group_rule.external_ids[
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
+    ]
+    assert rest_data.get(
+        SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ETHERTYPE
+    ) == security_group_rule.external_ids.get(
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE
+    )
+    assert rest_data.get(
+        SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_IP_PREFIX
+    ) == security_group_rule.external_ids.get(
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_IP_PREFIX
+    )
+    assert rest_data.get(
+        SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PORT_RANGE_MAX
+    ) == security_group_rule.external_ids.get(
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_MAX_PORT
+    )
+    assert rest_data.get(
+        SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PORT_RANGE_MIN
+    ) == security_group_rule.external_ids.get(
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_MIN_PORT
+    )
+    assert rest_data.get(
+        SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PROTOCOL
+    ) == security_group_rule.external_ids.get(
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_PROTOCOL
+    )
+
+
 class ApiInputMaker(object):
     def get(self):
         """
@@ -347,3 +403,34 @@ class SecurityGroupApiInputMaker(ApiInputMaker):
         )
         self._tenant = (SecurityGroupMapper.REST_TENANT_ID, tenant_id)
         self._project = (SecurityGroupMapper.REST_PROJECT_ID, project_id)
+
+
+class SecurityGroupRuleApiInputMaker(ApiInputMaker):
+    def __init__(
+            self, direction, security_group_id, ether_type=None,
+            port_max=None, port_min=None, protocol=None, ip_prefix=None
+    ):
+        self._direction = (
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_DIRECTION, direction
+        )
+        self._sec_group_id = (
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_SEC_GROUP_ID,
+            security_group_id
+        )
+        self._ether_type = (
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ETHERTYPE, ether_type
+        )
+        self._port_max = (
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PORT_RANGE_MAX,
+            port_max
+        )
+        self._port_min = (
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PORT_RANGE_MIN,
+            port_min
+        )
+        self._protocol = (
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PROTOCOL, protocol
+        )
+        self._ip_prefix = (
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_IP_PREFIX, ip_prefix
+        )
