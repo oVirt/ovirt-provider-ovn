@@ -39,18 +39,27 @@ class OvnSecurityGroupApi(object):
         self._idl = idl
 
     def create_security_group(
-            self, name, project_id, tenant_id, description=None):
+            self, name, project_id=None, tenant_id=None, description=None):
         now = datetime.utcnow().isoformat()
         pg_name = self._generate_name(name)
         external_ids = {
             SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS: now,
-            SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION: description,
             SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS: now,
             SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: '1',
             SecurityGroupMapper.OVN_SECURITY_GROUP_NAME: name,
-            SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT: project_id,
-            SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id,
         }
+        if description:
+            external_ids[
+                SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION
+            ] = description
+        if tenant_id:
+            external_ids[
+                SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT
+            ] = tenant_id
+        if project_id:
+            external_ids[
+                SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT
+            ] = project_id
         return self._idl.pg_add(
             pg_name, may_exist=False, external_ids=external_ids
         )

@@ -1226,6 +1226,23 @@ class TestOvnNorth(object):
         )
         assert_security_group_equal(result, security_group)
 
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.PgAddCommand.execute',
+        lambda cmd, check_error: TestOvnNorth.SECURITY_GROUP
+    )
+    def test_add_security_group_optional_data(self, mock_connection):
+        ovn_north = NeutronApi()
+        rest_data = SecurityGroupApiInputMaker(
+            TestOvnNorth.SECURITY_GROUP_NAME
+        ).get()
+
+        result = ovn_north.add_security_group(rest_data)
+        security_group = SecurityGroup(
+            sec_group=TestOvnNorth.SECURITY_GROUP,
+            sec_group_rules=[]
+        )
+        assert_security_group_equal(result, security_group)
+
     @mock.patch('ovsdbapp.schema.ovn_northbound.commands.PgDelCommand',
                 autospec=False)
     def test_delete_security_group(self, mock_pg_del_command, mock_connection):

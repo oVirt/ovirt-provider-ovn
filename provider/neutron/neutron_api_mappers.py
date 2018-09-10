@@ -941,6 +941,21 @@ class SecurityGroupMapper(Mapper):
         [REST_SEC_GROUP_DESC, Mapper.REST_TENANT_ID, REST_PROJECT_ID]
     )
     _valid_update_keys = set([REST_SEC_GROUP_NAME, REST_SEC_GROUP_DESC])
+    _optional_attr_ext_id_mapper = {
+        REST_SEC_GROUP_CREATED_AT: OVN_SECURITY_GROUP_CREATE_TS,
+        REST_SEC_GROUP_UPDATED_AT: OVN_SECURITY_GROUP_UPDATE_TS,
+        REST_PROJECT_ID: OVN_SECURITY_GROUP_PROJECT,
+        Mapper.REST_TENANT_ID: OVN_SECURITY_GROUP_TENANT,
+        REST_SEC_GROUP_DESC: OVN_SECURITY_GROUP_DESCRIPTION
+    }
+
+    @classmethod
+    def set_from_external_ids(cls, external_ids):
+        rest_optional_values = {}
+        for rest_key, ext_id_key in cls._optional_attr_ext_id_mapper.items():
+            if ext_id_key in external_ids:
+                rest_optional_values[rest_key] = external_ids[ext_id_key]
+        return rest_optional_values
 
     @staticmethod
     def row2rest(security_group):
@@ -952,49 +967,22 @@ class SecurityGroupMapper(Mapper):
             SecurityGroupMapper.REST_SEC_GROUP_ID: str(group_data.uuid),
             SecurityGroupMapper.REST_SEC_GROUP_RULES: [],
             SecurityGroupMapper.REST_SEC_GROUP_TAGS: [],
-            SecurityGroupMapper.REST_PROJECT_ID:
-                group_data.external_ids[
-                    SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT
-                ],
-            SecurityGroupMapper.REST_TENANT_ID:
-                group_data.external_ids[
-                    SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT
-                ],
             SecurityGroupMapper.REST_SEC_GROUP_REVISION_NR: int(
                 group_data.external_ids[
                     SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER
                 ]
             )
         }
-        if (
-                SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS
-                in group_data.external_ids
-        ):
-            result[
-                SecurityGroupMapper.REST_SEC_GROUP_CREATED_AT
-            ] = group_data.external_ids[
-                SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS
-            ]
-        if (
-                SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS
-                in group_data.external_ids
-        ):
-            result[
-                SecurityGroupMapper.REST_SEC_GROUP_UPDATED_AT
-            ] = group_data.external_ids[
-                SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS
-            ]
+        rest_optional_values = SecurityGroupMapper.set_from_external_ids(
+            group_data.external_ids
+        )
+        result.update(rest_optional_values)
         result[SecurityGroupMapper.REST_SEC_GROUP_NAME] = (
             group_data.external_ids.get(
                 SecurityGroupMapper.OVN_SECURITY_GROUP_NAME
             )
         )
 
-        result[SecurityGroupMapper.REST_SEC_GROUP_DESC] = (
-            group_data.external_ids.get(
-                SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION
-            )
-        )
         return result
 
     @staticmethod
@@ -1012,12 +1000,12 @@ class SecurityGroupMapper(Mapper):
             return func(
                 wrapped_self,
                 rest_sec_group_data[SecurityGroupMapper.REST_SEC_GROUP_NAME],
-                rest_sec_group_data[
+                rest_sec_group_data.get(
                     SecurityGroupMapper.REST_PROJECT_ID
-                ],
-                rest_sec_group_data[
+                ),
+                rest_sec_group_data.get(
                     SecurityGroupMapper.REST_TENANT_ID
-                ],
+                ),
                 rest_sec_group_data.get(
                     SecurityGroupMapper.REST_SEC_GROUP_DESC
                 )
