@@ -354,3 +354,24 @@ class OvnNorth(object):
         return sec_group_rule.external_ids[
             SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
         ]
+
+    def activate_default_security_group(self, port_id):
+        try:
+            default_sec_group = self.get_security_group(
+                self._ovn_sec_group_api.get_default_sec_group_name()
+            )
+        except ElementNotFoundError:
+            default_sec_group = ovn_connection.execute(
+                self._ovn_sec_group_api.create_security_group(
+                    self._ovn_sec_group_api.get_default_sec_group_name()
+                )
+            )
+            for acl in self._ovn_sec_group_api.create_default_port_group_acls(
+                default_sec_group.uuid
+            ):
+                ovn_connection.execute(acl)
+        ovn_connection.execute(
+            self._ovn_sec_group_api.add_security_group_ports(
+                default_sec_group.uuid, port_id
+            )
+        )

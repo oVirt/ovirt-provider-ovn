@@ -42,7 +42,7 @@ class OvnSecurityGroupApi(object):
     def create_security_group(
             self, name, project_id=None, tenant_id=None, description=None):
         now = datetime.utcnow().isoformat()
-        pg_name = self._generate_name(name)
+        pg_name = self._generate_name_when_required(name)
         external_ids = {
             SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS: now,
             SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS: now,
@@ -76,7 +76,7 @@ class OvnSecurityGroupApi(object):
         except RowNotFound as e:
             raise ElementNotFoundError(e)
         now = datetime.utcnow().isoformat()
-        pg_name = self._generate_name(name)
+        pg_name = self._generate_name_when_required(name)
         external_ids = sec_group.external_ids
 
         external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS] = now
@@ -97,10 +97,10 @@ class OvnSecurityGroupApi(object):
         ).execute()
 
     @staticmethod
-    def _generate_name(name):
+    def _generate_name_when_required(name):
         return 'ovirt-{name}-{gen_id}'.format(
             name=name, gen_id=uuid.uuid4()
-        )
+        ) if name != acl_lib.DEFAULT_PG_NAME else name
 
     @staticmethod
     def get_bumped_revision_number(security_group):
@@ -116,21 +116,37 @@ class OvnSecurityGroupApi(object):
             ether_type=None, ip_prefix=None, port_min=None, port_max=None,
             protocol=None
     ):
-        acl = acl_lib.create_acls(
-            security_group, direction, description=description,
-            ether_type=ether_type, ip_prefix=ip_prefix, min_port=port_min,
-            max_port=port_max, protocol=protocol
+        acl = acl_lib.create_acl(
+            security_group, direction=direction, ether_type=ether_type,
+            ip_prefix=ip_prefix, port_min=port_min, port_max=port_max,
+            protocol=protocol,  description=description
         )
 
-        acl_command = self._idl.pg_acl_add(
-            security_group.uuid, acl['direction'], acl['priority'],
-            acl['match'], acl['action'], severity='alert', name='',
-            **acl.get('external_ids')
-        )
-
-        return acl_command
+        return self._create_add_acl_command(security_group.uuid, acl)
 
     def delete_security_group_rule(
             self, port_group, direction, priority, match
     ):
         return self._idl.pg_acl_del(port_group, direction, priority, match)
+
+    def _create_add_acl_command(self, pg_uuid, acl):
+        return self._idl.pg_acl_add(
+            pg_uuid, acl['direction'], acl['priority'],
+            acl['match'], acl['action'], severity='alert', name='',
+            **acl.get('external_ids', {})
+        )
+
+    def create_default_port_group_acls(self, default_group_id):
+        return [
+            self._create_add_acl_command(
+                self.get_default_sec_group_name(), acl
+            )
+            for acl in acl_lib.create_default_port_group_acls(default_group_id)
+        ]
+
+    def add_security_group_ports(self, security_group, port_id):
+        return self._idl.pg_add_ports(security_group, port_id)
+
+    @staticmethod
+    def get_default_sec_group_name():
+        return acl_lib.DEFAULT_PG_NAME

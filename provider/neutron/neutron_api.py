@@ -387,6 +387,7 @@ class NeutronApi(object):
                 )
             if port_security is True:
                 db_set_command.add(ovnconst.ROW_LSP_PORT_SECURITY, [mac])
+                self.ovn_north.activate_default_security_group(port.uuid)
             elif port_security is False:
                 db_set_command.add(ovnconst.ROW_LSP_PORT_SECURITY, [])
             db_set_command.add(ovnconst.ROW_LSP_ADDRESSES, [mac]).execute()

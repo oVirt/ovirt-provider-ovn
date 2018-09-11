@@ -24,6 +24,9 @@ from neutron.neutron_api_mappers import RestDataError
 from neutron.neutron_api_mappers import SecurityGroupRuleMapper
 
 
+DEFAULT_PG_NAME = 'Default'
+
+
 class ProtocolNotSupported(RestDataError):
     message = (
         'The protocol "{protocol}" is not supported. Valid protocols '
@@ -139,28 +142,26 @@ def _get_icmp_protocol_data(min_port, max_port):
     return [('type', min_port), ('code', max_port)]
 
 
-def create_acls(
-        port_group, direction, description=None, ether_type=None,
-        ip_prefix=None, min_port=None, max_port=None, protocol=None
+def create_acl(
+        security_group, direction, description=None, ether_type=None,
+        ip_prefix=None, port_min=None, port_max=None, protocol=None
 ):
     match = create_acl_match(
-        direction, ether_type, ip_prefix, min_port,
-        max_port, protocol, port_group.name
+            direction, ether_type, ip_prefix, port_min,
+            port_max, protocol, security_group.name
+        )
+    acl = build_acl_parameters(
+        port_group=security_group, direction=direction,
+        match=create_acl_match_string(match),
+        action=neutron_constants.ACL_ACTION_ALLOW_RELATED,
+        priority=neutron_constants.ACL_ALLOW_PRIORITY
     )
-
-    return dict(
-                build_acl_on_pg(
-                    port_group=port_group.uuid,
-                    direction=direction,
-                    match=create_acl_match_string(match),
-                    action=neutron_constants.ACL_ACTION_ALLOW_RELATED,
-                    priority=neutron_constants.ACL_ALLOW_PRIORITY
-                ),
-                external_ids=get_acl_external_ids(
-                    description, ether_type, ip_prefix, max_port, min_port,
-                    protocol, str(port_group.uuid)
-                )
-            )
+    external_ids = get_acl_external_ids(
+        description=description, ether_type=ether_type, ip_prefix=ip_prefix,
+        max_port=port_max, min_port=port_min, protocol=protocol,
+        port_group_id=str(security_group.uuid)
+    )
+    return dict(acl, external_ids=external_ids)
 
 
 def create_acl_match(
@@ -182,7 +183,7 @@ def create_acl_match_string(match_list):
     return ' && '.join(match_list)
 
 
-def build_acl_on_pg(port_group, direction, match, action, priority):
+def build_acl_parameters(port_group, direction, match, action, priority):
     return {
         'port_group': port_group,
         'priority': priority,
@@ -227,3 +228,52 @@ def get_acl_external_ids(
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_DESCRIPTION
         ] = description
     return rule_external_id_data
+
+
+def create_default_port_group_acls(default_port_group_id):
+    acl_list = []
+    for ovn_direction, openstack_direction in (
+            neutron_constants.OVN_TO_API_DIRECTION_MAPPER.items()
+    ):
+        acl_list.append(
+            dict(
+                build_acl_parameters(
+                    DEFAULT_PG_NAME, openstack_direction,
+                    acl_direction(openstack_direction, DEFAULT_PG_NAME)
+                    + ' && ip',
+                    neutron_constants.ACL_ACTION_DROP,
+                    neutron_constants.ACL_DROP_PRIORITY
+                ),
+                external_ids=get_acl_external_ids(
+                    description='drop all {} ip traffic'.format(
+                        openstack_direction
+                    ),
+                    ether_type=None, ip_prefix=None, max_port=None,
+                    min_port=None, protocol=None,
+                    port_group_id=str(default_port_group_id)
+                )
+            )
+        )
+
+    acl_list.extend(create_default_allow_egress_acls(default_port_group_id))
+    return acl_list
+
+
+def create_default_allow_egress_acls(port_group_id):
+    return [
+        dict(
+            build_acl_parameters(
+                DEFAULT_PG_NAME, neutron_constants.EGRESS_DIRECTION,
+                acl_direction(
+                    neutron_constants.EGRESS_DIRECTION, DEFAULT_PG_NAME
+                ) + ' && {}'.format(ovn_proto),
+                neutron_constants.ACL_ACTION_ALLOW,
+                neutron_constants.ACL_ALLOW_PRIORITY
+            ),
+            external_ids=get_acl_external_ids(
+                description='automatically added allow all egress ip traffic',
+                ether_type=None, ip_prefix=None, max_port=None, min_port=None,
+                protocol=os_proto, port_group_id=str(port_group_id)
+            )
+        ) for os_proto, ovn_proto, in {'IPv4': 'ip4', 'IPv6': 'ip6'}.items()
+    ]
