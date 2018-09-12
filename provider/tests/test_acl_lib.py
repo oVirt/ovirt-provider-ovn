@@ -28,10 +28,10 @@ from ovndb.acls import acl_remote_ip_prefix
 
 
 def test_acl_direction():
-    assert acl_direction('ingress', 'pg1') == 'from-lport == @pg1'
-    assert acl_direction('egress', 'pg1') == 'to-lport == @pg1'
+    assert acl_direction('ingress', 'pg1') == 'inport == @pg1'
+    assert acl_direction('egress', 'pg1') == 'outport == @pg1'
     with pytest.raises(KeyError):
-        acl_direction('left2right', 'pg1') == 'to-lport == @pg1'
+        acl_direction('left2right', 'pg1')
 
 
 def test_acl_ether_type():
