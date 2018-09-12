@@ -255,7 +255,7 @@ def assert_security_group_equal(rest_data, security_group):
 
 class OvnSecurityGroupRuleRow(OvnRow):
     def __init__(
-            self, uuid, direction, match, priority, security_group_id,
+            self, uuid, direction, match, priority, security_group_id, action,
             external_ids=None
     ):
         self.uuid = uuid
@@ -263,6 +263,7 @@ class OvnSecurityGroupRuleRow(OvnRow):
         self.direction = direction
         self.match = match
         self.priority = priority
+        self.action = action
         self.external_ids = external_ids
 
 

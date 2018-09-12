@@ -28,6 +28,7 @@ import constants as ovnconst
 
 from handlers.base_handler import ElementNotFoundError
 
+import neutron.constants as neutron_constants
 from neutron.neutron_api_mappers import SecurityGroupMapper
 
 from ovndb.db_set_command import DbSetCommand
@@ -150,3 +151,12 @@ class OvnSecurityGroupApi(object):
     @staticmethod
     def get_default_sec_group_name():
         return acl_lib.DEFAULT_PG_NAME
+
+
+def only_rules_with_allowed_actions(f):
+    def filter_rules(*args):
+        return filter(
+            lambda rule: rule.action != neutron_constants.ACL_ACTION_DROP,
+            f(*args)
+        )
+    return filter_rules

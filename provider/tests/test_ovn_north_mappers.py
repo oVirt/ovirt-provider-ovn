@@ -258,7 +258,7 @@ class TestOvnNorthMappers(object):
         }
         security_group_rule = OvnSecurityGroupRuleRow(
             rule_id,
-            'from-lport', 'ip4 && udp && ', 1001, group_id,
+            'from-lport', 'ip4 && udp && ', 1001, group_id, 'allow',
             acl_external_ids
         )
         assert_security_group_rule_equal(
@@ -294,7 +294,7 @@ class TestOvnNorthMappers(object):
         }
         security_group_rule = OvnSecurityGroupRuleRow(
             rule_id,
-            'to-lport', 'ip4 && udp && ', 1001, SECURITY_GROUP_UUID,
+            'to-lport', 'ip4 && udp && ', 1001, SECURITY_GROUP_UUID, 'allow',
             acl_external_ids
         )
 

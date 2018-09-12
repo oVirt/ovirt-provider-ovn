@@ -188,6 +188,7 @@ class TestOvnNorth(object):
     )
 
     SECURITY_GROUP_RULE_ID_01 = UUID(int=1)
+    SECURITY_GROUP_RULE_ID_02 = UUID(int=2)
     SECURITY_GROUP_RULE_01_EXT_IDS = {
         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID:
             SECURITY_GROUP_ID,
@@ -196,10 +197,22 @@ class TestOvnNorth(object):
         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE:
             neutron_constants.IPV4_ETHERTYPE
     }
+    SECURITY_GROUP_RULE_02_EXT_IDS = {
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID:
+            SECURITY_GROUP_ID,
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_PROTOCOL: 'udp',
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE: 'IPv6'
+    }
     SECURITY_GROUP_RULE_01 = OvnSecurityGroupRuleRow(
         SECURITY_GROUP_RULE_ID_01,
-        'from-lport', 'ip4 && tcp', 1001, SECURITY_GROUP_ID,
+        'from-lport', 'ip4 && tcp', 1001, SECURITY_GROUP_ID, 'allow',
         SECURITY_GROUP_RULE_01_EXT_IDS
+    )
+
+    SECURITY_GROUP_RULE_02 = OvnSecurityGroupRuleRow(
+        SECURITY_GROUP_RULE_ID_02,
+        'to-lport', 'ip6 && udp', 1000, SECURITY_GROUP_ID, 'drop',
+        SECURITY_GROUP_RULE_02_EXT_IDS
     )
 
     ports = [PORT_1, PORT_2]
@@ -1423,3 +1436,26 @@ class TestOvnNorth(object):
             'ip4 && tcp'
         )
         assert mock_delete_rule.mock_calls[0] == expected_del_call
+
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbListCommand.execute',
+        lambda command, check_error: [
+            TestOvnNorth.SECURITY_GROUP_RULE_01,
+            TestOvnNorth.SECURITY_GROUP_RULE_02
+        ]
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
+        lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP
+    )
+    def test_filter_out_drop_security_rules(self, mock_connection):
+        ovn_north = NeutronApi()
+        result = ovn_north.get_security_group(
+            TestOvnNorth.SECURITY_GROUP_ID
+        )
+        assert_security_group_equal(
+            result, SecurityGroup(
+                sec_group=TestOvnNorth.SECURITY_GROUP,
+                sec_group_rules=[TestOvnNorth.SECURITY_GROUP_RULE_01]
+            )
+        )

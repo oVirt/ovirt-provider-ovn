@@ -34,6 +34,7 @@ from neutron.neutron_api_mappers import SubnetMapper
 
 from ovndb.db_set_command import DbSetCommand
 from ovndb.ovn_security_groups import OvnSecurityGroupApi
+from ovndb.ovn_security_groups import only_rules_with_allowed_actions
 
 
 def accepts_single_arg(f):
@@ -272,6 +273,7 @@ class OvnNorth(object):
             sec_group_id, name, description
         )
 
+    @only_rules_with_allowed_actions
     def list_security_group_rules(self, sec_group_id=None):
         all_rules = ovn_connection.execute(
             self.idl.db_list_rows(ovnconst.TABLE_ACL)
