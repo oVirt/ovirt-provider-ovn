@@ -28,6 +28,7 @@ from handlers.base_handler import ElementNotFoundError
 
 import neutron.validation as validate
 from neutron.neutron_api_mappers import PortMapper
+from neutron.neutron_api_mappers import SecurityGroupMapper
 from neutron.neutron_api_mappers import SecurityGroupRuleMapper
 from neutron.neutron_api_mappers import SubnetMapper
 
@@ -294,3 +295,34 @@ class OvnNorth(object):
                     rule_id=security_group_rule_id
                 )
             )
+
+    def create_security_group_rule(
+            self, security_group_id, direction, description=None,
+            ether_type=None, remote_ip_prefix=None, port_min=None,
+            port_max=None, protocol=None
+    ):
+        sec_group = self.get_security_group(security_group_id)
+        new_rev_number = self._ovn_sec_group_api.get_bumped_revision_number(
+            sec_group
+        )
+        sec_group_rule_command = (
+            self._ovn_sec_group_api.create_security_group_rule(
+                sec_group, direction, description=description,
+                ether_type=ether_type, ip_prefix=remote_ip_prefix,
+                port_min=port_min, port_max=port_max, protocol=protocol
+            )
+        )
+        add_sec_group_rule_result = ovn_connection.execute(
+            sec_group_rule_command
+        )
+
+        sec_group_update_command = self.create_ovn_update_command(
+            ovnconst.TABLE_PORT_GROUP, security_group_id
+        )
+
+        sec_group_update_command.add(
+            ovnconst.ROW_PG_EXTERNAL_IDS,
+            {SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: new_rev_number}
+        ).execute()
+
+        return add_sec_group_rule_result

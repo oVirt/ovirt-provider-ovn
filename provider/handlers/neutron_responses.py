@@ -308,5 +308,16 @@ def show_security_group_rule(nb_db, content, parameters):
     )
 
 
+@rest(POST, SECURITY_GROUP_RULES, _responses)
+def post_security_group_rule(nb_db, content, parameters):
+    received_sec_group_rule = get_entity(content, 'security_group_rule')
+    return Response(
+        {
+            'security_group_rule':
+                nb_db.add_security_group_rule(received_sec_group_rule)
+        }
+    )
+
+
 def responses():
     return _responses

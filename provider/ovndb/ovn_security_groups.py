@@ -31,6 +31,7 @@ from handlers.base_handler import ElementNotFoundError
 from neutron.neutron_api_mappers import SecurityGroupMapper
 
 from ovndb.db_set_command import DbSetCommand
+import ovndb.acls as acl_lib
 
 
 class OvnSecurityGroupApi(object):
@@ -80,7 +81,7 @@ class OvnSecurityGroupApi(object):
 
         external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS] = now
         external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER] = (
-            self._get_bumped_revision_number(sec_group)
+            self.get_bumped_revision_number(sec_group)
         )
         external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_NAME] = name
         if description:
@@ -102,10 +103,29 @@ class OvnSecurityGroupApi(object):
         )
 
     @staticmethod
-    def _get_bumped_revision_number(security_group):
+    def get_bumped_revision_number(security_group):
         current_revision = int(
             security_group.external_ids[
                 SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER
             ]
         )
         return str(current_revision + 1)
+
+    def create_security_group_rule(
+            self, security_group, direction, description=None,
+            ether_type=None, ip_prefix=None, port_min=None, port_max=None,
+            protocol=None
+    ):
+        acl = acl_lib.create_acls(
+            security_group, direction, description=description,
+            ether_type=ether_type, ip_prefix=ip_prefix, min_port=port_min,
+            max_port=port_max, protocol=protocol
+        )
+
+        acl_command = self._idl.pg_acl_add(
+            security_group.uuid, acl['direction'], acl['priority'],
+            acl['match'], acl['action'], severity='alert', name='',
+            **acl.get('external_ids')
+        )
+
+        return acl_command

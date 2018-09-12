@@ -1225,6 +1225,22 @@ class NeutronApi(object):
     def get_security_group_rule(self, security_group_rule_id):
         return self.ovn_north.get_security_group_rule(security_group_rule_id)
 
+    @SecurityGroupRuleMapper.validate_add
+    @SecurityGroupRuleMapper.map_from_rest
+    @SecurityGroupRuleMapper.map_to_rest
+    def add_security_group_rule(
+            self, security_group_id, direction, description=None,
+            ether_type=None, port_min=None, port_max=None,
+            remote_ip_prefix=None, protocol=None
+    ):
+        sec_group_rule = self.ovn_north.create_security_group_rule(
+            security_group_id, direction, description=description,
+            ether_type=ether_type, remote_ip_prefix=remote_ip_prefix,
+            port_min=port_min, port_max=port_max, protocol=protocol
+        )
+
+        return sec_group_rule
+
     def __enter__(self):
         return self
 

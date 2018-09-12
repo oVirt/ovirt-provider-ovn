@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import neutron.constants as neutron_constants
 
 from neutron.neutron_api_mappers import RestDataError
+from neutron.neutron_api_mappers import SecurityGroupRuleMapper
 
 
 class ProtocolNotSupported(RestDataError):
@@ -136,3 +137,93 @@ def handle_icmp_protocol(protocol, min_port, max_port):
 
 def _get_icmp_protocol_data(min_port, max_port):
     return [('type', min_port), ('code', max_port)]
+
+
+def create_acls(
+        port_group, direction, description=None, ether_type=None,
+        ip_prefix=None, min_port=None, max_port=None, protocol=None
+):
+    match = create_acl_match(
+        direction, ether_type, ip_prefix, min_port,
+        max_port, protocol, port_group.name
+    )
+
+    return dict(
+                build_acl_on_pg(
+                    port_group=port_group.uuid,
+                    direction=direction,
+                    match=create_acl_match_string(match),
+                    action=neutron_constants.ACL_ACTION_ALLOW_RELATED,
+                    priority=neutron_constants.ACL_ALLOW_PRIORITY
+                ),
+                external_ids=get_acl_external_ids(
+                    description, ether_type, ip_prefix, max_port, min_port,
+                    protocol, str(port_group.uuid)
+                )
+            )
+
+
+def create_acl_match(
+        direction, ether_type, ip_prefix, min_port, max_port, protocol,
+        port_group_id
+):
+    match = [acl_direction(direction, port_group_id)]
+    ip_version, icmp = get_acl_protocol_info(ether_type)
+
+    match.append(ip_version)
+    match.append(acl_remote_ip_prefix(ip_prefix, direction, ip_version))
+    match.extend(
+        process_acl_protocol_and_ports(protocol, min_port, max_port, icmp)
+    )
+    return filter(lambda s: s is not '', match)
+
+
+def create_acl_match_string(match_list):
+    return ' && '.join(match_list)
+
+
+def build_acl_on_pg(port_group, direction, match, action, priority):
+    return {
+        'port_group': port_group,
+        'priority': priority,
+        'action': action,
+        'log': False,
+        'name': '',
+        'severity': [],
+        'direction': neutron_constants.API_TO_OVN_DIRECTION_MAPPER[direction],
+        'match': match
+    }
+
+
+def get_acl_external_ids(
+        description, ether_type, ip_prefix, max_port, min_port,
+        protocol, port_group_id
+):
+    rule_external_id_data = {
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID: port_group_id
+    }
+    if ether_type:
+        rule_external_id_data[
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE
+        ] = ether_type
+    if max_port:
+        rule_external_id_data[
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_MAX_PORT
+        ] = str(max_port)
+    if min_port:
+        rule_external_id_data[
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_MIN_PORT
+        ] = str(min_port)
+    if ip_prefix:
+        rule_external_id_data[
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_IP_PREFIX
+        ] = ip_prefix
+    if protocol:
+        rule_external_id_data[
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_PROTOCOL
+        ] = protocol
+    if description:
+        rule_external_id_data[
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_DESCRIPTION
+        ] = description
+    return rule_external_id_data

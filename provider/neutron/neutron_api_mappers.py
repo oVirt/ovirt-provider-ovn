@@ -1085,6 +1085,14 @@ class SecurityGroupRuleMapper(Mapper):
     OVN_SEC_GROUP_RULE_SEC_GROUP_ID = 'ovirt_port_group_id'
     OVN_SEC_GROUP_RULE_DESCRIPTION = 'ovirt_rule_description'
 
+    _mandatory_add_data = set(
+        [REST_SEC_GROUP_RULE_DIRECTION, REST_SEC_GROUP_RULE_SEC_GROUP_ID]
+    )
+    _optional_add_data = set([
+        REST_SEC_GROUP_RULE_PROTOCOL, REST_SEC_GROUP_RULE_ETHERTYPE,
+        REST_SEC_GROUP_RULE_PORT_RANGE_MAX, REST_SEC_GROUP_RULE_PORT_RANGE_MIN,
+        REST_SEC_GROUP_RULE_IP_PREFIX, REST_SEC_GROUP_RULE_DESCRIPTION
+    ])
     optional_attr_ext_id_mapper = {
         REST_SEC_GROUP_RULE_DESCRIPTION: OVN_SEC_GROUP_RULE_DESCRIPTION,
         REST_SEC_GROUP_RULE_ETHERTYPE: OVN_SEC_GROUP_RULE_ETHERTYPE,
@@ -1115,3 +1123,48 @@ class SecurityGroupRuleMapper(Mapper):
         )
         result.update(optional_rest_values)
         return result
+
+    @classmethod
+    def validate_add_rest_input(cls, rest_data):
+        cls.validate_keys(
+            set(rest_data.keys()),
+            cls._mandatory_add_data,
+            cls._optional_add_data
+        )
+
+    @staticmethod
+    def rest2row(wrapped_self, func, rest_data, entity_id):
+        security_group_id = rest_data[
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_SEC_GROUP_ID
+        ]
+        direction = rest_data[
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_DIRECTION
+        ]
+        description = rest_data.get(
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_DESCRIPTION
+        )
+        ether_type = rest_data.get(
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ETHERTYPE
+        )
+        port_max = int(rest_data.get(
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PORT_RANGE_MAX
+        )) if (
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PORT_RANGE_MAX
+            in rest_data
+        ) else None
+        port_min = int(rest_data.get(
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PORT_RANGE_MIN
+        )) if (
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PORT_RANGE_MAX
+            in rest_data
+        ) else None
+        protocol = rest_data.get(
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PROTOCOL
+        )
+        ip_prefix = rest_data.get(
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_IP_PREFIX
+        )
+        return func(
+            wrapped_self, security_group_id, direction, description,
+            ether_type, port_min, port_max, ip_prefix, protocol
+        )

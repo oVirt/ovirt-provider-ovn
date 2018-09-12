@@ -166,3 +166,8 @@ ICMP_PROTOCOLS = (
 # higher priority for ALLOW than for DROP
 ACL_ALLOW_PRIORITY = 1001
 ACL_DROP_PRIORITY = 1000
+
+# ACL actions
+ACL_ACTION_ALLOW = 'allow'
+ACL_ACTION_ALLOW_RELATED = 'allow-related'
+ACL_ACTION_DROP = 'drop'

@@ -19,10 +19,13 @@
 from __future__ import absolute_import
 
 import pytest
+import uuid
 
 from ovndb.acls import acl_direction
 from ovndb.acls import get_acl_protocol_info
 from ovndb.acls import acl_remote_ip_prefix
+from ovndb.acls import create_acl_match
+from ovndb.acls import create_acl_match_string
 from ovndb.acls import handle_icmp_protocol
 from ovndb.acls import handle_ports
 
@@ -72,3 +75,49 @@ def test_acl_port_matches():
     assert handle_ports('tcp', 80, 90) == [
         'tcp', 'tcp.dst >= 80', 'tcp.dst <= 90'
     ]
+
+
+def test_create_acl_match():
+    pg_id = uuid.UUID(int=100)
+    assert create_acl_match(
+        'ingress', 'IPv4', None, None, None, 'tcp', pg_id
+    ) == ['inport == @00000000-0000-0000-0000-000000000064', 'ip4', 'tcp']
+    assert create_acl_match(
+        'ingress', 'IPv4', None, 5000, 5299, 'tcp', pg_id
+    ) == [
+        'inport == @00000000-0000-0000-0000-000000000064',
+        'ip4', 'tcp', 'tcp.dst >= 5000', 'tcp.dst <= 5299'
+    ]
+    assert create_acl_match(
+        'ingress', 'IPv4', '192.168.80.0/24', 5000, 5299, 'tcp', pg_id
+    ) == [
+        'inport == @00000000-0000-0000-0000-000000000064',
+        'ip4', 'ip4.src == 192.168.80.0/24', 'tcp', 'tcp.dst >= 5000',
+        'tcp.dst <= 5299'
+    ]
+
+
+def test_create_acl_match_output():
+    pg_id = uuid.UUID(int=100)
+    assert create_acl_match_string(
+        create_acl_match(
+            'ingress', 'IPv4', None, None, None, 'tcp', pg_id
+        )
+    ) == 'inport == @00000000-0000-0000-0000-000000000064 && ip4 && tcp'
+    assert create_acl_match_string(
+        create_acl_match(
+            'ingress', 'IPv4', None, 5000, 5299, 'tcp', pg_id
+        )
+    ) == (
+        'inport == @00000000-0000-0000-0000-000000000064 && ip4 && '
+        'tcp && tcp.dst >= 5000 && tcp.dst <= 5299'
+    )
+    assert create_acl_match_string(
+        create_acl_match(
+            'ingress', 'IPv4', '192.168.80.0/24', 5000, 5299, 'tcp', pg_id
+        )
+    ) == (
+        'inport == @00000000-0000-0000-0000-000000000064 && ip4 && '
+        'ip4.src == 192.168.80.0/24 && tcp && tcp.dst >= 5000 && '
+        'tcp.dst <= 5299'
+    )
