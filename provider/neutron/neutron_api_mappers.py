@@ -49,6 +49,7 @@ SecurityGroup = namedtuple('SecurityGroup', ['sec_group', 'sec_group_rules'])
 class Mapper(object):
 
     REST_TENANT_ID = 'tenant_id'
+    REST_PROJECT_ID = 'project_id'
 
     @classmethod
     def map_from_rest(cls, f):
@@ -121,6 +122,14 @@ class Mapper(object):
     @staticmethod
     def _str2bool(boolean_string):
         return boolean_string.lower() == 'true'
+
+    @staticmethod
+    def set_from_external_ids(external_ids, mappings):
+        rest_optional_values = {}
+        for rest_key, ext_id_key in mappings.items():
+            if ext_id_key in external_ids:
+                rest_optional_values[rest_key] = external_ids[ext_id_key]
+        return rest_optional_values
 
 
 class NetworkMapper(Mapper):
@@ -951,7 +960,6 @@ class SecurityGroupMapper(Mapper):
     REST_SEC_GROUP_ID = 'id'
     REST_SEC_GROUP_NAME = 'name'
 
-    REST_PROJECT_ID = 'project_id'
     REST_SEC_GROUP_DESC = 'description'
 
     REST_SEC_GROUP_CREATED_AT = 'created_at'
@@ -970,25 +978,17 @@ class SecurityGroupMapper(Mapper):
 
     _mandatory_add_data = set([REST_SEC_GROUP_NAME])
     _optional_add_data = set(
-        [REST_SEC_GROUP_DESC, Mapper.REST_TENANT_ID, REST_PROJECT_ID]
+        [REST_SEC_GROUP_DESC, Mapper.REST_TENANT_ID, Mapper.REST_PROJECT_ID]
     )
     _mandatory_update_data = set()
     _optional_update_data = set([REST_SEC_GROUP_NAME, REST_SEC_GROUP_DESC])
-    _optional_attr_ext_id_mapper = {
+    optional_attr_ext_id_mapper = {
         REST_SEC_GROUP_CREATED_AT: OVN_SECURITY_GROUP_CREATE_TS,
         REST_SEC_GROUP_UPDATED_AT: OVN_SECURITY_GROUP_UPDATE_TS,
-        REST_PROJECT_ID: OVN_SECURITY_GROUP_PROJECT,
+        Mapper.REST_PROJECT_ID: OVN_SECURITY_GROUP_PROJECT,
         Mapper.REST_TENANT_ID: OVN_SECURITY_GROUP_TENANT,
         REST_SEC_GROUP_DESC: OVN_SECURITY_GROUP_DESCRIPTION
     }
-
-    @classmethod
-    def set_from_external_ids(cls, external_ids):
-        rest_optional_values = {}
-        for rest_key, ext_id_key in cls._optional_attr_ext_id_mapper.items():
-            if ext_id_key in external_ids:
-                rest_optional_values[rest_key] = external_ids[ext_id_key]
-        return rest_optional_values
 
     @staticmethod
     def row2rest(security_group):
@@ -1007,7 +1007,8 @@ class SecurityGroupMapper(Mapper):
             )
         }
         rest_optional_values = SecurityGroupMapper.set_from_external_ids(
-            group_data.external_ids
+            group_data.external_ids,
+            SecurityGroupMapper.optional_attr_ext_id_mapper
         )
         result.update(rest_optional_values)
         result[SecurityGroupMapper.REST_SEC_GROUP_NAME] = (
