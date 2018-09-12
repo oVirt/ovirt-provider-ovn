@@ -51,6 +51,7 @@ from ovntestlib import assert_subnet_equal
 from ovntestlib import NetworkApiInputMaker
 from ovntestlib import PortApiInputMaker
 from ovntestlib import SecurityGroupApiInputMaker
+from ovntestlib import SecurityGroupRuleApiInputMaker
 from ovntestlib import SubnetApiInputMaker
 from ovntestlib import OvnNetworkRow
 from ovntestlib import OvnPortRow
@@ -1381,4 +1382,20 @@ class TestOvnNorth(object):
                 sec_group=TestOvnNorth.SECURITY_GROUP,
                 sec_group_rules=[TestOvnNorth.SECURITY_GROUP_RULE_01]
             )
+        )
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.PgAclAddCommand.execute',
+        lambda cmd, check_error: TestOvnNorth.SECURITY_GROUP_RULE_01
+    )
+    def test_add_security_group_rules(self, mock_connection):
+        ovn_north = NeutronApi()
+        rest_data = SecurityGroupRuleApiInputMaker(
+            'ingress', TestOvnNorth.SECURITY_GROUP_ID, ether_type='IPv4',
+            protocol='tcp'
+        ).get()
+
+        result = ovn_north.add_security_group_rule(rest_data)
+        assert_security_group_rule_equal(
+            result, TestOvnNorth.SECURITY_GROUP_RULE_01
         )
