@@ -91,3 +91,48 @@ IP_PROTOCOL_MAP = {
     PROTO_NAME_UDPLITE: PROTO_NUM_UDPLITE,
     PROTO_NAME_VRRP: PROTO_NUM_VRRP
 }
+
+PROTOCOL_NAME_TO_NUM_MAP = {
+    k: str(v) for k, v in
+    IP_PROTOCOL_MAP.items()
+}
+
+PROTOCOL_NUM_TO_NAME_MAP = {
+    v: k for k, v in
+    PROTOCOL_NAME_TO_NUM_MAP.items()
+}
+
+API_TO_OVN_DIRECTION_MAPPER = {
+    INGRESS_DIRECTION: 'from-lport',
+    EGRESS_DIRECTION: 'to-lport'
+}
+
+OVN_TO_API_DIRECTION_MAPPER = {
+    v: k for k, v in API_TO_OVN_DIRECTION_MAPPER.items()
+}
+
+# all allowed transport protocols values as per networking api v2
+# both name & protocol number are added to the array
+TRANSPORT_PROTOCOLS = (
+    PROTO_NAME_TCP,
+    PROTO_NAME_UDP,
+    PROTO_NAME_SCTP,
+    PROTOCOL_NAME_TO_NUM_MAP[PROTO_NAME_TCP],
+    PROTOCOL_NAME_TO_NUM_MAP[PROTO_NAME_UDP],
+    PROTOCOL_NAME_TO_NUM_MAP[PROTO_NAME_SCTP]
+)
+
+# allowed transport protocols as per networking api v2
+# both name & protocol number are added to the array
+ICMP_PROTOCOLS = (
+    PROTO_NAME_ICMP,
+    PROTO_NAME_IPV6_ICMP,
+    PROTO_NAME_IPV6_ICMP_LEGACY,
+    PROTOCOL_NAME_TO_NUM_MAP[PROTO_NAME_ICMP],
+    PROTOCOL_NAME_TO_NUM_MAP[PROTO_NAME_IPV6_ICMP],
+    PROTOCOL_NAME_TO_NUM_MAP[PROTO_NAME_IPV6_ICMP_LEGACY]
+)
+
+# higher priority for ALLOW than for DROP
+ACL_ALLOW_PRIORITY = 1001
+ACL_DROP_PRIORITY = 1000

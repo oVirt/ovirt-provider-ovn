@@ -23,51 +23,6 @@ import neutron.constants as neutron_constants
 from neutron.neutron_api_mappers import RestDataError
 from neutron.ip import is_valid_cidr
 
-PROTOCOL_NAME_TO_NUM_MAP = {
-    k: str(v) for k, v in
-    neutron_constants.IP_PROTOCOL_MAP.items()
-}
-
-PROTOCOL_NUM_TO_NAME_MAP = {
-    v: k for k, v in
-    PROTOCOL_NAME_TO_NUM_MAP.items()
-}
-
-API_TO_OVN_DIRECTION_MAPPER = {
-    neutron_constants.INGRESS_DIRECTION: 'from-lport',
-    neutron_constants.EGRESS_DIRECTION: 'to-lport'
-}
-
-OVN_TO_API_DIRECTION_MAPPER = {
-    v: k for k, v in API_TO_OVN_DIRECTION_MAPPER.items()
-}
-
-# all allowed transport protocols values as per networking api v2
-# both name & protocol number are added to the array
-TRANSPORT_PROTOCOLS = (
-    neutron_constants.PROTO_NAME_TCP,
-    neutron_constants.PROTO_NAME_UDP,
-    neutron_constants.PROTO_NAME_SCTP,
-    PROTOCOL_NAME_TO_NUM_MAP[neutron_constants.PROTO_NAME_TCP],
-    PROTOCOL_NAME_TO_NUM_MAP[neutron_constants.PROTO_NAME_UDP],
-    PROTOCOL_NAME_TO_NUM_MAP[neutron_constants.PROTO_NAME_SCTP]
-)
-
-# allowed transport protocols as per networking api v2
-# both name & protocol number are added to the array
-ICMP_PROTOCOLS = (
-    neutron_constants.PROTO_NAME_ICMP,
-    neutron_constants.PROTO_NAME_IPV6_ICMP,
-    neutron_constants.PROTO_NAME_IPV6_ICMP_LEGACY,
-    PROTOCOL_NAME_TO_NUM_MAP[neutron_constants.PROTO_NAME_ICMP],
-    PROTOCOL_NAME_TO_NUM_MAP[neutron_constants.PROTO_NAME_IPV6_ICMP],
-    PROTOCOL_NAME_TO_NUM_MAP[neutron_constants.PROTO_NAME_IPV6_ICMP_LEGACY]
-)
-
-# higher priority for ALLOW than for DROP
-ACL_ALLOW_PRIORITY = 1001
-ACL_DROP_PRIORITY = 1000
-
 
 class ProtocolNotSupported(RestDataError):
     message = (
@@ -79,14 +34,14 @@ class ProtocolNotSupported(RestDataError):
     def __init__(self, protocol):
         super(ProtocolNotSupported, self).__init__(self.message.format(
             protocol=protocol, valid_protocols=', '.join(
-                PROTOCOL_NAME_TO_NUM_MAP.keys()
+                neutron_constants.PROTOCOL_NAME_TO_NUM_MAP.keys()
             )
         ))
 
 
 def acl_direction(api_direction, port_group_name):
     return '{direction} == @{port_group}'.format(
-        direction=API_TO_OVN_DIRECTION_MAPPER[api_direction],
+        direction=neutron_constants.API_TO_OVN_DIRECTION_MAPPER[api_direction],
         port_group=port_group_name
     )
 
@@ -129,7 +84,7 @@ def _get_protocol_number(protocol):
         if 0 <= protocol <= 255:
             return str(protocol)
     except (ValueError, TypeError):
-        protocol = PROTOCOL_NAME_TO_NUM_MAP.get(protocol)
+        protocol = neutron_constants.PROTOCOL_NAME_TO_NUM_MAP.get(protocol)
         if protocol is not None:
             return protocol
 
