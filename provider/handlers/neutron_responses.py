@@ -35,7 +35,7 @@ PORT_ID = 'port_id'
 SUBNET_ID = 'subnet_id'
 ROUTER_ID = 'router_id'
 SECURITY_GROUP_ID = 'security_group_id'
-
+SECURITY_GROUP_RULE_ID = 'security_group_rule_id'
 
 NETWORKS = 'networks'
 NETWORK_ENTITY = 'networks/{network_id}'
@@ -49,6 +49,8 @@ SECURITY_GROUPS = 'security-groups'
 SECURITY_GROUP_ENTITY = 'security-groups/{security_group_id}'
 ADD_ROUTER_INTERFACE = 'routers/{router_id}/add_router_interface'
 DELETE_ROUTER_INTERFACE = 'routers/{router_id}/remove_router_interface'
+SECURITY_GROUP_RULES = 'security-group-rules'
+SECURITY_GROUP_RULE_ENTITY = 'security-group-rules/{security_group_rule_id}'
 
 FLOATINGIPS = 'floatingips'
 
@@ -286,6 +288,13 @@ def put_security_group(nb_db, content, parameters):
         received_security_group, parameters[SECURITY_GROUP_ID]
     )
     return Response({'security_group': sec_group})
+
+
+@rest(GET, SECURITY_GROUP_RULES, _responses)
+def get_security_group_rules(nb_db, content, parameters):
+    return Response(
+        {'security_group_rules': nb_db.list_security_group_rules()}
+    )
 
 
 def responses():

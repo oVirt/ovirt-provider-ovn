@@ -26,6 +26,7 @@ from netaddr import IPNetwork
 import six
 
 import constants as ovnconst
+import neutron.constants as neutron_constants
 import neutron.ip as ip_utils
 from ovirt_provider_config_common import dhcp_mtu
 from ovirt_provider_config_common import tenant_id
@@ -1060,3 +1061,54 @@ class SecurityGroupMapper(Mapper):
             cls._mandatory_update_data,
             cls._optional_update_data
         )
+
+
+class SecurityGroupRuleMapper(Mapper):
+    REST_SEC_GROUP_RULE_ID = 'id'
+    REST_SEC_GROUP_RULE_DIRECTION = 'direction'
+    REST_SEC_GROUP_RULE_PROTOCOL = 'protocol'
+    REST_SEC_GROUP_RULE_ETHERTYPE = 'ethertype'
+    REST_SEC_GROUP_RULE_PORT_RANGE_MAX = 'port_range_max'
+    REST_SEC_GROUP_RULE_PORT_RANGE_MIN = 'port_range_min'
+    REST_SEC_GROUP_RULE_IP_PREFIX = 'remote_ip_prefix'
+    REST_SEC_GROUP_RULE_SEC_GROUP_ID = 'security_group_id'
+    REST_SEC_GROUP_RULE_DESCRIPTION = 'description'
+
+    OVN_SEC_GROUP_RULE_PROTOCOL = 'ovirt_protocol'
+    OVN_SEC_GROUP_RULE_ETHERTYPE = 'ovirt_ethertype'
+    OVN_SEC_GROUP_RULE_MAX_PORT = 'ovirt_max_port'
+    OVN_SEC_GROUP_RULE_MIN_PORT = 'ovirt_min_port'
+    OVN_SEC_GROUP_RULE_IP_PREFIX = 'ovirt_ip_prefix'
+    OVN_SEC_GROUP_RULE_SEC_GROUP_ID = 'ovirt_port_group_id'
+    OVN_SEC_GROUP_RULE_DESCRIPTION = 'ovirt_rule_description'
+
+    optional_attr_ext_id_mapper = {
+        REST_SEC_GROUP_RULE_DESCRIPTION: OVN_SEC_GROUP_RULE_DESCRIPTION,
+        REST_SEC_GROUP_RULE_ETHERTYPE: OVN_SEC_GROUP_RULE_ETHERTYPE,
+        REST_SEC_GROUP_RULE_IP_PREFIX: OVN_SEC_GROUP_RULE_IP_PREFIX,
+        REST_SEC_GROUP_RULE_PORT_RANGE_MAX: OVN_SEC_GROUP_RULE_MAX_PORT,
+        REST_SEC_GROUP_RULE_PORT_RANGE_MIN: OVN_SEC_GROUP_RULE_MIN_PORT,
+        REST_SEC_GROUP_RULE_PROTOCOL: OVN_SEC_GROUP_RULE_PROTOCOL,
+    }
+
+    @staticmethod
+    def row2rest(rule):
+        if not rule:
+            return {}
+
+        result = {
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ID:
+                str(rule.uuid),
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_DIRECTION:
+                neutron_constants.OVN_TO_API_DIRECTION_MAPPER[rule.direction],
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_SEC_GROUP_ID:
+                rule.external_ids[
+                    SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
+                ]
+        }
+        optional_rest_values = SecurityGroupRuleMapper.set_from_external_ids(
+            rule.external_ids,
+            SecurityGroupRuleMapper.optional_attr_ext_id_mapper
+        )
+        result.update(optional_rest_values)
+        return result

@@ -42,6 +42,7 @@ from neutron.neutron_api_mappers import RouterInterface
 from neutron.neutron_api_mappers import RouterMapper
 from neutron.neutron_api_mappers import SecurityGroup
 from neutron.neutron_api_mappers import SecurityGroupMapper
+from neutron.neutron_api_mappers import SecurityGroupRuleMapper
 from neutron.neutron_api_mappers import SubnetConfigError
 from neutron.neutron_api_mappers import SubnetMapper
 
@@ -1201,6 +1202,10 @@ class NeutronApi(object):
             sec_group=self.get_security_group(sec_group_id),
             sec_group_rules=[]
         )
+
+    @SecurityGroupRuleMapper.map_to_rest
+    def list_security_group_rules(self):
+        return self.ovn_north.list_security_group_rules()
 
     def __enter__(self):
         return self

@@ -265,3 +265,8 @@ class OvnNorth(object):
         self._ovn_sec_group_api.update_security_group(
             sec_group_id, name, description
         )
+
+    def list_security_group_rules(self):
+        return ovn_connection.execute(
+            self.idl.db_list_rows(ovnconst.TABLE_ACL)
+        )

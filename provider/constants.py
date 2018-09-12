@@ -72,3 +72,5 @@ DEFAULT_ROUTE = '0.0.0.0/0'
 TABLE_PORT_GROUP = 'Port_Group'
 ROW_PG_NAME = 'name'
 ROW_PG_EXTERNAL_IDS = 'external_ids'
+
+TABLE_ACL = 'ACL'
