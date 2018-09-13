@@ -21,6 +21,7 @@ from __future__ import absolute_import
 
 import uuid
 from datetime import datetime
+from functools import wraps
 
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 
@@ -33,6 +34,16 @@ from neutron.neutron_api_mappers import SecurityGroupMapper
 
 from ovndb.db_set_command import DbSetCommand
 import ovndb.acls as acl_lib
+
+
+def build_add_acl_command(f):
+    @wraps(f)
+    def build_command_from_dict(wrapped_self, port_group):
+        return [
+            wrapped_self.create_add_acl_command(port_group.uuid, acl_data)
+            for acl_data in f(wrapped_self, port_group)
+        ]
+    return build_command_from_dict
 
 
 class OvnSecurityGroupApi(object):
@@ -123,27 +134,27 @@ class OvnSecurityGroupApi(object):
             protocol=protocol,  description=description
         )
 
-        return self._create_add_acl_command(security_group.uuid, acl)
+        return self.create_add_acl_command(security_group.uuid, acl)
 
     def delete_security_group_rule(
             self, port_group, direction, priority, match
     ):
         return self._idl.pg_acl_del(port_group, direction, priority, match)
 
-    def _create_add_acl_command(self, pg_uuid, acl):
+    def create_add_acl_command(self, pg_uuid, acl):
         return self._idl.pg_acl_add(
             pg_uuid, acl['direction'], acl['priority'],
             acl['match'], acl['action'], severity='alert', name='',
             **acl.get('external_ids', {})
         )
 
-    def create_default_port_group_acls(self, default_group_id):
-        return [
-            self._create_add_acl_command(
-                self.get_default_sec_group_name(), acl
-            )
-            for acl in acl_lib.create_default_port_group_acls(default_group_id)
-        ]
+    @build_add_acl_command
+    def create_default_port_group_acls(self, port_group):
+        return acl_lib.create_default_port_group_acls(port_group)
+
+    @build_add_acl_command
+    def create_allow_all_egress_acls(self, port_group):
+        return acl_lib.create_default_allow_egress_acls(port_group)
 
     def add_security_group_ports(self, security_group, port_id):
         return self._idl.pg_add_ports(security_group, port_id)

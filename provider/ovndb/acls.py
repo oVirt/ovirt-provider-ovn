@@ -230,7 +230,7 @@ def get_acl_external_ids(
     return rule_external_id_data
 
 
-def create_default_port_group_acls(default_port_group_id):
+def create_default_port_group_acls(port_group):
     acl_list = []
     for ovn_direction, openstack_direction in (
             neutron_constants.OVN_TO_API_DIRECTION_MAPPER.items()
@@ -250,30 +250,32 @@ def create_default_port_group_acls(default_port_group_id):
                     ),
                     ether_type=None, ip_prefix=None, max_port=None,
                     min_port=None, protocol=None,
-                    port_group_id=str(default_port_group_id)
+                    port_group_id=str(port_group.uuid)
                 )
             )
         )
 
-    acl_list.extend(create_default_allow_egress_acls(default_port_group_id))
     return acl_list
 
 
-def create_default_allow_egress_acls(port_group_id):
+def create_default_allow_egress_acls(port_group):
     return [
         dict(
             build_acl_parameters(
                 DEFAULT_PG_NAME, neutron_constants.EGRESS_DIRECTION,
                 acl_direction(
-                    neutron_constants.EGRESS_DIRECTION, DEFAULT_PG_NAME
-                ) + ' && {}'.format(ovn_proto),
+                    neutron_constants.EGRESS_DIRECTION, port_group.name
+                ) + ' && {}'.format(
+                    ovn_proto
+                ),
                 neutron_constants.ACL_ACTION_ALLOW,
                 neutron_constants.ACL_ALLOW_PRIORITY
             ),
             external_ids=get_acl_external_ids(
                 description='automatically added allow all egress ip traffic',
                 ether_type=None, ip_prefix=None, max_port=None, min_port=None,
-                protocol=os_proto, port_group_id=str(port_group_id)
+                protocol=os_proto, port_group_id=str(port_group.uuid)
             )
-        ) for os_proto, ovn_proto, in {'IPv4': 'ip4', 'IPv6': 'ip6'}.items()
+        ) for os_proto, ovn_proto
+        in neutron_constants.ETHER_TYPE_MAPPING.items()
     ]

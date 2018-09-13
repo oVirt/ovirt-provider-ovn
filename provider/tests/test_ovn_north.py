@@ -191,7 +191,7 @@ class TestOvnNorth(object):
     SECURITY_GROUP_RULE_ID_02 = UUID(int=2)
     SECURITY_GROUP_RULE_01_EXT_IDS = {
         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID:
-            SECURITY_GROUP_ID,
+            str(SECURITY_GROUP_ID),
         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_PROTOCOL:
             neutron_constants.PROTO_NAME_TCP,
         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE:
@@ -199,7 +199,7 @@ class TestOvnNorth(object):
     }
     SECURITY_GROUP_RULE_02_EXT_IDS = {
         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID:
-            SECURITY_GROUP_ID,
+            str(SECURITY_GROUP_ID),
         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_PROTOCOL: 'udp',
         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE: 'IPv6'
     }
@@ -1248,6 +1248,10 @@ class TestOvnNorth(object):
         )
 
     @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.PgAclAddCommand.execute',
+        lambda cmd, check_error: []
+    )
+    @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.PgAddCommand.execute',
         lambda cmd, check_error: TestOvnNorth.SECURITY_GROUP
     )
@@ -1265,6 +1269,10 @@ class TestOvnNorth(object):
         )
         assert_security_group_equal(result, security_group)
 
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.PgAclAddCommand.execute',
+        lambda cmd, check_error: []
+    )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.PgAddCommand.execute',
         lambda cmd, check_error: TestOvnNorth.SECURITY_GROUP
@@ -1327,6 +1335,10 @@ class TestOvnNorth(object):
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
         autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.PgAclAddCommand.execute',
+        lambda cmd, check_error: []
     )
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbListCommand.execute',
@@ -1432,8 +1444,8 @@ class TestOvnNorth(object):
         )
         assert mock_delete_rule.call_count == 1
         expected_del_call = mock.call(
-            ovn_north.idl, TestOvnNorth.SECURITY_GROUP_ID, 'from-lport', 1001,
-            'ip4 && tcp'
+            ovn_north.idl, str(TestOvnNorth.SECURITY_GROUP_ID), 'from-lport',
+            1001, 'ip4 && tcp'
         )
         assert mock_delete_rule.mock_calls[0] == expected_del_call
 
@@ -1459,3 +1471,28 @@ class TestOvnNorth(object):
                 sec_group_rules=[TestOvnNorth.SECURITY_GROUP_RULE_01]
             )
         )
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.PgAclAddCommand.execute',
+        lambda cmd, check_error: TestOvnNorth.SECURITY_GROUP_RULE_01
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.PgAddCommand.execute',
+        lambda cmd, check_error: TestOvnNorth.SECURITY_GROUP
+    )
+    def test_add_security_group_automatic_rule_install(self, mock_connection):
+        ovn_north = NeutronApi()
+        rest_data = SecurityGroupApiInputMaker(
+            TestOvnNorth.SECURITY_GROUP_NAME, tenant_id(), tenant_id(),
+            description=TestOvnNorth.SECURITY_GROUP_DESCRIPTION
+        ).get()
+
+        result = ovn_north.add_security_group(rest_data)
+        security_group = SecurityGroup(
+            sec_group=TestOvnNorth.SECURITY_GROUP,
+            sec_group_rules=[
+                TestOvnNorth.SECURITY_GROUP_RULE_01,
+                TestOvnNorth.SECURITY_GROUP_RULE_01
+            ]
+        )
+        assert_security_group_equal(result, security_group)

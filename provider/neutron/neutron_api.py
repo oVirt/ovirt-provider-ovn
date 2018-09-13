@@ -1199,11 +1199,12 @@ class NeutronApi(object):
     def add_security_group(
             self, name, project_id=None, tenant_id=None, description=None
     ):
-        return SecurityGroup(
-            sec_group=self.ovn_north.add_security_group(
+        group_data, egress_rules = self.ovn_north.add_security_group(
                 name, project_id, tenant_id, description
-            ),
-            sec_group_rules=[]
+            )
+        return SecurityGroup(
+            sec_group=group_data,
+            sec_group_rules=egress_rules
         )
 
     def delete_security_group(self, security_group_id):
