@@ -24,6 +24,7 @@ from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 import ovn_connection
 import constants as ovnconst
 
+from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
 
 import neutron.validation as validate
@@ -34,6 +35,7 @@ from neutron.neutron_api_mappers import SubnetMapper
 
 from ovndb.db_set_command import DbSetCommand
 from ovndb.ovn_security_groups import OvnSecurityGroupApi
+from ovndb.ovn_security_groups import SecurityGroupException
 from ovndb.ovn_security_groups import only_rules_with_allowed_actions
 
 
@@ -271,9 +273,12 @@ class OvnNorth(object):
         )
 
     def update_security_group(self, sec_group_id, name, description):
-        self._ovn_sec_group_api.update_security_group(
-            sec_group_id, name, description
-        )
+        try:
+            self._ovn_sec_group_api.update_security_group(
+                sec_group_id, name, description
+            )
+        except SecurityGroupException as ex:
+            raise BadRequestError(ex.message)
 
     @only_rules_with_allowed_actions
     def list_security_group_rules(self, sec_group_id=None):

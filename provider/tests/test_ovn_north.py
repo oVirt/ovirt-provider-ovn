@@ -23,6 +23,7 @@ import pytest
 
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 import constants as ovnconst
+from handlers.base_handler import BadRequestError
 from handlers.base_handler import ConflictError
 import neutron.constants as neutron_constants
 from neutron.neutron_api_mappers import InvalidRestData
@@ -176,6 +177,19 @@ class TestOvnNorth(object):
     SECURITY_GROUP = OvnSecurityGroupRow(
         SECURITY_GROUP_ID,
         SECURITY_GROUP_NAME,
+        external_ids={
+            SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION:
+                SECURITY_GROUP_DESCRIPTION,
+            SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS: '',
+            SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS: '',
+            SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: '1',
+            SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id(),
+            SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT: tenant_id()
+        }
+    )
+    DEFAULT_SECURITY_GROUP = OvnSecurityGroupRow(
+        SECURITY_GROUP_ID,
+        'Default',
         external_ids={
             SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION:
                 SECURITY_GROUP_DESCRIPTION,
@@ -1373,6 +1387,25 @@ class TestOvnNorth(object):
         )
 
         assert mock_db_update.call_count == 1
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
+        lambda self, table, the_id: TestOvnNorth.DEFAULT_SECURITY_GROUP
+    )
+    def test_update_default_sec_group(self, mock_connection):
+        ovn_north = NeutronApi()
+
+        # update the default security group
+        new_name = 'new_way_cuter_name'
+        new_description = 'this thing is waaaay better now'
+
+        with pytest.raises(BadRequestError):
+            ovn_north.update_security_group(
+                SecurityGroupApiInputMaker(
+                    new_name, description=new_description
+                ).get(),
+                TestOvnNorth.SECURITY_GROUP_ID
+            )
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',

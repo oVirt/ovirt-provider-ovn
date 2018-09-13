@@ -46,6 +46,10 @@ def build_add_acl_command(f):
     return build_command_from_dict
 
 
+class SecurityGroupException(AttributeError):
+    pass
+
+
 class OvnSecurityGroupApi(object):
 
     def __init__(self, idl):
@@ -87,6 +91,10 @@ class OvnSecurityGroupApi(object):
             )
         except RowNotFound as e:
             raise ElementNotFoundError(e)
+        if sec_group.name == self.get_default_sec_group_name():
+            raise SecurityGroupException(
+                'Updating default security group not allowed.'
+            )
         now = datetime.utcnow().isoformat()
         pg_name = self._generate_name_when_required(name)
         external_ids = sec_group.external_ids
