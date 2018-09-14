@@ -75,7 +75,7 @@ def random_unique_mac(ls_ports, router_ports):
 
 
 def _random_mac():
-    macparts = [0]
+    macparts = [2]
     macparts.extend([random.randint(0x00, 0xff) for i in range(5)])
     return ':'.join(map(lambda x: "%02x" % x, macparts))
 
