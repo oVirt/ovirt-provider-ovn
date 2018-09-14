@@ -261,6 +261,7 @@ class NeutronApi(object):
         fixed_ips=None,
         binding_host=None,
         port_security=None,
+        security_groups=None,
     ):
         port = self._create_port(name, network_id)
         self._update_port_values(
@@ -278,6 +279,8 @@ class NeutronApi(object):
                 )
             )
         )
+        self.ovn_north.add_security_groups_to_port(port.uuid, security_groups)
+        self._update_port_security_groups_command(port.uuid, security_groups)
         return self.get_port(port.uuid)
 
     @PortMapper.validate_update
@@ -294,6 +297,7 @@ class NeutronApi(object):
         fixed_ips=None,
         binding_host=None,
         port_security=None,
+        security_groups=None,
     ):
         port = self.ovn_north.get_lsp(ovirt_lsp_id=port_id)
         network_id = self._get_validated_port_network_id(port, network_id)
@@ -304,6 +308,7 @@ class NeutronApi(object):
             port, network_id=network_id, mac=mac, fixed_ips=fixed_ips,
             port_security=port_security
         )
+        self._update_port_security_groups(port, security_groups)
         return self.get_port(port_id)
 
     def _update_lsp_bound_lrp(self, port_id, fixed_ips):
@@ -477,6 +482,35 @@ class NeutronApi(object):
             (ovnconst.ROW_LSP_NAME, str(port_id))
         )
         return port
+
+    def _update_port_security_groups(self, port, security_groups):
+        if security_groups is None:
+            return
+        old_security_groups = port.external_ids.get(
+            PortMapper.OVN_SECURITY_GROUPS, ''
+        ).split()
+
+        sec_groups_to_install = set(security_groups) - set(old_security_groups)
+        sec_groups_to_delete = set(old_security_groups) - set(security_groups)
+
+        self.ovn_north.add_security_groups_to_port(
+            port.uuid, sec_groups_to_install
+        )
+        self.ovn_north.remove_security_groups_from_port(
+            port.uuid, sec_groups_to_delete
+        )
+
+        self._update_port_security_groups_command(port.uuid, security_groups)
+
+    def _update_port_security_groups_command(self, port_id, security_groups):
+        self.ovn_north.create_ovn_update_command(
+            ovnconst.TABLE_LSP, port_id
+        ).add(
+            ovnconst.ROW_LSP_EXTERNAL_IDS,
+            {
+                PortMapper.OVN_SECURITY_GROUPS: ' '.join(security_groups)
+            }
+        ).execute()
 
     def update_port_mac(self, port_id, macaddress):
         pass

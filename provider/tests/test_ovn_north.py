@@ -684,7 +684,7 @@ class TestOvnNorth(object):
             False
         )
 
-        assert mock_db_set.call_count == 3
+        assert mock_db_set.call_count == 4
 
         assert mock_db_set.mock_calls[0] == mock.call(
             ovn_north.idl,

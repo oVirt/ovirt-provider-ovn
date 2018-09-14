@@ -401,3 +401,25 @@ class OvnNorth(object):
                 port_group
             )
         ]
+
+    def list_port_security_groups(self, port_uuid):
+        return filter(
+            lambda pg: port_uuid in pg.ports,
+            self.list_security_groups()
+        )
+
+    def add_security_groups_to_port(self, port_id, security_groups):
+        for sec_group in security_groups:
+            ovn_connection.execute(
+                self._ovn_sec_group_api.add_security_group_ports(
+                    sec_group, port_id
+                )
+            )
+
+    def remove_security_groups_from_port(self, port_id, security_groups):
+        for sec_group in security_groups:
+            ovn_connection.execute(
+                self._ovn_sec_group_api.delete_security_group_ports(
+                    sec_group, port_id
+                )
+            )

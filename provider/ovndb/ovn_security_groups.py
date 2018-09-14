@@ -167,6 +167,9 @@ class OvnSecurityGroupApi(object):
     def add_security_group_ports(self, security_group, port_id):
         return self._idl.pg_add_ports(security_group, port_id)
 
+    def delete_security_group_ports(self, security_group, port_id):
+        return self._idl.pg_del_ports(security_group, port_id)
+
     @staticmethod
     def get_default_sec_group_name():
         return acl_lib.DEFAULT_PG_NAME

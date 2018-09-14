@@ -320,6 +320,7 @@ class PortMapper(Mapper):
     OVN_NIC_NAME = 'ovirt_nic_name'
     OVN_DEVICE_OWNER = 'ovirt_device_owner'
     OVN_REQUESTED_CHASSIS = 'requested-chassis'
+    OVN_SECURITY_GROUPS = 'ovirt_security_groups'
     DEVICE_OWNER_ROUTER = 'network:router_interface'
     DEVICE_OWNER_ROUTER_GATEWAY = 'network:router_gateway'
 
@@ -334,6 +335,7 @@ class PortMapper(Mapper):
         fixed_ips = rest_data.get(PortMapper.REST_PORT_FIXED_IPS)
         binding_host = rest_data.get(PortMapper.REST_PORT_BINDING_HOST)
         port_security = rest_data.get(PortMapper.REST_PORT_SECURITY_ENABLED)
+        security_groups = rest_data.get(PortMapper.REST_PORT_SECURITY_GROUPS)
 
         if port_id:
             return func(
@@ -347,7 +349,8 @@ class PortMapper(Mapper):
                 device_owner=device_owner,
                 fixed_ips=fixed_ips,
                 binding_host=binding_host,
-                port_security=port_security
+                port_security=port_security,
+                security_groups=security_groups
             )
         else:
             return func(
@@ -360,7 +363,8 @@ class PortMapper(Mapper):
                 device_owner=device_owner,
                 fixed_ips=fixed_ips,
                 binding_host=binding_host,
-                port_security=port_security
+                port_security=port_security,
+                security_groups=security_groups or []
             )
 
     @staticmethod
@@ -435,11 +439,6 @@ class PortMapper(Mapper):
 
     @staticmethod
     def _validate_common(rest_data):
-
-        sec_groups = rest_data.get(PortMapper.REST_PORT_SECURITY_GROUPS)
-        if sec_groups and sec_groups != []:
-            raise SecurityGroupsNotSupportedDataError()
-
         Mapper._boolean_or_exception(
             PortMapper.REST_PORT_ADMIN_STATE_UP,
             rest_data.get(PortMapper.REST_PORT_ADMIN_STATE_UP, False)
@@ -911,13 +910,6 @@ class PortDeviceIdRequiredDataError(RestDataError):
 
     def __init__(self):
         super(PortDeviceIdRequiredDataError, self).__init__(self.message)
-
-
-class SecurityGroupsNotSupportedDataError(RestDataError):
-    message = 'Port security_groups are not supported'
-
-    def __init__(self):
-        super(SecurityGroupsNotSupportedDataError, self).__init__(self.message)
 
 
 class PortSecurityNotSupportedDataError(RestDataError):
