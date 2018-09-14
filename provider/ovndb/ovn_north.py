@@ -321,9 +321,12 @@ class OvnNorth(object):
                 port_min=port_min, port_max=port_max, protocol=protocol
             )
         )
-        add_sec_group_rule_result = ovn_connection.execute(
-            sec_group_rule_command
-        )
+        try:
+            add_sec_group_rule_result = ovn_connection.execute(
+                sec_group_rule_command
+            )
+        except RuntimeError as e:
+            raise BadRequestError(e.message)
 
         sec_group_update_command = self.create_ovn_update_command(
             ovnconst.TABLE_PORT_GROUP, security_group_id
