@@ -730,7 +730,6 @@ class TestOvnNorth(object):
             ovnconst.TABLE_LSP,
             TestOvnNorth.PORT_ID01,
             (ovnconst.ROW_LSP_DHCPV4_OPTIONS, TestOvnNorth.SUBNET_ID101),
-            (ovnconst.ROW_LSP_PORT_SECURITY, []),
             (
                 ovnconst.ROW_LSP_ADDRESSES,
                 ['{mac_address} {ip_address}'.format(
@@ -738,6 +737,7 @@ class TestOvnNorth(object):
                     ip_address=TestOvnNorth.PORT_NAME01_FIXED_IP
                 )]
             ),
+            (ovnconst.ROW_LSP_PORT_SECURITY, []),
         )
 
     @mock.patch(

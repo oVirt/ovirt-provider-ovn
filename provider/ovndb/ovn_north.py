@@ -428,3 +428,16 @@ class OvnNorth(object):
                     sec_group, port_id
                 )
             )
+
+    def deactivate_default_security_group(self, port_id):
+        try:
+            default_sec_group = self.get_security_group(
+                self._ovn_sec_group_api.get_default_sec_group_name()
+            )
+            ovn_connection.execute(
+                self._ovn_sec_group_api.delete_security_group_ports(
+                    default_sec_group.uuid, port_id
+                )
+            )
+        except ElementNotFoundError:
+            raise BadRequestError('Default security group is not provisioned')
