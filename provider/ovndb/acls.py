@@ -21,7 +21,6 @@ from __future__ import absolute_import
 import neutron.constants as neutron_constants
 
 from neutron.neutron_api_mappers import RestDataError
-from neutron.ip import is_valid_cidr
 
 
 class ProtocolNotSupported(RestDataError):
@@ -46,7 +45,7 @@ def acl_direction(api_direction, port_group_name):
     )
 
 
-def acl_ethertype(ether_type):
+def get_acl_protocol_info(ether_type):
     ip_version = None
     icmp = None
     if ether_type == neutron_constants.IPV4_ETHERTYPE:
@@ -61,14 +60,9 @@ def acl_ethertype(ether_type):
 def acl_remote_ip_prefix(ip_prefix, direction, ip_version):
     if not ip_prefix:
         return ''
-    if not is_valid_cidr(ip_prefix):
-        raise RestDataError('Invalid IP prefix')
-    src_or_dst = (
-        'src' if direction == neutron_constants.INGRESS_DIRECTION else 'dst'
-    )
     return '{ip_version}.{direction} == {prefix}'.format(
         ip_version=ip_version,
-        direction=src_or_dst,
+        direction=neutron_constants.OVN_ACL_IP_DIRECTION_MAPPER[direction],
         prefix=ip_prefix
     )
 
@@ -76,20 +70,18 @@ def acl_remote_ip_prefix(ip_prefix, direction, ip_version):
 def _get_protocol_number(protocol):
     if protocol is None:
         return
-    try:
-        protocol = int(protocol)
-        if 0 <= protocol <= 255:
-            return str(protocol)
-    except (ValueError, TypeError):
+    if protocol.isdigit() and 0 <= int(protocol) <= 255:
+        return protocol
+    else:
         protocol = neutron_constants.PROTOCOL_NAME_TO_NUM_MAP.get(protocol)
-        if protocol is not None:
+        if protocol:
             return protocol
     raise ProtocolNotSupported(protocol)
 
 
 def process_acl_protocol_and_ports(protocol, min_port, max_port, icmp):
     match = []
-    if protocol is None:
+    if not protocol:
         return match
 
     protocol = _get_protocol_number(protocol)

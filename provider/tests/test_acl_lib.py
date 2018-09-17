@@ -20,10 +20,8 @@ from __future__ import absolute_import
 
 import pytest
 
-from neutron.neutron_api_mappers import RestDataError
-
 from ovndb.acls import acl_direction
-from ovndb.acls import acl_ethertype
+from ovndb.acls import get_acl_protocol_info
 from ovndb.acls import acl_remote_ip_prefix
 from ovndb.acls import handle_icmp_protocol
 from ovndb.acls import handle_ports
@@ -37,9 +35,9 @@ def test_acl_direction():
 
 
 def test_acl_ether_type():
-    assert acl_ethertype('IPv4') == ('ip4', 'icmp4')
-    assert acl_ethertype('IPv6') == ('ip6', 'icmp6')
-    assert acl_ethertype('dumb-type') == (None, None)
+    assert get_acl_protocol_info('IPv4') == ('ip4', 'icmp4')
+    assert get_acl_protocol_info('IPv6') == ('ip6', 'icmp6')
+    assert get_acl_protocol_info('dumb-type') == (None, None)
 
 
 def test_ip_prefix():
@@ -55,8 +53,6 @@ def test_ip_prefix():
     assert acl_remote_ip_prefix('192.168.2.0/24', 'egress', 'ip6') == (
         'ip6.dst == 192.168.2.0/24'
     )
-    with pytest.raises(RestDataError):
-        acl_remote_ip_prefix('bobloblaw', 'ingress', 'ip6')
 
 
 def test_acl_icmp_handler():
