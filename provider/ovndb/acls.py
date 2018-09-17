@@ -47,18 +47,15 @@ def acl_direction(api_direction, port_group_name):
 
 
 def acl_ethertype(ether_type):
-    match = ''
     ip_version = None
     icmp = None
     if ether_type == neutron_constants.IPV4_ETHERTYPE:
-        match = ' && {}'.format(neutron_constants.OVN_IPV4_ETHERTYPE)
         ip_version = neutron_constants.OVN_IPV4_ETHERTYPE
         icmp = neutron_constants.ICMP_V4
     elif ether_type == neutron_constants.IPV6_ETHERTYPE:
-        match = ' && {}'.format(neutron_constants.OVN_IPV6_ETHERTYPE)
         ip_version = neutron_constants.OVN_IPV6_ETHERTYPE
         icmp = neutron_constants.ICMP_V6
-    return match, ip_version, icmp
+    return ip_version, icmp
 
 
 def acl_remote_ip_prefix(ip_prefix, direction, ip_version):
@@ -69,7 +66,7 @@ def acl_remote_ip_prefix(ip_prefix, direction, ip_version):
     src_or_dst = (
         'src' if direction == neutron_constants.INGRESS_DIRECTION else 'dst'
     )
-    return ' && {ip_version}.{direction} == {prefix}'.format(
+    return '{ip_version}.{direction} == {prefix}'.format(
         ip_version=ip_version,
         direction=src_or_dst,
         prefix=ip_prefix
@@ -87,5 +84,63 @@ def _get_protocol_number(protocol):
         protocol = neutron_constants.PROTOCOL_NAME_TO_NUM_MAP.get(protocol)
         if protocol is not None:
             return protocol
-
     raise ProtocolNotSupported(protocol)
+
+
+def process_acl_protocol_and_ports(protocol, min_port, max_port, icmp):
+    match = []
+    if protocol is None:
+        return match
+
+    protocol = _get_protocol_number(protocol)
+    if protocol in neutron_constants.TRANSPORT_PROTOCOLS:
+        protocol = neutron_constants.PROTOCOL_NUM_TO_NAME_MAP[protocol]
+        match.extend(handle_ports(protocol, min_port, max_port))
+    elif protocol in neutron_constants.ICMP_PROTOCOLS:
+        match.extend(handle_icmp_protocol(icmp, min_port, max_port))
+    else:
+        match.append('ip.proto == {}'.format(protocol))
+
+    return match
+
+
+def handle_ports(protocol, min_port, max_port):
+    match = [protocol]
+    if min_port is not None and min_port == max_port:
+        match.append(
+            '{proto}.dst == {port}'.format(
+                proto=protocol, port=min_port
+            )
+        )
+    else:
+        ports_acl_part = [
+            '{protocol}.dst {operator} {port_num}'.format(
+                protocol=protocol, operator=op, port_num=port
+            )
+            for op, port in _get_port_operators(min_port, max_port)
+            if port is not None
+        ]
+        match.extend(ports_acl_part)
+
+    return match
+
+
+def _get_port_operators(min_port, max_port):
+    return [('>=', min_port), ('<=', max_port)]
+
+
+def handle_icmp_protocol(protocol, min_port, max_port):
+    match = [protocol]
+    icmp_protocol_acl = [
+        '{icmp_protocol}.{attribute} == {value}'.format(
+            icmp_protocol=protocol, attribute=k, value=v
+        )
+        for k, v in _get_icmp_protocol_data(min_port, max_port)
+        if v is not None
+    ]
+    match.extend(icmp_protocol_acl)
+    return match
+
+
+def _get_icmp_protocol_data(min_port, max_port):
+    return [('type', min_port), ('code', max_port)]
