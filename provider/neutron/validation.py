@@ -246,3 +246,8 @@ def port_does_not_belong_to_subnet(lsp, ls, subnet_id):
             'Port {port} does not belong to subnet {subnet}.'
             .format(port=lsp.uuid, subnet=subnet_id)
         )
+
+
+def cannot_delete_default_security_group(security_group, default_group_name):
+    if security_group.name == default_group_name:
+        raise BadRequestError('Cannot delete the \'Default\' security group')

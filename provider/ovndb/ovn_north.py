@@ -268,6 +268,11 @@ class OvnNorth(object):
         return security_group, egress_rules
 
     def remove_security_group(self, security_group_id):
+        security_group = self.get_security_group(security_group_id)
+        validate.cannot_delete_default_security_group(
+            security_group,
+            self._ovn_sec_group_api.get_default_sec_group_name()
+        )
         ovn_connection.execute(
             self._ovn_sec_group_api.delete_security_group(security_group_id)
         )
