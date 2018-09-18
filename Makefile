@@ -38,24 +38,24 @@ install:
 	install -m 644 -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/ovirt-provider-ovn.conf
 	install -m 644 -D ovirt-provider-ovn.logrotate $(DESTDIR)/etc/logrotate.d/ovirt-provider-ovn
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/
-	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ provider/*.py*
-	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ version.py*
+	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ provider/*.py*
+	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ version.py*
 	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ LICENSE
 	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ AUTHORS
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/
-	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/ provider/auth/*.py*
+	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/ provider/auth/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/
-	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins provider/auth/plugins/*.py*
+	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins provider/auth/plugins/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/static_token/
-	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/static_token provider/auth/plugins/static_token/*.py*
+	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/static_token provider/auth/plugins/static_token/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/ovirt/
-	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/ovirt provider/auth/plugins/ovirt/*.py*
+	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/ovirt provider/auth/plugins/ovirt/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/handlers/
-	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/handlers provider/handlers/*.py*
+	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/handlers provider/handlers/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/neutron/
-	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/neutron/ provider/neutron/*.py*
+	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/neutron/ provider/neutron/*.py*
 	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/
-	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/ provider/ovndb/*.py*
+	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/ provider/ovndb/*.py*
 	install -m 644 -D provider/scripts/ovirt-provider-ovn.service $(DESTDIR)/usr/lib/systemd/system/ovirt-provider-ovn.service
 
 	install -m 644 -D provider/scripts/ovirt-provider-ovn.xml $(DESTDIR)/usr/lib/firewalld/services/ovirt-provider-ovn.xml
@@ -72,7 +72,7 @@ install:
 	install -m 544 -D driver/scripts/setup_ovn_controller.sh $(DESTDIR)/usr/libexec/ovirt-provider-ovn/setup_ovn_controller.sh
 	install -m 544 -D driver/scripts/unconfigure_ovn_controller.sh $(DESTDIR)/usr/libexec/ovirt-provider-ovn/unconfigure_ovn_controller.sh
 	install -d $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/
-	install -m 644 -t $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/ driver/vdsm_tool/ovn_config.py*
+	install -m 644 -p -t $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/ driver/vdsm_tool/ovn_config.py*
 	install -m 644 -D README.adoc $(DESTDIR)/usr/share/doc/ovirt-provider-ovn/README.adoc
 	install -m 644 -t $(DESTDIR)/usr/libexec/ovirt-provider-ovn/ LICENSE
 	install -m 644 -t $(DESTDIR)/usr/libexec/ovirt-provider-ovn/ AUTHORS
