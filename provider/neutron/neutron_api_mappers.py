@@ -1076,6 +1076,7 @@ class SecurityGroupRuleMapper(Mapper):
     REST_SEC_GROUP_RULE_IP_PREFIX = 'remote_ip_prefix'
     REST_SEC_GROUP_RULE_SEC_GROUP_ID = 'security_group_id'
     REST_SEC_GROUP_RULE_DESCRIPTION = 'description'
+    REST_SEC_GROUP_RULE_REMOTE_GROUP = 'remote_group_id'
 
     OVN_SEC_GROUP_RULE_PROTOCOL = 'ovirt_protocol'
     OVN_SEC_GROUP_RULE_ETHERTYPE = 'ovirt_ethertype'
@@ -1091,7 +1092,8 @@ class SecurityGroupRuleMapper(Mapper):
     _optional_add_data = set([
         REST_SEC_GROUP_RULE_PROTOCOL, REST_SEC_GROUP_RULE_ETHERTYPE,
         REST_SEC_GROUP_RULE_PORT_RANGE_MAX, REST_SEC_GROUP_RULE_PORT_RANGE_MIN,
-        REST_SEC_GROUP_RULE_IP_PREFIX, REST_SEC_GROUP_RULE_DESCRIPTION
+        REST_SEC_GROUP_RULE_IP_PREFIX, REST_SEC_GROUP_RULE_DESCRIPTION,
+        REST_SEC_GROUP_RULE_REMOTE_GROUP
     ])
     optional_attr_ext_id_mapper = {
         REST_SEC_GROUP_RULE_DESCRIPTION: OVN_SEC_GROUP_RULE_DESCRIPTION,
