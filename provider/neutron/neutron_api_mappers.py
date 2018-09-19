@@ -1148,18 +1148,14 @@ class SecurityGroupRuleMapper(Mapper):
         ether_type = rest_data.get(
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ETHERTYPE
         )
-        port_max = int(rest_data.get(
+        rest_port_max = rest_data.get(
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PORT_RANGE_MAX
-        )) if (
-            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PORT_RANGE_MAX
-            in rest_data
-        ) else None
-        port_min = int(rest_data.get(
+        )
+        port_max = int(rest_port_max) if rest_port_max else None
+        rest_port_min = rest_data.get(
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PORT_RANGE_MIN
-        )) if (
-            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PORT_RANGE_MAX
-            in rest_data
-        ) else None
+        )
+        port_min = int(rest_port_min) if rest_port_min else None
         protocol = rest_data.get(
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PROTOCOL
         )
