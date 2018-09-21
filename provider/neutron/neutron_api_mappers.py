@@ -386,7 +386,9 @@ class PortMapper(Mapper):
             PortMapper.REST_PORT_NAME:
                 lsp.external_ids[PortMapper.OVN_NIC_NAME],
             PortMapper.REST_PORT_NETWORK_ID: str(ls.uuid),
-            PortMapper.REST_PORT_SECURITY_GROUPS: [],
+            PortMapper.REST_PORT_SECURITY_GROUPS: lsp.external_ids.get(
+                PortMapper.OVN_SECURITY_GROUPS, ''
+            ).split(),
             PortMapper.REST_PORT_SECURITY_ENABLED: len(lsp.port_security) > 0,
             PortMapper.REST_TENANT_ID: tenant_id(),
             PortMapper.REST_PORT_FIXED_IPS: PortMapper.get_fixed_ips(
