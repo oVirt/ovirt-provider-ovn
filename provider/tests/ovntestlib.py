@@ -216,10 +216,11 @@ class OvnRouterPort(object):
 
 
 class OvnSecurityGroupRow(OvnRow):
-    def __init__(self, uuid, name=None, external_ids=None):
+    def __init__(self, uuid, name, ports=None, external_ids=None):
         self.uuid = uuid
         self.name = name
         self.external_ids = external_ids or {}
+        self.ports = ports or []
 
 
 def assert_security_group_equal(rest_data, security_group):

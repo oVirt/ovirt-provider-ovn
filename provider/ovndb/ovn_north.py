@@ -273,6 +273,7 @@ class OvnNorth(object):
             security_group,
             self._ovn_sec_group_api.get_default_sec_group_name()
         )
+        validate.cannot_delete_sec_group_in_use(security_group)
         ovn_connection.execute(
             self._ovn_sec_group_api.delete_security_group(security_group_id)
         )

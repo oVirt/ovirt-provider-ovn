@@ -1334,6 +1334,10 @@ class TestOvnNorth(object):
                 == invalid_data.value.message
         )
 
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
+        lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP
+    )
     @mock.patch('ovsdbapp.schema.ovn_northbound.commands.PgDelCommand',
                 autospec=False)
     def test_delete_security_group(self, mock_pg_del_command, mock_connection):
@@ -1529,3 +1533,45 @@ class TestOvnNorth(object):
             ]
         )
         assert_security_group_equal(result, security_group)
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup'
+    )
+    def test_cannot_delete_assigned_sec_group(
+            self, mock_lookup, mock_connection
+    ):
+        security_group_id = UUID(int=101)
+        port_01_id = UUID(int=4)
+
+        port_01 = OvnPortRow(
+            port_01_id,
+            external_ids={
+                PortMapper.OVN_NIC_NAME: TestOvnNorth.PORT_NAME01,
+                PortMapper.OVN_DEVICE_ID: str(port_01_id),
+                PortMapper.OVN_DEVICE_OWNER: TestOvnNorth.DEVICE_OWNER_OVIRT,
+                PortMapper.OVN_SECURITY_GROUPS: str(security_group_id)
+            }
+        )
+
+        security_group_with_ports = OvnSecurityGroupRow(
+            security_group_id,
+            TestOvnNorth.SECURITY_GROUP_NAME,
+            external_ids={
+                SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION:
+                    '',
+                SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS: '',
+                SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS: '',
+                SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: '1',
+                SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id(),
+                SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT: tenant_id()
+            },
+            ports=[port_01]
+        )
+
+        mock_lookup.return_value = security_group_with_ports
+        ovn_north = NeutronApi()
+        with pytest.raises(BadRequestError) as ex:
+            ovn_north.delete_security_group(security_group_id)
+        assert 'Security Group {} in use'.format(
+            security_group_id
+        ) == ex.value.message
