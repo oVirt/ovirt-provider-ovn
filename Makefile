@@ -21,7 +21,7 @@ VERSION=1.2.15
 DIST_DIR=$(NAME)-$(VERSION)
 GITHASH=$(shell git rev-parse --short HEAD)
 TIMESTAMP:=$(shell date +'%Y%m%d%H%M%S')
-RELEASE_SUFFIX=0.$(TIMESTAMP).git$(GITHASH)
+RELEASE_SUFFIX=1
 
 DIST_FILE=$(NAME)-$(VERSION).tar.gz
 PYTHON ?= $(shell which python)
