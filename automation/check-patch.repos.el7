@@ -5,5 +5,4 @@ masterLatestTested,http://resources.ovirt.org/repos/ovirt/tested/master/rpm/el7/
 centos-ovirt-4.2-el7,http://cbs.centos.org/repos/virt7-ovirt-42-testing/x86_64/os/
 centos-ovirt-common-4.2-el7,http://cbs.centos.org/repos/virt7-ovirt-common-testing/x86_64/os/
 centos-kvm-common-4.2-el7,http://mirror.centos.org/centos/7/virt/x86_64/kvm-common/
-mdbarroso-ovsdbapp-el7,https://copr-be.cloud.fedoraproject.org/results/mdbarroso/ovsdbapp/epel-7-$basearch/
 
