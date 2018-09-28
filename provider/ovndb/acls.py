@@ -238,7 +238,7 @@ def create_default_port_group_acls(port_group):
         acl_list.append(
             dict(
                 build_acl_parameters(
-                    DEFAULT_PG_NAME, openstack_direction,
+                    port_group.uuid, openstack_direction,
                     acl_direction(openstack_direction, DEFAULT_PG_NAME)
                     + ' && ip',
                     neutron_constants.ACL_ACTION_DROP,
