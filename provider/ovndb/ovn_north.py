@@ -365,22 +365,26 @@ class OvnNorth(object):
                 self._ovn_sec_group_api.get_default_sec_group_name()
             )
         except ElementNotFoundError:
-            default_sec_group = ovn_connection.execute(
-                self._ovn_sec_group_api.create_security_group(
-                    self._ovn_sec_group_api.get_default_sec_group_name()
-                )
-            )
-            for acl in self._ovn_sec_group_api.create_default_port_group_acls(
-                default_sec_group
-            ):
-                ovn_connection.execute(acl)
-
-            self.activate_egress_rules(default_sec_group)
+            default_sec_group = self._activate_default_sec_group()
         ovn_connection.execute(
             self._ovn_sec_group_api.add_security_group_ports(
                 default_sec_group.uuid, port_id
             )
         )
+
+    def _activate_default_sec_group(self):
+        default_sec_group = ovn_connection.execute(
+            self._ovn_sec_group_api.create_security_group(
+                self._ovn_sec_group_api.get_default_sec_group_name()
+            )
+        )
+        for acl in self._ovn_sec_group_api.create_default_port_group_acls(
+                default_sec_group
+        ):
+            ovn_connection.execute(acl)
+
+        self.activate_egress_rules(default_sec_group)
+        return default_sec_group
 
     def activate_egress_rules(self, port_group):
         return [
