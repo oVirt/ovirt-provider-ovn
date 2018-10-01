@@ -203,6 +203,7 @@ class TestOvnNorth(object):
 
     SECURITY_GROUP_RULE_ID_01 = UUID(int=1)
     SECURITY_GROUP_RULE_ID_02 = UUID(int=2)
+    SECURITY_GROUP_RULE_ID_03 = UUID(int=3)
     SECURITY_GROUP_RULE_01_EXT_IDS = {
         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID:
             str(SECURITY_GROUP_ID),
@@ -217,6 +218,13 @@ class TestOvnNorth(object):
         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_PROTOCOL: 'udp',
         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE: 'IPv6'
     }
+    SECURITY_GROUP_RULE_03_EXT_IDS = {
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID:
+            str(SECURITY_GROUP_ID),
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_PROTOCOL: 'udp',
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE: 'IPv4',
+        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_MIN_PORT: '161'
+    }
     SECURITY_GROUP_RULE_01 = OvnSecurityGroupRuleRow(
         SECURITY_GROUP_RULE_ID_01,
         'from-lport', 'ip4 && tcp', 1001, SECURITY_GROUP_ID, 'allow',
@@ -227,6 +235,11 @@ class TestOvnNorth(object):
         SECURITY_GROUP_RULE_ID_02,
         'to-lport', 'ip6 && udp', 1000, SECURITY_GROUP_ID, 'drop',
         SECURITY_GROUP_RULE_02_EXT_IDS
+    )
+    SECURITY_GROUP_RULE_03 = OvnSecurityGroupRuleRow(
+        SECURITY_GROUP_RULE_ID_03,
+        'from-lport', 'ip4 && udp && udp.dst == 161', 1001, SECURITY_GROUP_ID,
+        'allow', SECURITY_GROUP_RULE_03_EXT_IDS
     )
 
     ports = [PORT_1, PORT_2]
@@ -1510,15 +1523,20 @@ class TestOvnNorth(object):
         )
 
     @mock.patch(
-        'ovsdbapp.schema.ovn_northbound.commands.PgAclAddCommand.execute',
-        lambda cmd, check_error: TestOvnNorth.SECURITY_GROUP_RULE_01
+        'ovsdbapp.schema.ovn_northbound.commands.PgAclAddCommand.execute'
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.PgAddCommand.execute',
         lambda cmd, check_error: TestOvnNorth.SECURITY_GROUP
     )
-    def test_add_security_group_automatic_rule_install(self, mock_connection):
+    def test_add_security_group_automatic_rule_install(
+            self, mock_ovn_getter, mock_connection
+    ):
         ovn_north = NeutronApi()
+        mock_ovn_getter.side_effect = [
+            TestOvnNorth.SECURITY_GROUP_RULE_01,
+            TestOvnNorth.SECURITY_GROUP_RULE_03
+        ]
         rest_data = SecurityGroupApiInputMaker(
             TestOvnNorth.SECURITY_GROUP_NAME, tenant_id(), tenant_id(),
             description=TestOvnNorth.SECURITY_GROUP_DESCRIPTION
@@ -1529,7 +1547,7 @@ class TestOvnNorth(object):
             sec_group=TestOvnNorth.SECURITY_GROUP,
             sec_group_rules=[
                 TestOvnNorth.SECURITY_GROUP_RULE_01,
-                TestOvnNorth.SECURITY_GROUP_RULE_01
+                TestOvnNorth.SECURITY_GROUP_RULE_03
             ]
         )
         assert_security_group_equal(result, security_group)
