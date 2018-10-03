@@ -137,6 +137,9 @@ to OVN.
 
 
 %changelog
+* Wed Oct 03 2018 Miguel Duarte Barroso <mdbarroso@redhat.com> - 1.2.16
+- add security group support on the provider
+
 * Mon Mar 13 2017 Dominik Holler <dholler@redhat.com> - 1.1
 - add dependecy python-requests
 
