@@ -28,6 +28,7 @@ from ovndb.acls import create_acl_match
 from ovndb.acls import create_acl_match_string
 from ovndb.acls import handle_icmp_protocol
 from ovndb.acls import handle_ports
+from ovndb.acls import get_remote_group_id_match
 
 
 def test_acl_direction():
@@ -95,6 +96,18 @@ def test_create_acl_match():
         'ip4', 'ip4.src == 192.168.80.0/24', 'tcp', 'tcp.dst >= 5000',
         'tcp.dst <= 5299'
     ]
+    assert sorted(
+        create_acl_match(
+            'ingress', 'IPv4', '192.168.80.0/24', 5000, 5299, 'tcp', pg_id,
+            remote_group_name='Default'
+        )
+    ) == sorted(
+        [
+            'outport == @00000000-0000-0000-0000-000000000064',
+            'ip4', 'ip4.src == 192.168.80.0/24', 'tcp', 'tcp.dst >= 5000',
+            'tcp.dst <= 5299', 'ip4.src == $Default'
+        ]
+    )
 
 
 def test_create_acl_match_output():
@@ -121,3 +134,29 @@ def test_create_acl_match_output():
         'ip4.src == 192.168.80.0/24 && tcp && tcp.dst >= 5000 && '
         'tcp.dst <= 5299'
     )
+    assert create_acl_match_string(
+        create_acl_match(
+            'ingress', 'IPv4', '192.168.80.0/24', 5000, 5299, 'tcp', pg_id,
+            remote_group_name='Default'
+        )
+    ) == (
+        'outport == @00000000-0000-0000-0000-000000000064 && ip4 && '
+        'ip4.src == 192.168.80.0/24 && ip4.src == $Default && tcp && '
+        'tcp.dst >= 5000 && tcp.dst <= 5299'
+    )
+
+
+def test_remote_group_id_output():
+    remote_group_name = 'Default'
+    assert get_remote_group_id_match(
+        remote_group_name, 'ip4', 'ingress'
+    ) == 'ip4.src == $Default'
+    assert get_remote_group_id_match(
+        remote_group_name, 'ip6', 'ingress'
+    ) == 'ip6.src == $Default'
+    assert get_remote_group_id_match(
+        remote_group_name, 'ip4', 'egress'
+    ) == 'ip4.dst == $Default'
+    assert get_remote_group_id_match(
+        remote_group_name, 'ip6', 'egress'
+    ) == 'ip6.dst == $Default'

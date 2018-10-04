@@ -166,13 +166,16 @@ def create_acl(
 
 def create_acl_match(
         direction, ether_type, ip_prefix, min_port, max_port, protocol,
-        port_group_id
+        port_group_id, remote_group_name=None
 ):
     match = [acl_direction(direction, port_group_id)]
     ip_version, icmp = get_acl_protocol_info(ether_type)
 
     match.append(ip_version)
     match.append(acl_remote_ip_prefix(ip_prefix, direction, ip_version))
+    match.append(
+        get_remote_group_id_match(remote_group_name, ip_version, direction)
+    )
     match.extend(
         process_acl_protocol_and_ports(protocol, min_port, max_port, icmp)
     )
@@ -279,3 +282,11 @@ def create_default_allow_egress_acls(port_group):
         ) for os_proto, ovn_proto
         in neutron_constants.ETHER_TYPE_MAPPING.items()
     ]
+
+
+def get_remote_group_id_match(remote_group_name, ip_version, direction):
+    return '{ip_version}.{direction} == ${address_set_name}'.format(
+        ip_version=ip_version,
+        direction=neutron_constants.OVN_ACL_IP_DIRECTION_MAPPER[direction],
+        address_set_name=remote_group_name
+    ) if remote_group_name is not None else ''
