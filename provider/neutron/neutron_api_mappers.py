@@ -1125,6 +1125,17 @@ class SecurityGroupRuleMapper(Mapper):
             cls._mandatory_add_data,
             cls._optional_add_data
         )
+        if (
+                rest_data.get(
+                    SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_IP_PREFIX
+                ) and
+                rest_data.get(
+                    SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_REMOTE_GROUP
+                )
+        ):
+            raise BadRequestError(
+                'Only remote_ip_prefix or remote_group_id may be provided.'
+            )
 
     @staticmethod
     def rest2row(wrapped_self, func, rest_data, entity_id):
