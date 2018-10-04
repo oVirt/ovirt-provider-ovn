@@ -28,11 +28,13 @@ from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
 
 import neutron.validation as validate
+import neutron.constants as neutron_constants
 from neutron.neutron_api_mappers import PortMapper
 from neutron.neutron_api_mappers import SecurityGroupMapper
 from neutron.neutron_api_mappers import SecurityGroupRuleMapper
 from neutron.neutron_api_mappers import SubnetMapper
 
+import ovndb.acls as acl_lib
 from ovndb.db_set_command import DbSetCommand
 from ovndb.ovn_security_groups import OvnSecurityGroupApi
 from ovndb.ovn_security_groups import SecurityGroupException
@@ -265,6 +267,7 @@ class OvnNorth(object):
             )
         )
         egress_rules = self.activate_egress_rules(security_group)
+        self.create_address_sets(security_group.name)
         return security_group, egress_rules
 
     def remove_security_group(self, security_group_id):
@@ -277,6 +280,7 @@ class OvnNorth(object):
         ovn_connection.execute(
             self._ovn_sec_group_api.delete_security_group(security_group_id)
         )
+        self.remove_address_sets(security_group.name)
 
     def update_security_group(self, sec_group_id, name, description):
         try:
@@ -385,6 +389,7 @@ class OvnNorth(object):
                 default_sec_group.uuid, port_id
             )
         )
+        self.create_address_sets(default_sec_group.name)
 
     def _activate_default_sec_group(self):
         default_sec_group = ovn_connection.execute(
@@ -442,3 +447,23 @@ class OvnNorth(object):
             )
         except ElementNotFoundError:
             raise BadRequestError('Default security group is not provisioned')
+
+    def create_address_sets(self, sec_group_name):
+        return [
+            ovn_connection.execute(
+                self._ovn_sec_group_api.create_address_set(
+                    ip_version, sec_group_name
+                )
+            )
+            for ip_version in neutron_constants.OVN_IP_VERSIONS
+        ]
+
+    def remove_address_sets(self, sec_group_name):
+        return [
+            ovn_connection.execute(
+                self._ovn_sec_group_api.remove_address_set(
+                    acl_lib.get_assoc_addr_set_name(sec_group_name, ip_version)
+                )
+            )
+            for ip_version in neutron_constants.OVN_IP_VERSIONS
+        ]

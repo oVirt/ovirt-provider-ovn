@@ -74,3 +74,5 @@ ROW_PG_NAME = 'name'
 ROW_PG_EXTERNAL_IDS = 'external_ids'
 
 TABLE_ACL = 'ACL'
+
+TABLE_ADDRESS_SET = 'Address_Set'

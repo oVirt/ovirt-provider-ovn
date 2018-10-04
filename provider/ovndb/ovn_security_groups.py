@@ -174,6 +174,20 @@ class OvnSecurityGroupApi(object):
     def get_default_sec_group_name():
         return acl_lib.DEFAULT_PG_NAME
 
+    def create_address_set(self, ip_version, sec_group_name):
+        return self._idl.db_create(
+            ovnconst.TABLE_ADDRESS_SET,
+            name=acl_lib.get_assoc_addr_set_name(
+                sec_group_name, ip_version
+            ),
+            external_ids={'sec_group_name': sec_group_name}
+        )
+
+    def remove_address_set(self, address_set_name):
+        return self._idl.db_destroy(
+            ovnconst.TABLE_ADDRESS_SET, address_set_name
+        )
+
 
 def only_rules_with_allowed_actions(f):
     def filter_rules(*args):

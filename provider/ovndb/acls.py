@@ -290,3 +290,9 @@ def get_remote_group_id_match(remote_group_name, ip_version, direction):
         direction=neutron_constants.OVN_ACL_IP_DIRECTION_MAPPER[direction],
         address_set_name=remote_group_name
     ) if remote_group_name is not None else ''
+
+
+def get_assoc_addr_set_name(sec_group_name, ip_version):
+    return u'pg_{ip_v}_{pg_name}'.format(
+        pg_name=sec_group_name, ip_v=ip_version
+    )
