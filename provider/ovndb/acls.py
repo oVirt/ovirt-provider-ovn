@@ -144,12 +144,14 @@ def _get_icmp_protocol_data(min_port, max_port):
 
 def create_acl(
         security_group, direction, description=None, ether_type=None,
-        ip_prefix=None, port_min=None, port_max=None, protocol=None
+        ip_prefix=None, port_min=None, port_max=None, protocol=None,
+        remote_group=None
 ):
     match = create_acl_match(
-            direction, ether_type, ip_prefix, port_min,
-            port_max, protocol, security_group.name
-        )
+        direction, ether_type, ip_prefix, port_min,
+        port_max, protocol, security_group.name,
+        remote_group_name=remote_group.name if remote_group else None
+    )
     acl = build_acl_parameters(
         port_group=security_group, direction=direction,
         match=create_acl_match_string(match),
@@ -159,7 +161,8 @@ def create_acl(
     external_ids = get_acl_external_ids(
         description=description, ether_type=ether_type, ip_prefix=ip_prefix,
         max_port=port_max, min_port=port_min, protocol=protocol,
-        port_group_id=str(security_group.uuid)
+        port_group_id=str(security_group.uuid),
+        remote_group_id=str(remote_group.uuid) if remote_group else None
     )
     return dict(acl, external_ids=external_ids)
 
@@ -179,7 +182,7 @@ def create_acl_match(
     match.extend(
         process_acl_protocol_and_ports(protocol, min_port, max_port, icmp)
     )
-    return filter(lambda s: s is not '', match)
+    return filter(lambda s: s, match)
 
 
 def create_acl_match_string(match_list):
@@ -201,7 +204,7 @@ def build_acl_parameters(port_group, direction, match, action, priority):
 
 def get_acl_external_ids(
         description, ether_type, ip_prefix, max_port, min_port,
-        protocol, port_group_id
+        protocol, port_group_id, remote_group_id
 ):
     rule_external_id_data = {
         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID: port_group_id
@@ -230,6 +233,10 @@ def get_acl_external_ids(
         rule_external_id_data[
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_DESCRIPTION
         ] = description
+    if remote_group_id:
+        rule_external_id_data[
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_REMOTE_GROUP_ID
+        ] = remote_group_id
     return rule_external_id_data
 
 
@@ -253,7 +260,8 @@ def create_default_port_group_acls(port_group):
                     ),
                     ether_type=None, ip_prefix=None, max_port=None,
                     min_port=None, protocol=None,
-                    port_group_id=str(port_group.uuid)
+                    port_group_id=str(port_group.uuid),
+                    remote_group_id=None
                 )
             )
         )
@@ -277,7 +285,8 @@ def create_default_allow_egress_acls(port_group):
             external_ids=get_acl_external_ids(
                 description='automatically added allow all egress ip traffic',
                 ether_type=None, ip_prefix=None, max_port=None, min_port=None,
-                protocol=os_proto, port_group_id=str(port_group.uuid)
+                protocol=os_proto, port_group_id=str(port_group.uuid),
+                remote_group_id=None
             )
         ) for os_proto, ovn_proto
         in neutron_constants.ETHER_TYPE_MAPPING.items()
@@ -285,11 +294,34 @@ def create_default_allow_egress_acls(port_group):
 
 
 def get_remote_group_id_match(remote_group_name, ip_version, direction):
+    if remote_group_name and ip_version:
+        remote_group_acl_name = get_assoc_addr_set_name(
+            remote_group_name, ip_version
+        )
+        return build_remote_group_id_match(
+            remote_group_acl_name, ip_version, direction
+        )
+    elif remote_group_name:
+        remote_group_id_match = map(
+                lambda ovn_ip_version: build_remote_group_id_match(
+                    get_assoc_addr_set_name(remote_group_name, ovn_ip_version),
+                    ovn_ip_version, direction
+                ),
+                neutron_constants.ETHER_TYPE_MAPPING.values()
+            )
+        return '( {matches} )'.format(
+            matches=' || '.join(remote_group_id_match)
+        )
+    else:
+        return ''
+
+
+def build_remote_group_id_match(remote_group_name, ip_version, direction):
     return '{ip_version}.{direction} == ${address_set_name}'.format(
         ip_version=ip_version,
         direction=neutron_constants.OVN_ACL_IP_DIRECTION_MAPPER[direction],
         address_set_name=remote_group_name
-    ) if remote_group_name is not None else ''
+    )
 
 
 def get_assoc_addr_set_name(sec_group_name, ip_version):

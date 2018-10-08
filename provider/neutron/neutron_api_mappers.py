@@ -1077,6 +1077,7 @@ class SecurityGroupRuleMapper(Mapper):
     OVN_SEC_GROUP_RULE_IP_PREFIX = 'ovirt_ip_prefix'
     OVN_SEC_GROUP_RULE_SEC_GROUP_ID = 'ovirt_port_group_id'
     OVN_SEC_GROUP_RULE_DESCRIPTION = 'ovirt_rule_description'
+    OVN_SEC_GROUP_RULE_REMOTE_GROUP_ID = 'ovirt_remote_group_id'
 
     _mandatory_add_data = set(
         [REST_SEC_GROUP_RULE_DIRECTION, REST_SEC_GROUP_RULE_SEC_GROUP_ID]
@@ -1094,6 +1095,7 @@ class SecurityGroupRuleMapper(Mapper):
         REST_SEC_GROUP_RULE_PORT_RANGE_MAX: OVN_SEC_GROUP_RULE_MAX_PORT,
         REST_SEC_GROUP_RULE_PORT_RANGE_MIN: OVN_SEC_GROUP_RULE_MIN_PORT,
         REST_SEC_GROUP_RULE_PROTOCOL: OVN_SEC_GROUP_RULE_PROTOCOL,
+        REST_SEC_GROUP_RULE_REMOTE_GROUP: OVN_SEC_GROUP_RULE_REMOTE_GROUP_ID
     }
 
     @staticmethod
@@ -1165,7 +1167,11 @@ class SecurityGroupRuleMapper(Mapper):
         ip_prefix = rest_data.get(
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_IP_PREFIX
         )
+        remote_group_name = rest_data.get(
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_REMOTE_GROUP
+        )
         return func(
             wrapped_self, security_group_id, direction, description,
-            ether_type, port_min, port_max, ip_prefix, protocol
+            ether_type, port_min, port_max, ip_prefix, protocol,
+            remote_group_name
         )

@@ -134,12 +134,13 @@ class OvnSecurityGroupApi(object):
     def create_security_group_rule(
             self, security_group, direction, description=None,
             ether_type=None, ip_prefix=None, port_min=None, port_max=None,
-            protocol=None
+            protocol=None, remote_group=None
     ):
         acl = acl_lib.create_acl(
             security_group, direction=direction, ether_type=ether_type,
             ip_prefix=ip_prefix, port_min=port_min, port_max=port_max,
-            protocol=protocol,  description=description
+            protocol=protocol,  description=description,
+            remote_group=remote_group
         )
 
         return self.create_add_acl_command(security_group.uuid, acl)

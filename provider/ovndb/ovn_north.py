@@ -318,17 +318,22 @@ class OvnNorth(object):
     def create_security_group_rule(
             self, security_group_id, direction, description=None,
             ether_type=None, remote_ip_prefix=None, port_min=None,
-            port_max=None, protocol=None
+            port_max=None, protocol=None, remote_group_id=None
     ):
         sec_group = self.get_security_group(security_group_id)
         new_rev_number = self._ovn_sec_group_api.get_bumped_revision_number(
             sec_group
         )
+        remote_group = (
+            self.get_security_group(remote_group_id)
+            if remote_group_id else None
+        )
         sec_group_rule_command = (
             self._ovn_sec_group_api.create_security_group_rule(
                 sec_group, direction, description=description,
                 ether_type=ether_type, ip_prefix=remote_ip_prefix,
-                port_min=port_min, port_max=port_max, protocol=protocol
+                port_min=port_min, port_max=port_max, protocol=protocol,
+                remote_group=remote_group
             )
         )
         try:
@@ -384,12 +389,12 @@ class OvnNorth(object):
             )
         except ElementNotFoundError:
             default_sec_group = self._activate_default_sec_group()
+            self.create_address_sets(default_sec_group.name)
         ovn_connection.execute(
             self._ovn_sec_group_api.add_security_group_ports(
                 default_sec_group.uuid, port_id
             )
         )
-        self.create_address_sets(default_sec_group.name)
 
     def _activate_default_sec_group(self):
         default_sec_group = ovn_connection.execute(
