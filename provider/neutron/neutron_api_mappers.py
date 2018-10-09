@@ -483,6 +483,11 @@ class PortMapper(Mapper):
                         subnet_id=PortMapper.REST_PORT_SUBNET_ID
                     )
                 )
+            ip_addr = fixed_ips[0][PortMapper.REST_PORT_IP_ADDRESS]
+            if ip_utils.get_ip_version(ip_addr) is None:
+                raise RestDataError(
+                    'Invalid IP address: {}'.format(ip_addr)
+                )
 
 
 class SubnetMapper(Mapper):

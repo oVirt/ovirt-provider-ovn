@@ -23,6 +23,8 @@ import random
 
 import constants as ovnconst
 
+from netaddr import valid_ipv4
+from netaddr import valid_ipv6
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr.core import AddrFormatError
@@ -163,3 +165,12 @@ def is_valid_cidr(cidr):
         return True
     except AddrFormatError:
         return False
+
+
+def get_ip_version(ip_address):
+    if valid_ipv4(ip_address):
+        return 'ip4'
+    elif valid_ipv6(ip_address):
+        return 'ip6'
+    else:
+        return ''

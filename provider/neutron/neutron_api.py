@@ -241,6 +241,10 @@ class NeutronApi(object):
             self.ovn_north.get_lsp(ovirt_lsp_id=port_id)
         )
 
+    @PortMapper.map_to_rest
+    def _serialize_port(self, port):
+        return port
+
     def _get_network_port(self, lsp):
         ls = self._get_port_network(lsp)
         dhcp_options = self.ovn_north.get_dhcp(lsp_id=str(lsp.uuid))
@@ -282,7 +286,13 @@ class NeutronApi(object):
         ).execute()
         self.ovn_north.add_security_groups_to_port(port.uuid, security_groups)
         self._update_port_security_groups_command(port.uuid, security_groups)
-        return self.get_port(port.uuid)
+        port_data = self._get_network_port(
+            self.ovn_north.get_lsp(ovirt_lsp_id=port.uuid)
+        )
+        self.ovn_north.add_addr_set_ip(
+            security_groups, ip_utils.get_port_ip(lsp=port_data.lsp)
+        )
+        return self._serialize_port(port_data)
 
     @PortMapper.validate_update
     @PortMapper.map_from_rest
@@ -312,6 +322,7 @@ class NeutronApi(object):
             update_address_command, port, mac, port_security
         ).execute()
         self._update_port_security_groups(port, security_groups)
+        # TODO - remove old IP from address set, add new one
         return self.get_port(port_id)
 
     def _update_lsp_bound_lrp(self, port_id, fixed_ips):
@@ -526,6 +537,11 @@ class NeutronApi(object):
         lsp = self.ovn_north.get_lsp(lsp_id=port_id)
         validate.port_is_not_connected_to_router(lsp)
         self.ovn_north.remove_lsp(port_id)
+        self.ovn_north.delete_addr_set_ip(
+            security_groups=lsp.external_ids.get(
+                PortMapper.OVN_SECURITY_GROUPS, ''
+            ).split(), ip=ip_utils.get_port_ip(lsp)
+        )
 
     def deactivate_port_security(
             self, port, db_update_command,

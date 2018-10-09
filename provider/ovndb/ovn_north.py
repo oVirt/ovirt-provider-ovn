@@ -29,6 +29,7 @@ from handlers.base_handler import ElementNotFoundError
 
 import neutron.validation as validate
 import neutron.constants as neutron_constants
+from neutron.ip import get_ip_version
 from neutron.neutron_api_mappers import PortMapper
 from neutron.neutron_api_mappers import SecurityGroupMapper
 from neutron.neutron_api_mappers import SecurityGroupRuleMapper
@@ -472,3 +473,25 @@ class OvnNorth(object):
             )
             for ip_version in neutron_constants.OVN_IP_VERSIONS
         ]
+
+    def add_addr_set_ip(self, security_groups, ip):
+        if not ip or not security_groups:
+            return
+        ip_version = get_ip_version(ip)
+        self._ovn_sec_group_api.add_address_set_ip(
+            security_groups=[
+                self.get_security_group(sec_group_id)
+                for sec_group_id in security_groups
+            ], ip=ip, ip_version=ip_version
+        )
+
+    def delete_addr_set_ip(self, security_groups, ip):
+        if not ip or not security_groups:
+            return
+        ip_version = get_ip_version(ip)
+        self._ovn_sec_group_api.remove_address_set_ip(
+            security_groups=[
+                self.get_security_group(sec_group_id)
+                for sec_group_id in security_groups
+            ], ip=ip, ip_version=ip_version
+        )
