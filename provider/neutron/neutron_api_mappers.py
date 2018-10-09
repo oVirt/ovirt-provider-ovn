@@ -194,9 +194,7 @@ class NetworkMapper(Mapper):
         )
         result = {
             NetworkMapper.REST_NETWORK_ID: str(ls.uuid),
-            NetworkMapper.REST_NETWORK_NAME: str(
-                network_name or ls.name
-            ),
+            NetworkMapper.REST_NETWORK_NAME: network_name or ls.name,
             NetworkMapper.REST_TENANT_ID: tenant_id(),
             NetworkMapper.REST_STATUS: NetworkMapper.NETWORK_STATUS_ACTIVE,
             NetworkMapper.REST_PORT_SECURITY_ENABLED: Mapper._str2bool(

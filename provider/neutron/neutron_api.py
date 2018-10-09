@@ -111,7 +111,7 @@ class NeutronApi(object):
             port_security if port_security is not None
             else default_port_security_enabled()
         )
-        name = 'ovirt-{name}-{gen_id}'.format(name=name, gen_id=uuid.uuid4())
+        name = u'ovirt-{name}-{gen_id}'.format(name=name, gen_id=uuid.uuid4())
         return self.ovn_north.add_ls(
             name=name,
             external_ids=self._generate_external_ids({}, **external_ids_dict)

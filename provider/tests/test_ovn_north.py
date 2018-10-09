@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -79,10 +80,12 @@ class TestOvnNorth(object):
     NETWORK_ID11 = UUID(int=11)
     NETWORK_ID12 = UUID(int=12)
     NETWORK_IDMTU = UUID(int=123)
+    NETWORK_ID_UNICODE = UUID(int=456)
     NETWORK_NAME10 = 'name10'
     NETWORK_NAME11 = 'name11'
     NETWORK_NAME12 = 'name12'
     NETWORK_NAMEMTU = 'nameMTU'
+    NETWORK_NAME_UNICODE = u'רשתחיצונית'
 
     PORT_BINDING_ID = 'bee7-15900d-bee7-1590d'
 
@@ -165,6 +168,8 @@ class TestOvnNorth(object):
         NETWORK_IDMTU, NETWORK_NAMEMTU,
         external_ids={NetworkMapper.REST_MTU: str(VALUE_NETWORK_MTU)}
     )
+
+    NETWORK_UNICODE = OvnNetworkRow(NETWORK_ID_UNICODE, NETWORK_NAME_UNICODE)
 
     ROUTER_ID20 = UUID(int=20)
     ROUTER_NAME20 = 'router20'
@@ -299,14 +304,25 @@ class TestOvnNorth(object):
         autospec=False
     )
     def test_add_network(self, mock_add_command, mock_connection):
+        self._test_add_network(mock_add_command, TestOvnNorth.NETWORK_10)
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsAddCommand',
+        autospec=False
+    )
+    def test_add_network_with_unicode_name(self, mock_add_command,
+                                           mock_connection):
+        self._test_add_network(mock_add_command, TestOvnNorth.NETWORK_UNICODE)
+
+    def _test_add_network(self, mock_add_command, network_row):
         mock_add_command.return_value.execute.return_value = (
-            TestOvnNorth.NETWORK_10
+            network_row
         )
         ovn_north = NeutronApi()
-        rest_data = NetworkApiInputMaker(TestOvnNorth.NETWORK_NAME10).get()
+        rest_data = NetworkApiInputMaker(network_row.name).get()
         result = ovn_north.add_network(rest_data)
 
-        network = Network(ls=TestOvnNorth.NETWORK_10, localnet_lsp=None)
+        network = Network(ls=network_row, localnet_lsp=None)
         assert_network_equal(result, network)
         assert mock_add_command.call_count == 1
         assert mock_add_command.mock_calls[0] == mock.call(
@@ -315,7 +331,7 @@ class TestOvnNorth(object):
             False,
             external_ids={
                 NetworkMapper.OVN_NETWORK_NAME: (
-                    TestOvnNorth.NETWORK_NAME10
+                    network_row.name
                 ),
                 NetworkMapper.OVN_NETWORK_PORT_SECURITY: 'False'
             }
