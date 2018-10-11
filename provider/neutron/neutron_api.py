@@ -321,8 +321,11 @@ class NeutronApi(object):
         self.update_port_security(
             update_address_command, port, mac, port_security
         ).execute()
-        self._update_port_security_groups(port, security_groups)
-        # TODO - remove old IP from address set, add new one
+        self._update_port_security_groups(
+            port, security_groups, ip=fixed_ips[0].get(
+                PortMapper.REST_PORT_IP_ADDRESS
+            ) if fixed_ips else None
+        )
         return self.get_port(port_id)
 
     def _update_lsp_bound_lrp(self, port_id, fixed_ips):
@@ -501,15 +504,25 @@ class NeutronApi(object):
         )
         return port
 
-    def _update_port_security_groups(self, port, security_groups):
+    def _update_port_security_groups(self, port, security_groups, ip=None):
         if security_groups is None:
             return
         old_security_groups = port.external_ids.get(
             PortMapper.OVN_SECURITY_GROUPS, ''
         ).split()
 
-        sec_groups_to_install = set(security_groups) - set(old_security_groups)
-        sec_groups_to_delete = set(old_security_groups) - set(security_groups)
+        new_groups = set(security_groups or old_security_groups)
+        old_groups = set(old_security_groups)
+        sec_groups_to_install = new_groups - old_groups
+        sec_groups_to_delete = old_groups - new_groups
+        sec_groups_to_remain = old_groups.union(new_groups)
+
+        self._process_sec_groups_ip_update(
+            old_ip=ip_utils.get_port_ip(port),
+            new_ip=ip or ip_utils.get_port_ip(port),
+            to_install=sec_groups_to_install, to_remove=sec_groups_to_delete,
+            to_remain=sec_groups_to_remain
+        )
 
         self.ovn_north.add_security_groups_to_port(
             port.uuid, sec_groups_to_install
@@ -519,6 +532,16 @@ class NeutronApi(object):
         )
 
         self._update_port_security_groups_command(port.uuid, security_groups)
+
+    def _process_sec_groups_ip_update(
+            self, old_ip, new_ip, to_install, to_remove,
+            to_remain
+    ):
+        self.ovn_north.delete_addr_set_ip(to_remove, old_ip)
+        self.ovn_north.add_addr_set_ip(to_install, new_ip)
+        if to_remain and old_ip != new_ip:
+            self.ovn_north.delete_addr_set_ip(to_remain, old_ip)
+            self.ovn_north.add_addr_set_ip(to_remain, new_ip)
 
     def _update_port_security_groups_command(self, port_id, security_groups):
         self.ovn_north.create_ovn_update_command(
