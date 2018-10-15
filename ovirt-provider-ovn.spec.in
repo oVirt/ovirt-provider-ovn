@@ -138,6 +138,13 @@ to OVN.
 
 
 %changelog
+* Wed Nov 15 2018 Miguel Duarte Barroso <mdbarroso@redhat.com> - 1.2.17
+- comply with the networking api for security group rule GET requests
+- implement the remote group prefix parameter for security groups
+- implement the acls in the correct OVS pipeline stage
+- support unicode characters on security group names
+- support unicode characters on network names
+
 * Wed Oct 03 2018 Miguel Duarte Barroso <mdbarroso@redhat.com> - 1.2.16
 - add security group support on the provider
 
