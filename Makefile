@@ -123,3 +123,6 @@ flake8:
 
 unittest:
 	cd provider; python -m pytest tests/
+
+unittest3:
+	cd provider; python3 -m pytest tests/
