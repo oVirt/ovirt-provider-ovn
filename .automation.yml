@@ -1,5 +1,5 @@
 distros:
     - el7
-    - fc27
+    - fc28
 release_branches:
     master: [ ovirt-master, ovirt-4.2 ]
