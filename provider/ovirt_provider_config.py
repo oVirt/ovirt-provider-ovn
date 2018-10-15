@@ -18,9 +18,9 @@
 
 from __future__ import absolute_import
 
-import ConfigParser
 import glob
 import os
+from six.moves import configparser
 
 
 CONFIG_FILE = '/etc/ovirt-provider-ovn/ovirt-provider-ovn.conf'
@@ -134,7 +134,7 @@ _config = None
 
 def load():
     global _config
-    _config = ConfigParser.ConfigParser()
+    _config = configparser.ConfigParser()
     _config.read(CONFIG_FILE)
     _config.read(
         sorted(
@@ -149,7 +149,7 @@ def get(section, key, default=None):
     global _config
     try:
         return _config.get(section, key) if _config else default
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         return default
 
 
@@ -157,7 +157,7 @@ def getboolean(section, key, default=None):
     global _config
     try:
         return _config.getboolean(section, key) if _config else default
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         return default
 
 
@@ -165,7 +165,7 @@ def getfloat(section, key, default=None):
     global _config
     try:
         return _config.getfloat(section, key) if _config else default
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         return default
 
 
@@ -173,5 +173,5 @@ def getint(section, key, default=None):
     global _config
     try:
         return _config.getint(section, key) if _config else default
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         return default

@@ -54,6 +54,7 @@ Conflicts: %{_py2}-openvswitch = 1:2.6.1
 Requires: python-requests
 Requires: python-netaddr
 Requires: python2-ovsdbapp
+Requires: python2-six
 
 BuildRequires: python
 BuildRequires: systemd

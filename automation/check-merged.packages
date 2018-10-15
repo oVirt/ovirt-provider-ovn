@@ -12,6 +12,7 @@ python3-mock
 python3-pytest
 python3-requests-mock
 python3-setuptools
+python3-six
 python3-ovsdbapp
 git
 dnf
