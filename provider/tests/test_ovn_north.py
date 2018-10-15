@@ -177,7 +177,7 @@ class TestOvnNorth(object):
     ROUTER_20 = OvnRouterRow(ROUTER_ID20, ROUTER_NAME20)
 
     SECURITY_GROUP_ID = UUID(int=666)
-    SECURITY_GROUP_NAME = 'ultra-mega-security'
+    SECURITY_GROUP_NAME = u'ultra-mega-security-弹射'
     SECURITY_GROUP_DESCRIPTION = 'as safe as it gets'
     SECURITY_GROUP = OvnSecurityGroupRow(
         SECURITY_GROUP_ID,

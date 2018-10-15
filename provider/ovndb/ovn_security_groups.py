@@ -118,7 +118,7 @@ class OvnSecurityGroupApi(object):
 
     @staticmethod
     def _generate_name_when_required(name):
-        return 'ovirt_{name}_{gen_id}'.format(
+        return u'ovirt_{name}_{gen_id}'.format(
             name=name, gen_id=str(uuid.uuid4()).replace('-', '_')
         ) if name != acl_lib.DEFAULT_PG_NAME else name
 

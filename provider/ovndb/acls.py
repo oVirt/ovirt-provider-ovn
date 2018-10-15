@@ -43,7 +43,7 @@ class ProtocolNotSupported(RestDataError):
 
 
 def acl_direction(api_direction, port_group_name):
-    return '{direction} == @{port_group}'.format(
+    return u'{direction} == @{port_group}'.format(
         direction=neutron_constants.OVN_DIRECTION_MATCH_MAPPER[api_direction],
         port_group=port_group_name
     )
