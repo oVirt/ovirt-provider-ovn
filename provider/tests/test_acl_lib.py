@@ -31,8 +31,8 @@ from ovndb.acls import handle_ports
 
 
 def test_acl_direction():
-    assert acl_direction('ingress', 'pg1') == 'inport == @pg1'
-    assert acl_direction('egress', 'pg1') == 'outport == @pg1'
+    assert acl_direction('ingress', 'pg1') == 'outport == @pg1'
+    assert acl_direction('egress', 'pg1') == 'inport == @pg1'
     with pytest.raises(KeyError):
         acl_direction('left2right', 'pg1')
 
@@ -81,17 +81,17 @@ def test_create_acl_match():
     pg_id = uuid.UUID(int=100)
     assert create_acl_match(
         'ingress', 'IPv4', None, None, None, 'tcp', pg_id
-    ) == ['inport == @00000000-0000-0000-0000-000000000064', 'ip4', 'tcp']
+    ) == ['outport == @00000000-0000-0000-0000-000000000064', 'ip4', 'tcp']
     assert create_acl_match(
         'ingress', 'IPv4', None, 5000, 5299, 'tcp', pg_id
     ) == [
-        'inport == @00000000-0000-0000-0000-000000000064',
+        'outport == @00000000-0000-0000-0000-000000000064',
         'ip4', 'tcp', 'tcp.dst >= 5000', 'tcp.dst <= 5299'
     ]
     assert create_acl_match(
         'ingress', 'IPv4', '192.168.80.0/24', 5000, 5299, 'tcp', pg_id
     ) == [
-        'inport == @00000000-0000-0000-0000-000000000064',
+        'outport == @00000000-0000-0000-0000-000000000064',
         'ip4', 'ip4.src == 192.168.80.0/24', 'tcp', 'tcp.dst >= 5000',
         'tcp.dst <= 5299'
     ]
@@ -103,13 +103,13 @@ def test_create_acl_match_output():
         create_acl_match(
             'ingress', 'IPv4', None, None, None, 'tcp', pg_id
         )
-    ) == 'inport == @00000000-0000-0000-0000-000000000064 && ip4 && tcp'
+    ) == 'outport == @00000000-0000-0000-0000-000000000064 && ip4 && tcp'
     assert create_acl_match_string(
         create_acl_match(
             'ingress', 'IPv4', None, 5000, 5299, 'tcp', pg_id
         )
     ) == (
-        'inport == @00000000-0000-0000-0000-000000000064 && ip4 && '
+        'outport == @00000000-0000-0000-0000-000000000064 && ip4 && '
         'tcp && tcp.dst >= 5000 && tcp.dst <= 5299'
     )
     assert create_acl_match_string(
@@ -117,7 +117,7 @@ def test_create_acl_match_output():
             'ingress', 'IPv4', '192.168.80.0/24', 5000, 5299, 'tcp', pg_id
         )
     ) == (
-        'inport == @00000000-0000-0000-0000-000000000064 && ip4 && '
+        'outport == @00000000-0000-0000-0000-000000000064 && ip4 && '
         'ip4.src == 192.168.80.0/24 && tcp && tcp.dst >= 5000 && '
         'tcp.dst <= 5299'
     )
