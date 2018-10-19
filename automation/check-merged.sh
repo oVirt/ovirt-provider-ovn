@@ -7,6 +7,7 @@ pip install -U requests-mock==1.4.0
 make check
 make unittest
 make lint || true
+make integrationtest
 
 if grep -q 'Fedora' /etc/redhat-release; then
     make unittest3

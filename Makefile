@@ -129,3 +129,6 @@ unittest3:
 
 lint:
 	tox -e pylint
+
+integrationtest:
+	tox -e integration-tests27
