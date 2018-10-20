@@ -8,7 +8,7 @@ make check
 make unittest
 
 if grep -q 'Fedora' /etc/redhat-release; then
-    make unittest3 || echo "Ignoring Python 3 errors temporarily"
+    make unittest3
 fi
 
 if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'ovirt-provider-ovn.spec.in|Makefile|automation' ; then
