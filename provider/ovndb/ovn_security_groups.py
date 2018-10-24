@@ -35,6 +35,10 @@ from neutron.neutron_api_mappers import SecurityGroupMapper
 from ovndb.db_set_command import DbSetCommand
 import ovndb.acls as acl_lib
 
+WHITE_LIST_GROUP_NAMES = [
+    acl_lib.DEFAULT_PG_NAME, acl_lib.DROP_ALL_IP_PG_NAME
+]
+
 
 def build_add_acl_command(f):
     @wraps(f)
@@ -120,7 +124,7 @@ class OvnSecurityGroupApi(object):
     def _generate_name_when_required(name):
         return u'ovirt_{name}_{gen_id}'.format(
             name=name, gen_id=str(uuid.uuid4()).replace('-', '_')
-        ) if name != acl_lib.DEFAULT_PG_NAME else name
+        ) if name not in WHITE_LIST_GROUP_NAMES else name
 
     @staticmethod
     def get_bumped_revision_number(security_group):
@@ -158,8 +162,8 @@ class OvnSecurityGroupApi(object):
         )
 
     @build_add_acl_command
-    def create_default_port_group_acls(self, port_group):
-        return acl_lib.create_default_port_group_acls(port_group)
+    def create_drop_all_traffic_acls(self, port_group):
+        return acl_lib.create_drop_all_traffic_acls(port_group)
 
     @build_add_acl_command
     def create_allow_all_egress_acls(self, port_group):
@@ -174,6 +178,10 @@ class OvnSecurityGroupApi(object):
     @staticmethod
     def get_default_sec_group_name():
         return acl_lib.DEFAULT_PG_NAME
+
+    @staticmethod
+    def get_drop_all_sec_group_name():
+        return acl_lib.DROP_ALL_IP_PG_NAME
 
     def create_address_set(self, ip_version, sec_group_name):
         return self._idl.db_create(

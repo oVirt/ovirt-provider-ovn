@@ -384,32 +384,48 @@ class OvnNorth(object):
         ]
 
     def activate_default_security_group(self, port_id):
-        try:
-            default_sec_group = self.get_security_group(
-                self._ovn_sec_group_api.get_default_sec_group_name()
-            )
-        except ElementNotFoundError:
-            default_sec_group = self._activate_default_sec_group()
-            self.create_address_sets(default_sec_group.name)
+        self.activate_drop_all_security_group(port_id)
+        default_sec_group = self.assure_group_exists(
+            acl_lib.DEFAULT_PG_NAME,
+            self._ovn_sec_group_api.create_allow_all_egress_acls
+        )
         ovn_connection.execute(
             self._ovn_sec_group_api.add_security_group_ports(
                 default_sec_group.uuid, port_id
             )
         )
 
-    def _activate_default_sec_group(self):
-        default_sec_group = ovn_connection.execute(
-            self._ovn_sec_group_api.create_security_group(
-                self._ovn_sec_group_api.get_default_sec_group_name()
+    def assure_group_exists(
+            self, sec_group_name, provision_acl_function=None,
+            create_address_sets=True
+    ):
+        try:
+            sec_group = self.get_security_group(sec_group_name)
+        except ElementNotFoundError:
+            sec_group = self._activate_group(sec_group_name)
+            if create_address_sets:
+                self.create_address_sets(sec_group.name)
+            if provision_acl_function:
+                for acl in provision_acl_function(sec_group):
+                    ovn_connection.execute(acl)
+        return sec_group
+
+    def activate_drop_all_security_group(self, port_id):
+        drop_all_port_group = self.assure_group_exists(
+            acl_lib.DROP_ALL_IP_PG_NAME,
+            self._ovn_sec_group_api.create_drop_all_traffic_acls,
+            False
+        )
+        ovn_connection.execute(
+            self._ovn_sec_group_api.add_security_group_ports(
+                drop_all_port_group.uuid, port_id
             )
         )
-        for acl in self._ovn_sec_group_api.create_default_port_group_acls(
-                default_sec_group
-        ):
-            ovn_connection.execute(acl)
 
-        self.activate_egress_rules(default_sec_group)
-        return default_sec_group
+    def _activate_group(self, sec_group_name):
+        return ovn_connection.execute(
+            self._ovn_sec_group_api.create_security_group(sec_group_name)
+        )
 
     def activate_egress_rules(self, port_group):
         return [

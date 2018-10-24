@@ -25,6 +25,7 @@ from neutron.neutron_api_mappers import SecurityGroupRuleMapper
 
 
 DEFAULT_PG_NAME = 'Default'
+DROP_ALL_IP_PG_NAME = 'DropAll'
 
 
 class ProtocolNotSupported(RestDataError):
@@ -240,16 +241,16 @@ def get_acl_external_ids(
     return rule_external_id_data
 
 
-def create_default_port_group_acls(port_group):
+def create_drop_all_traffic_acls(port_group):
     acl_list = []
-    for ovn_direction, openstack_direction in (
+    for _, openstack_direction in (
             neutron_constants.OVN_TO_API_DIRECTION_MAPPER.items()
     ):
         acl_list.append(
             dict(
                 build_acl_parameters(
                     port_group.uuid, openstack_direction,
-                    acl_direction(openstack_direction, DEFAULT_PG_NAME)
+                    acl_direction(openstack_direction, DROP_ALL_IP_PG_NAME)
                     + ' && ip',
                     neutron_constants.ACL_ACTION_DROP,
                     neutron_constants.ACL_DROP_PRIORITY
