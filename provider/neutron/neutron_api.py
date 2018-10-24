@@ -53,6 +53,7 @@ from ovirt_provider_config_common import dhcp_mtu
 from ovirt_provider_config_common import default_port_security_enabled
 from ovirt_provider_config_common import ovs_version_29
 
+import ovndb.acls as acl_lib
 from ovndb.ovn_north import OvnNorth
 
 
@@ -284,6 +285,10 @@ class NeutronApi(object):
         self.update_port_security(
             update_address_command, port, mac, port_security
         ).execute()
+        if security_groups is None and port_security:
+            security_groups = [acl_lib.DEFAULT_PG_NAME]
+        elif security_groups is None:
+            security_groups = []
         self.ovn_north.add_security_groups_to_port(port.uuid, security_groups)
         self._update_port_security_groups_command(port.uuid, security_groups)
         port_data = self._get_network_port(
@@ -322,7 +327,8 @@ class NeutronApi(object):
             update_address_command, port, mac, port_security
         ).execute()
         self._update_port_security_groups(
-            port, security_groups, ip=fixed_ips[0].get(
+            port, security_groups, port_security=port_security,
+            ip=fixed_ips[0].get(
                 PortMapper.REST_PORT_IP_ADDRESS
             ) if fixed_ips else None
         )
@@ -504,14 +510,18 @@ class NeutronApi(object):
         )
         return port
 
-    def _update_port_security_groups(self, port, security_groups, ip=None):
-        if security_groups is None:
+    def _update_port_security_groups(
+            self, port, security_groups, port_security=None, ip=None
+    ):
+        if security_groups is not None:
+            new_groups = set(security_groups)
+        elif port_security is True:
+            new_groups = {acl_lib.DEFAULT_PG_NAME}
+        else:
             return
         old_security_groups = port.external_ids.get(
             PortMapper.OVN_SECURITY_GROUPS, ''
         ).split()
-
-        new_groups = set(security_groups or old_security_groups)
         old_groups = set(old_security_groups)
         sec_groups_to_install = new_groups - old_groups
         sec_groups_to_delete = old_groups - new_groups
@@ -530,8 +540,9 @@ class NeutronApi(object):
         self.ovn_north.remove_security_groups_from_port(
             port.uuid, sec_groups_to_delete
         )
-
-        self._update_port_security_groups_command(port.uuid, security_groups)
+        self._update_port_security_groups_command(
+            port.uuid, security_groups or sec_groups_to_install
+        )
 
     def _process_sec_groups_ip_update(
             self, old_ip, new_ip, to_install, to_remove,

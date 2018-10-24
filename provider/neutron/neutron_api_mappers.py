@@ -362,7 +362,7 @@ class PortMapper(Mapper):
                 fixed_ips=fixed_ips,
                 binding_host=binding_host,
                 port_security=port_security,
-                security_groups=security_groups or []
+                security_groups=security_groups
             )
 
     @staticmethod
