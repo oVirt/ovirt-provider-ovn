@@ -390,7 +390,7 @@ class OvnNorth(object):
         self.activate_drop_all_security_group(port_id)
         default_sec_group = self.assure_group_exists(
             acl_lib.DEFAULT_PG_NAME,
-            self._ovn_sec_group_api.create_allow_all_egress_acls
+            self._ovn_sec_group_api.create_default_sec_group_acls
         )
         ovn_connection.execute(
             self._ovn_sec_group_api.add_security_group_ports(

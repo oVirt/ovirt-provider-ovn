@@ -166,6 +166,18 @@ class OvnSecurityGroupApi(object):
         return acl_lib.create_drop_all_traffic_acls(port_group)
 
     @build_add_acl_command
+    def create_default_sec_group_acls(self, port_group):
+        acls = acl_lib.create_default_allow_egress_acls(port_group)
+        for ip_version in neutron_constants.ETHER_TYPE_MAPPING.keys():
+            acls.append(
+                acl_lib.create_acl(
+                    port_group, neutron_constants.INGRESS_DIRECTION,
+                    ether_type=ip_version, remote_group=port_group
+                )
+            )
+        return acls
+
+    @build_add_acl_command
     def create_allow_all_egress_acls(self, port_group):
         return acl_lib.create_default_allow_egress_acls(port_group)
 
