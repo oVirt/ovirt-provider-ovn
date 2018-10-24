@@ -245,8 +245,11 @@ class OvnNorth(object):
         )
 
     def list_security_groups(self):
-        return ovn_connection.execute(
-            self.idl.db_list_rows(ovnconst.TABLE_PORT_GROUP)
+        return filter(
+            lambda pg: pg.name != acl_lib.DROP_ALL_IP_PG_NAME,
+            ovn_connection.execute(
+                self.idl.db_list_rows(ovnconst.TABLE_PORT_GROUP)
+            )
         )
 
     def get_security_group(self, security_group_id):
