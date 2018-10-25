@@ -131,4 +131,5 @@ lint:
 	tox -e pylint
 
 integrationtest:
+	automation/create_it_env.sh
 	tox -e integration-tests27
