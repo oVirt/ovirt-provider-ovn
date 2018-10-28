@@ -22,9 +22,9 @@ import abc
 import httplib
 import json as libjson
 import logging
-import urlparse
 
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
+from six.moves import urllib_parse
 
 from auth import BadGateway
 from auth import Forbidden
@@ -242,8 +242,8 @@ class BaseHandler(BaseHTTPRequestHandler):
 
     @staticmethod
     def _parse_request_path(full_path):
-        parsed_path = urlparse.urlparse(full_path)
-        query = urlparse.parse_qs(parsed_path.query)
+        parsed_path = urllib_parse.urlparse(full_path)
+        query = urllib_parse.parse_qs(parsed_path.query)
         query_path = BaseHandler._remove_json_extension(parsed_path.path)
         elements = filter(None, query_path.split('/'))[1:]
         if not elements:
