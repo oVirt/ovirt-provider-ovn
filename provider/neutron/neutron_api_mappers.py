@@ -126,11 +126,10 @@ class Mapper(object):
 
     @staticmethod
     def set_from_external_ids(external_ids, mappings):
-        rest_optional_values = {}
-        for rest_key, ext_id_key in mappings.items():
-            if ext_id_key in external_ids:
-                rest_optional_values[rest_key] = external_ids[ext_id_key]
-        return rest_optional_values
+        return {
+            rest_key: external_ids.get(ext_id_key)
+            for rest_key, ext_id_key in mappings.items()
+        }
 
 
 class NetworkMapper(Mapper):
