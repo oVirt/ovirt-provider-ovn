@@ -1654,3 +1654,19 @@ class TestOvnNorth(object):
         assert 'Security Group {} in use'.format(
             security_group_id
         ) == ex.value.message
+
+    def test_sec_group_rules_ip_prefix_requires_ethertype(
+            self, mock_connection
+    ):
+        ovn_north = NeutronApi()
+        ip_prefix = '192.168.14.0/24'
+        rest_data = SecurityGroupRuleApiInputMaker(
+            'ingress', TestOvnNorth.SECURITY_GROUP_ID,
+            ip_prefix=ip_prefix
+        ).get()
+
+        with pytest.raises(BadRequestError) as exception:
+            ovn_north.add_security_group_rule(rest_data)
+        assert 'Conflicting value ethertype {} for CIDR {}'.format(
+            None, ip_prefix
+        ) == exception.value.message

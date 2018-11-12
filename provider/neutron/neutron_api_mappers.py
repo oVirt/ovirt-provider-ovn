@@ -1142,6 +1142,24 @@ class SecurityGroupRuleMapper(Mapper):
             raise BadRequestError(
                 'Only remote_ip_prefix or remote_group_id may be provided.'
             )
+        prefix = rest_data.get(
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_IP_PREFIX
+        )
+        if prefix:
+            addr_or_prefix = IPNetwork(prefix)
+            ether_type = rest_data.get(
+                    SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ETHERTYPE
+            )
+
+            if ether_type != 'IPv{version}'.format(
+                    version=addr_or_prefix.version
+            ):
+                raise BadRequestError(
+                    'Conflicting value ethertype '
+                    '{ether_type} for CIDR {cidr}'.format(
+                        ether_type=ether_type, cidr=prefix
+                    )
+                )
 
     @staticmethod
     def rest2row(wrapped_self, func, rest_data, entity_id):
