@@ -19,16 +19,21 @@
 
 
 from handlers import GET
+from ovirt_provider_config_common import url_filter_exception
 
 
 def filter_query_results(items, query):
+    filter_exceptions = url_filter_exception().split(',')
     return filter(
         lambda e: all(
             map(
                 lambda (k, v): _compare_query_values( # noqa E999
                     e.get(k), v[0]
                 ),
-                query.items()
+                [
+                    (key, val) for (key, val) in query.items()
+                    if key not in filter_exceptions
+                ]
             )
         ),
         items

@@ -47,6 +47,7 @@ from ovirt_provider_config import DEFAULT_PROVIDER_HOST
 from ovirt_provider_config import DEFAULT_SSL_CERT_FILE
 from ovirt_provider_config import DEFAULT_SSL_ENABLED
 from ovirt_provider_config import DEFAULT_SSL_KEY_FILE
+from ovirt_provider_config import DEFAULT_URL_FILTER_EXCEPTION
 from ovirt_provider_config import DEFAULT_VALIDATION_MAX_ALLOWED_MTU
 from ovirt_provider_config import KEY_AUTH_PLUGIN
 from ovirt_provider_config import KEY_AUTH_TOKEN_TIMEOUT
@@ -71,6 +72,7 @@ from ovirt_provider_config import KEY_PROVIDER_HOST
 from ovirt_provider_config import KEY_SSL_CACERT_FILE
 from ovirt_provider_config import KEY_SSL_CERT_FILE
 from ovirt_provider_config import KEY_SSL_KEY_FILE
+from ovirt_provider_config import KEY_URL_FILTER_EXCEPTION
 from ovirt_provider_config import KEY_VALIDATION_MAX_ALLOWED_MTU
 
 
@@ -310,4 +312,12 @@ def default_port_security_enabled():
         CONFIG_SECTION_NETWORK,
         KEY_NETWORK_PORT_SECURITY_ENABLED,
         DEFAULT_NETWORK_PORT_SECURITY_ENABLED
+    )
+
+
+def url_filter_exception():
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_PROVIDER,
+        KEY_URL_FILTER_EXCEPTION,
+        DEFAULT_URL_FILTER_EXCEPTION
     )
