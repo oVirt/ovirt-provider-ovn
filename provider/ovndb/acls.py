@@ -272,25 +272,12 @@ def create_drop_all_traffic_acls(port_group):
 
 def create_default_allow_egress_acls(port_group):
     return [
-        dict(
-            build_acl_parameters(
-                DEFAULT_PG_NAME, neutron_constants.EGRESS_DIRECTION,
-                acl_direction(
-                    neutron_constants.EGRESS_DIRECTION, port_group.name
-                ) + ' && {}'.format(
-                    ovn_proto
-                ),
-                neutron_constants.ACL_ACTION_ALLOW,
-                neutron_constants.ACL_ALLOW_PRIORITY
-            ),
-            external_ids=get_acl_external_ids(
-                description='automatically added allow all egress ip traffic',
-                ether_type=None, ip_prefix=None, max_port=None, min_port=None,
-                protocol=os_proto, port_group_id=str(port_group.uuid),
-                remote_group_id=None
-            )
-        ) for os_proto, ovn_proto
-        in neutron_constants.ETHER_TYPE_MAPPING.items()
+        create_acl(
+            port_group, neutron_constants.EGRESS_DIRECTION,
+            ether_type=ip_version,
+            description='automatically added allow all egress ip traffic'
+        )
+        for ip_version in neutron_constants.ETHER_TYPE_MAPPING.keys()
     ]
 
 
