@@ -5,7 +5,7 @@
 
 There currently is a huge gap in the testability of the ovirt-provider-ovn; the
 project has unit tests, which test individual functional modules within in, and
-there is another ovirt project - [oVirt system tests][https://github.com/oVirt/ovirt-system-tests] -
+there is another ovirt project - [oVirt system tests](https://github.com/oVirt/ovirt-system-tests) -
 that tests the whole end to end oVirt flows.
 
 This means that there is no way for a developer to get short feedback from the
