@@ -4,10 +4,15 @@ EXEC_PATH=$(dirname "$(realpath "$0")")
 
 OVN_CENTRAL_IMG="tripleomaster/centos-binary-ovn-northd:current-tripleo"
 OVN_CONTROLLER_IMG="tripleomaster/centos-binary-ovn-controller:current-tripleo"
+OVIRT_PROVIDER_OVN_IMG="maiqueb/ovirt_provider_ovn"
 
-OVN_CONTAINER_FILES="$(git rev-parse --show-toplevel)/automation/containers"
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+OVN_CONTAINER_FILES="$PROJECT_ROOT/automation/containers"
 OVN_NORTHD_FILES="${OVN_CONTAINER_FILES}/ovn-central"
 OVN_CONTROLLER_FILES="${OVN_CONTAINER_FILES}/ovn-controller/"
+
+PROVIDER_PATH="$PROJECT_ROOT"/provider
+CONTAINER_SRC_CODE_PATH="/ovirt-provider-ovn"
 
 function docker_ip {
     docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $1
@@ -33,6 +38,32 @@ function create_ovn_containers {
   '
 }
 
+function start_provider_container {
+  PROVIDER_ID="$(docker run --privileged -d -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $PROJECT_ROOT/:$CONTAINER_SRC_CODE_PATH -p 9696:9696 -p 35357:35357 -e OVN_NB_IP=$OVN_CENTRAL_IP -e PROVIDER_SRC_CODE=$CONTAINER_SRC_CODE_PATH $OVIRT_PROVIDER_OVN_IMG)"
+  create_rpms
+  install_provider_on_container
+}
+
+function create_rpms {
+  cleanup_past_builds
+  docker exec -t "$PROVIDER_ID" /bin/bash -c '
+    cd $PROVIDER_SRC_CODE && \
+    make rpm
+  '
+}
+
+function cleanup_past_builds {
+  rm -f "$PROVIDER_PATH"/*.tar.gz
+}
+
+function install_provider_on_container {
+  docker exec -t "$PROVIDER_ID" /bin/bash -c '
+    yum install -y --disablerepo=ovirtwebui-ovirt-web-ui-master ~/rpmbuild/RPMS/noarch/ovirt-provider-ovn-1.*.rpm && \
+    sed -ie "s/PLACE_HOLDER/${OVN_NB_IP}/g" /etc/ovirt-provider-ovn/conf.d/10-integrationtest.conf && \
+    systemctl start ovirt-provider-ovn
+  '
+}
+
 trap destroy_env EXIT
 create_ovn_containers
 docker exec -t "$OVN_CENTRAL_ID" /bin/bash -c '
@@ -40,6 +71,7 @@ docker exec -t "$OVN_CENTRAL_ID" /bin/bash -c '
   ovn-nbctl show && \
   ovn-sbctl list chassis
 '
+start_provider_container
 if [ -n "$RUN_INTEG_TESTS" ]; then
   tox -e integration-tests27
   destroy_env
