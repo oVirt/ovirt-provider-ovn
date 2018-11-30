@@ -17,15 +17,32 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import pytest
 import requests
 
 
-# TODO: this network was created out of band in the create_it_env.sh
-#       script. This test should be updated in a later patch to
-#       create the network in a fixture in this same module.
-def test_get_network():
+@pytest.fixture(scope='module')
+def logical_switch():
+    payload = {
+        'network': {'name': 'ls0'}
+    }
+    response = requests.post(
+        'http://localhost:9696/v2.0/networks/', json=payload
+    )
+    if response.status_code not in range(200, 205):
+        raise Exception('could not create network')
+    try:
+        yield response.json()['network']
+    finally:
+        requests.delete(
+            'http://localhost:9696/v2.0/networks/' +
+            response.json()['network']['id']
+        )
+
+
+def test_get_network(logical_switch):
     r = requests.get('http://localhost:9696/v2.0/networks')
     assert r.status_code == 200
     networks = r.json()['networks']
     assert len(networks) == 1
-    assert networks.pop()['name'] == 'ls0'
+    assert networks.pop()['name'] == logical_switch['name']

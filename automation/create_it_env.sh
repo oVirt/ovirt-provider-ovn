@@ -68,11 +68,6 @@ function install_provider_on_container {
 
 trap destroy_env EXIT
 create_ovn_containers
-docker exec -t "$OVN_CENTRAL_ID" /bin/bash -c '
-  ovn-nbctl ls-add ls0 && \
-  ovn-nbctl show && \
-  ovn-sbctl list chassis
-'
 start_provider_container
 if [ -n "$RUN_INTEG_TESTS" ]; then
   tox -e integration-tests27
