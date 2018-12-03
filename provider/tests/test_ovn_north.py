@@ -1046,7 +1046,8 @@ class TestOvnNorth(object):
             ovirt_name=TestOvnNorth.SUBNET_102.external_ids.get(
                     SubnetMapper.OVN_NAME
                 ),
-            ovirt_network_id=str(TestOvnNorth.NETWORK_ID10)
+            ovirt_network_id=str(TestOvnNorth.NETWORK_ID10),
+            ip_version='4'
         )
         assert mock_add_command.mock_calls[0] == expected_add_call
 
@@ -1755,3 +1756,21 @@ class TestOvnNorth(object):
         assert 'Conflicting value ethertype {} for CIDR {}'.format(
             None, ip_prefix
         ) == exception.value.message
+
+    def test_invalid_v6_cidr(self, mock_connection):
+        ovn_north = NeutronApi()
+        rest_data = SubnetApiInputMaker(
+            TestOvnNorth.SUBNET_102.external_ids.get(
+                SubnetMapper.OVN_NAME
+            ),
+            cidr=TestOvnNorth.SUBNET_CIDR,
+            network_id=str(TestOvnNorth.NETWORK_ID10),
+            dns_nameservers=['1.1.1.1'], gateway_ip='1.1.1.0',
+            ip_version=6
+        ).get()
+        with pytest.raises(BadRequestError) as exception:
+            ovn_north.add_subnet(rest_data)
+        assert exception.value.message == (
+            "The provided ip_version [6] does not match the supplied "
+            "cidr=1.1.1.0/24 or gateway=1.1.1.0"
+        )

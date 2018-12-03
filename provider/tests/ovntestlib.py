@@ -157,7 +157,7 @@ def assert_subnet_equal(actual, subnet_row):
     assert actual['network_id'] == subnet_row.external_ids.get(
         SubnetMapper.OVN_NETWORK_ID
     )
-    assert actual['ip_version'] == SubnetMapper.IP_VERSION
+    assert actual['ip_version'] == SubnetMapper.IP_VERSION_4
     assert actual.get('enable_dhcp')
     ovn_dns_server = [subnet_row.options.get(SubnetMapper.OVN_DNS_SERVER)]
     actual_dns_nameservers = actual.get('dns_nameservers')

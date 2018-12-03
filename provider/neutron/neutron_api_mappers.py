@@ -514,8 +514,11 @@ class SubnetMapper(Mapper):
     OVN_DHCP_LEASE_TIME = 'lease_time'
     OVN_DHCP_MTU = 'mtu'
     OVN_GATEWAY_ROUTER_ID = 'gateway_router'
+    OVN_IP_VERSION = 'ip_version'
 
-    IP_VERSION = 4
+    IP_VERSION_4 = 4
+    IP_VERSION_6 = 6
+    ALLOWED_IP_VERSIONS = [IP_VERSION_4, IP_VERSION_6]
 
     @staticmethod
     def rest2row(wrapped_self, func, rest_data, subnet_id):
@@ -557,7 +560,12 @@ class SubnetMapper(Mapper):
             SubnetMapper.REST_SUBNET_CIDR: row.cidr,
             SubnetMapper.REST_SUBNET_NETWORK_ID:
                 external_ids[SubnetMapper.OVN_NETWORK_ID],
-            SubnetMapper.REST_SUBNET_IP_VERSION: SubnetMapper.IP_VERSION,
+            SubnetMapper.REST_SUBNET_IP_VERSION: int(
+                external_ids.get(
+                    SubnetMapper.OVN_IP_VERSION,
+                    SubnetMapper.IP_VERSION_4
+                )
+            ),
             SubnetMapper.REST_TENANT_ID: tenant_id(),
             SubnetMapper.REST_SUBNET_ENABLE_DHCP: True,
             SubnetMapper.REST_SUBNET_ALLOCATION_POOLS: [
@@ -594,10 +602,34 @@ class SubnetMapper(Mapper):
         SubnetMapper._validate_common(rest_data)
         if SubnetMapper.REST_SUBNET_IP_VERSION not in rest_data:
             raise BadRequestError('Missing \'ip_version\' attribute')
+        SubnetMapper._validate_ip_version_consistency(
+            rest_data.get(SubnetMapper.REST_SUBNET_IP_VERSION),
+            cidr=rest_data.get(SubnetMapper.REST_SUBNET_CIDR),
+            gateway=rest_data.get(SubnetMapper.REST_SUBNET_GATEWAY_IP)
+        )
 
     @staticmethod
     def validate_update_rest_input(rest_data):
         SubnetMapper._validate_common(rest_data)
+
+    @staticmethod
+    def _validate_ip_version_consistency(ip_version, cidr, gateway):
+        if ip_version not in SubnetMapper.ALLOWED_IP_VERSIONS:
+            raise BadRequestError('\'ip_version\' must be either 4 or 6')
+        cidr_ip_version = IPNetwork(cidr).version
+        gateway_ip_version = IPNetwork(gateway).version if gateway else None
+        if len(
+                {
+                    ip_version, cidr_ip_version,
+                    gateway_ip_version or ip_version
+                }
+        ) is not 1:
+            raise BadRequestError(
+                'The provided ip_version [{ip}] does not match the supplied '
+                'cidr={cidr} or gateway={gateway}'.format(
+                    ip=ip_version, cidr=cidr, gateway=gateway
+                )
+            )
 
     @staticmethod
     def _validate_common(rest_data):

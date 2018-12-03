@@ -404,11 +404,14 @@ class NeutronApi(object):
         db_set_command = self.ovn_north.create_ovn_update_command(
             ovnconst.TABLE_LSP, port.uuid
         )
+        ip_version = int(
+            subnet.external_ids.get(
+                SubnetMapper.OVN_IP_VERSION, SubnetMapper.IP_VERSION_4
+            ) if subnet else SubnetMapper.IP_VERSION_4
+        )
         if mac:
             if subnet:
-                db_set_command.add(
-                    ovnconst.ROW_LSP_DHCPV4_OPTIONS, subnet.uuid
-                )
+                self.update_port_subnet(db_set_command, subnet, ip_version)
                 mac += ' ' + self._get_port_addesses_suffix(
                     network_id, fixed_ips)
             else:
@@ -418,6 +421,17 @@ class NeutronApi(object):
                 )
             db_set_command.add(ovnconst.ROW_LSP_ADDRESSES, [mac])
         return db_set_command
+
+    @staticmethod
+    def update_port_subnet(ovsdb_update_command, subnet, ip_version):
+        options_type = (
+            ovnconst.ROW_LSP_DHCPV4_OPTIONS
+            if ip_version == SubnetMapper.IP_VERSION_4
+            else ovnconst.ROW_LSP_DHCPV6_OPTIONS
+        )
+        ovsdb_update_command.add(
+            options_type, subnet.uuid
+        )
 
     def update_port_security(
             self, update_db_command, port, mac, port_security
@@ -618,7 +632,8 @@ class NeutronApi(object):
                                     ' for network {}'.format(network_id))
 
         external_ids = {
-            SubnetMapper.OVN_NETWORK_ID: network_id
+            SubnetMapper.OVN_NETWORK_ID: network_id,
+            SubnetMapper.OVN_IP_VERSION: str(ip_version)
         }
         if name:
             external_ids[SubnetMapper.OVN_NAME] = name
