@@ -770,6 +770,89 @@ class TestOvnNorth(object):
         )
 
     @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbClearCommand.execute',
+        lambda cmd, check_error: []
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsListCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LspGetCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LspAddCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'neutron.neutron_api.ovs_version_29',
+        lambda: True
+    )
+    def test_add_port_subnet(
+            self, mock_db_set, mock_add_command, mock_get_dhcp_options,
+            mock_ls_get, mock_lsp_get, mock_ls_list, mock_connection
+    ):
+        networkd_uuid = UUID(int=505)
+        subnet_cidr = '192.168.14.0/24'
+        subnet_uuid = UUID(int=606)
+        port_name = 'mega-port'
+        port_uuid = UUID(int=707)
+
+        subnet = OvnSubnetRow(
+            subnet_uuid,
+            network_id=str(networkd_uuid),
+            cidr=subnet_cidr
+        )
+        port_fixed_ips = [{
+            PortMapper.REST_PORT_SUBNET_ID: str(subnet_uuid)
+        }]
+        ovn_port = OvnPortRow(
+            port_uuid,
+            addresses=[TestOvnNorth.MAC_ADDRESS, '192.168.14.2'],
+            external_ids={
+                PortMapper.OVN_NIC_NAME: port_name,
+                PortMapper.OVN_DEVICE_ID: str(port_uuid),
+                PortMapper.OVN_DEVICE_OWNER: TestOvnNorth.DEVICE_OWNER_OVIRT,
+            }
+        )
+        port_network = OvnNetworkRow(
+            networkd_uuid, 'net4', ports=[ovn_port]
+        )
+        mock_add_command.return_value.execute.return_value = ovn_port
+        mock_get_dhcp_options.return_value.execute.return_value = [subnet]
+        mock_ls_get.return_value.execute.return_value = port_network
+        mock_lsp_get.return_value.execute.return_value = ovn_port
+        mock_ls_list.return_value.execute.return_value = [port_network]
+
+        ovn_north = NeutronApi()
+        rest_data = PortApiInputMaker(
+            port_name, str(networkd_uuid),
+            device_id=TestOvnNorth.DEVICE_ID,
+            device_owner=TestOvnNorth.DEVICE_OWNER_OVIRT, admin_state_up=True,
+            mac_address=TestOvnNorth.MAC_ADDRESS,
+            fixed_ips=port_fixed_ips,
+            binding_host_id=TestOvnNorth.PORT_BINDING_ID
+        ).get()
+        result = ovn_north.add_port(rest_data)
+
+        port = NetworkPort(lsp=ovn_port, ls=port_network,
+                           dhcp_options=subnet, lrp=None)
+        assert_port_equal(result, port)
+
+    @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
         'execute',
         lambda cmd, check_error: []

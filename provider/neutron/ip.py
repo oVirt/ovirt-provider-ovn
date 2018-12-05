@@ -173,4 +173,4 @@ def get_ip_version(ip_address):
     elif valid_ipv6(ip_address):
         return 'ip6'
     else:
-        return ''
+        return None
