@@ -150,6 +150,7 @@ class NetworkMapper(Mapper):
     NETWORK_TYPE_VLAN = 'vlan'
 
     OVN_SUBNET = 'subnet'
+    OVN_IPV6_PREFIX = 'ipv6_prefix'
 
     NETWORK_STATUS_ACTIVE = 'ACTIVE'
 
@@ -589,7 +590,7 @@ class SubnetMapper(Mapper):
     @staticmethod
     def get_allocation_pool(cidr):
         ip_network = IPNetwork(cidr)
-        if len(ip_network) > 2:
+        if ip_network.size > 2:
             return {
                 SubnetMapper.REST_SUBNET_ALLOCATION_POOLS_START:
                     str(ip_network[2]),

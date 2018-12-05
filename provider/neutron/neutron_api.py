@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 import uuid
 
+from netaddr import IPNetwork
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 
 import ovn_connection
@@ -638,13 +639,7 @@ class NeutronApi(object):
         if name:
             external_ids[SubnetMapper.OVN_NAME] = name
 
-        dhcp_server_ip = cidr.split('/', 1)[0]
-
-        options = {
-            SubnetMapper.OVN_DHCP_SERVER_ID: dhcp_server_ip,
-            SubnetMapper.OVN_DHCP_SERVER_MAC: dhcp_server_mac(),
-            SubnetMapper.OVN_DHCP_LEASE_TIME: dhcp_lease_time(),
-        }
+        options = self.get_subnet_options(cidr)
         if gateway:
             options[SubnetMapper.OVN_GATEWAY] = gateway
         network_mtu = network.external_ids.get(SubnetMapper.OVN_DHCP_MTU)
@@ -659,7 +654,7 @@ class NeutronApi(object):
         self.ovn_north.db_set(
             ovnconst.TABLE_LS,
             network_id,
-            (ovnconst.ROW_LS_OTHER_CONFIG, {NetworkMapper.OVN_SUBNET: cidr}),
+            (ovnconst.ROW_LS_OTHER_CONFIG, self.get_ls_options(cidr)),
         )
 
         subnet = self.ovn_north.add_dhcp_options(cidr, external_ids)
@@ -673,6 +668,30 @@ class NeutronApi(object):
             ).execute()
 
         return self.get_subnet(subnet.uuid)
+
+    @staticmethod
+    def get_ls_options(cidr):
+        network = IPNetwork(cidr)
+        if network.version == SubnetMapper.IP_VERSION_4:
+            options = {NetworkMapper.OVN_SUBNET: cidr}
+        else:
+            options = {NetworkMapper.OVN_IPV6_PREFIX: str(network[0])}
+        return options
+
+    @staticmethod
+    def get_subnet_options(cidr):
+        network = IPNetwork(cidr)
+        if network.version == SubnetMapper.IP_VERSION_4:
+            options = {
+                SubnetMapper.OVN_DHCP_SERVER_ID: cidr.split('/', 1)[0],
+                SubnetMapper.OVN_DHCP_SERVER_MAC: dhcp_server_mac(),
+                SubnetMapper.OVN_DHCP_LEASE_TIME: dhcp_lease_time(),
+            }
+        else:
+            options = {
+                SubnetMapper.OVN_DHCP_SERVER_ID: dhcp_server_mac()
+            }
+        return options
 
     @SubnetMapper.validate_update
     @SubnetMapper.map_from_rest
