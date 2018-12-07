@@ -2,8 +2,10 @@
 
 EXEC_PATH=$(dirname "$(realpath "$0")")
 
-OVN_CENTRAL_IMG="tripleomaster/centos-binary-ovn-northd:current-tripleo"
-OVN_CONTROLLER_IMG="tripleomaster/centos-binary-ovn-controller:current-tripleo"
+OVN_CENTRAL_TRIPLEO_TAG="${CENTRAL_CONTAINER_TAG:-current-tripleo}"
+OVN_CONTROLLER_TRIPLEO_TAG="${CONTROLLER_CONTAINER_TAG:-current-tripleo}"
+OVN_CENTRAL_IMG="tripleomaster/centos-binary-ovn-northd:$OVN_CENTRAL_TRIPLEO_TAG"
+OVN_CONTROLLER_IMG="tripleomaster/centos-binary-ovn-controller:$OVN_CONTROLLER_TRIPLEO_TAG"
 OVIRT_PROVIDER_OVN_IMG="maiqueb/ovirt_provider_ovn"
 
 PROJECT_ROOT=$(git rev-parse --show-toplevel)
