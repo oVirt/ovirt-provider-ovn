@@ -1,0 +1,4 @@
+---
+# defaults file for create_l2l3_ovn_entities
+
+cloud_name: ovirt

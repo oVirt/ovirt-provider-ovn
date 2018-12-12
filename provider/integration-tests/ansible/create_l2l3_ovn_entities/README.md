@@ -34,7 +34,8 @@ An example of the expected 'network_points' input can be found below:
             'subnet_name': 'subnet1',
             'cidr': '192.168.10.0/24',
             'gateway_ip': '192.168.10.1',
-            'network': 'net1'
+            'network': 'net1',
+            'ns': 'ns1'
         },
         {
             'name': 'lport2',
@@ -43,7 +44,8 @@ An example of the expected 'network_points' input can be found below:
             'subnet_name': 'subnet1',
             'cidr': '192.168.10.0/24',
             'gateway_ip': '192.168.10.1',
-            'network': 'net1'
+            'network': 'net1',
+            'ns': 'ns2'
         }
     ]
 }
@@ -70,6 +72,7 @@ Example Playbook
                cidr: 192.168.10.0/24
                gateway_ip: 192.168.10.1
                network: net1
+               ns: ns1
              - name: lport2
                ip: 192.168.10.3
                mac': 00:00:00:22:22:22
@@ -77,6 +80,7 @@ Example Playbook
                cidr: 192.168.10.0/24
                gateway_ip: 192.168.10.1
                network: net1
+               ns: ns2
            cloud_name: ovirt
 
 License

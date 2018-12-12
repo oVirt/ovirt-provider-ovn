@@ -1,0 +1,49 @@
+---
+- name: create the ip namespaces
+  delegate_to: "{{ controller_container_id }}"
+  ip_netns:
+    name: "{{ item.ns }}"
+    state: present
+  with_items:
+    - "{{ network_points }}"
+
+- name: get ovn port data
+  os_port_facts:
+    cloud: "{{ cloud_name }}"
+
+- name: create ports
+  delegate_to: "{{ controller_container_id }}"
+  command:
+    ovs-vsctl add-port br-int "{{ item.name }}" -- set Interface "{{ item.name }}" type=internal external_ids:iface-id="{{ item.id }}"
+  with_items:
+    - "{{ openstack_ports }}"
+
+- name: attach the ports to the namespaces
+  delegate_to: "{{ controller_container_id }}"
+  command:
+    ip link set "{{ item.name }}" netns "{{ item.ns }}"
+  with_items:
+    - "{{ network_points }}"
+
+- debug: var=openstack_ports
+
+- name: set mac addresses on the ports
+  delegate_to: "{{ controller_container_id }}"
+  command:
+    "ip netns exec {{ item.ns }} ip link set {{ item.name }} address {{ item.mac }}"
+  with_items:
+  - "{{ network_points }}"
+
+- name: set ip addresses on the ports
+  delegate_to: "{{ controller_container_id }}"
+  command:
+    ip netns exec "{{ item.ns }}" ip addr add "{{ item.ip }}"/24 dev "{{ item.name }}"
+  with_items:
+    - "{{ network_points }}"
+
+- name: activate the interfaces
+  delegate_to: "{{ controller_container_id }}"
+  command:
+    ip netns exec "{{ item.ns }}" ip link set "{{ item.name }}" up
+  with_items:
+    - "{{ network_points }}"
