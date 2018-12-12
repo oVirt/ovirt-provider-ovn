@@ -1,0 +1,52 @@
+---
+- name: Add the ovn-containers to the inventory
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - block:
+      - name: add provider container to inventory
+        add_host:
+          name: "{{ provider_container_id }}"
+          ansible_connection: docker
+          ansible_user: root
+
+      - name: add ovn-controller to inventory
+        add_host:
+          name: "{{ controller_container_id }}"
+          ansible_connection: docker
+          ansible_user: root
+
+      - name: start ovirt-provider-ovn service
+        delegate_to: "{{ provider_container_id }}"
+        service:
+          name: ovirt-provider-ovn
+          state: started
+
+      when:
+        - controller_container_id is defined
+        - provider_container_id is defined
+
+
+- name: Create L2 and L3 ovn entities via ansible
+  hosts: localhost
+  gather_facts: no
+
+  roles:
+    - create_l2l3_ovn_entities
+    - setup_dataplane
+
+  tasks:
+    - block:
+      - name: assure connectivity
+        delegate_to: "{{ controller_container_id }}"
+        command:
+          ip netns exec "{{ ping_source_namespace }}" ping -4 -c 1 "{{ ping_destination_ip }}"
+        register: ping_result
+
+      - debug: var=ping_result
+
+      when:
+        - ping_destination_ip is defined
+        - ping_source_namespace is defined
+        - controller_container_id is defined
