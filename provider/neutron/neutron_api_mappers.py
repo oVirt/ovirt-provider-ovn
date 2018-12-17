@@ -236,11 +236,11 @@ class NetworkMapper(Mapper):
 
     @staticmethod
     def validate_update_rest_input(rest_data):
-        NetworkMapper._validate_rest_input(rest_data)
+        NetworkMapper._validate_rest_input(rest_data, check_name=False)
 
     @staticmethod
-    def _validate_rest_input(rest_data):
-        if NetworkMapper.REST_NETWORK_NAME not in rest_data:
+    def _validate_rest_input(rest_data, check_name=True):
+        if check_name and NetworkMapper.REST_NETWORK_NAME not in rest_data:
             raise NetworkNameRequiredDataError()
         Mapper._boolean_or_exception(
             NetworkMapper.REST_PORT_SECURITY_ENABLED,
