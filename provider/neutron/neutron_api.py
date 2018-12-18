@@ -153,7 +153,11 @@ class NeutronApi(object):
             ls_id=network_id
         ).external_ids
 
-        relevant_external_ids = {NetworkMapper.OVN_NETWORK_NAME: name}
+        relevant_external_ids = {
+            NetworkMapper.OVN_NETWORK_NAME: name or current_external_ids[
+                NetworkMapper.OVN_NETWORK_NAME
+            ]
+        }
         if mtu is not None:
             relevant_external_ids[NetworkMapper.OVN_MTU] = str(mtu)
         if port_security is not None:
