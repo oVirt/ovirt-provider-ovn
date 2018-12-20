@@ -22,6 +22,14 @@ RUN yum install -y \
       git && \
     mkdir -p /etc/ovirt-provider-ovn/conf.d/
 
+RUN yum install -y openvswitch \
+      openvswitch-ovn-common \
+      openvswitch-ovn-central \
+      python-ovsdbapp \
+      python-openvswitch \
+      kernel \
+      linux-firmware
+
 COPY 10-integrationtest.conf /etc/ovirt-provider-ovn/conf.d/
 
 VOLUME [ "/sys/fs/cgroup" , "/ovirt-provider-ovn-rpms"]
