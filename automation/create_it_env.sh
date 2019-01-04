@@ -33,7 +33,7 @@ function create_ovn_containers {
 
   sleep 1
   docker exec -t "$OVN_CONTROLLER_ID" /bin/bash -c '
-      ovs-vsctl set Open_vSwitch . \
+      ovs-vsctl --no-wait set Open_vSwitch . \
           external_ids:ovn-remote="tcp:$OVN_SB_IP:6642" \
           external_ids:ovn-encap-ip=`hostname -I` \
           external_ids:ovn-encap-type=geneve
