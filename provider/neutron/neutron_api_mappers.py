@@ -505,6 +505,7 @@ class SubnetMapper(Mapper):
     REST_SUBNET_ALLOCATION_POOLS = 'allocation_pools'
     REST_SUBNET_ALLOCATION_POOLS_START = 'start'
     REST_SUBNET_ALLOCATION_POOLS_STOP = 'stop'
+    REST_SUBNET_IPV6_ADDRESS_MODE = 'ipv6_address_mode'
 
     OVN_NAME = 'ovirt_name'
     OVN_NETWORK_ID = 'ovirt_network_id'
@@ -516,10 +517,13 @@ class SubnetMapper(Mapper):
     OVN_DHCP_MTU = 'mtu'
     OVN_GATEWAY_ROUTER_ID = 'gateway_router'
     OVN_IP_VERSION = 'ip_version'
+    OVN_IPV6_ADDRESS_MODE = 'ovirt_ipv6_address_mode'
 
     IP_VERSION_4 = 4
     IP_VERSION_6 = 6
     ALLOWED_IP_VERSIONS = [IP_VERSION_4, IP_VERSION_6]
+
+    IPV6_ADDRESS_MODE_STATEFUL = 'dhcpv6_stateful'
 
     @staticmethod
     def rest2row(wrapped_self, func, rest_data, subnet_id):
@@ -530,6 +534,9 @@ class SubnetMapper(Mapper):
         dns = dnses[0] if dnses else None
         gateway = rest_data.get(SubnetMapper.REST_SUBNET_GATEWAY_IP)
         ip_version = rest_data.get(SubnetMapper.REST_SUBNET_IP_VERSION)
+        ipv6_address_mode = rest_data.get(
+            SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE
+        )
 
         if subnet_id:
             return func(
@@ -547,7 +554,8 @@ class SubnetMapper(Mapper):
                 network_id=network_id,
                 gateway=gateway,
                 dns=dns,
-                ip_version=ip_version
+                ip_version=ip_version,
+                ipv6_address_mode=ipv6_address_mode
             )
 
     @staticmethod
@@ -584,6 +592,10 @@ class SubnetMapper(Mapper):
             result[SubnetMapper.REST_SUBNET_GATEWAY_IP] = (
                 options[SubnetMapper.OVN_GATEWAY]
             )
+        if SubnetMapper.OVN_IPV6_ADDRESS_MODE in external_ids:
+            result[SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE] = external_ids[
+                SubnetMapper.OVN_IPV6_ADDRESS_MODE
+            ]
 
         return result
 
@@ -639,6 +651,14 @@ class SubnetMapper(Mapper):
             raise UnsupportedDataValueError(
                 SubnetMapper.REST_SUBNET_ENABLE_DHCP,
                 False
+            )
+        if (SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE in rest_data and
+                rest_data.get(SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE)
+                != SubnetMapper.IPV6_ADDRESS_MODE_STATEFUL):
+            raise UnsupportedDataValueError(
+                SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE,
+                rest_data.get(SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE),
+                [SubnetMapper.IPV6_ADDRESS_MODE_STATEFUL]
             )
 
 
@@ -969,9 +989,14 @@ class SubnetConfigError(BadRequestError):
 
 class UnsupportedDataValueError(RestDataError):
     message = 'Setting {key} value to {value} is not supported'
+    extra_msg = '. Allowed values are: {allowed_values}'
 
-    def __init__(self, key, value):
-        error_message = self.message.format(key=key, value=value)
+    def __init__(self, key, value, supported_values=None):
+        error_message = (
+                self.message.format(key=key, value=value) +
+                self.extra_msg.format(allowed_values=supported_values)
+                if supported_values else ""
+        )
         super(UnsupportedDataValueError, self).__init__(error_message)
 
 

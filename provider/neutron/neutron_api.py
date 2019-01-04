@@ -621,6 +621,7 @@ class NeutronApi(object):
         gateway,
         ip_version,
         dns=None,
+        ipv6_address_mode=None
     ):
         try:
             network = self.ovn_north.get_ls(ls_id=network_id)
@@ -638,6 +639,10 @@ class NeutronApi(object):
         }
         if name:
             external_ids[SubnetMapper.OVN_NAME] = name
+        if ipv6_address_mode:
+            external_ids[
+                SubnetMapper.OVN_IPV6_ADDRESS_MODE
+            ] = ipv6_address_mode
 
         options = self.get_subnet_options(cidr)
         if gateway:
