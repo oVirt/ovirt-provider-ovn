@@ -69,7 +69,8 @@ SUBNET_CIDR = '1.1.1.0/24'
 class TestOvnNorthMappers(object):
     def test_subnet_to_rest_minimal(self):
         row = OvnSubnetRow(SUBNET_ID102, cidr=SUBNET_CIDR, external_ids={
-            SubnetMapper.OVN_NETWORK_ID: NETWORK_ID1
+            SubnetMapper.OVN_NETWORK_ID: NETWORK_ID1,
+            SubnetMapper.OVN_IP_VERSION: '6'
         })
         subnet = SubnetMapper.row2rest(row)
         assert_subnet_equal(subnet, row)

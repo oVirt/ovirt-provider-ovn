@@ -74,6 +74,8 @@ class TestOvnNorth(object):
     LOCALNET_VLAN = 10
     DEVICE_OWNER_OVIRT = 'oVirt'
     SUBNET_CIDR = '1.1.1.0/24'
+    SUBNET_IPV6_CIDR = 'bef0:1234:a890:5678::/64'
+    SUBNET_IPV6_GATEWAY = 'bef0:1234:a890:5678::1'
     VALUE_NETWORK_MTU = 32854
 
     NETWORK_ID10 = UUID(int=10)
@@ -136,6 +138,7 @@ class TestOvnNorth(object):
     SUBNET_ID101 = UUID(int=101)
     SUBNET_ID102 = UUID(int=102)
     SUBNET_IDMTU = UUID(int=987)
+    SUBNET_IDV6 = UUID(int=6)
 
     SUBNET_101 = OvnSubnetRow(
         SUBNET_ID101,
@@ -149,6 +152,10 @@ class TestOvnNorth(object):
         SUBNET_IDMTU,
         network_id=str(NETWORK_IDMTU),
         cidr=SUBNET_CIDR
+    )
+
+    SUBNET_IPV6 = OvnSubnetRow(
+        SUBNET_IDV6, cidr=SUBNET_IPV6_CIDR, ip_version=6
     )
 
     NETWORK_10 = OvnNetworkRow(NETWORK_ID10, NETWORK_NAME10)
@@ -1774,3 +1781,50 @@ class TestOvnNorth(object):
             "The provided ip_version [6] does not match the supplied "
             "cidr=1.1.1.0/24 or gateway=1.1.1.0"
         )
+
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
+        'execute',
+        lambda cmd, check_error: TestOvnNorth.SUBNET_IPV6
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsAddCommand.'
+        'execute',
+        lambda cmd, check_error: TestOvnNorth.SUBNET_IPV6
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
+        'execute',
+        lambda cmd, check_error: []
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsAddCommand.execute',
+        lambda cmd, check_error: TestOvnNorth.NETWORK_MTU
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
+        lambda cmd, check_error: TestOvnNorth.NETWORK_MTU
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsSetOptionsCommand',
+        autospec=False
+    )
+    def test_ipv6_support(
+            self, mock_setoptions_command, mock_dbset_command, mock_connection
+    ):
+        ovn_north = NeutronApi()
+        rest_data = SubnetApiInputMaker(
+            TestOvnNorth.SUBNET_IPV6.external_ids.get(
+                SubnetMapper.OVN_NAME
+            ),
+            cidr=TestOvnNorth.SUBNET_IPV6_CIDR,
+            network_id=str(TestOvnNorth.NETWORK_IDMTU),
+            gateway_ip=TestOvnNorth.SUBNET_IPV6_GATEWAY, ip_version=6
+        ).get()
+
+        created_subnet = ovn_north.add_subnet(rest_data)
+        assert_subnet_equal(created_subnet, TestOvnNorth.SUBNET_IPV6)
