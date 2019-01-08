@@ -37,6 +37,7 @@ import version
 
 from handlers.keystone import TokenHandler
 from handlers.neutron import NeutronHandler
+from ovirt_provider_config_common import ssl_ciphers_string
 from ovirt_provider_config_common import ssl_enabled
 from ovirt_provider_config_common import ssl_key_file
 from ovirt_provider_config_common import ssl_cert_file
@@ -147,7 +148,8 @@ def _ssl_wrap(server):
                                         keyfile=ssl_key_file(),
                                         certfile=ssl_cert_file(),
                                         server_side=True,
-                                        ssl_version=ssl.PROTOCOL_TLSv1_2)
+                                        ssl_version=ssl.PROTOCOL_TLSv1_2,
+                                        ciphers=ssl_ciphers_string())
 
 
 if __name__ == '__main__':

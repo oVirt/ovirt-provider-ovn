@@ -45,6 +45,7 @@ from ovirt_provider_config import DEFAULT_OVN_REMOTE_AT_LOCALHOST
 from ovirt_provider_config import DEFAULT_OVS_VERSION_29
 from ovirt_provider_config import DEFAULT_PROVIDER_HOST
 from ovirt_provider_config import DEFAULT_SSL_CERT_FILE
+from ovirt_provider_config import DEFAULT_SSL_CIPHERS_STRING
 from ovirt_provider_config import DEFAULT_SSL_ENABLED
 from ovirt_provider_config import DEFAULT_SSL_KEY_FILE
 from ovirt_provider_config import DEFAULT_URL_FILTER_EXCEPTION
@@ -71,6 +72,7 @@ from ovirt_provider_config import KEY_OVS_VERSION_29
 from ovirt_provider_config import KEY_PROVIDER_HOST
 from ovirt_provider_config import KEY_SSL_CACERT_FILE
 from ovirt_provider_config import KEY_SSL_CERT_FILE
+from ovirt_provider_config import KEY_SSL_CIPHERS_STRING
 from ovirt_provider_config import KEY_SSL_KEY_FILE
 from ovirt_provider_config import KEY_URL_FILTER_EXCEPTION
 from ovirt_provider_config import KEY_VALIDATION_MAX_ALLOWED_MTU
@@ -227,6 +229,14 @@ def ssl_cacert_file():
         CONFIG_SECTION_SSL,
         KEY_SSL_CACERT_FILE,
         DEFAULT_SSL_CERT_FILE
+    )
+
+
+def ssl_ciphers_string():
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_SSL,
+        KEY_SSL_CIPHERS_STRING,
+        DEFAULT_SSL_CIPHERS_STRING
     )
 
 

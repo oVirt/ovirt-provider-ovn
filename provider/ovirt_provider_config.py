@@ -64,10 +64,12 @@ KEY_HTTPS_ENABLED = 'https-enabled'
 KEY_SSL_KEY_FILE = 'ssl-key-file'
 KEY_SSL_CERT_FILE = 'ssl-cert-file'
 KEY_SSL_CACERT_FILE = 'ssl-cacert-file'
+KEY_SSL_CIPHERS_STRING = 'ssl-ciphers-string'
 
 DEFAULT_SSL_KEY_FILE = '/etc/pki/ovirt-engine/keys/ovirt-provider-ovn.pem'
 DEFAULT_SSL_CERT_FILE = '/etc/pki/ovirt-engine/certs/ovirt-provider-ovn.cer'
 DEFAULT_SSL_CACERT_FILE = '/etc/pki/ovirt-engine/ca.pem'
+DEFAULT_SSL_CIPHERS_STRING = 'HIGH'
 DEFAULT_SSL_ENABLED = False
 
 CONFIG_SECTION_DHCP = 'DHCP'
