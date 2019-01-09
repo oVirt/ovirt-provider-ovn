@@ -97,7 +97,7 @@ ssl-cacert-file:: Path to the certificate authority's certificate used to
   validate the OVN Northbound Database's identity. +
   _default:_ `/etc/pki/ovirt-engine/ca.pem`
 
-ssl-ciphers-string:: The available ciphers for HTTPS/TLS for oVirt's external network AP. +
+ssl-ciphers-string:: The ciphers for oVirt external network API's HTTPS/TLS. +
   It should be a string in the
   link:https://www.openssl.org/docs/manmaster/man1/ciphers.html[OpenSSL cipher list format].
 
