@@ -1,0 +1,55 @@
+---
+- name: reset the ovs network, deleting all ports connected to it
+  delegate_to: "{{ controller_container_id }}"
+  openvswitch_bridge:
+    bridge: br-int
+    state: absent
+  when: enable_data_plane_reset
+
+- name: delete all ports
+  os_port:
+    cloud: "{{ cloud_name }}"
+    name: "{{ item.name }}"
+    state: absent
+  with_items:
+    - "{{ network_points }}"
+
+- name: read current ports from provider ...
+  os_port_facts:
+    cloud: "{{ cloud_name }}"
+
+- fail:
+    msg: 'ports were not deleted'
+  when: openstack_ports | length > 0
+
+- name: delete all networks
+  os_network:
+    cloud: "{{ cloud_name }}"
+    name: "{{ item.network }}"
+    state: absent
+  with_items:
+    - "{{ network_points }}"
+
+- name: read current networks from provider ...
+  os_networks_facts:
+    cloud: "{{ cloud_name }}"
+
+- fail:
+    msg: 'Networks were not deleted'
+  when: openstack_networks | length > 0
+
+- name: delete all subnets
+  os_subnet:
+    cloud: "{{ cloud_name }}"
+    name: "{{ item.subnet_name }}"
+    state: absent
+  with_items:
+  - "{{ network_points }}"
+
+- name: read current subnets from provider ...
+  os_subnets_facts:
+    cloud: "{{ cloud_name }}"
+
+- fail:
+    msg: 'Networks were not deleted'
+  when: openstack_subnets | length > 0

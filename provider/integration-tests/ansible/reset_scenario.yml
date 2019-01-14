@@ -1,0 +1,24 @@
+---
+- name: Assure dependencies are in place
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: add provider container to inventory
+      add_host:
+        name: "{{ provider_container_id }}"
+        ansible_connection: docker
+        ansible_user: root
+
+    - name: add ovn-controller to inventory
+      add_host:
+        name: "{{ controller_container_id }}"
+        ansible_connection: docker
+        ansible_user: root
+
+- name: Reset the data & control planes
+  hosts: localhost
+  gather_facts: no
+
+  roles:
+    - role: reset_scenario

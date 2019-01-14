@@ -1,0 +1,4 @@
+---
+# defaults file for reset_scenario
+cloud_name: ovirt
+enable_data_plane_reset: true
