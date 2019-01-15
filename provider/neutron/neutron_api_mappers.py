@@ -525,6 +525,7 @@ class SubnetMapper(Mapper):
         dnses = rest_data.get(SubnetMapper.REST_SUBNET_DNS_NAMESERVERS)
         dns = dnses[0] if dnses else None
         gateway = rest_data.get(SubnetMapper.REST_SUBNET_GATEWAY_IP)
+        ip_version = rest_data.get(SubnetMapper.REST_SUBNET_IP_VERSION)
 
         if subnet_id:
             return func(
@@ -542,6 +543,7 @@ class SubnetMapper(Mapper):
                 network_id=network_id,
                 gateway=gateway,
                 dns=dns,
+                ip_version=ip_version
             )
 
     @staticmethod
@@ -590,6 +592,8 @@ class SubnetMapper(Mapper):
     @staticmethod
     def validate_add_rest_input(rest_data):
         SubnetMapper._validate_common(rest_data)
+        if SubnetMapper.REST_SUBNET_IP_VERSION not in rest_data:
+            raise BadRequestError('Missing \'ip_version\' attribute')
 
     @staticmethod
     def validate_update_rest_input(rest_data):

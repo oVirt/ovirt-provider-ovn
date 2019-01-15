@@ -604,6 +604,7 @@ class NeutronApi(object):
         cidr,
         network_id,
         gateway,
+        ip_version,
         dns=None,
     ):
         try:

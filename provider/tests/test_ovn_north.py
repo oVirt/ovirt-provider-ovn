@@ -443,7 +443,8 @@ class TestOvnNorth(object):
             cidr=TestOvnNorth.SUBNET_CIDR,
             network_id=str(TestOvnNorth.NETWORK_IDMTU),
             dns_nameservers=['1.1.1.1'],
-            gateway_ip='1.1.1.0'
+            gateway_ip='1.1.1.0',
+            ip_version=4
         ).get()
 
         expected_options_call = mock.call(
@@ -515,7 +516,8 @@ class TestOvnNorth(object):
             cidr=TestOvnNorth.SUBNET_CIDR,
             network_id=str(TestOvnNorth.NETWORK_IDMTU),
             dns_nameservers=['1.1.1.1'],
-            gateway_ip='1.1.1.0'
+            gateway_ip='1.1.1.0',
+            ip_version=4
         ).get()
 
         ovn_north.add_subnet(subnet_rest_data)
@@ -1017,7 +1019,7 @@ class TestOvnNorth(object):
             TestOvnNorth.SUBNET_102.external_ids.get(
                 SubnetMapper.OVN_NAME
             ),
-            cidr=TestOvnNorth.SUBNET_CIDR,
+            cidr=TestOvnNorth.SUBNET_CIDR, ip_version=4,
             network_id=str(TestOvnNorth.NETWORK_ID10),
             dns_nameservers=['1.1.1.1'], gateway_ip='1.1.1.0'
         ).get()
@@ -1094,7 +1096,7 @@ class TestOvnNorth(object):
         rest_data = SubnetApiInputMaker(
             'subnet_name', cidr=TestOvnNorth.SUBNET_CIDR,
             network_id=str(TestOvnNorth.NETWORK_ID10), dns_nameservers=[],
-            gateway_ip='1.1.1.0'
+            gateway_ip='1.1.1.0', ip_version=4
         ).get()
         result = ovn_north.add_subnet(rest_data)
         assert_subnet_equal(result, TestOvnNorth.SUBNET_102)
@@ -1209,7 +1211,7 @@ class TestOvnNorth(object):
     def test_subnet_add_duplicate_network(self, mock_connection):
         ovn_north = NeutronApi()
         rest_data = SubnetApiInputMaker(
-            'subnet_name', cidr=TestOvnNorth.SUBNET_CIDR,
+            'subnet_name', cidr=TestOvnNorth.SUBNET_CIDR, ip_version=4,
             network_id=str(TestOvnNorth.NETWORK_ID10), gateway_ip='1.1.1.0'
         ).get()
         with pytest.raises(SubnetConfigError):
@@ -1220,7 +1222,7 @@ class TestOvnNorth(object):
         rest_data = SubnetApiInputMaker(
             'subnet_name', cidr=TestOvnNorth.SUBNET_CIDR, network_id='',
             dns_nameservers=['1.1.1.1'], gateway_ip='1.1.1.0',
-            enable_dhcp=False
+            enable_dhcp=False, ip_version=4
         ).get()
         with pytest.raises(UnsupportedDataValueError):
             ovn_north.add_subnet(rest_data)
@@ -1235,7 +1237,7 @@ class TestOvnNorth(object):
         ovn_north = NeutronApi()
         rest_data = SubnetApiInputMaker(
             'subnet_name', cidr=TestOvnNorth.SUBNET_CIDR, network_id=7,
-            dns_nameservers=['1.1.1.1'], gateway_ip='1.1.1.0'
+            dns_nameservers=['1.1.1.1'], gateway_ip='1.1.1.0', ip_version=4
         ).get()
         with pytest.raises(SubnetConfigError):
             ovn_north.add_subnet(rest_data)

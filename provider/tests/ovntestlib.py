@@ -370,7 +370,8 @@ class SubnetApiInputMaker(ApiInputMaker):
             network_id=None,
             dns_nameservers=None,
             gateway_ip=None,
-            enable_dhcp=None
+            enable_dhcp=None,
+            ip_version=None
     ):
         self._name = (SubnetMapper.REST_SUBNET_NAME, name)
         self._cidr = (SubnetMapper.REST_SUBNET_CIDR, cidr)
@@ -380,6 +381,7 @@ class SubnetApiInputMaker(ApiInputMaker):
         )
         self._gateway_ip = (SubnetMapper.REST_SUBNET_GATEWAY_IP, gateway_ip)
         self._enable_dhcp = (SubnetMapper.REST_SUBNET_ENABLE_DHCP, enable_dhcp)
+        self._ip_version = (SubnetMapper.REST_SUBNET_IP_VERSION, ip_version)
 
 
 class PortApiInputMaker(ApiInputMaker):
