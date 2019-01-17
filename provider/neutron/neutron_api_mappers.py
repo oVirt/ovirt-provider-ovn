@@ -616,9 +616,17 @@ class SubnetMapper(Mapper):
         SubnetMapper._validate_common(rest_data)
         if SubnetMapper.REST_SUBNET_IP_VERSION not in rest_data:
             raise BadRequestError('Missing \'ip_version\' attribute')
+        ip_version = rest_data[SubnetMapper.REST_SUBNET_IP_VERSION]
+        if (
+                ip_version != SubnetMapper.IP_VERSION_6 and
+                SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE in rest_data
+        ):
+            raise BadRequestError(
+                'The \'{}\' parameter can only be used when \'ip_version\' '
+                '== 6'.format(SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE)
+            )
         SubnetMapper._validate_ip_version_consistency(
-            rest_data.get(SubnetMapper.REST_SUBNET_IP_VERSION),
-            cidr=rest_data.get(SubnetMapper.REST_SUBNET_CIDR),
+            ip_version, cidr=rest_data.get(SubnetMapper.REST_SUBNET_CIDR),
             gateway=rest_data.get(SubnetMapper.REST_SUBNET_GATEWAY_IP)
         )
 

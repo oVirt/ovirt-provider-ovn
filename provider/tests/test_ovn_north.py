@@ -1866,3 +1866,22 @@ class TestOvnNorth(object):
             'Setting ipv6_address_mode value to dhcpv6_stateless is not '
             'supported. Allowed values are: [\'dhcpv6_stateful\']'
         )
+
+    def test_v4_subnet_having_v6_attributes(self, mock_connection):
+        ovn_north = NeutronApi()
+        rest_data = SubnetApiInputMaker(
+            TestOvnNorth.SUBNET_102.external_ids.get(
+                SubnetMapper.OVN_NAME
+            ),
+            cidr=TestOvnNorth.SUBNET_CIDR,
+            network_id=str(TestOvnNorth.NETWORK_ID10),
+            dns_nameservers=['1.1.1.1'], gateway_ip='1.1.1.0',
+            ip_version=4, address_mode='dhcpv6_stateful'
+        ).get()
+
+        with pytest.raises(BadRequestError) as bre:
+            ovn_north.add_subnet(rest_data)
+        assert bre.value.message == (
+            'The \'ipv6_address_mode\' parameter can only be used '
+            'when \'ip_version\' == 6'
+        )
