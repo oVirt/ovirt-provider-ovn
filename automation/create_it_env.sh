@@ -65,9 +65,16 @@ function install_provider_on_container {
   '
 }
 
+function activate_provider_traces {
+  docker exec -t "$PROVIDER_ID" /bin/bash -c '
+    sed -i_backup 's/INFO/DEBUG/g' /etc/ovirt-provider-ovn/logger.conf
+  '
+}
+
 trap destroy_env EXIT
 create_ovn_containers
 start_provider_container
+activate_provider_traces
 if [ -n "$RUN_INTEG_TESTS" ]; then
   tox -e integration-tests27
   destroy_env
