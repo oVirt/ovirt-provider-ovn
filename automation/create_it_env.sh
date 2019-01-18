@@ -59,7 +59,9 @@ function cleanup_past_builds {
 
 function install_provider_on_container {
   docker exec -t "$PROVIDER_ID" /bin/bash -c '
-    yum install -y --disablerepo=ovirtwebui-ovirt-web-ui-master ~/rpmbuild/RPMS/noarch/ovirt-provider-ovn-1.*.rpm && \
+    yum install -y --disablerepo=* --enablerepo=base \
+	    --enablerepo=centos-opstools-release \
+	    ~/rpmbuild/RPMS/noarch/ovirt-provider-ovn-1.*.rpm && \
     sed -ie "s/PLACE_HOLDER/${OVN_NB_IP}/g" /etc/ovirt-provider-ovn/conf.d/10-integrationtest.conf && \
     systemctl start ovirt-provider-ovn
   '
