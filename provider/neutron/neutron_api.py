@@ -442,9 +442,7 @@ class NeutronApi(object):
             self.ovn_north.activate_default_security_group(port.uuid)
             update_db_command.add(ovnconst.ROW_LSP_PORT_SECURITY, [mac])
         elif port_security is False:
-            if len(port.port_security) > 0:
-                self.ovn_north.deactivate_default_security_group(port.uuid)
-            update_db_command.add(ovnconst.ROW_LSP_PORT_SECURITY, [])
+            self.deactivate_port_security(port, update_db_command)
         return update_db_command
 
     def _get_port_addesses_suffix(self, network_id, fixed_ips):
@@ -600,7 +598,7 @@ class NeutronApi(object):
             self, port, db_update_command,
     ):
         if len(port.port_security) > 0:
-            self.ovn_north.deactivate_default_security_group(port.uuid)
+            self.ovn_north.deactivate_dropall_security_group(port.uuid)
         return db_update_command.add(ovnconst.ROW_LSP_PORT_SECURITY, [])
 
     @SubnetMapper.map_to_rest
