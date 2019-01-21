@@ -22,6 +22,7 @@ import abc
 from collections import namedtuple
 from functools import wraps
 
+from netaddr import AddrFormatError
 from netaddr import IPNetwork
 import six
 
@@ -1211,7 +1212,11 @@ class SecurityGroupRuleMapper(Mapper):
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_IP_PREFIX
         )
         if prefix:
-            addr_or_prefix = IPNetwork(prefix)
+            try:
+                addr_or_prefix = IPNetwork(prefix, implicit_prefix=True)
+            except AddrFormatError as afe:
+                raise BadRequestError(afe.message)
+
             ether_type = rest_data.get(
                     SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ETHERTYPE
             )
