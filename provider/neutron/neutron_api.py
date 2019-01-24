@@ -642,17 +642,8 @@ class NeutronApi(object):
                 SubnetMapper.OVN_IPV6_ADDRESS_MODE
             ] = ipv6_address_mode
 
-        options = self.get_subnet_options(cidr)
-        if gateway:
-            options[SubnetMapper.OVN_GATEWAY] = gateway
         network_mtu = network.external_ids.get(SubnetMapper.OVN_DHCP_MTU)
-        if network_mtu:
-            options[SubnetMapper.OVN_DHCP_MTU] = network_mtu
-        elif dhcp_enable_mtu():
-            options[SubnetMapper.OVN_DHCP_MTU] = dhcp_mtu()
-
-        if dns:
-            options[SubnetMapper.OVN_DNS_SERVER] = dns
+        options = self.get_subnet_options(cidr, gateway, network_mtu, dns)
 
         self.ovn_north.db_set(
             ovnconst.TABLE_LS,
@@ -682,7 +673,7 @@ class NeutronApi(object):
         return options
 
     @staticmethod
-    def get_subnet_options(cidr):
+    def get_subnet_options(cidr, gateway, network_mtu, dns):
         network = IPNetwork(cidr)
         if network.version == SubnetMapper.IP_VERSION_4:
             options = {
@@ -690,10 +681,18 @@ class NeutronApi(object):
                 SubnetMapper.OVN_DHCP_SERVER_MAC: dhcp_server_mac(),
                 SubnetMapper.OVN_DHCP_LEASE_TIME: dhcp_lease_time(),
             }
+            if gateway:
+                options[SubnetMapper.OVN_GATEWAY] = gateway
+            if network_mtu:
+                options[SubnetMapper.OVN_DHCP_MTU] = network_mtu
+            elif dhcp_enable_mtu():
+                options[SubnetMapper.OVN_DHCP_MTU] = dhcp_mtu()
         else:
             options = {
                 SubnetMapper.OVN_DHCP_SERVER_ID: dhcp_server_mac()
             }
+        if dns:
+            options[SubnetMapper.OVN_DNS_SERVER] = dns
         return options
 
     @SubnetMapper.validate_update
