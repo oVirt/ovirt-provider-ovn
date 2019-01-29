@@ -29,7 +29,9 @@ RUN yum install -y openvswitch \
       python-ovsdbapp \
       python-openvswitch \
       kernel \
-      linux-firmware && \
+      linux-firmware \
+      python2-netaddr \
+      python2-requests && \
     yum clean all
 
 COPY 10-integrationtest.conf /etc/ovirt-provider-ovn/conf.d/
