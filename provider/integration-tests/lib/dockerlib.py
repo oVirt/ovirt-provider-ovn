@@ -35,11 +35,14 @@ def get_container_ip(container_name):
 
 
 def inner_ping(
-        container_name, source_namespace, target_ip, expected_result=0
+        container_name, source_namespace, target_ip, expected_result=0,
+        ip_version=4
 ):
     command = [
         CONTAINER_CLI, 'exec', container_name, 'bash', '-c',
-        'ip netns exec {} ping -c 1 {}'.format(source_namespace, target_ip)
+        'ip netns exec {} ping -{} -c 1 {}'.format(
+            source_namespace, ip_version, target_ip
+        )
     ]
     result = subprocess.call(command)
     if result != expected_result:

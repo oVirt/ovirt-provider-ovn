@@ -31,15 +31,10 @@
   delegate_to: "{{ controller_container_id }}"
   command:
     "ip netns exec {{ item.ns }} ip link set {{ item.name }} address {{ item.mac }}"
+  when:
+    - item.mac is defined
   with_items:
   - "{{ network_points }}"
-
-- name: set ip addresses on the ports
-  delegate_to: "{{ controller_container_id }}"
-  command:
-    ip netns exec "{{ item.ns }}" ip addr add "{{ item.ip }}"/24 dev "{{ item.name }}"
-  with_items:
-    - "{{ network_points }}"
 
 - name: activate the interfaces
   delegate_to: "{{ controller_container_id }}"
@@ -47,3 +42,32 @@
     ip netns exec "{{ item.ns }}" ip link set "{{ item.name }}" up
   with_items:
     - "{{ network_points }}"
+
+- name: set static ip addresses on the ports
+  delegate_to: "{{ controller_container_id }}"
+  command:
+    ip netns exec "{{ item.ns }}" ip addr add "{{ item.ip }}"/24 dev "{{ item.name }}"
+  when:
+    - item.ip is defined
+  with_items:
+    - "{{ network_points }}"
+
+- name: namespace dynamic ipv4 configuration
+  delegate_to: "{{ controller_container_id }}"
+  command:
+    "timeout 1m ip netns exec {{ item.ns }} dhclient -4 -lf /var/lib/dhclient/{{ item.ns }}.lease --no-pid {{ item.name }}"
+  with_items:
+    - "{{ network_points }}"
+  when:
+    - "'ip' not in item"
+    - item.cidr | ipv4
+
+- name: namespace dynamic ipv6 configuration
+  delegate_to: "{{ controller_container_id }}"
+  command:
+    "timeout 1m ip netns exec {{ item.ns }} dhclient -6 -lf /var/lib/dhclient/{{ item.ns }}.lease --no-pid {{ item.name }}"
+  when:
+    - "'ip' not in item"
+    - item.cidr | ipv6
+  with_items:
+  - "{{ network_points }}"

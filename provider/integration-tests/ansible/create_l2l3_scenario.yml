@@ -1,5 +1,5 @@
 ---
-- name: Add the ovn-containers to the inventory
+- name: Add the ovn-containers to the inventory & install dependencies
   hosts: localhost
   gather_facts: no
 
@@ -27,6 +27,12 @@
         - controller_container_id is defined
         - provider_container_id is defined
 
+    - name: install dhclient in the ovn-controller
+      delegate_to: "{{ controller_container_id }}"
+      yum:
+        name: dhclient
+        state: latest
+        disablerepo: delorean
 
 - name: Create L2 and L3 ovn entities via ansible
   hosts: localhost

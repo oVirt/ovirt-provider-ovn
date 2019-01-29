@@ -53,3 +53,11 @@
 - fail:
     msg: 'Networks were not deleted'
   when: openstack_subnets | length > 0
+
+- name: delete the dhcp leases
+  delegate_to: "{{ controller_container_id }}"
+  file:
+    path: "/var/lib/dhclient/{{ item.ns }}.lease"
+    state: absent
+  with_items:
+    - "{{ network_points }}"
