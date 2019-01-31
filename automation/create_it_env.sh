@@ -1,6 +1,8 @@
 #!/bin/sh -ex
 
 EXEC_PATH=$(dirname "$(realpath "$0")")
+PROJECT_ROOT="$EXEC_PATH/.."
+EXPORTED_ARTIFACTS_DIR="$PROJECT_ROOT/exported-artifacts/"
 
 OVN_CENTRAL_TRIPLEO_TAG="${CENTRAL_CONTAINER_TAG:-current-tripleo}"
 OVN_CONTROLLER_TRIPLEO_TAG="${CONTROLLER_CONTAINER_TAG:-current-tripleo}"
@@ -21,7 +23,17 @@ function docker_ip {
 }
 
 function destroy_env {
-  docker rm -f $(docker ps -q --filter "label=purpose=ovirt_provider_ovn_integ_tests")
+  if [ -n "$(filter_integration_test_containers)" ]; then
+    collect_container_logs
+    docker rm -f $(filter_integration_test_containers)
+  else
+    echo "No containers to destroy; Bailing out."
+    return 0
+  fi
+}
+
+function filter_integration_test_containers {
+  docker ps -q --filter "label=purpose=ovirt_provider_ovn_integ_tests"
 }
 
 function create_ovn_containers {
@@ -71,6 +83,22 @@ function activate_provider_traces {
   docker exec -t "$PROVIDER_ID" /bin/bash -c '
     sed -i_backup 's/INFO/DEBUG/g' /etc/ovirt-provider-ovn/logger.conf
   '
+}
+
+function collect_container_logs {
+  echo "Collecting logs from containers ..."
+  mkdir -p "$EXPORTED_ARTIFACTS_DIR"
+  if [ -n "$OVN_CENTRAL_ID" ]; then
+    docker cp "$OVN_CENTRAL_ID":/etc/openvswitch/ovnnb_db.db "$EXPORTED_ARTIFACTS_DIR"
+    docker cp "$OVN_CENTRAL_ID":/etc/openvswitch/ovnsb_db.db "$EXPORTED_ARTIFACTS_DIR"
+    docker cp "$OVN_CENTRAL_ID":/var/log/openvswitch/ovn-northd.log "$EXPORTED_ARTIFACTS_DIR"
+  fi
+  if [ -n "$OVN_CONTROLLER_ID" ]; then
+    docker cp "$OVN_CONTROLLER_ID":/var/log/openvswitch/ovn-controller.log "$EXPORTED_ARTIFACTS_DIR"
+  fi
+  if [ -n "$PROVIDER_ID" ]; then
+    docker cp "$PROVIDER_ID":/var/log/ovirt-provider-ovn.log "$EXPORTED_ARTIFACTS_DIR"
+  fi
 }
 
 trap destroy_env EXIT
