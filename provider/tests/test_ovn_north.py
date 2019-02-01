@@ -1457,10 +1457,7 @@ class TestOvnNorth(object):
         with pytest.raises(InvalidRestData) as invalid_data:
             rest_data.update({'peanut-butter': 32})
             ovn_north.add_security_group(rest_data)
-        assert (
-                'Invalid data found: peanut-butter'
-                == invalid_data.value.message
-        )
+        assert 'Invalid data found: peanut-butter' == str(invalid_data.value)
 
     def test_add_security_group_validator_data_missing(self, mock_connection):
         ovn_north = NeutronApi()
@@ -1472,10 +1469,7 @@ class TestOvnNorth(object):
         with pytest.raises(MandatoryDataMissing) as invalid_data:
             rest_data.pop('name')
             ovn_north.add_security_group(rest_data)
-        assert (
-                'Mandatory data name is missing'
-                == invalid_data.value.message
-        )
+        assert 'Mandatory data name is missing' == str(invalid_data.value)
 
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbDestroyCommand', autospec=False
@@ -1746,7 +1740,7 @@ class TestOvnNorth(object):
             ovn_north.delete_security_group(security_group_id)
         assert 'Security Group {} in use'.format(
             security_group_id
-        ) == ex.value.message
+        ) == str(ex.value)
 
     def test_sec_group_rules_ip_prefix_requires_ethertype(
             self, mock_connection
@@ -1762,7 +1756,7 @@ class TestOvnNorth(object):
             ovn_north.add_security_group_rule(rest_data)
         assert 'Conflicting value ethertype {} for CIDR {}'.format(
             None, ip_prefix
-        ) == exception.value.message
+        ) == str(exception.value)
 
     def test_invalid_v6_cidr(self, mock_connection):
         ovn_north = NeutronApi()
@@ -1777,9 +1771,9 @@ class TestOvnNorth(object):
         ).get()
         with pytest.raises(BadRequestError) as exception:
             ovn_north.add_subnet(rest_data)
-        assert exception.value.message == (
-            "The provided ip_version [6] does not match the supplied "
-            "cidr=1.1.1.0/24 or gateway=1.1.1.0"
+        assert str(exception.value) == (
+            'The provided ip_version [6] does not match the supplied '
+            'cidr=1.1.1.0/24 or gateway=1.1.1.0'
         )
 
     @mock.patch(
@@ -1845,7 +1839,7 @@ class TestOvnNorth(object):
 
         with pytest.raises(UnsupportedDataValueError) as error:
             ovn_north.add_subnet(slaac_rest_data)
-        assert error.value.message == (
+        assert str(error.value) == (
             'Setting ipv6_address_mode value to slaac is not supported. '
             'Allowed values are: [\'dhcpv6_stateful\']'
         )
@@ -1862,7 +1856,7 @@ class TestOvnNorth(object):
 
         with pytest.raises(UnsupportedDataValueError) as stateless_dhcp6_error:
             ovn_north.add_subnet(stateless_dhcpv6_rest_data)
-        assert stateless_dhcp6_error.value.message == (
+        assert str(stateless_dhcp6_error.value) == (
             'Setting ipv6_address_mode value to dhcpv6_stateless is not '
             'supported. Allowed values are: [\'dhcpv6_stateful\']'
         )
@@ -1881,7 +1875,7 @@ class TestOvnNorth(object):
 
         with pytest.raises(BadRequestError) as bre:
             ovn_north.add_subnet(rest_data)
-        assert bre.value.message == (
+        assert str(bre.value) == (
             'The \'ipv6_address_mode\' parameter can only be used '
             'when \'ip_version\' == 6'
         )

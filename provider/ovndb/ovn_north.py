@@ -292,7 +292,7 @@ class OvnNorth(object):
                 sec_group_id, name, description
             )
         except SecurityGroupException as ex:
-            raise BadRequestError(ex.message)
+            raise BadRequestError(ex)
 
     @only_rules_with_allowed_actions
     def list_security_group_rules(self, sec_group_id=None):

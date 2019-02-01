@@ -938,22 +938,24 @@ class MandatoryDataMissing(RestDataError):
     message = 'Mandatory data {attributes} is missing'
 
     def __init__(self, missing_elements):
-        super(MandatoryDataMissing, self).__init__(
-            self.message.format(
-                attributes=', '.join(missing_elements)
+        self._missing_elements = missing_elements
+
+    def __str__(self):
+        return self.message.format(
+                attributes=', '.join(self._missing_elements)
             )
-        )
 
 
 class InvalidRestData(RestDataError):
     message = 'Invalid data found: {attributes}'
 
     def __init__(self, invalid_elements):
-        super(InvalidRestData, self).__init__(
-            self.message.format(
-                attributes=', '.join(invalid_elements)
+        self._invalid_elements = invalid_elements
+
+    def __str__(self):
+        return self.message.format(
+                attributes=', '.join(self._invalid_elements)
             )
-        )
 
 
 class NetworkNameRequiredDataError(RestDataError):
@@ -1001,12 +1003,16 @@ class UnsupportedDataValueError(RestDataError):
     extra_msg = '. Allowed values are: {allowed_values}'
 
     def __init__(self, key, value, supported_values=None):
-        error_message = (
-                self.message.format(key=key, value=value) +
-                self.extra_msg.format(allowed_values=supported_values)
-                if supported_values else ""
+        self._key = key
+        self._value = value
+        self._supported_values = supported_values
+
+    def __str__(self):
+        return (
+            self.message.format(key=self._key, value=self._value) +
+            self.extra_msg.format(allowed_values=self._supported_values)
+            if self._supported_values else ""
         )
-        super(UnsupportedDataValueError, self).__init__(error_message)
 
 
 class SecurityGroupMandatoryDataMissing(RestDataError):

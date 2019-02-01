@@ -232,7 +232,7 @@ class BaseHandler(BaseHTTPRequestHandler):
         response_code=httplib.INTERNAL_SERVER_ERROR,
     ):
         self._log_request(method, path, content, log_level=logging.ERROR)
-        error_message = e.message or message
+        error_message = str(e) or message
         logging.exception(error_message)
         self.send_error(response_code)
         self.wfile.write(ERROR_MESSAGE.format(
