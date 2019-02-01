@@ -45,7 +45,6 @@ SAME_SUBNET = {
             'name': 'lport1',
             'subnet_name': 'subnet1',
             'cidr': 'bef0:1234:a890:5678::/64',
-            'mac': '00:00:00:11:11:11',
             'network': 'net1',
             'ns': 'ns1',
             'ip_version': 6
@@ -54,7 +53,6 @@ SAME_SUBNET = {
             'name': 'lport2',
             'subnet_name': 'subnet1',
             'cidr': 'bef0:1234:a890:5678::/64',
-            'mac': '00:00:00:22:22:22',
             'network': 'net1',
             'ns': 'ns2',
             'ip_version': 6

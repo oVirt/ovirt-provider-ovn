@@ -1,5 +1,4 @@
 ---
-# tasks file for create_ovn_entities
 - name: create a logical network
   os_network:
     cloud: "{{ cloud_name }}"
@@ -28,23 +27,7 @@
     - "{{ created_networks.results }}"
   register: created_subnets
 
-- name: create ports in the logical network with static IP addresses
-  os_port:
-    cloud: "{{ cloud_name }}"
-    name: "{{ item.0.name }}"
-    state: present
-    network: "{{ item.1.network.id }}"
-    fixed_ips:
-      - ip_address: "{{ item.0.ip }}"
-    mac_address: "{{ item.0.mac }}"
-  when:
-    - "'ip' in item.0"
-    - "'mac' in item.0"
-  with_together:
-    - "{{ network_points }}"
-    - "{{ created_networks.results }}"
-
-- name: create ports in the logical network with dynamic IPs
+- name: create ports in the logical network
   os_port:
     cloud: "{{ cloud_name }}"
     name: "{{ item.0.name }}"
@@ -52,13 +35,13 @@
     network: "{{ item.1.network.id }}"
     fixed_ips:
       - subnet_id: "{{ item.2.subnet.id }}"
-    mac_address: "{{ item.0.mac }}"
-  when:
-    - item.0.ip is not defined
+        ip_address: "{{ item.0.ip | default(omit) }}"
+    mac_address: "{{ item.0.mac | default(omit) }}"
   with_together:
     - "{{ network_points }}"
     - "{{ created_networks.results }}"
     - "{{ created_subnets.results }}"
+  register: created_ports
 
 - name: provision routers in the control plane
   os_router:

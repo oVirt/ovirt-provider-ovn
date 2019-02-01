@@ -7,18 +7,14 @@
   with_items:
     - "{{ network_points }}"
 
-- name: get ovn port data
-  os_port_facts:
-    cloud: "{{ cloud_name }}"
-
 - name: create ports
   delegate_to: "{{ controller_container_id }}"
   command:
-    ovs-vsctl add-port br-int "{{ item.name }}" -- set Interface "{{ item.name }}" type=internal external_ids:iface-id="{{ item.id }}"
+    ovs-vsctl add-port br-int "{{ item.port.name }}" -- set Interface "{{ item.port.name }}" type=internal external_ids:iface-id="{{ item.port.id }}"
   when:
-    - item.name != "router_port"
+    - item.port.name != "router_port"
   with_items:
-    - "{{ openstack_ports }}"
+    - "{{ created_ports.results }}"
 
 - name: attach the ports to the namespaces
   delegate_to: "{{ controller_container_id }}"
@@ -27,22 +23,18 @@
   with_items:
     - "{{ network_points }}"
 
-- debug: var=openstack_ports
-
-
 - name: debug filters
   include: start_tcpdump_debug.yml
   when:
   - debug_icmpv6
 
-- name: set mac addresses on the ports
+- name: set MAC address on the ports
   delegate_to: "{{ controller_container_id }}"
   command:
-    "ip netns exec {{ item.ns }} ip link set {{ item.name }} address {{ item.mac }}"
-  when:
-    - item.mac is defined
-  with_items:
-  - "{{ network_points }}"
+    "ip netns exec {{ item.0.ns }} ip link set {{ item.0.name }} address {{ item.1.port.mac_address }}"
+  with_together:
+    - "{{ network_points }}"
+    - "{{ created_ports.results }}"
 
 - name: activate the interfaces
   delegate_to: "{{ controller_container_id }}"
