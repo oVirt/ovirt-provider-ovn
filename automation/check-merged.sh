@@ -2,7 +2,7 @@
 
 easy_install pip
 pip install -U tox
-pip install -U requests-mock==1.4.0
+pip install -U requests-mock==1.5.2
 
 make check
 make unittest

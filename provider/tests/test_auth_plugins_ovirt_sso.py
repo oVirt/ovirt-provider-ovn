@@ -20,7 +20,6 @@ from __future__ import absolute_import
 import json
 
 import pytest
-import requests_mock
 from requests.exceptions import ConnectTimeout
 
 from auth.plugins.ovirt import sso
@@ -68,11 +67,10 @@ INFO = {
 }
 
 
-@requests_mock.Mocker()
 class TestOvirtSso(object):
 
-    def test_create_token_success(self, mock_requests):
-        mock_requests.register_uri('POST', TOKEN_URL,
+    def test_create_token_success(self, requests_mock):
+        requests_mock.register_uri('POST', TOKEN_URL,
                                    text=TOKEN_RESPONSE_SUCCESS)
         token = sso.create_token(username=NOT_RELEVANT,
                                  password=NOT_RELEVANT,
@@ -81,8 +79,8 @@ class TestOvirtSso(object):
                                  timeout=NOT_RELEVANT)
         assert token == TOKEN
 
-    def test_create_token_fail(self, mock_requests):
-        mock_requests.register_uri('POST', TOKEN_URL,
+    def test_create_token_fail(self, requests_mock):
+        requests_mock.register_uri('POST', TOKEN_URL,
                                    status_code=400,
                                    text=TOKEN_RESPONSE_AUTH_FAILED)
         with pytest.raises(sso.Unauthorized):
@@ -92,8 +90,8 @@ class TestOvirtSso(object):
                              ca_file=NOT_RELEVANT,
                              timeout=NOT_RELEVANT)
 
-    def test_create_token_timeout(self, mock_requests):
-        mock_requests.register_uri('POST', TOKEN_URL, exc=ConnectTimeout)
+    def test_create_token_timeout(self, requests_mock):
+        requests_mock.register_uri('POST', TOKEN_URL, exc=ConnectTimeout)
         with pytest.raises(sso.Timeout):
             sso.create_token(username=NOT_RELEVANT,
                              password=NOT_RELEVANT,
@@ -101,8 +99,8 @@ class TestOvirtSso(object):
                              ca_file=NOT_RELEVANT,
                              timeout=NOT_RELEVANT)
 
-    def test_get_profiles(self, mock_requests):
-        mock_requests.register_uri('POST', TOKEN_INFO_URL,
+    def test_get_profiles(self, requests_mock):
+        requests_mock.register_uri('POST', TOKEN_INFO_URL,
                                    text=PROFILES_LIST_RESPONSE)
         profiles = sso.get_profiles(token=TOKEN,
                                     engine_url=ENGINE_URL,
@@ -112,8 +110,8 @@ class TestOvirtSso(object):
                                     client_secret=NOT_RELEVANT)
         assert profiles == PROFILES
 
-    def test_get_token_info(self, mock_requests):
-        mock_requests.register_uri('POST', TOKEN_INFO_URL,
+    def test_get_token_info(self, requests_mock):
+        requests_mock.register_uri('POST', TOKEN_INFO_URL,
                                    text=json.dumps(INFO))
         info = sso.get_token_info(token=TOKEN,
                                   engine_url=ENGINE_URL,
