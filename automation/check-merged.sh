@@ -18,3 +18,4 @@ if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'ovirt-provi
 fi
 
 make lint
+make coverage

@@ -5,6 +5,7 @@
 *.tar.gz
 *.tmp
 *~
+.coverage
 .idea
 .project
 .pydevproject
@@ -15,3 +16,4 @@ provider/version.py
 provider/tests/.cache
 exported-artifacts/
 provider/scripts/ovirt-provider-ovn.service
+provider/.coverage

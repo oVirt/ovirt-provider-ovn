@@ -1,4 +1,4 @@
-netaddr
+netaddr==0.7.19
 ovsdbapp
 requests
 six

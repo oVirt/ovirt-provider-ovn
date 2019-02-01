@@ -146,3 +146,6 @@ integrationtest3:
 	PROVIDER_IMG="maiqueb/ovirt_provider_ovn_fedora" \
 	TEST_TARGET="integration-tests36" \
 		automation/create_it_env.sh
+
+coverage:
+	tox -e coverage
