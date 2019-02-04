@@ -46,7 +46,7 @@
 - name: set static ip addresses on the ports
   delegate_to: "{{ controller_container_id }}"
   command:
-    ip netns exec "{{ item.ns }}" ip addr add "{{ item.ip }}"/24 dev "{{ item.name }}"
+    ip netns exec "{{ item.ns }}" ip addr add "{{ item.ip }}"/"{{ item.cidr.split('/')[1] }}" dev "{{ item.name }}"
   when:
     - item.ip is defined
   with_items:
