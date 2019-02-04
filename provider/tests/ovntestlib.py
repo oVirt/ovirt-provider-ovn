@@ -255,7 +255,12 @@ def assert_security_group_equal(rest_data, security_group):
                 SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER
         ))
     )
-    rest_rules = rest_data.get(SecurityGroupMapper.REST_SEC_GROUP_RULES, [])
+    rest_rules = list(
+        filter(
+            lambda rule: rule,
+            rest_data.get(SecurityGroupMapper.REST_SEC_GROUP_RULES, [])
+        )
+    )
     assert len(
         filter(lambda rule: rule, rest_rules)
     ) == len(security_group.sec_group_rules)
