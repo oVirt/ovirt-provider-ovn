@@ -93,7 +93,7 @@ class Mapper(object):
         raise NotImplementedError()
 
     @staticmethod
-    def row2rest(func, row):
+    def row2rest(row):
         raise NotImplementedError()
 
     @staticmethod
@@ -904,10 +904,10 @@ class BaseRouterInterfaceMapper(Mapper):
         )
         if not subnet and not port:
             raise RestDataError(
-                'Either {subnet} or {port} must be specified.'
+                'Either {} or {} must be specified.'
                 .format(
-                    subnet=RouterMapper.REST_ROUTERINTERFACE_SUBNET_ID,
-                    port=RouterMapper.REST_ROUTERINTERFACE_PORT_ID
+                    BaseRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_ID,
+                    BaseRouterInterfaceMapper.REST_ROUTERINTERFACE_PORT_ID
                 )
             )
         return subnet, port

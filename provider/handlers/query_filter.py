@@ -24,17 +24,13 @@ from ovirt_provider_config_common import url_filter_exception
 
 def filter_query_results(items, query):
     filter_exceptions = url_filter_exception().split(',')
+    valid_filters = [
+        (key, val) for (key, val) in query.items()
+        if key not in filter_exceptions
+    ]
     return filter(
-        lambda e: all(
-            map(
-                lambda (k, v): _compare_query_values( # noqa E999
-                    e.get(k), v[0]
-                ),
-                [
-                    (key, val) for (key, val) in query.items()
-                    if key not in filter_exceptions
-                ]
-            )
+        lambda item: all(
+            _filter_query_result(item, valid_filters)
         ),
         items
     )
@@ -52,3 +48,9 @@ def _compare_query_values(entity_value, query_value):
     if isinstance(entity_value, bool):
         return str(entity_value).lower() == query_value.lower()
     return entity_value == query_value
+
+
+def _filter_query_result(result, valid_filters):
+    return [
+        _compare_query_values(result.get(k), v[0]) for (k, v) in valid_filters
+    ]

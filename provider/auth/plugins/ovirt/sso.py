@@ -175,7 +175,7 @@ def _check_for_error(response):
             result = response.json()
             if 'error' in result:
                 details = '{}{}'.format(result.get('error_code', ''),
-                                        result.get('error_description'), '')
+                                        result.get('error_description', ''))
                 raise Unauthorized(
                     'Error during SSO authentication {} : {}'.format(
                         result['error'], details))
