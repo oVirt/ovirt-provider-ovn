@@ -39,6 +39,9 @@ from ovirt_provider_config import KEY_OVIRT_ADMIN_ROLE_ID
 from ovirt_provider_config import DEFAULT_ENGINE_NETWORK_ADMIN_ROLE_ID
 
 
+STRING_ENCODING = 'ascii'
+
+
 class AuthorizationByRole(OVirtPlugin):
 
     def validate_token(self, token):
@@ -94,7 +97,9 @@ class AuthorizationByRole(OVirtPlugin):
 
 
 def _encode(string):
-    return binascii.b2a_hex(string).upper()
+    return binascii.b2a_hex(string.encode(STRING_ENCODING)).decode(
+            STRING_ENCODING
+        ).upper()
 
 
 def _admin_role_id():
