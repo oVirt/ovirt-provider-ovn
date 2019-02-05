@@ -18,7 +18,7 @@
 from __future__ import absolute_import
 
 from datetime import datetime, timedelta
-import httplib
+from six.moves import http_client
 
 from ovirt_provider_config_common import auth_token_timeout
 from ovirt_provider_config_common import openstack_region
@@ -77,7 +77,7 @@ def post_tokens(content, parameters):
 
     # OpenStack Identity API v2.0 specifies HTTP 200 as return code for
     # successful token creation
-    http_code = httplib.OK
+    http_code = http_client.OK
 
     return Response({
         'access': {

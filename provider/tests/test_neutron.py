@@ -18,10 +18,10 @@
 from __future__ import absolute_import
 
 from mock import MagicMock
-import httplib
 import json
 import mock
 
+from six.moves import http_client
 from handlers.base_handler import Response
 from handlers.neutron import NeutronHandler
 
@@ -66,7 +66,7 @@ def response_code_201(nb_db, content, path_parts):
             'method:': REST_RESPONSE_POST,
             'value:': content
         },
-        code=httplib.CREATED
+        code=http_client.CREATED
     )
 
 
@@ -177,7 +177,7 @@ class TestNeutronHandler(object):
         handler.path = '/v2.0/testports'
         handler.do_DELETE()
         assert send_error.call_count == 1
-        mock_call = mock.call(httplib.METHOD_NOT_ALLOWED)
+        mock_call = mock.call(http_client.METHOD_NOT_ALLOWED)
         assert send_error.mock_calls[0] == mock_call
 
     @mock.patch('handlers.neutron.NeutronApi', autospec=True)
@@ -229,7 +229,7 @@ class TestNeutronHandler(object):
 
         handler.do_POST()
 
-        assert mock_send_response.call_args[0][1] == httplib.CREATED
+        assert mock_send_response.call_args[0][1] == http_client.CREATED
         expected_response = json.dumps({
             'method:': REST_RESPONSE_POST,
             'value:': 'content'

@@ -18,7 +18,6 @@
 #
 from __future__ import absolute_import
 
-from BaseHTTPServer import HTTPServer
 from threading import Thread
 import atexit
 import logging
@@ -28,6 +27,7 @@ import socket
 import ssl
 import sys
 import threading
+from six.moves.BaseHTTPServer import HTTPServer
 
 from ovsdbapp.backend.ovs_idl import vlog
 
