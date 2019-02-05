@@ -1251,7 +1251,8 @@ class SecurityGroupRuleMapper(Mapper):
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_DESCRIPTION
         )
         ether_type = rest_data.get(
-            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ETHERTYPE
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ETHERTYPE,
+            neutron_constants.IPV4_ETHERTYPE
         )
         rest_port_max = rest_data.get(
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PORT_RANGE_MAX

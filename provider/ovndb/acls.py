@@ -282,23 +282,12 @@ def create_default_allow_egress_acls(port_group):
 
 
 def get_remote_group_id_match(remote_group_name, ip_version, direction):
-    if remote_group_name and ip_version:
+    if remote_group_name:
         remote_group_acl_name = get_assoc_addr_set_name(
             remote_group_name, ip_version
         )
         return build_remote_group_id_match(
             remote_group_acl_name, ip_version, direction
-        )
-    elif remote_group_name:
-        remote_group_id_match = map(
-                lambda ovn_ip_version: build_remote_group_id_match(
-                    get_assoc_addr_set_name(remote_group_name, ovn_ip_version),
-                    ovn_ip_version, direction
-                ),
-                neutron_constants.ETHER_TYPE_MAPPING.values()
-            )
-        return '( {matches} )'.format(
-            matches=' || '.join(remote_group_id_match)
         )
     else:
         return ''
