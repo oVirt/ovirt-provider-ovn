@@ -237,8 +237,10 @@ class OvnSecurityGroupApi(object):
 
 def only_rules_with_allowed_actions(f):
     def filter_rules(*args):
-        return filter(
-            lambda rule: rule.action != neutron_constants.ACL_ACTION_DROP,
-            f(*args)
+        return list(
+            filter(
+                lambda rule: rule.action != neutron_constants.ACL_ACTION_DROP,
+                f(*args)
+            )
         )
     return filter_rules

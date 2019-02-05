@@ -183,7 +183,7 @@ class SelectingHandler(BaseHandler):
                 current_map = current_map[part]
             elif RESPONSE_VALUE_PARAMETER in current_map:
                 current_map = current_map[RESPONSE_VALUE_PARAMETER]
-                key = current_map.keys()[0]
+                key = list(current_map.keys())[0]
                 assert key, 'Expected parameter name is missing'
                 current_map = current_map[key]
                 parameters[key] = part

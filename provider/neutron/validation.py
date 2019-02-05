@@ -189,7 +189,7 @@ def port_added_to_lr_must_have_subnet(network_cidr, lsp_id, lr_id):
 
 
 def network_has_no_ports(ls_id, ls_ports, localnet_lsp):
-    if filter(lambda x: x != localnet_lsp, ls_ports):
+    if list(filter(lambda x: x != localnet_lsp, ls_ports)):
         raise RestDataError(
             'Unable to delete network {}. Ports exist for the network'
             .format(ls_id)
@@ -220,10 +220,10 @@ def subnet_is_ovirt_managed(subnet):
 
 def no_default_gateway_in_routes(default_gateway_exists, routes):
     if default_gateway_exists and routes:
-        if filter(
+        if list(filter(
             lambda r: r[RouterMapper.REST_ROUTER_DESTINATION]
                 == ovnconst.DEFAULT_ROUTE, routes
-        ):
+        )):
             raise BadRequestError(
                 'A default static route can not be added when an external '
                 ' gateway is defined on a router.'

@@ -28,11 +28,13 @@ def filter_query_results(items, query):
         (key, val) for (key, val) in query.items()
         if key not in filter_exceptions
     ]
-    return filter(
-        lambda item: all(
-            _filter_query_result(item, valid_filters)
-        ),
-        items
+    return list(
+        filter(
+            lambda item: all(
+                _filter_query_result(item, valid_filters)
+            ),
+            items
+        )
     )
 
 

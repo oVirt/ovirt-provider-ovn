@@ -45,8 +45,8 @@ from ovndb.ovn_security_groups import only_rules_with_allowed_actions
 def accepts_single_arg(f):
     def inner(self, **kwargs):
         assert len(
-            filter(lambda (_, v,): v is not None, kwargs.items())  # NOQA: E999
-        ) == 1, 'Exactly one paramter must be specified'
+            list(filter(lambda v: v is not None, kwargs.values()))
+        ) == 1, 'Exactly one parameter must be specified'
         return f(self, **kwargs)
     return inner
 
@@ -245,10 +245,12 @@ class OvnNorth(object):
         )
 
     def list_security_groups(self):
-        return filter(
-            lambda pg: pg.name != acl_lib.DROP_ALL_IP_PG_NAME,
-            ovn_connection.execute(
-                self.idl.db_list_rows(ovnconst.TABLE_PORT_GROUP)
+        return list(
+            filter(
+                lambda pg: pg.name != acl_lib.DROP_ALL_IP_PG_NAME,
+                ovn_connection.execute(
+                    self.idl.db_list_rows(ovnconst.TABLE_PORT_GROUP)
+                )
             )
         )
 
@@ -302,10 +304,12 @@ class OvnNorth(object):
 
         return (
             all_rules if sec_group_id is None
-            else filter(
-                lambda sec_group_rule: sec_group_rule.external_ids.get(
-                    SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
-                ) == str(sec_group_id), all_rules
+            else list(
+                filter(
+                    lambda sec_group_rule: sec_group_rule.external_ids.get(
+                        SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
+                    ) == str(sec_group_id), all_rules
+                )
             )
         )
 
@@ -439,9 +443,11 @@ class OvnNorth(object):
         ]
 
     def list_port_security_groups(self, port_uuid):
-        return filter(
-            lambda pg: port_uuid in pg.ports,
-            self.list_security_groups()
+        return list(
+            filter(
+                lambda pg: port_uuid in pg.ports,
+                self.list_security_groups()
+            )
         )
 
     def add_security_groups_to_port(self, port_id, security_groups):

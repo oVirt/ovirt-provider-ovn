@@ -247,7 +247,7 @@ class BaseHandler(BaseHTTPRequestHandler):
         parsed_path = urllib_parse.urlparse(full_path)
         query = urllib_parse.parse_qs(parsed_path.query)
         query_path = BaseHandler._remove_json_extension(parsed_path.path)
-        elements = filter(None, query_path.split('/'))[1:]
+        elements = list(filter(None, query_path.split('/')))[1:]
         if not elements:
             elements.append('')
         return elements, query

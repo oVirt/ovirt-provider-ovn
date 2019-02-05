@@ -183,7 +183,7 @@ def create_acl_match(
     match.extend(
         process_acl_protocol_and_ports(protocol, min_port, max_port, icmp)
     )
-    return filter(lambda s: s, match)
+    return list(filter(lambda s: s, match))
 
 
 def create_acl_match_string(match_list):
