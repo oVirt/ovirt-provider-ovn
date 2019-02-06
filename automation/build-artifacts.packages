@@ -5,3 +5,4 @@ rpm-build
 systemd
 python2-ovsdbapp
 dnf
+python3-devel

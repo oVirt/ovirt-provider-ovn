@@ -25,41 +25,42 @@ RELEASE_SUFFIX=0.$(TIMESTAMP).git$(GITHASH)
 
 DIST_FILE=$(NAME)-$(VERSION).tar.gz
 PYTHON ?= python2
-PYTHON_LIBS=$(shell $(PYTHON) -c 'from distutils.sysconfig import get_python_lib; print(get_python_lib())')
+GET_LIB_PATH_COMMAND='from distutils.sysconfig import get_python_lib; print(get_python_lib())'
+
+# TODO: replace 'python2' below w/ '$(PYTHON)' once the driver can be
+# 	ported to python3; until then, all driver related code must
+# 	stick to python2. Only the driver code is leveraging the
+# 	'PYTHON_LIBS' variable.
+PYTHON_LIBS=$(shell python2 -c $(GET_LIB_PATH_COMMAND))
 MKDIR=mkdir -p
 RPM_SOURCE_DIR=$(shell rpm --eval %_sourcedir)
 
-install:
+PROVIDER_PYTHON_FILES_DIR=$(DESTDIR)/usr/share/ovirt-provider-ovn/
+SHELL := bash
+
+compile:
 	$(PYTHON) -m compileall .
 	$(PYTHON) -O -m compileall .
+
+install_python_files: compile
+	for file in $(shell find provider/ -not \( -path provider/integration-tests -prune \) -not \( -path provider/tests -prune \) -regex ".*\.py[co]?"); do \
+		install -m 644 -p -D $$file $(PROVIDER_PYTHON_FILES_DIR)/$${file/provider\///}; \
+	done
+
+install: install_python_files provider/scripts/ovirt-provider-ovn.service
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/conf.d
 	install -m 644 -D provider/readme.conf $(DESTDIR)/etc/ovirt-provider-ovn/conf.d/README
 	install -m 644 -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/logger.conf
 	install -m 644 -t $(DESTDIR)/etc/ovirt-provider-ovn/ provider/ovirt-provider-ovn.conf
 	install -m 644 -D ovirt-provider-ovn.logrotate $(DESTDIR)/etc/logrotate.d/ovirt-provider-ovn
-	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/
-	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ provider/*.py*
-	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ version.py*
+
 	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ LICENSE
 	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ AUTHORS
-	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/
-	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/ provider/auth/*.py*
-	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/
-	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins provider/auth/plugins/*.py*
-	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/static_token/
-	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/static_token provider/auth/plugins/static_token/*.py*
-	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/ovirt/
-	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/auth/plugins/ovirt provider/auth/plugins/ovirt/*.py*
-	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/handlers/
-	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/handlers provider/handlers/*.py*
-	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/neutron/
-	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/neutron/ provider/neutron/*.py*
-	install -d $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/
-	install -m 644 -p -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ovndb/ provider/ovndb/*.py*
 	install -m 644 -D provider/scripts/ovirt-provider-ovn.service $(DESTDIR)/usr/lib/systemd/system/ovirt-provider-ovn.service
-
 	install -m 644 -D provider/scripts/ovirt-provider-ovn.xml $(DESTDIR)/usr/lib/firewalld/services/ovirt-provider-ovn.xml
+
+	# install driver hooks
 	install -m 555 -D driver/vdsm_hooks/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_device_create/10_ovirt_provider_ovn_hook
 	install -m 555 -D driver/vdsm_hooks/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_nic_hotplug/10_ovirt_provider_ovn_hook
 	install -m 555 -D driver/vdsm_hooks/ovirt_provider_ovn_vhostuser_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_nic_hotplug/20_ovirt_provider_ovn_vhostuser_hook
@@ -69,6 +70,7 @@ install:
 	install -m 555 -D driver/vdsm_hooks/after_get_caps.py $(DESTDIR)/usr/libexec/vdsm/hooks/after_get_caps/ovirt_provider_ovn_hook
 	install -m 644 -D driver/vdsm_hooks/sudoers $(DESTDIR)/etc/sudoers.d/50_vdsm_hook_ovirt_provider_ovn_hook
 
+	# install driver config stuff
 	install -d $(DESTDIR)/usr/libexec/ovirt-provider-ovn
 	install -m 544 -D driver/scripts/setup_ovn_controller.sh $(DESTDIR)/usr/libexec/ovirt-provider-ovn/setup_ovn_controller.sh
 	install -m 544 -D driver/scripts/unconfigure_ovn_controller.sh $(DESTDIR)/usr/libexec/ovirt-provider-ovn/unconfigure_ovn_controller.sh
@@ -90,10 +92,15 @@ version.py: version.py.in
 	    < version.py.in \
 	    > provider/version.py
 
+provider/scripts/ovirt-provider-ovn.service: provider/scripts/ovirt-provider-ovn.service.in
+	sed -e "s|@PYTHON_EXECUTABLE@|${PYTHON}|" \
+		< provider/scripts/ovirt-provider-ovn.service.in \
+		> provider/scripts/ovirt-provider-ovn.service
+
 dist: version.py
 	mkdir -p build/$(DIST_DIR)/
 
-	find ./provider \( -name "*py" -o -name "*conf" -o -name "*xml" -o -name "*service" \)   -exec cp --parents \{\} build/$(DIST_DIR)/ \;
+	find ./provider \( -name "*py" -o -name "*conf" -o -name "*xml" -o -name "*service.in" \)   -exec cp --parents \{\} build/$(DIST_DIR)/ \;
 	find ./driver \( -name "*py" -o -name "*conf" -o -name "*sh" \)   -exec cp --parents \{\} build/$(DIST_DIR)/ \;
 
 	cp Makefile build/$(DIST_DIR)/

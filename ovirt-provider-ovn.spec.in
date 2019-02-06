@@ -22,12 +22,25 @@
 
 # define the python package prefix based on distribution version
 # this is needed to require a correct python-openvswitch package:
-# python-openvswitch or python2-openvswitch for fedora >=25
-%if 0%{?fedora} >= 25
+# python-openvswitch or python3-openvswitch for fedora >=28 or
+# el >= 8
+%if 0%{?fedora} >= 28 || 0%{?rhel} >= 8
+%global required_python python%{python3_pkgversion}
+%global required_python_interpreter %{__python3}
+%define required_python_lib(l:) python%{python3_pkgversion}-%{*}
 %define _py2 python2
 %else
+%global required_python python
+%global required_python_interpreter %{__python2}
+%define required_python_lib(l:) %{-l*}%{*}
 %define _py2 python
 %endif
+
+%global required_ovs_lib %{required_python_lib -l python- openvswitch}
+%global required_six_lib %{required_python_lib -l python- six}
+%global required_ovsdbapp_lib %{required_python_lib -l python- ovsdbapp}
+%global required_requests_lib %{required_python_lib -l python- requests}
+%global required_netaddr_lib %{required_python_lib -l python- netaddr}
 
 Name:           ovirt-provider-ovn
 Version:        @VERSION@
@@ -44,17 +57,17 @@ Requires: kernel >= 3.10.0-512
 Requires: openvswitch >= 0:2.7
 Requires: openvswitch-ovn-central >= 0:2.7
 Requires: openvswitch-ovn-common >= 0:2.7
-Requires: %{_py2}-openvswitch >= 0:2.7
+Requires: %{required_ovs_lib} >= 0:2.7
 
 Conflicts: openvswitch = 1:2.6.1
 Conflicts: openvswitch-ovn-central = 1:2.6.1
 Conflicts: openvswitch-ovn-common = 1:2.6.1
-Conflicts: %{_py2}-openvswitch = 1:2.6.1
+Conflicts: %{required_ovs_lib} = 1:2.6.1
 
-Requires: python-requests
-Requires: python-netaddr
-Requires: python2-ovsdbapp
-Requires: python2-six
+Requires: %{required_requests_lib}
+Requires: %{required_netaddr_lib}
+Requires: %{required_ovsdbapp_lib}
+Requires: %{required_six_lib}
 
 BuildRequires: python
 BuildRequires: systemd
@@ -66,7 +79,7 @@ BuildRequires: systemd
 
 %install
 rm -rf $RPM_BUILD_ROOT
-%make_install
+%make_install PYTHON="%{required_python_interpreter}"
 
 
 %description
@@ -98,7 +111,7 @@ Requires: kernel >= 3.10.0-512
 Requires: openvswitch >= 0:2.7
 Requires: openvswitch-ovn-host >= 0:2.7
 Requires: openvswitch-ovn-common >= 0:2.7
-Requires: %{_py2}-openvswitch  >= 0:2.7
+Requires: %{_py2}-openvswitch >= 0:2.7
 
 Conflicts: openvswitch = 1:2.6.1
 Conflicts: openvswitch-ovn-host = 1:2.6.1

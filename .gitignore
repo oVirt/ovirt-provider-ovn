@@ -14,3 +14,4 @@ provider/.cache
 provider/version.py
 provider/tests/.cache
 exported-artifacts/
+provider/scripts/ovirt-provider-ovn.service

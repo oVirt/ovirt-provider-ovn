@@ -3,5 +3,6 @@ python
 python-openvswitch
 rpm-build
 systemd
+python2-devel
 python2-ovsdbapp
 yum

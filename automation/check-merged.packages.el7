@@ -5,6 +5,7 @@ python-pytest
 python-requests
 python-setuptools
 python-six
+python2-devel
 python2-pytest
 python2-setuptools
 python2-ovsdbapp
