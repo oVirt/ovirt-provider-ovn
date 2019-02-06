@@ -24,13 +24,14 @@ TIMESTAMP:=$(shell date +'%Y%m%d%H%M%S')
 RELEASE_SUFFIX=0.$(TIMESTAMP).git$(GITHASH)
 
 DIST_FILE=$(NAME)-$(VERSION).tar.gz
-PYTHON ?= $(shell which python)
+PYTHON ?= python2
+PYTHON_LIBS=$(shell $(PYTHON) -c 'from distutils.sysconfig import get_python_lib; print(get_python_lib())')
 MKDIR=mkdir -p
 RPM_SOURCE_DIR=$(shell rpm --eval %_sourcedir)
 
 install:
-	python -m compileall .
-	python -O -m compileall .
+	$(PYTHON) -m compileall .
+	$(PYTHON) -O -m compileall .
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/conf.d
 	install -m 644 -D provider/readme.conf $(DESTDIR)/etc/ovirt-provider-ovn/conf.d/README
@@ -71,8 +72,8 @@ install:
 	install -d $(DESTDIR)/usr/libexec/ovirt-provider-ovn
 	install -m 544 -D driver/scripts/setup_ovn_controller.sh $(DESTDIR)/usr/libexec/ovirt-provider-ovn/setup_ovn_controller.sh
 	install -m 544 -D driver/scripts/unconfigure_ovn_controller.sh $(DESTDIR)/usr/libexec/ovirt-provider-ovn/unconfigure_ovn_controller.sh
-	install -d $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/
-	install -m 644 -p -t $(DESTDIR)/usr/lib/python2.7/site-packages/vdsm/tool/ driver/vdsm_tool/ovn_config.py*
+	install -d $(DESTDIR)$(PYTHON_LIBS)/vdsm/tool/
+	install -m 644 -p -t $(DESTDIR)$(PYTHON_LIBS)/vdsm/tool/ driver/vdsm_tool/ovn_config.py*
 	install -m 644 -D README.adoc $(DESTDIR)/usr/share/doc/ovirt-provider-ovn/README.adoc
 	install -m 644 -t $(DESTDIR)/usr/libexec/ovirt-provider-ovn/ LICENSE
 	install -m 644 -t $(DESTDIR)/usr/libexec/ovirt-provider-ovn/ AUTHORS
