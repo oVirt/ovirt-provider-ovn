@@ -262,7 +262,7 @@ def assert_security_group_equal(rest_data, security_group):
         )
     )
     assert len(
-        filter(lambda rule: rule, rest_rules)
+        list(filter(lambda rule: rule, rest_rules))
     ) == len(security_group.sec_group_rules)
     for rest_rule, row_rule in get_sorted_rules(
             rest_rules, security_group.sec_group_rules
