@@ -40,9 +40,9 @@ def filter_query_results(items, query):
 
 def should_be_filtered(response, query, path_parts, method):
     return (
-        query and response and len(response.values()) == 1 and
-        len(path_parts) == 1 and isinstance(response.values()[0], list) and
-        method == GET
+        query and response and len(list(response.values())) == 1 and
+        len(path_parts) == 1 and isinstance(list(response.values())[0], list)
+        and method == GET
     )
 
 

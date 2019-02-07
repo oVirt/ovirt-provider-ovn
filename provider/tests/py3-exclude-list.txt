@@ -1,4 +1,3 @@
-tests/test_neutron.py
 tests/test_neutron_response.py
 tests/test_ovn_north_mappers.py
 tests/test_ovn_north.py
