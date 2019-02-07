@@ -126,7 +126,7 @@ unittest:
 	cd provider; python -m pytest tests/
 
 unittest3:
-	cd provider; python3 -m pytest `ls tests/test_*py | grep -v -x -F -f tests/py3-exclude-list.txt`
+	cd provider; python3 -m pytest tests/
 
 lint:
 	tox -e pylint
