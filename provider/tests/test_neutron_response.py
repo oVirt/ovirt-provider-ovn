@@ -102,7 +102,7 @@ class TestNeutronResponse(object):
                 )
                 assert handler is not None
                 assert params is not None
-                assert params.values()[0] == '7'
+                assert list(params.values())[0] == '7'
 
         for path in [
             ADD_ROUTER_INTERFACE.format(router_id=7),
