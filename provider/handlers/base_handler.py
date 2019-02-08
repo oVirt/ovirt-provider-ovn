@@ -216,7 +216,7 @@ class BaseHandler(BaseHTTPRequestHandler):
         logging.debug('Response code: {}'.format(response_code))
         if response:
             logging.debug('Response body: {}'.format(response))
-            self.wfile.write(response)
+            self.wfile.write(response.encode())
 
     def _get_content(self):
         content_length = int(self.headers['Content-Length'])
@@ -240,7 +240,7 @@ class BaseHandler(BaseHTTPRequestHandler):
         self.wfile.write(ERROR_MESSAGE.format(
             error_message,
             response_code,
-            http_client.responses[response_code]))
+            http_client.responses[response_code]).encode())
 
     @staticmethod
     def _parse_request_path(full_path):

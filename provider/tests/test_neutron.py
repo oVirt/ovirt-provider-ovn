@@ -92,7 +92,9 @@ class TestNeutronHandler(object):
         handler.do_GET()
 
         assert mock_send_response.call_args[0][1] == 200
-        expected_response = json.dumps({'method:': REST_RESPONSE_GET})
+        expected_response = json.dumps(
+            {'method:': REST_RESPONSE_GET}
+        ).encode()
         assert handler.wfile.write.call_args[0][0] == expected_response
         assert mock_send_response.call_count == 1
         assert mock_validate_token.call_count == 1
@@ -134,7 +136,9 @@ class TestNeutronHandler(object):
         handler.do_GET()
 
         assert mock_send_response.call_args[0][1] == 200
-        expected_response = json.dumps({'method:': REST_RESPONSE_SHOW})
+        expected_response = json.dumps(
+            {'method:': REST_RESPONSE_SHOW}
+        ).encode()
         assert handler.wfile.write.call_args[0][0] == expected_response
         assert mock_send_response.call_count == 1
         assert mock_validate_token.call_count == 1
@@ -204,7 +208,7 @@ class TestNeutronHandler(object):
         expected_response = json.dumps({
             'method:': REST_RESPONSE_POST,
             'value:': 'content'
-        })
+        }).encode()
         assert handler.wfile.write.call_args[0][0] == expected_response
         assert mock_send_response.call_count == 1
         assert mock_validate_token.call_count == 1
@@ -233,7 +237,7 @@ class TestNeutronHandler(object):
         expected_response = json.dumps({
             'method:': REST_RESPONSE_POST,
             'value:': 'content'
-        })
+        }).encode()
         assert handler.wfile.write.call_args[0][0] == expected_response
         assert mock_send_response.call_count == 1
         assert mock_validate_token.call_count == 1

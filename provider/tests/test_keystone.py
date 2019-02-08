@@ -83,7 +83,7 @@ class TestKeystoneHandler(object):
         handler = self._test_handle_post_request(path)
         mock_send_response.assert_called_once_with(handler, 201)
         handler.wfile.write.assert_called_once_with(json.dumps(
-            {'value': expected_string + 'value'}))
+            {'value': expected_string + 'value'}).encode())
 
     def _test_handle_post_request(self, path):
         handler = self._create_tokenhandler(path)
@@ -169,5 +169,5 @@ class TestKeystoneHandler(object):
         handler.rfile.read.return_value = None
         handler.headers = {'Content-Length': 0}
         handler.do_POST()
-        expected_body = json.dumps({'value': EMPTY})
+        expected_body = json.dumps({'value': EMPTY}).encode()
         handler.wfile.write.assert_called_once_with(expected_body)
