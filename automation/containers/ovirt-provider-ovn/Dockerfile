@@ -19,7 +19,8 @@ RUN yum install -y \
       http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm \
       make \
       rpm-build \
-      git && \
+      git \
+      python-devel && \
     mkdir -p /etc/ovirt-provider-ovn/conf.d/
 
 RUN yum install -y openvswitch \
@@ -28,7 +29,8 @@ RUN yum install -y openvswitch \
       python-ovsdbapp \
       python-openvswitch \
       kernel \
-      linux-firmware
+      linux-firmware && \
+    yum clean all
 
 COPY 10-integrationtest.conf /etc/ovirt-provider-ovn/conf.d/
 
