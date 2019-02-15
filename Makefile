@@ -140,3 +140,9 @@ lint:
 
 integrationtest:
 	RUN_INTEG_TESTS="defined" automation/create_it_env.sh
+
+integrationtest3:
+	RUN_INTEG_TESTS="defined" \
+	PROVIDER_IMG="maiqueb/ovirt_provider_ovn_fedora" \
+	TEST_TARGET="integration-tests36" \
+		automation/create_it_env.sh

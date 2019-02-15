@@ -27,6 +27,8 @@ CONTROLLER_CONTAINER_ID = get_container_id_from_img_name(
 )
 PROVIDER_CONTAINER_ID = get_container_id_from_img_name(
             'maiqueb/ovirt_provider_ovn'
+) or get_container_id_from_img_name(
+            'maiqueb/ovirt_provider_ovn_fedora'
 )
 
 SAME_SUBNET = {

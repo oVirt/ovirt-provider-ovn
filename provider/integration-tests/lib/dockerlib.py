@@ -31,7 +31,7 @@ def get_container_ip(container_name):
     ]
     return subprocess.check_output(
         docker_ip_command, stderr=subprocess.STDOUT
-    ).strip()
+    ).decode().strip()
 
 
 def inner_ping(
@@ -61,4 +61,4 @@ def get_container_id_from_img_name(image_name):
     ]
     return subprocess.check_output(
         command, stderr=subprocess.STDOUT
-    ).strip()
+    ).decode().strip()

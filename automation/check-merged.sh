@@ -10,6 +10,7 @@ make integrationtest
 
 if grep -q 'Fedora' /etc/redhat-release; then
     make unittest3
+    make integrationtest3
 fi
 
 if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'ovirt-provider-ovn.spec.in|Makefile|automation' ; then

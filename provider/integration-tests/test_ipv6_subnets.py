@@ -29,6 +29,8 @@ CONTROLLER_CONTAINER_ID = get_container_id_from_img_name(
 )
 PROVIDER_CONTAINER_ID = get_container_id_from_img_name(
             'maiqueb/ovirt_provider_ovn'
+) or get_container_id_from_img_name(
+            'maiqueb/ovirt_provider_ovn_fedora'
 )
 
 SAME_SUBNET = {
@@ -96,7 +98,9 @@ def _get_port_ip_by_name(port_name):
 
 def _get_networking_api_port_data(port_name):
     reply = requests.get(PROVIDER_URL + 'ports')
-    return filter(
-        lambda port: port.get('name') == port_name,
-        reply.json().get('ports')
+    return list(
+        filter(
+            lambda port: port.get('name') == port_name,
+            reply.json().get('ports')
+        )
     )[0]

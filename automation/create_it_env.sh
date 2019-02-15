@@ -8,7 +8,7 @@ OVN_CENTRAL_TRIPLEO_TAG="${CENTRAL_CONTAINER_TAG:-current-tripleo}"
 OVN_CONTROLLER_TRIPLEO_TAG="${CONTROLLER_CONTAINER_TAG:-current-tripleo}"
 OVN_CENTRAL_IMG="tripleomaster/centos-binary-ovn-northd:$OVN_CENTRAL_TRIPLEO_TAG"
 OVN_CONTROLLER_IMG="tripleomaster/centos-binary-ovn-controller:$OVN_CONTROLLER_TRIPLEO_TAG"
-OVIRT_PROVIDER_OVN_IMG="maiqueb/ovirt_provider_ovn"
+OVIRT_PROVIDER_OVN_IMG="${PROVIDER_IMG:-maiqueb/ovirt_provider_ovn}"
 
 PROJECT_ROOT=$(git rev-parse --show-toplevel)
 OVN_CONTAINER_FILES="$PROJECT_ROOT/automation/containers"
@@ -17,6 +17,8 @@ OVN_CONTROLLER_FILES="${OVN_CONTAINER_FILES}/ovn-controller/"
 
 PROVIDER_PATH="$PROJECT_ROOT"/provider
 CONTAINER_SRC_CODE_PATH="/ovirt-provider-ovn"
+
+AUTOMATED_TEST_TARGET="${TEST_TARGET:-integration-tests27}"
 
 function docker_ip {
     docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $1
@@ -105,7 +107,7 @@ create_ovn_containers
 start_provider_container
 activate_provider_traces
 if [ -n "$RUN_INTEG_TESTS" ]; then
-  tox -e integration-tests27
+  tox -e "$AUTOMATED_TEST_TARGET"
   destroy_env
 fi
 trap - EXIT
