@@ -137,6 +137,10 @@ to OVN.
 
 
 %changelog
+* Mon Feb 18 2019 Miguel Duarte Barroso <mdbarroso@redhat.com> - 1.2.20
+- fix dhcpv6 options
+- default security group rule ethertype to IPv4
+
 * Tue Jan 22 2019 Miguel Duarte Barroso <mdbarroso@redhat.com> - 1.2.19
 - subnet ipv6 support
 - fix disabling port security on logical ports
