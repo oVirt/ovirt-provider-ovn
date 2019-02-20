@@ -200,7 +200,7 @@ class BaseHandler(BaseHTTPRequestHandler):
 
     @staticmethod
     def _filter_results(query, response):
-        resource_name, resource_data = response.body.items()[0]
+        resource_name, resource_data = list(response.body.items())[0]
         return {
             resource_name: filter_query_results(resource_data, query)
         }

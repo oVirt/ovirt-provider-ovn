@@ -21,6 +21,9 @@ import pytest
 import requests
 
 
+ENDPOINT = 'http://localhost:9696/v2.0/'
+
+
 @pytest.fixture(scope='module')
 def logical_switch():
     payload = {
@@ -41,8 +44,29 @@ def logical_switch():
 
 
 def test_get_network(logical_switch):
-    r = requests.get('http://localhost:9696/v2.0/networks')
-    assert r.status_code == 200
-    networks = r.json()['networks']
+    networks = _get_and_assert('networks')
     assert len(networks) == 1
     assert networks.pop()['name'] == logical_switch['name']
+
+
+def test_filter(logical_switch):
+    networks = _get_and_assert('networks', 'name', 'ls0')
+    assert len(networks) == 1
+    assert networks.pop()['name'] == logical_switch['name']
+    assert len(_get_and_assert('networks', 'name', 'kangaroo')) == 0
+
+
+def test_limiter(logical_switch):
+    networks = _get_and_assert('networks', 'limit', '1000')
+    assert len(networks) == 1
+    assert networks.pop()['name'] == logical_switch['name']
+
+
+def _get_and_assert(entity_type, filter_key=None, filter_value=None):
+    url = ENDPOINT + entity_type + (
+        '?{key}={value}'.format(key=filter_key, value=filter_value)
+        if filter_key and filter_value else ''
+    )
+    r = requests.get(url)
+    assert r.status_code == 200
+    return r.json()[entity_type]
