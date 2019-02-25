@@ -27,27 +27,29 @@ DIST_FILE=$(NAME)-$(VERSION).tar.gz
 PYTHON ?= python2
 GET_LIB_PATH_COMMAND='from distutils.sysconfig import get_python_lib; print(get_python_lib())'
 
-# TODO: replace 'python2' below w/ '$(PYTHON)' once the driver can be
-# 	ported to python3; until then, all driver related code must
-# 	stick to python2. Only the driver code is leveraging the
-# 	'PYTHON_LIBS' variable.
-PYTHON_LIBS=$(shell python2 -c $(GET_LIB_PATH_COMMAND))
+PYTHON_LIBS=$(shell $(PYTHON) -c $(GET_LIB_PATH_COMMAND))
 MKDIR=mkdir -p
 RPM_SOURCE_DIR=$(shell rpm --eval %_sourcedir)
 
 PROVIDER_PYTHON_FILES_DIR=$(DESTDIR)/usr/share/ovirt-provider-ovn/
+DRIVER_CONFIG_PYTHON_FILES_DIR=$(DESTDIR)$(PYTHON_LIBS)
 SHELL := bash
 
 compile:
 	$(PYTHON) -m compileall .
 	$(PYTHON) -O -m compileall .
 
-install_python_files: compile
+install_provider_python_files: compile
 	for file in $(shell find provider/ -not \( -path provider/integration-tests -prune \) -not \( -path provider/tests -prune \) -regex ".*\.py[co]?"); do \
 		install -m 644 -p -D $$file $(PROVIDER_PYTHON_FILES_DIR)/$${file/provider\///}; \
 	done
 
-install: install_python_files provider/scripts/ovirt-provider-ovn.service
+install_driver_config_tool: compile
+	for file in $(shell find driver/vdsm_tool -regex ".*\.py[co]?"); do \
+		install -m 644 -p -D $$file $(DRIVER_CONFIG_PYTHON_FILES_DIR)/vdsm/tool/$${file/driver\/vdsm_tool\///}; \
+	done
+
+install: install_provider_python_files install_driver_config_tool provider/scripts/ovirt-provider-ovn.service
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/conf.d
 	install -m 644 -D provider/readme.conf $(DESTDIR)/etc/ovirt-provider-ovn/conf.d/README
@@ -74,8 +76,6 @@ install: install_python_files provider/scripts/ovirt-provider-ovn.service
 	install -d $(DESTDIR)/usr/libexec/ovirt-provider-ovn
 	install -m 544 -D driver/scripts/setup_ovn_controller.sh $(DESTDIR)/usr/libexec/ovirt-provider-ovn/setup_ovn_controller.sh
 	install -m 544 -D driver/scripts/unconfigure_ovn_controller.sh $(DESTDIR)/usr/libexec/ovirt-provider-ovn/unconfigure_ovn_controller.sh
-	install -d $(DESTDIR)$(PYTHON_LIBS)/vdsm/tool/
-	install -m 644 -p -t $(DESTDIR)$(PYTHON_LIBS)/vdsm/tool/ driver/vdsm_tool/ovn_config.py*
 	install -m 644 -D README.adoc $(DESTDIR)/usr/share/doc/ovirt-provider-ovn/README.adoc
 	install -m 644 -t $(DESTDIR)/usr/libexec/ovirt-provider-ovn/ LICENSE
 	install -m 644 -t $(DESTDIR)/usr/libexec/ovirt-provider-ovn/ AUTHORS

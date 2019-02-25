@@ -28,12 +28,12 @@
 %global required_python python%{python3_pkgversion}
 %global required_python_interpreter %{__python3}
 %define required_python_lib(l:) python%{python3_pkgversion}-%{*}
-%define _py2 python2
+%global required_python_sitelib %{python3_sitelib}
 %else
 %global required_python python
 %global required_python_interpreter %{__python2}
+%global required_python_sitelib %{python2_sitelib}
 %define required_python_lib(l:) %{-l*}%{*}
-%define _py2 python
 %endif
 
 %global required_ovs_lib %{required_python_lib -l python- openvswitch}
@@ -111,12 +111,12 @@ Requires: kernel >= 3.10.0-512
 Requires: openvswitch >= 0:2.7
 Requires: openvswitch-ovn-host >= 0:2.7
 Requires: openvswitch-ovn-common >= 0:2.7
-Requires: %{_py2}-openvswitch >= 0:2.7
+Requires: %{required_ovs_lib} >= 0:2.7
 
 Conflicts: openvswitch = 1:2.6.1
 Conflicts: openvswitch-ovn-host = 1:2.6.1
 Conflicts: openvswitch-ovn-common = 1:2.6.1
-Conflicts: %{_py2}-openvswitch = 1:2.6.1
+Conflicts: %{required_ovs_lib} = 1:2.6.1
 
 Requires: vdsm
 Requires(post): firewalld-filesystem
@@ -138,13 +138,13 @@ to OVN.
 %license LICENSE
 
 %files driver
-%{_libexecdir}/vdsm/hooks/before_nic_hotplug/*
-%{_libexecdir}/vdsm/hooks/before_device_create/*
-%{_libexecdir}/vdsm/hooks/after_get_caps/*
-%{_libexecdir}/vdsm/hooks/after_vm_destroy/*
+%{_libexecdir}/vdsm/hooks/before_nic_hotplug/
+%{_libexecdir}/vdsm/hooks/before_device_create/
+%{_libexecdir}/vdsm/hooks/after_get_caps/
+%{_libexecdir}/vdsm/hooks/after_vm_destroy/
 %{_libexecdir}/vdsm/vhostuser_permissions_setter
 %{_libexecdir}/ovirt-provider-ovn
-%{python_sitelib}/vdsm/tool/ovn_config.py*
+%{required_python_sitelib}/vdsm/tool/
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_ovirt_provider_ovn_hook
 %license LICENSE
 
