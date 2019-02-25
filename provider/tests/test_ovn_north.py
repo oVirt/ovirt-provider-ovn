@@ -1373,7 +1373,7 @@ class TestOvnNorth(object):
         lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP
     )
     def test_get_security_group(self, mock_connection):
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
         result = ovn_north.get_security_group(
             TestOvnNorth.SECURITY_GROUP_ID
         )
@@ -1395,7 +1395,7 @@ class TestOvnNorth(object):
         lambda cmd, check_error: TestOvnNorth.SECURITY_GROUP
     )
     def test_add_security_group(self, db_create_mock, mock_connection):
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
         rest_data = SecurityGroupApiInputMaker(
             TestOvnNorth.SECURITY_GROUP_NAME, tenant_id(), tenant_id(),
             description=TestOvnNorth.SECURITY_GROUP_DESCRIPTION
@@ -1435,7 +1435,7 @@ class TestOvnNorth(object):
     def test_add_security_group_optional_data(
             self, db_create_mock, mock_connection
     ):
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
         rest_data = SecurityGroupApiInputMaker(
             TestOvnNorth.SECURITY_GROUP_NAME
         ).get()
@@ -1448,7 +1448,7 @@ class TestOvnNorth(object):
         assert_security_group_equal(result, security_group)
 
     def test_add_security_group_validator(self, mock_connection):
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
         rest_data = SecurityGroupApiInputMaker(
             TestOvnNorth.SECURITY_GROUP_NAME, tenant_id(), tenant_id(),
             description=TestOvnNorth.SECURITY_GROUP_DESCRIPTION
@@ -1460,7 +1460,7 @@ class TestOvnNorth(object):
         assert 'Invalid data found: peanut-butter' == str(invalid_data.value)
 
     def test_add_security_group_validator_data_missing(self, mock_connection):
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
         rest_data = SecurityGroupApiInputMaker(
             TestOvnNorth.SECURITY_GROUP_NAME, tenant_id(), tenant_id(),
             description=TestOvnNorth.SECURITY_GROUP_DESCRIPTION
@@ -1483,7 +1483,7 @@ class TestOvnNorth(object):
     def test_delete_security_group(
             self, mock_pg_del_command, db_destroy, mock_connection
     ):
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
 
         ovn_north.delete_security_group(TestOvnNorth.SECURITY_GROUP_ID)
         assert mock_pg_del_command.call_count == 1
@@ -1529,7 +1529,7 @@ class TestOvnNorth(object):
     def test_update_security_group(
             self, mock_db_update, db_create_mock, mock_connection
     ):
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
         rest_data = SecurityGroupApiInputMaker(
             TestOvnNorth.SECURITY_GROUP_NAME, tenant_id(), tenant_id(),
             description=TestOvnNorth.SECURITY_GROUP_DESCRIPTION
@@ -1555,7 +1555,7 @@ class TestOvnNorth(object):
         lambda self, table, the_id: TestOvnNorth.DEFAULT_SECURITY_GROUP
     )
     def test_update_default_sec_group(self, mock_connection):
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
 
         # update the default security group
         new_name = 'new_way_cuter_name'
@@ -1576,7 +1576,7 @@ class TestOvnNorth(object):
     def test_get_security_group_rule(
             self, mock_connection
     ):
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
         result = ovn_north.get_security_group_rule(
             TestOvnNorth.SECURITY_GROUP_RULE_ID_01
         )
@@ -1593,7 +1593,7 @@ class TestOvnNorth(object):
         lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP
     )
     def test_get_security_group_with_rules(self, mock_connection):
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
         result = ovn_north.get_security_group(
             TestOvnNorth.SECURITY_GROUP_ID
         )
@@ -1609,7 +1609,7 @@ class TestOvnNorth(object):
         lambda cmd, check_error: TestOvnNorth.SECURITY_GROUP_RULE_01
     )
     def test_add_security_group_rules(self, mock_connection):
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
         rest_data = SecurityGroupRuleApiInputMaker(
             'ingress', TestOvnNorth.SECURITY_GROUP_ID, ether_type='IPv4',
             protocol='tcp'
@@ -1633,7 +1633,7 @@ class TestOvnNorth(object):
         mock_ovn_getter.side_effect = [
             TestOvnNorth.SECURITY_GROUP_RULE_01, TestOvnNorth.SECURITY_GROUP
         ]
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
         ovn_north.delete_security_group_rule(
             TestOvnNorth.SECURITY_GROUP_RULE_ID_01
         )
@@ -1656,7 +1656,7 @@ class TestOvnNorth(object):
         lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP
     )
     def test_filter_out_drop_security_rules(self, mock_connection):
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
         result = ovn_north.get_security_group(
             TestOvnNorth.SECURITY_GROUP_ID
         )
@@ -1680,7 +1680,7 @@ class TestOvnNorth(object):
     def test_add_security_group_automatic_rule_install(
             self, mock_ovn_getter, db_create_mock, mock_connection
     ):
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
         mock_ovn_getter.side_effect = [
             TestOvnNorth.SECURITY_GROUP_RULE_01,
             TestOvnNorth.SECURITY_GROUP_RULE_03
@@ -1735,7 +1735,7 @@ class TestOvnNorth(object):
         )
 
         mock_lookup.return_value = security_group_with_ports
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
         with pytest.raises(BadRequestError) as ex:
             ovn_north.delete_security_group(security_group_id)
         assert 'Security Group {} in use'.format(
@@ -1745,7 +1745,7 @@ class TestOvnNorth(object):
     def test_sec_group_rules_ip_prefix_requires_ethertype(
             self, mock_connection
     ):
-        ovn_north = NeutronApi()
+        ovn_north = NeutronApi(sec_group_support=True)
         ip_prefix = '192.168.14.0/24'
         rest_data = SecurityGroupRuleApiInputMaker(
             'ingress', TestOvnNorth.SECURITY_GROUP_ID,

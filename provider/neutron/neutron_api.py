@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 import uuid
 
+from functools import wraps
 from netaddr import IPNetwork
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
 
@@ -30,6 +31,7 @@ import neutron.validation as validate
 
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
+from handlers.base_handler import MethodNotAllowedError
 
 from neutron.neutron_api_mappers import AddRouterInterfaceMapper
 from neutron.neutron_api_mappers import NetworkMapper
@@ -58,11 +60,25 @@ import ovndb.acls as acl_lib
 from ovndb.ovn_north import OvnNorth
 
 
+def assure_security_groups_support(f):
+    @wraps(f)
+    def inner(wrapped_self, *args, **kwargs):
+        if not wrapped_self.security_group_support:
+            raise MethodNotAllowedError(
+                'Security Groups are only supported on ovirt <= 4.3'
+            )
+        return f(wrapped_self, *args, **kwargs)
+    return inner
+
+
 class NeutronApi(object):
 
-    def __init__(self):
+    def __init__(self, sec_group_support=None):
         self.ovsidl, self.idl = ovn_connection.connect()
         self.ovn_north = OvnNorth(self.idl)
+        self.security_group_support = (
+                sec_group_support or self.are_security_groups_supported()
+        )
 
     # TODO: could this be moved to ovsdbapp?
     def _get_port_network(self, port):
@@ -1325,9 +1341,10 @@ class NeutronApi(object):
                 )
             )
             for group_data in self.ovn_north.list_security_groups()
-        ]
+        ] if self.are_security_groups_supported() else []
 
     @SecurityGroupMapper.map_to_rest
+    @assure_security_groups_support
     def get_security_group(self, sec_group_id):
         return SecurityGroup(
             sec_group=self.ovn_north.get_security_group(sec_group_id),
@@ -1339,6 +1356,7 @@ class NeutronApi(object):
     @SecurityGroupMapper.validate_add
     @SecurityGroupMapper.map_from_rest
     @SecurityGroupMapper.map_to_rest
+    @assure_security_groups_support
     def add_security_group(
             self, name, project_id=None, tenant_id=None, description=None
     ):
@@ -1350,11 +1368,13 @@ class NeutronApi(object):
             sec_group_rules=egress_rules
         )
 
+    @assure_security_groups_support
     def delete_security_group(self, security_group_id):
         self.ovn_north.remove_security_group(security_group_id)
 
     @SecurityGroupMapper.validate_update
     @SecurityGroupMapper.map_from_rest
+    @assure_security_groups_support
     def update_security_group(self, sec_group_id, name, description=None):
         self.ovn_north.update_security_group(sec_group_id, name, description)
         return SecurityGroup(
@@ -1363,16 +1383,19 @@ class NeutronApi(object):
         )
 
     @SecurityGroupRuleMapper.map_to_rest
+    @assure_security_groups_support
     def list_security_group_rules(self):
         return self.ovn_north.list_security_group_rules()
 
     @SecurityGroupRuleMapper.map_to_rest
+    @assure_security_groups_support
     def get_security_group_rule(self, security_group_rule_id):
         return self.ovn_north.get_security_group_rule(security_group_rule_id)
 
     @SecurityGroupRuleMapper.validate_add
     @SecurityGroupRuleMapper.map_from_rest
     @SecurityGroupRuleMapper.map_to_rest
+    @assure_security_groups_support
     def add_security_group_rule(
             self, security_group_id, direction, description=None,
             ether_type=None, port_min=None, port_max=None,
@@ -1387,8 +1410,12 @@ class NeutronApi(object):
 
         return sec_group_rule
 
+    @assure_security_groups_support
     def delete_security_group_rule(self, security_group_rule_id):
         self.ovn_north.remove_security_group_rule(security_group_rule_id)
+
+    def are_security_groups_supported(self):
+        return ovnconst.TABLE_PORT_GROUP in self.ovsidl.tables
 
     def __enter__(self):
         return self
