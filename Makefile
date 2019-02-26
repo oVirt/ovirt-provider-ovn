@@ -138,6 +138,9 @@ unittest3:
 lint:
 	tox -e pylint
 
+lint3:
+	tox -e pylint3
+
 integrationtest:
 	RUN_INTEG_TESTS="defined" automation/create_it_env.sh
 

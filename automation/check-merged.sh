@@ -8,14 +8,15 @@ make check
 make unittest
 make integrationtest
 
-if grep -q 'Fedora' /etc/redhat-release; then
-    make unittest3
-    make integrationtest3
-fi
-
 if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'ovirt-provider-ovn.spec.in|Makefile|automation' ; then
     ./automation/build-artifacts.sh
 fi
 
 make lint
 make coverage
+
+if grep -q 'Fedora' /etc/redhat-release; then
+    make unittest3
+    make integrationtest3
+    make lint3
+fi

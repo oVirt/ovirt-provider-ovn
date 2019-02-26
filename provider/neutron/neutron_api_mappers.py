@@ -1229,7 +1229,7 @@ class SecurityGroupRuleMapper(Mapper):
             try:
                 addr_or_prefix = IPNetwork(prefix, implicit_prefix=True)
             except AddrFormatError as afe:
-                raise BadRequestError(afe.message)
+                raise BadRequestError(afe)
 
             ether_type = rest_data.get(
                     SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ETHERTYPE
