@@ -647,17 +647,13 @@ class NeutronApi(object):
             raise SubnetConfigError('Unable to create more than one subnet'
                                     ' for network {}'.format(network_id))
 
-        external_ids = {
-            SubnetMapper.OVN_NETWORK_ID: network_id,
-            SubnetMapper.OVN_IP_VERSION: str(ip_version)
-        }
-        if name:
-            external_ids[SubnetMapper.OVN_NAME] = name
-        if ipv6_address_mode:
-            external_ids[
-                SubnetMapper.OVN_IPV6_ADDRESS_MODE
-            ] = ipv6_address_mode
-
+        external_ids = self.get_subnet_external_ids(
+            network_id,
+            ip_version,
+            name,
+            ipv6_address_mode,
+            gateway
+        )
         network_mtu = network.external_ids.get(SubnetMapper.OVN_DHCP_MTU)
         options = self.get_subnet_options(cidr, gateway, network_mtu, dns)
 
@@ -711,6 +707,28 @@ class NeutronApi(object):
             options[SubnetMapper.OVN_DNS_SERVER] = dns
         return options
 
+    @staticmethod
+    def get_subnet_external_ids(
+            network_id,
+            ip_version,
+            name,
+            ipv6_address_mode,
+            gateway
+    ):
+        external_ids = {
+            SubnetMapper.OVN_NETWORK_ID: network_id,
+            SubnetMapper.OVN_IP_VERSION: str(ip_version)
+        }
+        if name:
+            external_ids[SubnetMapper.OVN_NAME] = name
+        if ipv6_address_mode:
+            external_ids[
+                SubnetMapper.OVN_IPV6_ADDRESS_MODE
+            ] = ipv6_address_mode
+        if ip_version == SubnetMapper.IP_VERSION_6 and gateway:
+            external_ids[SubnetMapper.OVN_GATEWAY] = gateway
+        return external_ids
+
     @SubnetMapper.validate_update
     @SubnetMapper.map_from_rest
     def update_subnet(
@@ -720,6 +738,7 @@ class NeutronApi(object):
         gateway=None,
         dns=None,
     ):
+        subnet = self.ovn_north.get_dhcp(dhcp_id=subnet_id)
         self.ovn_north.create_ovn_update_command(
             ovnconst.TABLE_DHCP_Options, subnet_id
         ).add(
@@ -727,7 +746,10 @@ class NeutronApi(object):
             {SubnetMapper.OVN_NAME: name},
             name
         ).add(
-            ovnconst.ROW_DHCP_OPTIONS,
+            (
+                ovnconst.ROW_DHCP_OPTIONS if ip_utils.is_subnet_ipv4(subnet)
+                else ovnconst.ROW_DHCP_EXTERNAL_IDS
+            ),
             {SubnetMapper.OVN_GATEWAY: gateway},
             gateway
         ).add(

@@ -43,6 +43,30 @@ def logical_switch():
         )
 
 
+@pytest.fixture(scope='module')
+def subnet(logical_switch):
+    payload = {
+        'subnet': {
+            'network_id': logical_switch['id'],
+            'ip_version': 6,
+            'cidr': '1234::/64',
+            'gateway_ip': '1234::1'
+        }
+    }
+    response = requests.post(
+        'http://localhost:9696/v2.0/subnets/', json=payload
+    )
+    if response.status_code not in range(200, 205):
+        raise Exception('could not create subnet')
+    try:
+        yield response.json()['subnet']
+    finally:
+        requests.delete(
+            'http://localhost:9696/v2.0/subnets/' +
+            response.json()['subnet']['id']
+        )
+
+
 def test_get_network(logical_switch):
     networks = _get_and_assert('networks')
     assert len(networks) == 1
@@ -60,6 +84,16 @@ def test_limiter(logical_switch):
     networks = _get_and_assert('networks', 'limit', '1000')
     assert len(networks) == 1
     assert networks.pop()['name'] == logical_switch['name']
+
+
+def test_get_subnet(subnet):
+    subnets = _get_and_assert('subnets')
+    assert len(subnets) == 1
+    api_subnet = subnets.pop()
+    assert api_subnet['network_id'] == subnet['network_id']
+    assert api_subnet['ip_version'] == subnet['ip_version']
+    assert api_subnet['cidr'] == subnet['cidr']
+    assert api_subnet['gateway_ip'] == subnet['gateway_ip']
 
 
 def _get_and_assert(entity_type, filter_key=None, filter_value=None):

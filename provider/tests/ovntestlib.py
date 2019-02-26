@@ -143,9 +143,14 @@ class OvnSubnetRow(OvnRow):
             SubnetMapper.OVN_IP_VERSION: str(ip_version)
         }
         self.options = options or {
-            'router': '1.1.1.1',
             'dns_server': '8.8.8.8'
         }
+        if (
+            'router' not in self.options
+            and ip_version == SubnetMapper.IP_VERSION_4
+        ):
+            self.options['router'] = '1.1.1.1'
+
         self.external_ids[SubnetMapper.OVN_NETWORK_ID] = network_id or '0'
 
 

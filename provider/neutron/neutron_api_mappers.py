@@ -565,17 +565,14 @@ class SubnetMapper(Mapper):
             return {}
         options = row.options
         external_ids = row.external_ids
+        ipv4 = ip_utils.is_subnet_ipv4(row)
         result = {
             SubnetMapper.REST_SUBNET_ID: str(row.uuid),
             SubnetMapper.REST_SUBNET_CIDR: row.cidr,
             SubnetMapper.REST_SUBNET_NETWORK_ID:
                 external_ids[SubnetMapper.OVN_NETWORK_ID],
-            SubnetMapper.REST_SUBNET_IP_VERSION: int(
-                external_ids.get(
-                    SubnetMapper.OVN_IP_VERSION,
-                    SubnetMapper.IP_VERSION_4
-                )
-            ),
+            SubnetMapper.REST_SUBNET_IP_VERSION:
+                ip_utils.get_subnet_ip_version(row),
             SubnetMapper.REST_TENANT_ID: tenant_id(),
             SubnetMapper.REST_SUBNET_ENABLE_DHCP: True,
             SubnetMapper.REST_SUBNET_ALLOCATION_POOLS: [
@@ -589,9 +586,13 @@ class SubnetMapper(Mapper):
             result[SubnetMapper.REST_SUBNET_NAME] = (
                 external_ids[SubnetMapper.OVN_NAME]
             )
-        if SubnetMapper.OVN_GATEWAY in options:
+        if ipv4 and SubnetMapper.OVN_GATEWAY in options:
             result[SubnetMapper.REST_SUBNET_GATEWAY_IP] = (
                 options[SubnetMapper.OVN_GATEWAY]
+            )
+        elif not ipv4 and SubnetMapper.OVN_GATEWAY in external_ids:
+            result[SubnetMapper.REST_SUBNET_GATEWAY_IP] = (
+                external_ids[SubnetMapper.OVN_GATEWAY]
             )
         if SubnetMapper.OVN_IPV6_ADDRESS_MODE in external_ids:
             result[SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE] = external_ids[

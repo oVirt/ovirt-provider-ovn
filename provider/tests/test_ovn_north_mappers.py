@@ -71,7 +71,7 @@ class TestOvnNorthMappers(object):
         row = OvnSubnetRow(SUBNET_ID102, cidr=SUBNET_CIDR, external_ids={
             SubnetMapper.OVN_NETWORK_ID: NETWORK_ID1,
             SubnetMapper.OVN_IP_VERSION: '6'
-        })
+        }, ip_version=6)
         subnet = SubnetMapper.row2rest(row)
         assert_subnet_equal(subnet, row)
 
