@@ -26,7 +26,8 @@ function docker_ip {
 
 function destroy_env {
   if [ -n "$(filter_integration_test_containers)" ]; then
-    collect_container_logs
+    collect_ovn_data
+    collect_provider_logs
     docker rm -f $(filter_integration_test_containers)
   else
     echo "No containers to destroy; Bailing out."
@@ -62,6 +63,9 @@ function start_provider_container {
 function create_rpms {
   cleanup_past_builds
   docker exec -t "$PROVIDER_ID" /bin/bash -c '
+    touch /var/log/ovirt-provider-ovn.log
+  '
+  docker exec -t "$PROVIDER_ID" /bin/bash -c '
     cd $PROVIDER_SRC_CODE && \
     make rpm
   '
@@ -86,8 +90,8 @@ function activate_provider_traces {
   '
 }
 
-function collect_container_logs {
-  echo "Collecting logs from containers ..."
+function collect_ovn_data {
+  echo "Collecting data from OVN containers ..."
   mkdir -p "$EXPORTED_ARTIFACTS_DIR"
   if [ -n "$OVN_CENTRAL_ID" ]; then
     docker cp "$OVN_CENTRAL_ID":/etc/openvswitch/ovnnb_db.db "$EXPORTED_ARTIFACTS_DIR"
@@ -97,6 +101,9 @@ function collect_container_logs {
   if [ -n "$OVN_CONTROLLER_ID" ]; then
     docker cp "$OVN_CONTROLLER_ID":/var/log/openvswitch/ovn-controller.log "$EXPORTED_ARTIFACTS_DIR"
   fi
+}
+
+function collect_provider_logs {
   if [ -n "$PROVIDER_ID" ]; then
     docker cp "$PROVIDER_ID":/var/log/ovirt-provider-ovn.log "$EXPORTED_ARTIFACTS_DIR"
   fi
