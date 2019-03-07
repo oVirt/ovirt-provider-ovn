@@ -25,6 +25,8 @@ import hooking
 
 PROVIDER_TYPE_KEY = 'provider_type'
 PROVIDER_TYPE = 'EXTERNAL_NETWORK'
+PLUGIN_TYPE_KEY = 'plugin_type'
+PLUGIN_TYPE_OVN = 'OVIRT_PROVIDER_OVN'
 VNIC_ID_KEY = 'vnic_id'
 VHOST_PERM_SETTER = '/usr/libexec/vdsm/vhostuser_permissions_setter'
 
@@ -115,6 +117,10 @@ def is_netdev_datapath():
 def main():
     provider_type = os.environ.get(PROVIDER_TYPE_KEY, None)
     if provider_type != PROVIDER_TYPE:
+        return
+
+    plugin_type = os.environ.get(PLUGIN_TYPE_KEY, None)
+    if plugin_type != PLUGIN_TYPE_OVN:
         return
 
     if not is_netdev_datapath():
