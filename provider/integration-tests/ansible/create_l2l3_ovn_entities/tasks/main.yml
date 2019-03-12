@@ -19,6 +19,7 @@
     cidr: "{{ item.0.cidr }}"
     gateway_ip: "{{ item.0.gateway_ip | default(omit) }}"
     enable_dhcp: yes
+    ipv6_address_mode: "{{ item.0.ipv6_address_mode | default(omit) }}"
   when:
     - item.0.subnet_name is defined
     - item.0.cidr is defined

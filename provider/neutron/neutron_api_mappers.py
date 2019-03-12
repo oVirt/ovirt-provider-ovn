@@ -516,6 +516,7 @@ class SubnetMapper(Mapper):
     OVN_DHCP_SERVER_MAC = 'server_mac'
     OVN_DHCP_LEASE_TIME = 'lease_time'
     OVN_DHCP_MTU = 'mtu'
+    OVN_DHCPV6_STATELESS = 'dhcpv6_stateless'
     OVN_GATEWAY_ROUTER_ID = 'gateway_router'
     OVN_IP_VERSION = 'ip_version'
     OVN_IPV6_ADDRESS_MODE = 'ovirt_ipv6_address_mode'
@@ -525,6 +526,10 @@ class SubnetMapper(Mapper):
     ALLOWED_IP_VERSIONS = [IP_VERSION_4, IP_VERSION_6]
 
     IPV6_ADDRESS_MODE_STATEFUL = 'dhcpv6_stateful'
+    IPV6_ADDRESS_MODE_STATELESS = 'dhcpv6_stateless'
+    ALLOWED_IPV6_ADDRESS_MODES = [
+        IPV6_ADDRESS_MODE_STATEFUL, IPV6_ADDRESS_MODE_STATELESS
+    ]
 
     @staticmethod
     def rest2row(wrapped_self, func, rest_data, subnet_id):
@@ -664,11 +669,11 @@ class SubnetMapper(Mapper):
             )
         if (SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE in rest_data and
                 rest_data.get(SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE)
-                != SubnetMapper.IPV6_ADDRESS_MODE_STATEFUL):
+                not in SubnetMapper.ALLOWED_IPV6_ADDRESS_MODES):
             raise UnsupportedDataValueError(
                 SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE,
                 rest_data.get(SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE),
-                [SubnetMapper.IPV6_ADDRESS_MODE_STATEFUL]
+                SubnetMapper.ALLOWED_IPV6_ADDRESS_MODES
             )
 
 

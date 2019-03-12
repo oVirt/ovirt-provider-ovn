@@ -50,7 +50,8 @@ def subnet(logical_switch):
             'network_id': logical_switch['id'],
             'ip_version': 6,
             'cidr': '1234::/64',
-            'gateway_ip': '1234::1'
+            'gateway_ip': '1234::1',
+            'ipv6_address_mode': 'dhcpv6_stateless'
         }
     }
     response = requests.post(
@@ -94,6 +95,7 @@ def test_get_subnet(subnet):
     assert api_subnet['ip_version'] == subnet['ip_version']
     assert api_subnet['cidr'] == subnet['cidr']
     assert api_subnet['gateway_ip'] == subnet['gateway_ip']
+    assert api_subnet['ipv6_address_mode'] == subnet['ipv6_address_mode']
 
 
 def _get_and_assert(entity_type, filter_key=None, filter_value=None):

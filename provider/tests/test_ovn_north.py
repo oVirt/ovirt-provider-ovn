@@ -1823,7 +1823,7 @@ class TestOvnNorth(object):
         created_subnet = ovn_north.add_subnet(rest_data)
         assert_subnet_equal(created_subnet, TestOvnNorth.SUBNET_IPV6)
 
-    def test_ipv6_only_allowed_ra_mode_is_dhcpv6_stateful(
+    def test_ipv6_allowed_ra_modes(
             self, mock_connection
     ):
         ovn_north = NeutronApi()
@@ -1841,24 +1841,7 @@ class TestOvnNorth(object):
             ovn_north.add_subnet(slaac_rest_data)
         assert str(error.value) == (
             'Setting ipv6_address_mode value to slaac is not supported. '
-            'Allowed values are: [\'dhcpv6_stateful\']'
-        )
-
-        stateless_dhcpv6_rest_data = SubnetApiInputMaker(
-            TestOvnNorth.SUBNET_IPV6.external_ids.get(
-                SubnetMapper.OVN_NAME
-            ),
-            cidr=TestOvnNorth.SUBNET_IPV6_CIDR,
-            network_id=str(TestOvnNorth.NETWORK_IDMTU),
-            gateway_ip=TestOvnNorth.SUBNET_IPV6_GATEWAY, ip_version=6,
-            address_mode='dhcpv6_stateless'
-        ).get()
-
-        with pytest.raises(UnsupportedDataValueError) as stateless_dhcp6_error:
-            ovn_north.add_subnet(stateless_dhcpv6_rest_data)
-        assert str(stateless_dhcp6_error.value) == (
-            'Setting ipv6_address_mode value to dhcpv6_stateless is not '
-            'supported. Allowed values are: [\'dhcpv6_stateful\']'
+            'Allowed values are: [\'dhcpv6_stateful\', \'dhcpv6_stateless\']'
         )
 
     def test_v4_subnet_having_v6_attributes(self, mock_connection):

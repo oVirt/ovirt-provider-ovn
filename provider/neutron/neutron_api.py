@@ -655,7 +655,9 @@ class NeutronApi(object):
             gateway
         )
         network_mtu = network.external_ids.get(SubnetMapper.OVN_DHCP_MTU)
-        options = self.get_subnet_options(cidr, gateway, network_mtu, dns)
+        options = self.get_subnet_options(
+            cidr, gateway, network_mtu, dns, ipv6_address_mode
+        )
 
         self.ovn_north.db_set(
             ovnconst.TABLE_LS,
@@ -685,7 +687,9 @@ class NeutronApi(object):
         return options
 
     @staticmethod
-    def get_subnet_options(cidr, gateway, network_mtu, dns):
+    def get_subnet_options(
+            cidr, gateway, network_mtu, dns, ipv6_address_mode=None
+    ):
         network = IPNetwork(cidr)
         if network.version == SubnetMapper.IP_VERSION_4:
             options = {
@@ -703,6 +707,8 @@ class NeutronApi(object):
             options = {
                 SubnetMapper.OVN_DHCP_SERVER_ID: dhcp_server_mac()
             }
+            if ipv6_address_mode == SubnetMapper.IPV6_ADDRESS_MODE_STATELESS:
+                options[SubnetMapper.OVN_DHCPV6_STATELESS] = "true"
         if dns:
             options[SubnetMapper.OVN_DNS_SERVER] = dns
         return options
