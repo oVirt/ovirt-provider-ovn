@@ -2,7 +2,7 @@ reset_scenario
 =========
 
 The reset_scenario role removes the ovn control plane entities created through
-the network_points.
+the network_point, and router abstractions.
 
 It can also remove all the dataplane elements - and does so, by default - using
 a boolean variable.
@@ -16,6 +16,7 @@ Role Variables
 --------------
 
 - list of network points
+- list of routers (optional)
 - controller_container_id
 - cloud_name
 
@@ -50,6 +51,10 @@ Example Playbook
                gateway_ip: 192.168.10.1
                network: net1
                ns: ns2
+           routers:
+             - name: router0
+               interfaces:
+                 - subnet1
            cloud_name: ovirt
            controller_container_id: 3f550c7173fb
 

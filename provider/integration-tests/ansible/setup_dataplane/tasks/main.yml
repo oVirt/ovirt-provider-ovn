@@ -15,6 +15,8 @@
   delegate_to: "{{ controller_container_id }}"
   command:
     ovs-vsctl add-port br-int "{{ item.name }}" -- set Interface "{{ item.name }}" type=internal external_ids:iface-id="{{ item.id }}"
+  when:
+    - item.name != "router_port"
   with_items:
     - "{{ openstack_ports }}"
 
@@ -62,12 +64,25 @@
     - "'ip' not in item"
     - item.cidr | ipv4
 
-- name: namespace dynamic ipv6 configuration
+- name: namespace dynamic ipv6 configuration through dhcpv6
   delegate_to: "{{ controller_container_id }}"
   command:
     "timeout 1m ip netns exec {{ item.ns }} dhclient -6 -lf /var/lib/dhclient/{{ item.ns }}.lease --no-pid {{ item.name }}"
   when:
     - "'ip' not in item"
     - item.cidr | ipv6
+    - item.ipv6_address_mode == 'dhcpv6_stateful'
   with_items:
   - "{{ network_points }}"
+
+- name: namespace dynamic ipv6 configuration through RAs
+  delegate_to: "{{ controller_container_id }}"
+  command:
+    "ip netns exec {{ item[0].ns }} echo 1 > /proc/sys/net/ipv6/conf/{{ item[0].name }}/{{ item[1] }}"
+  when:
+    - "'ip' not in item[0]"
+    - item[0].cidr | ipv6
+    - item[0].ipv6_address_mode == 'dhcpv6_stateless'
+  with_nested:
+    - "{{ network_points }}"
+    - [ 'autoconf', 'accept_ra', 'accept_redirects' ,'accept_ra_pinfo' ]

@@ -18,12 +18,16 @@ dependencies:
 Role Variables
 --------------
 
-This role relies on the 'network_point' abstraction.
+This role relies on two core abstractions: the 'network_point', and the 'router'.
 A network point represents a logical port, but it features all L2 and L3
 information for the port's dependencies to be created (its network, and
 subnet).
 
-An example of the expected 'network_points' input can be found below:
+A router, represents an OVN logical router, and information about which subnets
+it connects.
+
+An example of the expected 'network_points', and 'router' inputs can be found
+below:
 ```python
 {
     'network_points': [
@@ -35,7 +39,8 @@ An example of the expected 'network_points' input can be found below:
             'cidr': '192.168.10.0/24',
             'gateway_ip': '192.168.10.1',
             'network': 'net1',
-            'ns': 'ns1'
+            'ns': 'ns1',
+            'ipv6_address_mode': 'dhcpv6_stateless'
         },
         {
             'name': 'lport2',
@@ -45,7 +50,16 @@ An example of the expected 'network_points' input can be found below:
             'cidr': '192.168.10.0/24',
             'gateway_ip': '192.168.10.1',
             'network': 'net1',
-            'ns': 'ns2'
+            'ns': 'ns2',
+            'ipv6_address_mode': 'dhcpv6_stateless'
+        }
+    ],
+    'routers': [
+        {
+            'name': 'router0',
+            'interfaces': [
+                'subnet1'
+            ]
         }
     ]
 }
@@ -54,9 +68,11 @@ An example of the expected 'network_points' input can be found below:
 This role also requires the following variables:
   - cloud_name: the cloud name as defined in the clouds.yml file
 
-It is important to assure the **gateway_ip** / **cidr** / **ip** values of the
-network point are the same in all network_points, unless the user wants to
-update the subnet.
+It is important to assure the **gateway_ip** / **cidr** / **ip** /
+**ipv6_address_mode** values of the network point are the same in all
+network_points, unless the user wants to update the subnet.
+
+The list of routers is an **optional** attribute.
 
 Example Playbook
 ----------------
@@ -73,6 +89,7 @@ Example Playbook
                gateway_ip: 192.168.10.1
                network: net1
                ns: ns1
+               ipv6_address_mode: dhcpv6_stateless
              - name: lport2
                ip: 192.168.10.3
                mac': 00:00:00:22:22:22
@@ -81,6 +98,11 @@ Example Playbook
                gateway_ip: 192.168.10.1
                network: net1
                ns: ns2
+               ipv6_address_mode: dhcpv6_stateless
+           routers:
+             - name: router0
+               interfaces:
+                 - subnet1
            cloud_name: ovirt
 
 License

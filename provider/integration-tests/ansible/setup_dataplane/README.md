@@ -7,8 +7,11 @@ For every network_point it receives, it creates an IP namespace, and an ovs
 port, linking it to the corresponding OVN logical switch port. The ovs ports
 are made available to the IP namespaces.
 
-The mac & ip addresses of the interfaces (ovs ports) are statically configured
-in the guests (IP namespaces) based on the addresses reported by ovn.
+When mac & ip addresses are supplied in the network_point abstraction, the
+interfaces (ovs ports) are statically configured in the guests (IP namespaces)
+based on the addresses reported by ovn. When the IP address is ommitted, the
+client configures its IP address - either through a dhcp client, or via RA
+messages, depending on the subnet address mode configuration.
 
 The playbook importing this role *needs to* add the ovn controller docker
 container to the inventory, by calling the

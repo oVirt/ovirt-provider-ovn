@@ -59,3 +59,14 @@
     - "{{ network_points }}"
     - "{{ created_networks.results }}"
     - "{{ created_subnets.results }}"
+
+- name: provision routers in the control plane
+  os_router:
+    cloud: "{{ cloud_name }}"
+    name: "{{ item.name }}"
+    state: present
+    interfaces: "{{ item.interfaces | default([]) }}"
+  when:
+    - created_subnets.results | length > 0
+  with_items:
+    - "{{ routers | default([]) }}"

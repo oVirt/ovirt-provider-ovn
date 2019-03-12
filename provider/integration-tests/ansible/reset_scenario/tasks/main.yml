@@ -1,4 +1,12 @@
 ---
+- name: delete all routers
+  os_router:
+    cloud: "{{ cloud_name }}"
+    name: "{{ item.name }}"
+    state: absent
+  with_items:
+  - "{{ routers | default([]) }}"
+
 - name: reset the ovs network, deleting all ports connected to it
   delegate_to: "{{ controller_container_id }}"
   openvswitch_bridge:
@@ -61,3 +69,15 @@
     state: absent
   with_items:
     - "{{ network_points }}"
+
+- name: disable namespace dynamic ipv6 configuration through RAs
+  delegate_to: "{{ controller_container_id }}"
+  command:
+    "ip netns exec {{ item[0].ns }} echo 0 > /proc/sys/net/ipv6/conf/{{ item[0].name }}/{{ item[1] }}"
+  when:
+    - "'ip' not in item[0]"
+    - item[0].cidr | ipv6
+    - item[0].ipv6_address_mode == 'dhcpv6_stateless'
+  with_nested:
+    - "{{ network_points }}"
+    - [ 'autoconf', 'accept_ra', 'accept_redirects' ,'accept_ra_pinfo' ]

@@ -42,7 +42,8 @@ SAME_SUBNET = {
             'mac': '00:00:00:11:11:11',
             'network': 'net1',
             'ns': 'ns1',
-            'ip_version': 6
+            'ip_version': 6,
+            'ipv6_address_mode': 'dhcpv6_stateful'
         },
         {
             'name': 'lport2',
@@ -51,18 +52,58 @@ SAME_SUBNET = {
             'mac': '00:00:00:22:22:22',
             'network': 'net1',
             'ns': 'ns2',
-            'ip_version': 6
+            'ip_version': 6,
+            'ipv6_address_mode': 'dhcpv6_stateful'
         },
     ],
     'provider_container_id': PROVIDER_CONTAINER_ID,
     'controller_container_id': CONTROLLER_CONTAINER_ID
 }
 
+MULTIPLE_SUBNETS_STATELESS = {
+    'network_points': [
+        {
+            'name': 'lport1',
+            'subnet_name': 'subnet1',
+            'cidr': 'bef0:1234:a890:5678::/64',
+            'mac': '00:00:00:33:33:33',
+            'network': 'net1',
+            'ns': 'ns1',
+            'ip_version': 6,
+            'gateway_ip': 'bef0:1234:a890:5678::1',
+            'ipv6_address_mode': 'dhcpv6_stateless'
+        },
+        {
+            'name': 'lport2',
+            'subnet_name': 'subnet2',
+            'cidr': 'def0:abcd::/64',
+            'mac': '00:00:00:44:44:44',
+            'network': 'net2',
+            'ns': 'ns2',
+            'ip_version': 6,
+            'gateway_ip': 'def0:abcd::1',
+            'ipv6_address_mode': 'dhcpv6_stateless'
+        },
+    ],
+    'routers': [
+        {
+            'name': 'router0',
+            'interfaces': [
+                'subnet1',
+                'subnet2'
+            ]
+        }
+    ],
+    'provider_container_id': PROVIDER_CONTAINER_ID,
+    'controller_container_id': CONTROLLER_CONTAINER_ID
+}
+
+
 PROVIDER_URL = 'http://localhost:9696/v2.0/'
 
 
-@pytest.fixture(scope='module')
-def setup_dataplane():
+@pytest.fixture
+def setup_dataplane_single_subnet():
     get_playbook('create_l2l3_scenario.yml', SAME_SUBNET).run(
         enable_idempotency_checker=False
     )
@@ -74,13 +115,41 @@ def setup_dataplane():
         )
 
 
-def test_single_subnet(setup_dataplane):
+@pytest.fixture
+def setup_dataplane_multiple_subnet():
+    get_playbook('create_l2l3_scenario.yml', MULTIPLE_SUBNETS_STATELESS).run(
+        enable_idempotency_checker=False
+    )
+    try:
+        yield
+    finally:
+        get_playbook('reset_scenario.yml', MULTIPLE_SUBNETS_STATELESS).run(
+            enable_idempotency_checker=False
+        )
+
+
+def test_single_subnet(setup_dataplane_single_subnet):
     icmp_src_conf = SAME_SUBNET['network_points'][0]
     icmp_dst_conf = SAME_SUBNET['network_points'][1]
 
     destination_ip = _get_port_ip_by_name(icmp_dst_conf.get('name'))
     assert destination_ip
 
+    inner_ping(
+        container_name=CONTROLLER_CONTAINER_ID,
+        source_namespace=icmp_src_conf['ns'],
+        target_ip=destination_ip, expected_result=0, ip_version=6
+    )
+
+
+def test_multiple_subnets(setup_dataplane_multiple_subnet):
+    icmp_src_conf = MULTIPLE_SUBNETS_STATELESS['network_points'][0]
+    icmp_dst_conf = MULTIPLE_SUBNETS_STATELESS['network_points'][1]
+
+    destination_ip = _get_port_ip_by_name(icmp_dst_conf.get('name'))
+    assert destination_ip
+
+    assert len(_get_routers()) == 1
     inner_ping(
         container_name=CONTROLLER_CONTAINER_ID,
         source_namespace=icmp_src_conf['ns'],
@@ -104,3 +173,7 @@ def _get_networking_api_port_data(port_name):
             reply.json().get('ports')
         )
     )[0]
+
+
+def _get_routers():
+    return requests.get(PROVIDER_URL + 'routers').json().get('routers')
