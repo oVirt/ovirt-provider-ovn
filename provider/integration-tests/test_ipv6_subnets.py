@@ -98,6 +98,72 @@ MULTIPLE_SUBNETS_STATELESS = {
     'controller_container_id': CONTROLLER_CONTAINER_ID
 }
 
+MULTIPLE_SUBNETS_STATEFUL = {
+    'network_points': [
+        {
+            'name': 'lport1',
+            'subnet_name': 'subnet1',
+            'cidr': 'bef0:1234:a890:5678::/64',
+            'mac': '00:00:00:55:55:55',
+            'network': 'net1',
+            'ns': 'ns1',
+            'ip_version': 6,
+            'gateway_ip': 'bef0:1234:a890:5678::1',
+            'ipv6_address_mode': 'dhcpv6_stateful'
+        },
+        {
+            'name': 'lport2',
+            'subnet_name': 'subnet2',
+            'cidr': 'def0:abcd::/64',
+            'mac': '00:00:00:66:66:66',
+            'network': 'net2',
+            'ns': 'ns2',
+            'ip_version': 6,
+            'gateway_ip': 'def0:abcd::1',
+            'ipv6_address_mode': 'dhcpv6_stateful'
+        },
+    ],
+    'routers': [
+        {
+            'name': 'router0',
+            'interfaces': [
+                'subnet1',
+                'subnet2'
+            ]
+        }
+    ],
+    'provider_container_id': PROVIDER_CONTAINER_ID,
+    'controller_container_id': CONTROLLER_CONTAINER_ID
+}
+
+MULTIPLE_SUBNETS_STATEFUL_NO_ROUTER = {
+    'network_points': [
+        {
+            'name': 'lport1',
+            'subnet_name': 'subnet1',
+            'cidr': 'bef0:1234:a890:5678::/64',
+            'mac': '00:00:00:55:55:55',
+            'network': 'net1',
+            'ns': 'ns1',
+            'ip_version': 6,
+            'gateway_ip': 'bef0:1234:a890:5678::1',
+            'ipv6_address_mode': 'dhcpv6_stateful'
+        },
+        {
+            'name': 'lport2',
+            'subnet_name': 'subnet2',
+            'cidr': 'def0:abcd::/64',
+            'mac': '00:00:00:66:66:66',
+            'network': 'net2',
+            'ns': 'ns2',
+            'ip_version': 6,
+            'gateway_ip': 'def0:abcd::1',
+            'ipv6_address_mode': 'dhcpv6_stateful'
+        },
+    ],
+    'provider_container_id': PROVIDER_CONTAINER_ID,
+    'controller_container_id': CONTROLLER_CONTAINER_ID
+}
 
 PROVIDER_URL = 'http://localhost:9696/v2.0/'
 
@@ -128,6 +194,32 @@ def setup_dataplane_multiple_subnet():
         )
 
 
+@pytest.fixture
+def setup_dataplane_multiple_subnet_stateful_no_router():
+    get_playbook(
+        'create_l2l3_scenario.yml', MULTIPLE_SUBNETS_STATEFUL_NO_ROUTER
+    ).run(enable_idempotency_checker=False)
+    try:
+        yield
+    finally:
+        get_playbook(
+            'reset_scenario.yml', MULTIPLE_SUBNETS_STATEFUL_NO_ROUTER
+        ).run(enable_idempotency_checker=False)
+
+
+@pytest.fixture
+def setup_dataplane_multiple_subnet_stateful_with_router():
+    get_playbook(
+        'create_l2l3_scenario.yml', MULTIPLE_SUBNETS_STATEFUL
+    ).run(enable_idempotency_checker=False)
+    try:
+        yield
+    finally:
+        get_playbook(
+            'reset_scenario.yml', MULTIPLE_SUBNETS_STATEFUL
+        ).run(enable_idempotency_checker=False)
+
+
 def test_single_subnet(setup_dataplane_single_subnet):
     icmp_src_conf = SAME_SUBNET['network_points'][0]
     icmp_dst_conf = SAME_SUBNET['network_points'][1]
@@ -154,6 +246,40 @@ def test_multiple_subnets(setup_dataplane_multiple_subnet):
         container_name=CONTROLLER_CONTAINER_ID,
         source_namespace=icmp_src_conf['ns'],
         target_ip=destination_ip, expected_result=0, ip_version=6
+    )
+
+
+def test_multiple_subnets_stateful(
+        setup_dataplane_multiple_subnet_stateful_with_router
+):
+    icmp_src_conf = MULTIPLE_SUBNETS_STATEFUL['network_points'][0]
+    icmp_dst_conf = MULTIPLE_SUBNETS_STATEFUL['network_points'][1]
+
+    destination_ip = _get_port_ip_by_name(icmp_dst_conf.get('name'))
+    assert destination_ip
+
+    assert len(_get_routers()) == 1
+    inner_ping(
+        container_name=CONTROLLER_CONTAINER_ID,
+        source_namespace=icmp_src_conf['ns'],
+        target_ip=destination_ip, expected_result=0, ip_version=6
+    )
+
+
+def test_multiple_subnets_stateful_no_connectivity(
+        setup_dataplane_multiple_subnet_stateful_no_router
+):
+    icmp_src_conf = MULTIPLE_SUBNETS_STATEFUL_NO_ROUTER['network_points'][0]
+    icmp_dst_conf = MULTIPLE_SUBNETS_STATEFUL_NO_ROUTER['network_points'][1]
+
+    destination_ip = _get_port_ip_by_name(icmp_dst_conf.get('name'))
+    assert destination_ip
+
+    assert len(_get_routers()) == 0
+    inner_ping(
+        container_name=CONTROLLER_CONTAINER_ID,
+        source_namespace=icmp_src_conf['ns'],
+        target_ip=destination_ip, expected_result=2, ip_version=6
     )
 
 
