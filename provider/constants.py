@@ -57,6 +57,8 @@ ROW_LR_EXTERNAL_IDS = 'external_ids'
 
 TABLE_LRP = 'Logical_Router_Port'
 ROW_LRP_NETWORKS = 'networks'
+ROW_LRP_IPV6_ADDRESS_MODE = 'address_mode'
+ROW_LRP_IPV6_SEND_PERIODIC = 'send_periodic'
 
 LOCALNET_SWITCH_PORT_NAME = 'localnet_port'
 ROUTER_SWITCH_PORT_NAME = 'router_port'

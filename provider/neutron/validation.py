@@ -32,8 +32,7 @@ from neutron.neutron_api_mappers import RouterMapper
 
 
 def attach_network_to_router_by_subnet(subnet, network_id, router_id):
-    subnet_gateway = subnet.options.get('router')
-    if not subnet_gateway:
+    if not _get_subnet_gateway(subnet):
         raise ElementNotFoundError(
             'Unable to attach network {network_id} to router '
             '{router_id} by subnet {subnet_id}.'
@@ -150,13 +149,20 @@ def _validate_subnet_is_connected_to_another_router(
 
 
 def _validate_subnet_has_default_gateway(subnet):
-    if subnet.options.get('router') is None:
+    if _get_subnet_gateway(subnet) is None:
         raise BadRequestError(
             'Subnet {} cannot be used as external gateway, '
             'since it does not have a default gateway defined'.format(
                 subnet.uuid
             )
         )
+
+
+def _get_subnet_gateway(subnet):
+    return (
+        subnet.options.get('router') if ip_utils.is_subnet_ipv4(subnet)
+        else subnet.external_ids.get('router')
+    )
 
 
 def port_is_connected_to_router(lsp):

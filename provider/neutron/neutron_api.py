@@ -1195,21 +1195,39 @@ class NeutronApi(object):
             if subnet_id else
             self._update_routing_lsp_by_port(port_id, router_id)
         )
-        if not subnet_id:
-            subnet_id = str(self.ovn_north.get_dhcp(ls_id=network_id).uuid)
-        self.ovn_north.add_lrp(router_id, lrp_name, mac=mac, lrp_ip=lrp_ip)
+        subnet = (
+            self.ovn_north.get_dhcp(dhcp_id=subnet_id) if subnet_id
+            else self.ovn_north.get_dhcp(ls_id=network_id)
+        )
+        self.ovn_north.add_lrp(
+            router_id, lrp_name, mac=mac, lrp_ip=lrp_ip,
+            ipv6_ra_configs=self._build_ra_config_dict(subnet)
+        )
+
         return RouterInterface(
             id=router_id,
             ls_id=network_id,
             lsp_id=port_id,
-            dhcp_options_id=subnet_id,
+            dhcp_options_id=subnet_id or str(subnet.uuid),
         )
+
+    @staticmethod
+    def _build_ra_config_dict(subnet):
+        return {
+            ovnconst.ROW_LRP_IPV6_ADDRESS_MODE: subnet.external_ids.get(
+                SubnetMapper.OVN_IPV6_ADDRESS_MODE
+            ),
+            ovnconst.ROW_LRP_IPV6_SEND_PERIODIC: "true"
+        } if ip_utils.is_subnet_ipv6(subnet) else {}
 
     def _get_ip_from_subnet(self, subnet, network_id, router_id):
         validate.attach_network_to_router_by_subnet(
             subnet, network_id, router_id
         )
-        subnet_gateway = subnet.options.get('router')
+        subnet_gateway = (
+            subnet.options.get('router') if ip_utils.is_subnet_ipv4(subnet)
+            else subnet.external_ids.get(SubnetMapper.OVN_GATEWAY)
+        )
         subnet_netmask = ip_utils.get_mask_from_subnet(subnet)
         return '{ip}/{netmask}'.format(
             ip=subnet_gateway, netmask=subnet_netmask

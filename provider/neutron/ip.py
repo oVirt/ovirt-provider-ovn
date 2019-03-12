@@ -187,3 +187,7 @@ def get_subnet_ip_version(subnet):
 
 def is_subnet_ipv4(subnet):
     return get_subnet_ip_version(subnet) == 4
+
+
+def is_subnet_ipv6(subnet):
+    return get_subnet_ip_version(subnet) == 6

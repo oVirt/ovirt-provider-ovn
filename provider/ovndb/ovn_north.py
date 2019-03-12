@@ -82,11 +82,12 @@ class OvnNorth(object):
             router=name, may_exist=False, enabled=enabled
         ))
 
-    def add_lrp(self, lr_id, lrp_name, mac, lrp_ip):
+    def add_lrp(self, lr_id, lrp_name, mac, lrp_ip, ipv6_ra_configs=None):
         ovn_connection.execute(self.idl.lrp_add(
             router=lr_id, port=lrp_name,
             mac=mac,
             networks=[lrp_ip],
+            ipv6_ra_configs=ipv6_ra_configs or {}
         ))
 
     def add_route(self, lrp_id, prefix, nexthop):
