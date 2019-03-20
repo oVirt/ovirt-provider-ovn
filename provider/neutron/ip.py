@@ -87,7 +87,11 @@ def get_ip_from_cidr(cidr):
 
 
 def get_mask_from_subnet(subnet):
-    return subnet.cidr.split('/')[1]
+    return get_mask_from_cidr(subnet.cidr)
+
+
+def get_mask_from_cidr(cidr):
+    return cidr.split('/')[1]
 
 
 def ip_in_cidr(ip, cidr):

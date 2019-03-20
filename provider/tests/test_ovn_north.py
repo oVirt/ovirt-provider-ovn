@@ -1862,3 +1862,23 @@ class TestOvnNorth(object):
             'The \'ipv6_address_mode\' parameter can only be used '
             'when \'ip_version\' == 6'
         )
+
+    def test_ipv6_subnet_stateless_mode_invalid_prefix(self, mock_connection):
+        ovn_north = NeutronApi()
+        stateless_dhcpv6_rest_data = SubnetApiInputMaker(
+            TestOvnNorth.SUBNET_102.external_ids.get(
+                SubnetMapper.OVN_NAME
+            ),
+            cidr='bef0:1234:a890:5678::/96',
+            network_id=str(TestOvnNorth.NETWORK_IDMTU),
+            gateway_ip=TestOvnNorth.SUBNET_IPV6_GATEWAY, ip_version=6,
+            address_mode='dhcpv6_stateless'
+        ).get()
+
+        with pytest.raises(BadRequestError) as bre:
+            ovn_north.add_subnet(stateless_dhcpv6_rest_data)
+        assert str(bre.value) == (
+            'Invalid CIDR bef0:1234:a890:5678::/96 for IPv6 address mode. '
+            'OVN uses the EUI-64 address format, which requires the prefix '
+            'to be /64'
+        )

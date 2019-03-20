@@ -631,10 +631,15 @@ class SubnetMapper(Mapper):
                 'The \'{}\' parameter can only be used when \'ip_version\' '
                 '== 6'.format(SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE)
             )
+        cidr = rest_data.get(SubnetMapper.REST_SUBNET_CIDR)
         SubnetMapper._validate_ip_version_consistency(
-            ip_version, cidr=rest_data.get(SubnetMapper.REST_SUBNET_CIDR),
+            ip_version, cidr=cidr,
             gateway=rest_data.get(SubnetMapper.REST_SUBNET_GATEWAY_IP)
         )
+        if ip_version == SubnetMapper.IP_VERSION_6 and rest_data.get(
+                SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE
+        ) != SubnetMapper.IPV6_ADDRESS_MODE_STATEFUL:
+            SubnetMapper._validate_stateless_address_mode(cidr)
 
     @staticmethod
     def validate_update_rest_input(rest_data):
@@ -657,6 +662,15 @@ class SubnetMapper(Mapper):
                 'cidr={cidr} or gateway={gateway}'.format(
                     ip=ip_version, cidr=cidr, gateway=gateway
                 )
+            )
+
+    @staticmethod
+    def _validate_stateless_address_mode(cidr):
+        if int(ip_utils.get_mask_from_cidr(cidr)) != 64:
+            raise BadRequestError(
+                'Invalid CIDR {} for IPv6 address mode. '
+                'OVN uses the EUI-64 address format, '
+                'which requires the prefix to be /64'.format(cidr)
             )
 
     @staticmethod
