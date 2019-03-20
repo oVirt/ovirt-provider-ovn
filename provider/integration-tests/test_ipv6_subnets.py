@@ -25,7 +25,7 @@ from lib.dockerlib import inner_ping
 from lib.dockerlib import get_container_id_from_img_name
 
 CONTROLLER_CONTAINER_ID = get_container_id_from_img_name(
-        'tripleomaster/centos-binary-ovn-controller:current-tripleo'
+        'tripleomaster/centos-binary-ovn-controller:current-tripleo-rdo'
 )
 PROVIDER_CONTAINER_ID = get_container_id_from_img_name(
             'maiqueb/ovirt_provider_ovn'
