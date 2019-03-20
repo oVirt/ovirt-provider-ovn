@@ -67,6 +67,20 @@ def fixed_ip_matches_port_subnet(fixed_ips, subnet):
         )
 
 
+def fixed_ips_require_stateful_dhcp(subnet, fixed_ips):
+    subnet_ip_address = fixed_ips[0].get(PortMapper.REST_PORT_IP_ADDRESS)
+    if subnet.external_ids.get(
+            SubnetMapper.OVN_IPV6_ADDRESS_MODE
+    ) == SubnetMapper.IPV6_ADDRESS_MODE_STATELESS and subnet_ip_address:
+        raise BadRequestError(
+            'IPv6 address {ip} cannot be directly '
+            'assigned to a port on subnet {subnet_id} as the '
+            'subnet is configured for automatic addresses'.format(
+                ip=subnet_ip_address, subnet_id=subnet.uuid
+            )
+        )
+
+
 def ip_available_in_network(network, ip):
     if not ip_utils.is_ip_available_in_network(network, ip):
         raise RestDataError(

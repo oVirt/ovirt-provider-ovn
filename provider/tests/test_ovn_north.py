@@ -1882,3 +1882,57 @@ class TestOvnNorth(object):
             'OVN uses the EUI-64 address format, which requires the prefix '
             'to be /64'
         )
+
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LspAddCommand',
+        autospec=False
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbListCommand.execute',
+        lambda cmd, check_error: []
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LspListCommand.'
+        'execute',
+        lambda cmd, check_error: []
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsListCommand.'
+        'execute',
+        lambda cmd, check_error: [
+            OvnSubnetRow(
+                TestOvnNorth.SUBNET_IDV6, cidr=TestOvnNorth.SUBNET_IPV6_CIDR,
+                ip_version=6, network_id=str(TestOvnNorth.NETWORK_IDMTU),
+                external_ids={
+                    SubnetMapper.OVN_IPV6_ADDRESS_MODE:
+                        SubnetMapper.IPV6_ADDRESS_MODE_STATELESS
+                }
+            )
+        ]
+    )
+    def test_create_port_fixed_ip_on_stateless_subnet(
+            self, mock_add_port, mock_update_port, mock_connection
+    ):
+        ovn_north = NeutronApi()
+        port_rest_data = PortApiInputMaker(
+            TestOvnNorth.PORT_NAME01, str(TestOvnNorth.NETWORK_IDMTU),
+            fixed_ips=[
+                {
+                    PortMapper.REST_PORT_IP_ADDRESS: 'bef0:1234:a890:5678::3',
+                    PortMapper.REST_PORT_SUBNET_ID:
+                        str(TestOvnNorth.SUBNET_IDV6)
+                }
+            ]
+        ).get()
+
+        with pytest.raises(BadRequestError) as bre:
+            ovn_north.add_port(port_rest_data)
+        assert str(bre.value) == (
+            'IPv6 address bef0:1234:a890:5678::3 cannot be directly assigned '
+            'to a port on subnet 00000000-0000-0000-0000-000000000006 as the '
+            'subnet is configured for automatic addresses'
+        )

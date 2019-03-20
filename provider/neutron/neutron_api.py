@@ -361,6 +361,7 @@ class NeutronApi(object):
         lrp = self.ovn_north.get_lrp(lsp_id=port_id)
         subnet = self.ovn_north.get_dhcp(lsp_id=port_id)
         validate.fixed_ip_matches_port_subnet(fixed_ips, subnet)
+        validate.fixed_ips_require_stateful_dhcp(subnet, fixed_ips)
 
         new_lrp_ip = '{ip}/{netmask}'.format(
             ip=fixed_ips[0].get(PortMapper.REST_PORT_IP_ADDRESS),
@@ -418,6 +419,7 @@ class NeutronApi(object):
         mac = mac or ip_utils.get_port_mac(port)
         subnet = self.ovn_north.get_dhcp(ls_id=network_id)
         validate.fixed_ip_matches_port_subnet(fixed_ips, subnet)
+        validate.fixed_ips_require_stateful_dhcp(subnet, fixed_ips)
         db_set_command = self.ovn_north.create_ovn_update_command(
             ovnconst.TABLE_LSP, port.uuid
         )
