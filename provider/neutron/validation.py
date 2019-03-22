@@ -210,6 +210,19 @@ def port_added_to_lr_must_have_subnet(network_cidr, lsp_id, lr_id):
         )
 
 
+def unique_gateway_per_router(router, subnet, router_gateways):
+    subnet_gateway = ip_utils.get_subnet_gateway(subnet)
+    if subnet_gateway in router_gateways:
+        raise BadRequestError(
+            'Cannot attach subnet {subnet_id} to router {router_id},'
+            'since its gateway [{subnet_gateway}] is used in another subnet'
+            'already connected to it: {router_gateways}'.format(
+                subnet_id=subnet.uuid, router_id=router.uuid,
+                subnet_gateway=subnet_gateway, router_gateways=router_gateways
+            )
+        )
+
+
 def network_has_no_ports(ls_id, ls_ports, localnet_lsp):
     if list(filter(lambda x: x != localnet_lsp, ls_ports)):
         raise RestDataError(

@@ -23,6 +23,7 @@ import pytest
 from lib.ansiblelib import get_playbook
 from lib.dockerlib import inner_ping
 from lib.dockerlib import get_container_id_from_img_name
+from lib.dockerlib import reconfigure_interface
 
 CONTROLLER_CONTAINER_ID = get_container_id_from_img_name(
         'tripleomaster/centos-binary-ovn-controller:current-tripleo-rdo'
@@ -283,6 +284,35 @@ def test_multiple_subnets_stateful_no_connectivity(
     )
 
 
+def test_configure_network_mtu_via_ras(setup_dataplane_multiple_subnet):
+    icmp_src_conf = MULTIPLE_SUBNETS_STATELESS['network_points'][0]
+    icmp_dst_conf = MULTIPLE_SUBNETS_STATELESS['network_points'][1]
+
+    destination_ip = _get_port_ip_by_name(icmp_dst_conf.get('name'))
+    assert destination_ip
+
+    assert len(_get_routers()) == 1
+    inner_ping(
+        container_name=CONTROLLER_CONTAINER_ID,
+        source_namespace=icmp_src_conf['ns'],
+        target_ip=destination_ip, expected_result=0, ip_version=6,
+        data_size=1301
+    )
+
+    # update the network MTU
+    network = _get_network_by_name(icmp_dst_conf.get('network'))
+    _update_network_mtu(network['id'], 1300)
+    reconfigure_interface(
+        CONTROLLER_CONTAINER_ID, icmp_dst_conf['ns'], icmp_dst_conf['name']
+    )
+    inner_ping(
+        container_name=CONTROLLER_CONTAINER_ID,
+        source_namespace=icmp_src_conf['ns'],
+        target_ip=destination_ip, expected_result=1, ip_version=6,
+        data_size=1301
+    )
+
+
 def _get_port_ip_by_name(port_name):
     port_data = _get_networking_api_port_data(port_name)
     return (
@@ -303,3 +333,31 @@ def _get_networking_api_port_data(port_name):
 
 def _get_routers():
     return requests.get(PROVIDER_URL + 'routers').json().get('routers')
+
+
+def _get_network_by_name(network_name):
+    return next(
+        (
+            network for network in _get_networks()
+            if network.get('name') == network_name
+        ),
+        None
+    )
+
+
+def _update_network_mtu(network_uuid, mtu):
+    payload = {
+        'network': {'mtu': mtu}
+    }
+    reply = requests.put(
+        PROVIDER_URL + 'networks/' + network_uuid, json=payload
+    )
+    if reply.status_code not in (200, 204):
+        raise Exception(
+            'Could not update network MTU for network: '.format(network_uuid)
+        )
+
+
+def _get_networks():
+    reply = requests.get(PROVIDER_URL + 'networks')
+    return reply.json().get('networks')

@@ -195,3 +195,10 @@ def is_subnet_ipv4(subnet):
 
 def is_subnet_ipv6(subnet):
     return get_subnet_ip_version(subnet) == 6
+
+
+def get_subnet_gateway(subnet):
+    return (
+        subnet.options.get('router') if is_subnet_ipv4(subnet)
+        else subnet.external_ids.get('router')
+    )

@@ -36,12 +36,14 @@ def get_container_ip(container_name):
 
 def inner_ping(
         container_name, source_namespace, target_ip, expected_result=0,
-        ip_version=4
+        ip_version=4, data_size=56
 ):
     command = [
         CONTAINER_CLI, 'exec', container_name, 'bash', '-c',
-        'ip netns exec {} ping -{} -c 1 {}'.format(
-            source_namespace, ip_version, target_ip
+        'ip netns exec {ns} ping -{ip_version} -c 1 '
+        '-M do -s {size} {ip}'.format(
+            ns=source_namespace, ip_version=ip_version, size=data_size,
+            ip=target_ip
         )
     ]
     result = subprocess.call(command)
@@ -62,3 +64,14 @@ def get_container_id_from_img_name(image_name):
     return subprocess.check_output(
         command, stderr=subprocess.STDOUT
     ).decode().strip()
+
+
+def reconfigure_interface(container_name, target_namespace, interface_name):
+    for status in ['down', 'up']:
+        command = [
+            CONTAINER_CLI, 'exec', container_name, 'bash', '-c',
+            'ip netns exec {ns} ifconfig {if_name} {status}'.format(
+                ns=target_namespace, if_name=interface_name, status=status
+            )
+        ]
+        subprocess.call(command)

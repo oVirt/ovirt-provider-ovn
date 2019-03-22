@@ -30,6 +30,7 @@ from handlers.base_handler import ElementNotFoundError
 import neutron.validation as validate
 import neutron.constants as neutron_constants
 from neutron.ip import get_ip_version
+from neutron.ip import get_mask_from_subnet
 from neutron.neutron_api_mappers import PortMapper
 from neutron.neutron_api_mappers import SecurityGroupMapper
 from neutron.neutron_api_mappers import SecurityGroupRuleMapper
@@ -182,11 +183,25 @@ class OvnNorth(object):
     def list_ls(self):
         return ovn_connection.execute(self.idl.ls_list())
 
-    def list_lrp(self):
+    def list_lrp(self, router_id=None):
         # TODO: ovsdbapp does not allow to retrieve all lrp's in one query,
         # so we have to resort to using the generic query
         # To be changed once lrp_list is modified
-        return ovn_connection.execute(self.idl.db_list(ovnconst.TABLE_LRP))
+        all_lrps = ovn_connection.execute(self.idl.db_list(ovnconst.TABLE_LRP))
+        if router_id and all_lrps:
+            logical_router_ports = self.get_lr(lr_id=router_id).ports
+            lrp_ids = [lrp.uuid for lrp in logical_router_ports]
+            return list(
+                filter(
+                    lambda lrp: self.get_lrp_id(lrp) in lrp_ids, all_lrps
+                )
+            )
+        else:
+            return all_lrps
+
+    @staticmethod
+    def get_lrp_id(lrp):
+        return lrp['_uuid']
 
     def list_dhcp(self):
         dhcps = ovn_connection.execute(self.idl.dhcp_options_list())
@@ -520,4 +535,19 @@ class OvnNorth(object):
                 self.get_security_group(sec_group_id)
                 for sec_group_id in security_groups
             ], ip=ip, ip_version=ip_version
+        )
+
+    def get_lrp_by_subnet(self, subnet):
+        router_id = subnet.external_ids.get(SubnetMapper.OVN_GATEWAY_ROUTER_ID)
+        subnet_gateway = subnet.external_ids.get(SubnetMapper.OVN_GATEWAY)
+        subnet_prefix_length = get_mask_from_subnet(subnet)
+        cidr = '{gateway}/{prefix_length}'.format(
+            gateway=subnet_gateway, prefix_length=subnet_prefix_length
+        )
+        return next(
+            (
+                lrp for lrp in self.list_lrp(router_id=router_id)
+                if cidr in lrp[ovnconst.ROW_LRP_NETWORKS]
+            ),
+            None
         )

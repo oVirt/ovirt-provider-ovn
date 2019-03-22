@@ -219,13 +219,39 @@ class NeutronApi(object):
 
     def _update_networks_mtu(self, network_id, mtu):
         subnet = self.ovn_north.get_dhcp(ls_id=network_id)
-        if subnet and subnet.options.get(NetworkMapper.REST_MTU) != mtu:
+        old_mtu = self._get_subnet_mtu(subnet)
+        if subnet and old_mtu != mtu:
             self.ovn_north.create_ovn_update_command(
                 ovnconst.TABLE_DHCP_Options, subnet.uuid
             ).add(
-                ovnconst.ROW_DHCP_OPTIONS,
+                ovnconst.ROW_DHCP_OPTIONS
+                if ip_utils.is_subnet_ipv4(subnet)
+                else ovnconst.ROW_DHCP_EXTERNAL_IDS,
                 {SubnetMapper.OVN_DHCP_MTU: str(mtu)}
             ).execute()
+            if ip_utils.is_subnet_ipv6(subnet):
+                self._update_ipv6_subnet_lrp_mtu(subnet, str(mtu))
+
+    @staticmethod
+    def _get_subnet_mtu(subnet):
+        return (
+            subnet.options.get(NetworkMapper.REST_MTU)
+            if ip_utils.is_subnet_ipv4(subnet)
+            else subnet.external_ids.get(SubnetMapper.OVN_DHCP_MTU)
+        )
+
+    def _update_ipv6_subnet_lrp_mtu(self, subnet, mtu):
+        impacted_lrp = self.ovn_north.get_lrp_by_subnet(subnet)
+        if impacted_lrp:
+            self._update_ipv6_lrp_mtu(impacted_lrp, subnet, mtu)
+
+    def _update_ipv6_lrp_mtu(self, router_port, subnet, mtu):
+        self.ovn_north.create_ovn_update_command(
+            ovnconst.TABLE_LRP, self.ovn_north.get_lrp_id(router_port)
+        ).add(
+            ovnconst.ROW_LRP_IPV6_RA_CONFIGS,
+            self._build_ra_config_dict(subnet, mtu)
+        ).execute()
 
     def delete_network(self, network_id):
         network = self.ovn_north.get_ls(ls_id=network_id)
@@ -649,14 +675,15 @@ class NeutronApi(object):
             raise SubnetConfigError('Unable to create more than one subnet'
                                     ' for network {}'.format(network_id))
 
+        network_mtu = network.external_ids.get(SubnetMapper.OVN_DHCP_MTU)
         external_ids = self.get_subnet_external_ids(
             network_id,
             ip_version,
             name,
             ipv6_address_mode,
-            gateway
+            gateway,
+            network_mtu or (dhcp_mtu() if dhcp_enable_mtu() else None)
         )
-        network_mtu = network.external_ids.get(SubnetMapper.OVN_DHCP_MTU)
         options = self.get_subnet_options(
             cidr, gateway, network_mtu, dns, ipv6_address_mode
         )
@@ -721,7 +748,8 @@ class NeutronApi(object):
             ip_version,
             name,
             ipv6_address_mode,
-            gateway
+            gateway,
+            mtu
     ):
         external_ids = {
             SubnetMapper.OVN_NETWORK_ID: network_id,
@@ -733,6 +761,7 @@ class NeutronApi(object):
             external_ids[
                 SubnetMapper.OVN_IPV6_ADDRESS_MODE
             ] = ipv6_address_mode
+            external_ids[SubnetMapper.OVN_DHCP_MTU] = mtu
         if ip_version == SubnetMapper.IP_VERSION_6 and gateway:
             external_ids[SubnetMapper.OVN_GATEWAY] = gateway
         return external_ids
@@ -1032,7 +1061,20 @@ class NeutronApi(object):
             is_external_gateway=is_external_gateway
         )
         if router_id:
+            router = self.ovn_north.get_lr(lr_id=router_id)
             self._validate_subnet_is_not_on_router(subnet_id, router_id)
+            validate.unique_gateway_per_router(
+                router, existing_subnet_for_network,
+                self._get_router_gateways(router)
+            )
+
+    def _get_router_gateways(self, router):
+        router_ports = (
+            self.ovn_north.list_lrp(router_id=router.uuid) if router else []
+        )
+        return sum(
+            [lrp[ovnconst.ROW_LRP_NETWORKS] for lrp in router_ports], []
+        )
 
     def _create_routing_lsp_by_subnet(self, subnet_id, router_id):
         subnet = self.ovn_north.get_dhcp(dhcp_id=subnet_id)
@@ -1203,7 +1245,7 @@ class NeutronApi(object):
         )
         self.ovn_north.add_lrp(
             router_id, lrp_name, mac=mac, lrp_ip=lrp_ip,
-            ipv6_ra_configs=self._build_ra_config_dict(subnet)
+            ipv6_ra_configs=self._get_ra_configs(subnet)
         )
 
         return RouterInterface(
@@ -1213,14 +1255,26 @@ class NeutronApi(object):
             dhcp_options_id=subnet_id or str(subnet.uuid),
         )
 
+    def _get_ra_configs(self, subnet):
+        network = self.ovn_north.get_ls(dhcp=subnet)
+        return self._build_ra_config_dict(
+            subnet,
+            network.external_ids.get(NetworkMapper.OVN_MTU)
+        )
+
     @staticmethod
-    def _build_ra_config_dict(subnet):
-        return {
+    def _build_ra_config_dict(subnet, mtu=None):
+        if not ip_utils.is_subnet_ipv6(subnet):
+            return {}
+        ra_options = {
             ovnconst.ROW_LRP_IPV6_ADDRESS_MODE: subnet.external_ids.get(
                 SubnetMapper.OVN_IPV6_ADDRESS_MODE
             ),
             ovnconst.ROW_LRP_IPV6_SEND_PERIODIC: "true"
-        } if ip_utils.is_subnet_ipv6(subnet) else {}
+        }
+        if mtu:
+            ra_options[ovnconst.ROW_LRP_IPV6_MTU] = mtu
+        return ra_options
 
     def _get_ip_from_subnet(self, subnet, network_id, router_id):
         validate.attach_network_to_router_by_subnet(
