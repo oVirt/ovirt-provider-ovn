@@ -19,6 +19,7 @@
 
 import requests
 import pytest
+from time import sleep
 
 from lib.ansiblelib import get_playbook
 from lib.dockerlib import inner_ping
@@ -166,6 +167,37 @@ MULTIPLE_SUBNETS_STATEFUL_NO_ROUTER = {
     'controller_container_id': CONTROLLER_CONTAINER_ID
 }
 
+SINGLE_SUBNET_STATEFUL_WEIRD_PREFIX = {
+    'network_points': [
+        {
+            'name': 'lport1',
+            'subnet_name': 'subnet1',
+            'ip': 'fc00::10',
+            'cidr': 'fc00::/96',
+            'mac': '00:00:00:55:55:55',
+            'network': 'net1',
+            'ns': 'ns1',
+            'ip_version': 6,
+            'gateway_ip': 'fc00::1',
+            'ipv6_address_mode': 'dhcpv6_stateful'
+        },
+        {
+            'name': 'lport2',
+            'subnet_name': 'subnet1',
+            'ip': 'fc00::20',
+            'cidr': 'fc00::/96',
+            'mac': '00:00:00:66:66:66',
+            'network': 'net1',
+            'ns': 'ns2',
+            'ip_version': 6,
+            'gateway_ip': 'fc00::1',
+            'ipv6_address_mode': 'dhcpv6_stateful'
+        },
+    ],
+    'provider_container_id': PROVIDER_CONTAINER_ID,
+    'controller_container_id': CONTROLLER_CONTAINER_ID
+}
+
 PROVIDER_URL = 'http://localhost:9696/v2.0/'
 
 
@@ -221,6 +253,19 @@ def setup_dataplane_multiple_subnet_stateful_with_router():
         ).run(enable_idempotency_checker=False)
 
 
+@pytest.fixture
+def setup_dataplane_single_subnet_weird_prefix():
+    get_playbook(
+        'create_l2l3_scenario.yml', SINGLE_SUBNET_STATEFUL_WEIRD_PREFIX
+    ).run(enable_idempotency_checker=False)
+    try:
+        yield
+    finally:
+        get_playbook(
+            'reset_scenario.yml', SINGLE_SUBNET_STATEFUL_WEIRD_PREFIX
+        ).run(enable_idempotency_checker=False)
+
+
 def test_single_subnet(setup_dataplane_single_subnet):
     icmp_src_conf = SAME_SUBNET['network_points'][0]
     icmp_dst_conf = SAME_SUBNET['network_points'][1]
@@ -228,6 +273,23 @@ def test_single_subnet(setup_dataplane_single_subnet):
     destination_ip = _get_port_ip_by_name(icmp_dst_conf.get('name'))
     assert destination_ip
 
+    inner_ping(
+        container_name=CONTROLLER_CONTAINER_ID,
+        source_namespace=icmp_src_conf['ns'],
+        target_ip=destination_ip, expected_result=0, ip_version=6
+    )
+
+
+def test_single_subnet_weird_prefix(
+        setup_dataplane_single_subnet_weird_prefix
+):
+    icmp_src_conf = SINGLE_SUBNET_STATEFUL_WEIRD_PREFIX['network_points'][0]
+    icmp_dst_conf = SINGLE_SUBNET_STATEFUL_WEIRD_PREFIX['network_points'][1]
+
+    destination_ip = _get_port_ip_by_name(icmp_dst_conf.get('name'))
+    assert destination_ip
+
+    sleep(5)
     inner_ping(
         container_name=CONTROLLER_CONTAINER_ID,
         source_namespace=icmp_src_conf['ns'],
