@@ -44,8 +44,7 @@ SAME_SUBNET = {
             'mac': '00:00:00:11:11:11',
             'network': 'net1',
             'ns': 'ns1',
-            'ip_version': 6,
-            'ipv6_address_mode': 'dhcpv6_stateful'
+            'ip_version': 6
         },
         {
             'name': 'lport2',
@@ -54,8 +53,7 @@ SAME_SUBNET = {
             'mac': '00:00:00:22:22:22',
             'network': 'net1',
             'ns': 'ns2',
-            'ip_version': 6,
-            'ipv6_address_mode': 'dhcpv6_stateful'
+            'ip_version': 6
         },
     ],
     'provider_container_id': PROVIDER_CONTAINER_ID,
@@ -110,8 +108,7 @@ MULTIPLE_SUBNETS_STATEFUL = {
             'network': 'net1',
             'ns': 'ns1',
             'ip_version': 6,
-            'gateway_ip': 'bef0:1234:a890:5678::1',
-            'ipv6_address_mode': 'dhcpv6_stateful'
+            'gateway_ip': 'bef0:1234:a890:5678::1'
         },
         {
             'name': 'lport2',
@@ -121,8 +118,7 @@ MULTIPLE_SUBNETS_STATEFUL = {
             'network': 'net2',
             'ns': 'ns2',
             'ip_version': 6,
-            'gateway_ip': 'def0:abcd::1',
-            'ipv6_address_mode': 'dhcpv6_stateful'
+            'gateway_ip': 'def0:abcd::1'
         },
     ],
     'routers': [
@@ -148,8 +144,7 @@ MULTIPLE_SUBNETS_STATEFUL_NO_ROUTER = {
             'network': 'net1',
             'ns': 'ns1',
             'ip_version': 6,
-            'gateway_ip': 'bef0:1234:a890:5678::1',
-            'ipv6_address_mode': 'dhcpv6_stateful'
+            'gateway_ip': 'bef0:1234:a890:5678::1'
         },
         {
             'name': 'lport2',
@@ -159,8 +154,7 @@ MULTIPLE_SUBNETS_STATEFUL_NO_ROUTER = {
             'network': 'net2',
             'ns': 'ns2',
             'ip_version': 6,
-            'gateway_ip': 'def0:abcd::1',
-            'ipv6_address_mode': 'dhcpv6_stateful'
+            'gateway_ip': 'def0:abcd::1'
         },
     ],
     'provider_container_id': PROVIDER_CONTAINER_ID,
@@ -178,8 +172,7 @@ SINGLE_SUBNET_STATEFUL_WEIRD_PREFIX = {
             'network': 'net1',
             'ns': 'ns1',
             'ip_version': 6,
-            'gateway_ip': 'fc00::1',
-            'ipv6_address_mode': 'dhcpv6_stateful'
+            'gateway_ip': 'fc00::1'
         },
         {
             'name': 'lport2',
@@ -190,8 +183,7 @@ SINGLE_SUBNET_STATEFUL_WEIRD_PREFIX = {
             'network': 'net1',
             'ns': 'ns2',
             'ip_version': 6,
-            'gateway_ip': 'fc00::1',
-            'ipv6_address_mode': 'dhcpv6_stateful'
+            'gateway_ip': 'fc00::1'
         },
     ],
     'provider_container_id': PROVIDER_CONTAINER_ID,

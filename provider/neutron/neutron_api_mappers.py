@@ -29,6 +29,7 @@ import six
 import constants as ovnconst
 import neutron.constants as neutron_constants
 import neutron.ip as ip_utils
+from ovirt_provider_config_common import dhcp_ipv6_address_mode
 from ovirt_provider_config_common import dhcp_mtu
 from ovirt_provider_config_common import tenant_id
 from ovirt_provider_config_common import max_allowed_mtu
@@ -541,7 +542,8 @@ class SubnetMapper(Mapper):
         gateway = rest_data.get(SubnetMapper.REST_SUBNET_GATEWAY_IP)
         ip_version = rest_data.get(SubnetMapper.REST_SUBNET_IP_VERSION)
         ipv6_address_mode = rest_data.get(
-            SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE
+            SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE,
+            dhcp_ipv6_address_mode() if ip_version == 6 else None
         )
 
         if subnet_id:
@@ -637,7 +639,8 @@ class SubnetMapper(Mapper):
             gateway=rest_data.get(SubnetMapper.REST_SUBNET_GATEWAY_IP)
         )
         if ip_version == SubnetMapper.IP_VERSION_6 and rest_data.get(
-                SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE
+                SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE,
+                dhcp_ipv6_address_mode()
         ) != SubnetMapper.IPV6_ADDRESS_MODE_STATEFUL:
             SubnetMapper._validate_stateless_address_mode(cidr)
 

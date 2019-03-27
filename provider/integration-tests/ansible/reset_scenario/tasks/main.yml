@@ -76,6 +76,7 @@
     "ip netns exec {{ item[0].ns }} echo 0 > /proc/sys/net/ipv6/conf/{{ item[0].name }}/{{ item[1] }}"
   when:
     - "'ip' not in item[0]"
+    - "'ipv6_address_mode' in item[0]"
     - item[0].cidr | ipv6
     - item[0].ipv6_address_mode == 'dhcpv6_stateless'
   with_nested:

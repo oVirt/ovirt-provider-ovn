@@ -71,7 +71,7 @@
   when:
     - "'ip' not in item"
     - item.cidr | ipv6
-    - item.ipv6_address_mode == 'dhcpv6_stateful'
+    - "'ipv6_address_mode' not in item or item.ipv6_address_mode == 'dhcpv6_stateful'"
   with_items:
   - "{{ network_points }}"
 
@@ -81,6 +81,7 @@
     "ip netns exec {{ item[0].ns }} echo 1 > /proc/sys/net/ipv6/conf/{{ item[0].name }}/{{ item[1] }}"
   when:
     - "'ip' not in item[0]"
+    - "'ipv6_address_mode' in item[0]"
     - item[0].cidr | ipv6
     - item[0].ipv6_address_mode == 'dhcpv6_stateless'
   with_nested:

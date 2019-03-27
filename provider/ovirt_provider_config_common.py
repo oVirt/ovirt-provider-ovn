@@ -30,6 +30,7 @@ from ovirt_provider_config import DEFAULT_AUTH_TOKEN_TIMEOUT
 from ovirt_provider_config import DEFAULT_DHCP_ENABLE_MTU
 from ovirt_provider_config import DEFAULT_DHCP_LEASE_TIME
 from ovirt_provider_config import DEFAULT_DHCP_MTU
+from ovirt_provider_config import DEFAULT_DHCP_DEFAULT_IPV6_ADDRESS_MODE
 from ovirt_provider_config import DEFAULT_DHCP_SERVER_MAC
 from ovirt_provider_config import DEFAULT_KEYSTONE_PORT
 from ovirt_provider_config import DEFAULT_NETWORK_PORT_SECURITY_ENABLED
@@ -52,6 +53,7 @@ from ovirt_provider_config import DEFAULT_URL_FILTER_EXCEPTION
 from ovirt_provider_config import DEFAULT_VALIDATION_MAX_ALLOWED_MTU
 from ovirt_provider_config import KEY_AUTH_PLUGIN
 from ovirt_provider_config import KEY_AUTH_TOKEN_TIMEOUT
+from ovirt_provider_config import KEY_DHCP_DEFAULT_IPV6_ADDRESS_MODE
 from ovirt_provider_config import KEY_DHCP_ENABLE_MTU
 from ovirt_provider_config import KEY_DHCP_LEASE_TIME
 from ovirt_provider_config import KEY_DHCP_MTU
@@ -277,6 +279,14 @@ def dhcp_mtu():
         CONFIG_SECTION_DHCP,
         KEY_DHCP_MTU,
         DEFAULT_DHCP_MTU
+    )
+
+
+def dhcp_ipv6_address_mode():
+    return ovirt_provider_config.get(
+        CONFIG_SECTION_DHCP,
+        KEY_DHCP_DEFAULT_IPV6_ADDRESS_MODE,
+        DEFAULT_DHCP_DEFAULT_IPV6_ADDRESS_MODE
     )
 
 

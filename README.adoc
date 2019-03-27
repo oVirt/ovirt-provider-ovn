@@ -101,6 +101,10 @@ ssl-ciphers-string:: The ciphers for oVirt external network API's HTTPS/TLS. +
   It should be a string in the
   link:https://www.openssl.org/docs/manmaster/man1/ciphers.html[OpenSSL cipher list format].
 
+dhcp-default-ipv6-address-mode:: The default address mode for IPv6 subnets. +
+  The possible values are `dhcpv6_stateful`, or `dhcpv6_stateless`.
+  _default:_ `dhcpv6_stateful`
+
 ### Section [AUTH]
 Authorization and authentication of requests to the external network API are
 handled by a plugin. Multiple implementations of the plugin are available.
