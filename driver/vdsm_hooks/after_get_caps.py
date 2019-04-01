@@ -51,9 +51,7 @@ def _get_open_vswitch_host_id():
     if retcode == 0:
         return out[0].replace('"', '')
 
-    if _is_ovs_service_running():
-        hooking.log('Failed to get Open VSwitch system-id . err = %s' % (err))
-
+    hooking.log('Failed to get Open VSwitch system-id . err = %s' % (err))
     return None
 
 
@@ -102,6 +100,9 @@ if __name__ == '__main__':
               'script directly with option specified.')
         _usage()
         sys.exit(1)
+
+    if not _is_ovs_service_running():
+        hooking.exit_hook('OVS is not running', return_code=0)
 
     caps = hooking.read_json()
     caps = _update_openstack_binding_host_ids(caps)
