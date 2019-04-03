@@ -29,6 +29,12 @@
 
 - debug: var=openstack_ports
 
+
+- name: debug filters
+  include: start_tcpdump_debug.yml
+  when:
+  - debug_icmpv6
+
 - name: set mac addresses on the ports
   delegate_to: "{{ controller_container_id }}"
   command:

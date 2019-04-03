@@ -1,0 +1,9 @@
+---
+- name: start tcpdump capture
+  delegate_to: "{{ controller_container_id }}"
+  command: "ip netns exec {{ item.ns }} tcpdump -i any -n '(udp port 546 or 547) or icmp6' -w /root/{{ item.name }}.pcap"
+  async: 120
+  poll: 0
+  register: icmp6_captures
+  with_items:
+    - "{{ network_points }}"

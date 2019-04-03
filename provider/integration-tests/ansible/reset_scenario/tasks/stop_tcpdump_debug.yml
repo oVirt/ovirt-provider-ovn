@@ -1,0 +1,18 @@
+---
+- block:
+  - name: get tcpdump pids
+    delegate_to: "{{ controller_container_id }}"
+    command: "ip netns pids {{ item.ns }}"
+    with_items:
+      - "{{ network_points }}"
+    register: tcpdump_pids
+
+  - name: stop tcpdump captures
+    delegate_to: "{{ controller_container_id }}"
+    command: "/usr/bin/pkill --signal 2 --ns {{ item.stdout }} tcpdump"
+    when:
+      - item.stdout | int(-1) != -1
+    with_items:
+      - "{{ tcpdump_pids.results | default([])}}"
+  when:
+  - debug_icmpv6

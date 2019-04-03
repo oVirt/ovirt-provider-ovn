@@ -1,4 +1,5 @@
 ---
 # defaults file for reset_scenario
 cloud_name: ovirt
+debug_icmpv6: false
 enable_data_plane_reset: true
