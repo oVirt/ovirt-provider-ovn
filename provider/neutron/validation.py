@@ -68,6 +68,8 @@ def fixed_ip_matches_port_subnet(fixed_ips, subnet):
 
 
 def fixed_ips_require_stateful_dhcp(subnet, fixed_ips):
+    if not fixed_ips:
+        return
     subnet_ip_address = fixed_ips[0].get(PortMapper.REST_PORT_IP_ADDRESS)
     if subnet.external_ids.get(
             SubnetMapper.OVN_IPV6_ADDRESS_MODE
