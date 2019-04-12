@@ -220,10 +220,10 @@ class TestOvnNorthMappers(object):
         NetworkMapper._boolean_or_exception('', False)
         with pytest.raises(RestDataError) as expected_exception:
             NetworkMapper._boolean_or_exception('attr1', 'boloni')
-        assert expected_exception.value.message == 'attr1 must be of type bool'
+        assert str(expected_exception.value) == 'attr1 must be of type bool'
         with pytest.raises(RestDataError) as expected_exception:
             NetworkMapper._boolean_or_exception('attr2', [])
-        assert expected_exception.value.message == 'attr2 must be of type bool'
+        assert str(expected_exception.value) == 'attr2 must be of type bool'
 
     def test_acl_to_rest_minimal(self):
         name = 'sec1'

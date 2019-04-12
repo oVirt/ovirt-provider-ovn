@@ -953,8 +953,7 @@ class RemoveRouterInterfaceMapper(BaseRouterInterfaceMapper):
 
 
 class RestDataError(BadRequestError):
-    def __init__(self, message):
-        self.message = message
+    pass
 
 
 class MandatoryDataMissing(RestDataError):
