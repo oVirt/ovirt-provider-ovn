@@ -28,6 +28,7 @@ from ovirt_provider_config_common import tenant_description
 from ovirt_provider_config_common import tenant_name
 from ovirt_provider_config_common import tenant_id
 from ovirt_provider_config_common import keystone_url
+from ovirt_provider_config_common import keystone_url_with_version
 from ovirt_provider_config_common import neutron_url
 from ovirt_provider_config_common import nova_url_with_version
 
@@ -156,6 +157,20 @@ def get_tenants(content, parameters):
             'name': tenant_name(),
             'id': tenant_id(),
             'enabled': True}]
+    })
+
+
+@rest(GET, '', _responses)
+def get_default(content, parameters):
+    return Response({
+        'versions': [{
+            'status': 'CURRENT',
+            'id': 'v2.0',
+            'links': [{
+                'href': keystone_url_with_version(),
+                'rel': 'self'
+            }]
+        }]
     })
 
 

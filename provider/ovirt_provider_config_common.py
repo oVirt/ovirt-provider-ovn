@@ -86,6 +86,7 @@ PROTOCOL_SSL = 'ssl'
 
 SERVICE_URL = '{protocol}://{host}:{port}/'
 
+KEYSTONE_VERSION = 'v2.0/'
 NEUTRON_VERSION = 'v2.0/'
 NOVA_VERSION = 'v2.1/'
 
@@ -192,6 +193,10 @@ def neutron_url_with_version():
 
 def nova_url_with_version():
     return nova_url() + NOVA_VERSION
+
+
+def keystone_url_with_version():
+    return keystone_url() + KEYSTONE_VERSION
 
 
 def tenant_id():
