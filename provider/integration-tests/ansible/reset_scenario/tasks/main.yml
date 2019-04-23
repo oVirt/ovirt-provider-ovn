@@ -30,22 +30,6 @@
     msg: 'ports were not deleted'
   when: openstack_ports | length > 0
 
-- name: delete all networks
-  os_network:
-    cloud: "{{ cloud_name }}"
-    name: "{{ item.network }}"
-    state: absent
-  with_items:
-    - "{{ network_points }}"
-
-- name: read current networks from provider ...
-  os_networks_facts:
-    cloud: "{{ cloud_name }}"
-
-- fail:
-    msg: 'Networks were not deleted'
-  when: openstack_networks | length > 0
-
 - name: delete all subnets
   os_subnet:
     cloud: "{{ cloud_name }}"
@@ -61,6 +45,22 @@
 - fail:
     msg: 'Networks were not deleted'
   when: openstack_subnets | length > 0
+
+- name: delete all networks
+  os_network:
+    cloud: "{{ cloud_name }}"
+    name: "{{ item.network }}"
+    state: absent
+  with_items:
+    - "{{ network_points }}"
+
+- name: read current networks from provider ...
+  os_networks_facts:
+    cloud: "{{ cloud_name }}"
+
+- fail:
+    msg: 'Networks were not deleted'
+  when: openstack_networks | length > 0
 
 - name: delete the dhcp leases
   delegate_to: "{{ controller_container_id }}"
