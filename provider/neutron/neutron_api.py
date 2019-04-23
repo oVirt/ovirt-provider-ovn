@@ -1324,7 +1324,7 @@ class NeutronApi(object):
         is_subnet_gateway = (
             subnet and
             self._is_subnet_on_router(router_id, subnet_id) and
-            lrp_ip == subnet.options.get(SubnetMapper.OVN_GATEWAY, None)
+            lrp_ip == ip_utils.get_subnet_gateway(subnet)
         )
         self._delete_router_interface(router_id, port_id, lrp, lr)
         if is_subnet_gateway:
