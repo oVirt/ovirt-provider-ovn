@@ -79,6 +79,9 @@ class NeutronApi(object):
         self.security_group_support = (
                 sec_group_support or self.are_security_groups_supported()
         )
+        self.tx_manager = ovn_connection.OvnTransactionManager(
+            self.idl.ovsdb_connection
+        )
 
     # TODO: could this be moved to ovsdbapp?
     def _get_port_network(self, port):

@@ -19,9 +19,12 @@
 
 from __future__ import absolute_import
 
+import contextlib
+
 import ovs.stream
 import ovsdbapp.backend.ovs_idl.connection
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
+from ovsdbapp.backend.ovs_idl.transaction import Transaction
 from ovsdbapp.schema.ovn_northbound.impl_idl import OvnNbApiIdlImpl
 
 import constants as ovnconst
@@ -64,3 +67,27 @@ def execute(command):
         raise BadRequestError(e)
     except RowNotFound as e:
         raise ElementNotFoundError(e)
+
+
+class OvnTransactionManager(OvnNbApiIdlImpl):
+    def __init__(self, connection):
+        super(OvnTransactionManager, self).__init__(connection)
+        self._tx = None
+
+    def create_transaction(self, check_error=False, log_errors=True, **kwargs):
+        tx = Transaction(
+            self, self.ovsdb_connection, self.ovsdb_connection.timeout,
+            check_error, log_errors
+        )
+        self._tx = tx
+        return tx
+
+    @contextlib.contextmanager
+    def transaction(self, check_error=True, log_errors=False, **kwargs):
+        if not self._tx:
+            self._tx = self.create_transaction(check_error, log_errors)
+        try:
+            yield self._tx
+        finally:
+            self._tx.commit()
+            self._tx = None
