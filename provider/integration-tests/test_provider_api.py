@@ -22,6 +22,7 @@ import requests
 
 
 ENDPOINT = 'http://localhost:9696/v2.0/'
+SUBNET_ENDPOINT = ENDPOINT + 'subnets/'
 
 
 @pytest.fixture(scope='module')
@@ -98,6 +99,15 @@ def test_get_subnet(subnet):
     assert api_subnet['ipv6_address_mode'] == subnet['ipv6_address_mode']
 
 
+def test_ipv6_address_mode_not_updateable(subnet):
+    url = SUBNET_ENDPOINT + subnet['id']
+    update_payload = {
+        'subnet': {'ipv6_address_mode': 'dhcpv6_stateful'}
+    }
+    r = requests.put(url, json=update_payload)
+    _expect_failure(r, 400, 'Invalid data found: ipv6_address_mode')
+
+
 def _get_and_assert(entity_type, filter_key=None, filter_value=None):
     url = ENDPOINT + entity_type + (
         '?{key}={value}'.format(key=filter_key, value=filter_value)
@@ -106,3 +116,8 @@ def _get_and_assert(entity_type, filter_key=None, filter_value=None):
     r = requests.get(url)
     assert r.status_code == 200
     return r.json()[entity_type]
+
+
+def _expect_failure(response, expected_status_code, expected_error_message):
+    assert response.status_code == expected_status_code
+    assert response.json()['error']['message'] == expected_error_message
