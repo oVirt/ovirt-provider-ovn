@@ -532,6 +532,11 @@ class SubnetMapper(Mapper):
         IPV6_ADDRESS_MODE_STATEFUL, IPV6_ADDRESS_MODE_STATELESS
     ]
 
+    _optional_update_data = {
+        REST_SUBNET_NAME, REST_SUBNET_ENABLE_DHCP, REST_SUBNET_DNS_NAMESERVERS,
+        REST_SUBNET_ALLOCATION_POOLS, REST_SUBNET_GATEWAY_IP
+    }
+
     @staticmethod
     def rest2row(wrapped_self, func, rest_data, subnet_id):
         name = rest_data.get(SubnetMapper.REST_SUBNET_NAME)
@@ -644,8 +649,11 @@ class SubnetMapper(Mapper):
         ) != SubnetMapper.IPV6_ADDRESS_MODE_STATEFUL:
             SubnetMapper._validate_stateless_address_mode(cidr)
 
-    @staticmethod
-    def validate_update_rest_input(rest_data):
+    @classmethod
+    def validate_update_rest_input(cls, rest_data):
+        cls.validate_keys(
+            set(rest_data.keys()), set(), cls._optional_update_data
+        )
         SubnetMapper._validate_common(rest_data)
 
     @staticmethod
