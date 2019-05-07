@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import abc
 import json as libjson
 import logging
+import six
 
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
 from six.moves import http_client
@@ -39,14 +40,14 @@ from handlers import DELETE
 
 JSON_SUFFIX = '.json'
 
-ERROR_MESSAGE = """\
-{{
-  "error": {{
-    "message": "{}",
-    "code": {},
-    "title": "{}"
-  }}
-}}
+ERROR_MESSAGE = """
+{
+  "error": {
+    "message": "%(explain)s",
+    "code": %(code)d,
+    "title": "%(message)s"
+  }
+}
 """
 
 ERROR_CONTENT_TYPE = 'application/json'
@@ -83,7 +84,10 @@ class BaseHandler(BaseHTTPRequestHandler):
 
     # Suppress static error message of BaseHTTPRequestHandler, because a
     # the individual error message ERROR_MESSAGE is sent.
-    error_message_format = ''
+    if six.PY2:
+        error_message_format = ''
+    else:
+        error_message_format = ERROR_MESSAGE
     error_content_type = ERROR_CONTENT_TYPE
 
     # TODO: this is made configurable in a later patch
@@ -236,11 +240,15 @@ class BaseHandler(BaseHTTPRequestHandler):
         self._log_request(method, path, content, log_level=logging.ERROR)
         error_message = str(e) or message
         logging.exception(error_message)
-        self.send_error(response_code)
-        self.wfile.write(ERROR_MESSAGE.format(
-            error_message,
-            response_code,
-            http_client.responses[response_code]).encode())
+        if six.PY2:
+            self.send_error(response_code)
+            self.wfile.write((ERROR_MESSAGE % {
+                'code': response_code,
+                'explain': error_message,
+                'message': http_client.responses[response_code]
+            }).encode())
+        else:
+            self.send_error(response_code, explain=error_message)  # noqa: E501 pylint: disable=E1123
 
     @staticmethod
     def _parse_request_path(full_path):

@@ -181,8 +181,7 @@ class TestNeutronHandler(object):
         handler.path = '/v2.0/testports'
         handler.do_DELETE()
         assert send_error.call_count == 1
-        mock_call = mock.call(http_client.METHOD_NOT_ALLOWED)
-        assert send_error.mock_calls[0] == mock_call
+        assert send_error.call_args[0][0] == http_client.METHOD_NOT_ALLOWED
 
     @mock.patch('handlers.neutron.NeutronApi', autospec=True)
     @mock.patch('handlers.neutron.NeutronHandler.end_headers')

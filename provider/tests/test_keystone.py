@@ -20,6 +20,7 @@ from __future__ import absolute_import
 import json
 from mock import MagicMock, ANY
 import mock
+import six
 
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import Response
@@ -133,7 +134,7 @@ class TestKeystoneHandler(object):
                                          mock_send_header,
                                          mock_end_headers):
         self._test_handle_post_request('/v2.0/timeout')
-        mock_send_error.assert_called_once_with(ANY, 504)
+        self._assert_send_error_correctly_called(mock_send_error, 504)
 
     @mock.patch('handlers.keystone.TokenHandler.send_error', autospec=True)
     def test_handle_get_request_not_allowed(self, mock_send_error,
@@ -141,7 +142,7 @@ class TestKeystoneHandler(object):
                                             mock_send_header,
                                             mock_end_headers):
         self._test_handle_get_request('/v2.0/tokens')
-        mock_send_error.assert_called_once_with(ANY, 405)
+        self._assert_send_error_correctly_called(mock_send_error, 405)
 
     @mock.patch('handlers.keystone.TokenHandler.send_error', autospec=True)
     def test_handle_post_request_not_found(self, mock_send_error,
@@ -149,7 +150,7 @@ class TestKeystoneHandler(object):
                                            mock_send_header,
                                            mock_end_headers):
         self._test_handle_post_request('/v2/garbage')
-        mock_send_error.assert_called_once_with(ANY, 404)
+        self._assert_send_error_correctly_called(mock_send_error, 404)
 
     @mock.patch('handlers.keystone.TokenHandler.send_error', autospec=True)
     def test_handle_post_request_bad_req(self, mock_send_error,
@@ -157,7 +158,7 @@ class TestKeystoneHandler(object):
                                          mock_send_header,
                                          mock_end_headers):
         self._test_handle_post_request('/v2/bad_req')
-        mock_send_error.assert_called_once_with(ANY, 400)
+        self._assert_send_error_correctly_called(mock_send_error, 400)
 
     def test_empty_content(
         self,
@@ -171,3 +172,10 @@ class TestKeystoneHandler(object):
         handler.do_POST()
         expected_body = json.dumps({'value': EMPTY}).encode()
         handler.wfile.write.assert_called_once_with(expected_body)
+
+    @staticmethod
+    def _assert_send_error_correctly_called(mock_object, resp_code):
+        if six.PY2:
+            mock_object.assert_called_once_with(ANY, resp_code)
+        else:
+            mock_object.assert_called_once_with(ANY, resp_code, explain=ANY)
