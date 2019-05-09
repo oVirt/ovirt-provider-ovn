@@ -150,7 +150,7 @@ to OVN.
 
 
 %changelog
-* Thu Apr 11 2019 Miguel Duarte Barroso <mdbarroso@redhat.com> - 1.2.20
+* Thu Apr 11 2019 Miguel Duarte Barroso <mdbarroso@redhat.com> - 1.2.21
 - stateless dhcpv6 on ipv6 subnets
 - package the provider for python3 - on fedora / el8
 - fix IPv6 subnet gateway
