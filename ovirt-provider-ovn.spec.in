@@ -150,6 +150,11 @@ to OVN.
 
 
 %changelog
+* Thu May 09 2019 Miguel Duarte Barroso <mdbarroso@redhat.com> - 1.2.22
+- fix error handling on python3
+- fix error where ipv6 subnets could not be removed from routers
+- implement default keystone route
+
 * Thu Apr 11 2019 Miguel Duarte Barroso <mdbarroso@redhat.com> - 1.2.21
 - stateless dhcpv6 on ipv6 subnets
 - package the provider for python3 - on fedora / el8
