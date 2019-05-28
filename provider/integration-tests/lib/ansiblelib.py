@@ -18,111 +18,29 @@
 
 from __future__ import absolute_import
 
+import ansible_runner
 import os
-from collections import namedtuple
-from contextlib import contextmanager
-
-from ansible.executor.playbook_executor import PlaybookExecutor
-from ansible.inventory.manager import InventoryManager
-from ansible.parsing.dataloader import DataLoader
-from ansible.vars.manager import VariableManager
 
 
 PLAYBOOK_DIR = os.path.join(os.environ['INTEG_TEST_ROOT_FOLDER'], 'ansible')
+PY_INTERPRETER = os.environ['PY_INTERPRETER']
 
 
 def get_playbook(playbook_name, playbook_vars):
     playbook_path = os.path.join(PLAYBOOK_DIR, playbook_name)
-    return Playbook([playbook_path], extra_vars=playbook_vars)
-
-
-PbexOptions = namedtuple('PbexOptions',
-                         ['listtags', 'listtasks', 'listhosts', 'syntax',
-                          'connection', 'module_path', 'forks', 'remote_user',
-                          'private_key_file', 'ssh_common_args',
-                          'ssh_extra_args', 'sftp_extra_args',
-                          'scp_extra_args', 'become', 'become_method',
-                          'become_user', 'verbosity', 'check', 'diff'])
-_PBEX_OPTIONS = PbexOptions(listtags=False,
-                            listtasks=False,
-                            listhosts=False,
-                            syntax=False,
-                            connection='local',
-                            module_path=None,
-                            forks=100,
-                            remote_user=None,
-                            private_key_file=None,
-                            ssh_common_args=None,
-                            ssh_extra_args=None,
-                            sftp_extra_args=None,
-                            scp_extra_args=None,
-                            become=False,
-                            become_method=None,
-                            become_user=None,
-                            verbosity=0,
-                            check=False,
-                            diff=False)
+    return Playbook(playbook_path, extra_vars=playbook_vars)
 
 
 class AnsibleExecutionFailure(Exception):
     pass
 
 
-class StatsHandlerError(Exception):
-    pass
-
-
-class StatsHandlers(object):
-    funcs = set()
-
-    @staticmethod
-    def execute(stats):
-        """Is called if new stats are available"""
-        for func in StatsHandlers.funcs:
-            func(stats)
-
-    @staticmethod
-    def register(func):
-        """Registers function func to be called if new stats are available
-
-        :param func: function that accepts one argument
-        """
-        StatsHandlers.funcs.add(func)
-
-    @staticmethod
-    def unregister(func):
-        StatsHandlers.funcs.remove(func)
-
-
-@contextmanager
-def register_stats_handler(func):
-    StatsHandlers.register(func)
-    try:
-        yield
-    finally:
-        StatsHandlers.unregister(func)
-
-
 class Playbook(object):
-    def __init__(self, playbooks, extra_vars={}):
+    def __init__(self, playbook, extra_vars=None):
         self._execution_stats = None
         self._idempotency_check_stats = None
-        self._pbex_args = Playbook._create_pbex_args(playbooks, extra_vars)
-
-    @staticmethod
-    def _create_pbex_args(playbooks, extra_vars):
-        loader = DataLoader()
-        inventory = InventoryManager(loader=loader)
-        variable_manager = VariableManager(loader=loader, inventory=inventory)
-        variable_manager.extra_vars = extra_vars
-        return {
-            'playbooks': playbooks,
-            'inventory': inventory,
-            'variable_manager': variable_manager,
-            'loader': loader,
-            'options': _PBEX_OPTIONS,
-            'passwords': {},
-        }
+        self._playbook = playbook
+        self._extra_vars = extra_vars or {}
 
     @property
     def execution_stats(self):
@@ -133,27 +51,36 @@ class Playbook(object):
         return self._idempotency_check_stats
 
     def run(self, enable_idempotency_checker=True):
-        stats = []
-        required_stats = 2
-        with register_stats_handler(lambda new_stats: stats.append(new_stats)):
-            self._run_playbook_executor()
-            if enable_idempotency_checker:
-                # repeated call to ensure idempotency
-                self._run_playbook_executor()
-            else:
-                required_stats = 1
-
-        if len(stats) != required_stats:
-            raise StatsHandlerError
-        else:
-            self._store_stats(required_stats, stats)
+        self._execution_stats = self._run_playbook_executor()
+        if enable_idempotency_checker:
+            self._idempotency_check_stats = self._run_playbook_executor()
 
     def _run_playbook_executor(self):
-        pbex = PlaybookExecutor(**self._pbex_args)
-        if pbex.run() != 0:
+        runner = ansible_runner.run(
+            playbook=self._playbook,
+            extravars=self._extra_vars,
+            inventory='localhost ansible_connection=local '
+                      'ansible_python_interpreter={}'.format(PY_INTERPRETER)
+        )
+        if runner.status != 'successful':
             raise AnsibleExecutionFailure
+        return Playbook._stats(runner)
 
-    def _store_stats(self, required_stats, stats):
-        self._execution_stats = stats[0]
-        if required_stats == 2:
-            self._idempotency_check_stats = stats[1]
+    @staticmethod
+    def _stats(runner):
+        last_event = list(
+            filter(
+                lambda x:
+                'event' in x and x['event'] == 'playbook_on_stats',
+                runner.events
+            )
+        )
+        if not last_event:
+            return None
+        last_event = last_event[0]['event_data']
+        return dict(skipped=last_event['skipped'],
+                    ok=last_event['ok'],
+                    dark=last_event['dark'],
+                    failures=last_event['failures'],
+                    processed=last_event['processed'],
+                    changed=last_event['changed'])

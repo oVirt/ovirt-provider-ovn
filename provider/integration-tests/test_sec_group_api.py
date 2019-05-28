@@ -38,7 +38,7 @@ def _run_playbook(file_name):
 
 
 def _assert_playbook_executed_successfully(playbook):
-    assert not playbook.execution_stats.failures
-    assert playbook.execution_stats.changed.get('localhost', 0) > 0
-    assert not playbook.idempotency_check_stats.failures
-    assert not playbook.idempotency_check_stats.changed
+    assert not playbook.execution_stats['failures']
+    assert playbook.execution_stats['changed'].get('localhost', 0) > 0
+    assert not playbook.idempotency_check_stats['failures']
+    assert not playbook.idempotency_check_stats['changed']

@@ -4,6 +4,7 @@ python-openvswitch
 python-requests
 python-setuptools
 python-six
+python2-devel
 python2-pytest
 python2-requests-mock
 python2-setuptools
