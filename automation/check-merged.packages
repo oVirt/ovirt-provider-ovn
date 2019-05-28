@@ -19,3 +19,5 @@ python3-ovsdbapp
 git
 dnf
 docker
+python
+gcc

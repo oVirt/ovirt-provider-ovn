@@ -147,7 +147,7 @@ integrationtest:
 integrationtest3:
 	RUN_INTEG_TESTS="defined" \
 	PROVIDER_IMG="maiqueb/ovirt_provider_ovn_fedora" \
-	TEST_TARGET="integration-tests36" \
+	TEST_TARGET="integration-tests3" \
 		automation/create_it_env.sh
 
 coverage:
