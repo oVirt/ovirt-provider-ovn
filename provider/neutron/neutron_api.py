@@ -295,7 +295,7 @@ class NeutronApi(object):
 
     def _get_network_port(self, lsp):
         ls = self._get_port_network(lsp)
-        dhcp_options = self.ovn_north.get_dhcp(lsp_id=str(lsp.uuid))
+        dhcp_options = self.ovn_north.get_dhcp(lsp_id=lsp.uuid)
         lrp_name = lsp.options.get(ovnconst.LSP_OPTION_ROUTER_PORT)
         lrp = self.ovn_north.get_lrp(lrp_name=lrp_name) if lrp_name else None
         return NetworkPort(lsp=lsp, ls=ls, dhcp_options=dhcp_options, lrp=lrp)
@@ -440,7 +440,7 @@ class NeutronApi(object):
             self, port, network_id, mac=None, fixed_ips=None
     ):
         if port.type == ovnconst.LSP_TYPE_ROUTER:
-            self._update_lsp_bound_lrp(str(port.uuid), fixed_ips)
+            self._update_lsp_bound_lrp(port.uuid, fixed_ips)
             return
         mac = mac or ip_utils.get_port_mac(port)
         subnet = self.ovn_north.get_dhcp(ls_id=network_id)
@@ -562,13 +562,8 @@ class NeutronApi(object):
         return network_id or old_network_id
 
     def _create_port(self, name, network_id):
-        port = self.ovn_north.add_lsp(name, network_id)
-        port_id = str(port.uuid)
-        self.ovn_north.db_set(
-            ovnconst.TABLE_LSP,
-            port_id,
-            (ovnconst.ROW_LSP_NAME, str(port_id))
-        )
+        generated_id = str(uuid.uuid4())
+        port = self.ovn_north.add_lsp(generated_id, name, network_id)
         return port
 
     def _update_port_security_groups(
@@ -955,7 +950,8 @@ class NeutronApi(object):
         )
         is_updated_gw_different_than_existing = \
             self._is_updated_gw_different_than_existing(
-                lr, gateway_subnet, gateway_ip, existing_gw_lsp_id
+                lr, gateway_subnet, gateway_ip, uuid.UUID(existing_gw_lsp_id)
+                if existing_gw_lsp_id else None
             )
         if is_updated_gw_different_than_existing:
             self._delete_router_interface_by_port(
@@ -1083,7 +1079,7 @@ class NeutronApi(object):
             network_id, subnet_id, router_id)
         lrp_ip = self._get_ip_from_subnet(subnet, network_id, router_id)
         port = self._create_port(ovnconst.ROUTER_SWITCH_PORT_NAME, network_id)
-        lrp_name = self._create_router_port_name(port.uuid)
+        lrp_name = self._create_router_port_name(port.name)
         self._connect_port_to_router(
             port,
             lrp_name,
@@ -1122,7 +1118,7 @@ class NeutronApi(object):
             self._validate_subnet_is_not_on_router(subnet.uuid, router_id)
 
         lrp_ipmask = self._get_ip_netmask_for_lrp(port, router_id)
-        lrp_name = self._create_router_port_name(port.uuid)
+        lrp_name = self._create_router_port_name(port.name)
         mac = ip_utils.get_port_mac(port)
         self._connect_port_to_router(
             port,
@@ -1311,10 +1307,10 @@ class NeutronApi(object):
             return self._delete_router_interface_by_port(router_id, port_id)
 
     def _delete_router_interface_by_port(self, router_id, port_id):
-        lsp = self.ovn_north.get_lsp(lsp_id=port_id)
+        lsp = self.ovn_north.get_lsp(lsp_name=port_id)
         validate.port_is_connected_to_router(lsp)
 
-        subnet = self.ovn_north.get_dhcp(lsp_id=port_id)
+        subnet = self.ovn_north.get_dhcp(lsp_id=lsp.uuid)
         subnet_id = str(subnet.uuid)
         lrp = self.ovn_north.get_lrp(lsp_id=port_id)
         lrp_ip = ip_utils.get_ip_from_cidr(lrp.networks[0])
@@ -1355,7 +1351,7 @@ class NeutronApi(object):
     def _is_subnet_on_router(self, router_id, subnet_id):
         lr = self.ovn_north.get_lr(lr_id=router_id)
         for lrp in lr.ports:
-            lsp_id = self.ovn_north.get_lsp(lrp=lrp)
+            lsp_id = self.ovn_north.get_lsp(lrp=lrp).uuid
             lrp_subnet = self.ovn_north.get_dhcp(lsp_id=lsp_id)
             if str(lrp_subnet.uuid) == subnet_id:
                 return True
@@ -1388,7 +1384,7 @@ class NeutronApi(object):
         lr_gw_port = lr.external_ids.get(RouterMapper.OVN_ROUTER_GATEWAY_PORT)
         deleted_lsp_id = None
         for lrp in lr.ports:
-            lsp_id = self.ovn_north.get_lsp(lrp=lrp)
+            lsp_id = self.ovn_north.get_lsp(lrp=lrp).uuid
             lsp = self.ovn_north.get_lsp(lsp_id=lsp_id)
             if lsp in network.ports:
                 deleted_lsp_id = lsp_id

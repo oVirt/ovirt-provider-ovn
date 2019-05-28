@@ -382,24 +382,23 @@ class PortMapper(Mapper):
             return {}
         lsp, ls, dhcp_options, lrp = row
         rest_data = {
-            PortMapper.REST_PORT_ID: str(lsp.uuid),
+            PortMapper.REST_PORT_ID: lsp.name,
             PortMapper.REST_PORT_NAME:
                 lsp.external_ids[PortMapper.OVN_NIC_NAME],
             PortMapper.REST_PORT_NETWORK_ID: str(ls.uuid),
-            PortMapper.REST_PORT_SECURITY_GROUPS: lsp.external_ids.get(
-                PortMapper.OVN_SECURITY_GROUPS, ''
-            ).split(),
+            PortMapper.REST_PORT_SECURITY_GROUPS:
+                lsp.external_ids.get(
+                    PortMapper.OVN_SECURITY_GROUPS, ''
+                ).split(),
             PortMapper.REST_PORT_SECURITY_ENABLED: len(lsp.port_security) > 0,
             PortMapper.REST_TENANT_ID: tenant_id(),
-            PortMapper.REST_PORT_FIXED_IPS: PortMapper.get_fixed_ips(
-                lsp,
-                dhcp_options,
-                lrp
-            ),
-            PortMapper.REST_PORT_ADMIN_STATE_UP: bool(
-                (lsp.up and lsp.up[0]) and
-                (not lsp.enabled or lsp.enabled[0])
-            )
+            PortMapper.REST_PORT_FIXED_IPS:
+                PortMapper.get_fixed_ips(lsp, dhcp_options, lrp),
+            PortMapper.REST_PORT_ADMIN_STATE_UP:
+                bool(
+                    (lsp.up and lsp.up[0]) and
+                    (not lsp.enabled or lsp.enabled[0])
+                )
         }
         if PortMapper.OVN_DEVICE_ID in lsp.external_ids:
             rest_data[

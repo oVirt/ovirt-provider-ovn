@@ -113,7 +113,7 @@ class OvnPortRow(OvnRow):
 
 
 def assert_port_equal(rest_data, port):
-    assert rest_data['id'] == str(port.lsp.uuid)
+    assert rest_data['id'] == port.lsp.name
     assert rest_data['network_id'] == str(port.ls.uuid)
     assert rest_data['name'] == port.lsp.external_ids[PortMapper.OVN_NIC_NAME]
     device_owner = port.lsp.external_ids.get(PortMapper.OVN_DEVICE_OWNER)

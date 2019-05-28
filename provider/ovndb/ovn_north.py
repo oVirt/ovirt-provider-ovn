@@ -69,12 +69,13 @@ class OvnNorth(object):
             )
         )
 
-    def add_lsp(self, name, network_id):
+    def add_lsp(self, port_id, name, network_id):
         return ovn_connection.execute(
             self.idl.lsp_add(
                 network_id,
-                name,
-                may_exist=False
+                port_id,
+                may_exist=False,
+                external_ids={PortMapper.OVN_NIC_NAME: name},
             )
         )
 
@@ -142,21 +143,22 @@ class OvnNorth(object):
                     network = self.get_ls(ls_id=network_id)
                 except ElementNotFoundError:
                     continue
-                if any(port.name == lsp_id for port in network.ports):
+                if any(lsp.uuid == lsp_id for lsp in network.ports):
                     return dhcp
             return None
 
     @accepts_single_arg
-    def get_lsp(self, lsp_id=None, ovirt_lsp_id=None, lrp=None):
-        if lsp_id:
-            return ovn_connection.execute(self.idl.lsp_get(lsp_id))
+    def get_lsp(self, lsp_id=None, ovirt_lsp_id=None, lrp=None, lsp_name=None):
+        if lsp_id or lsp_name:
+            return ovn_connection.execute(self.idl.lsp_get(lsp_id or lsp_name))
         if ovirt_lsp_id:
             lsp = ovn_connection.execute(self.idl.lsp_get(ovirt_lsp_id))
             if not self._is_port_ovirt_controlled(lsp):
                 raise ValueError('Not an ovirt controller port')
             return lsp
         if lrp:
-            return lrp.name[len(ovnconst.ROUTER_PORT_NAME_PREFIX):]
+            lsp_id = lrp.name[len(ovnconst.ROUTER_PORT_NAME_PREFIX):]
+            return ovn_connection.execute(self.idl.lsp_get(lsp_id))
 
     @accepts_single_arg
     def get_lrp(self, lrp_name=None, lsp_id=None):

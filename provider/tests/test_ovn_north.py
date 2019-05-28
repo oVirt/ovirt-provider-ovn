@@ -387,12 +387,15 @@ class TestOvnNorth(object):
         assert mock_lsp_add_command.mock_calls[0] == mock.call(
             ovn_north.idl,
             str(TestOvnNorth.NETWORK_LOCALNET_12.uuid),
-            ovnconst.LOCALNET_SWITCH_PORT_NAME,
+            mock.ANY,
             None,
             None,
-            False
+            False,
+            external_ids={
+                'ovirt_nic_name': ovnconst.LOCALNET_SWITCH_PORT_NAME
+            }
         )
-        assert mock_db_set_command.call_count == 2
+        assert mock_db_set_command.call_count == 1
         assert mock_ls_get_command.call_count == 1
 
     @mock.patch(
@@ -716,25 +719,18 @@ class TestOvnNorth(object):
         mock_add_command.assert_called_with(
             ovn_north.idl,
             str(TestOvnNorth.NETWORK_ID10),
-            TestOvnNorth.PORT_NAME01,
+            mock.ANY,
             None,
             None,
-            False
+            False,
+            external_ids={
+                'ovirt_nic_name': TestOvnNorth.PORT_NAME01,
+            }
         )
 
-        assert mock_db_set.call_count == 4
+        assert mock_db_set.call_count == 3
 
-        assert mock_db_set.mock_calls[0] == mock.call(
-            ovn_north.idl,
-            ovnconst.TABLE_LSP,
-            str(TestOvnNorth.PORT_ID01),
-            (
-                ovnconst.ROW_LSP_NAME,
-                str(TestOvnNorth.PORT_ID01)
-            )
-        )
-
-        assert mock_db_set.mock_calls[2] == mock.call(
+        assert mock.call(
             ovn_north.idl,
             ovnconst.TABLE_LSP,
             TestOvnNorth.PORT_ID01,
@@ -761,9 +757,9 @@ class TestOvnNorth(object):
                         TestOvnNorth.PORT_BINDING_ID
                 }
             )
-        )
+        ) in mock_db_set.mock_calls
 
-        assert mock_db_set.mock_calls[4] == mock.call(
+        assert mock.call(
             ovn_north.idl,
             ovnconst.TABLE_LSP,
             TestOvnNorth.PORT_ID01,
@@ -776,7 +772,7 @@ class TestOvnNorth(object):
                 )]
             ),
             (ovnconst.ROW_LSP_PORT_SECURITY, []),
-        )
+        ) in mock_db_set.mock_calls
 
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbClearCommand.execute',
