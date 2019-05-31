@@ -54,6 +54,7 @@ class Playbook(object):
         self._execution_stats = self._run_playbook_executor()
         if enable_idempotency_checker:
             self._idempotency_check_stats = self._run_playbook_executor()
+        self._assert_playbook_executed_successfully(enable_idempotency_checker)
 
     def _run_playbook_executor(self):
         runner = ansible_runner.run(
@@ -84,3 +85,10 @@ class Playbook(object):
                     failures=last_event['failures'],
                     processed=last_event['processed'],
                     changed=last_event['changed'])
+
+    def _assert_playbook_executed_successfully(self, check_idempotency):
+        assert not self.execution_stats['failures']
+        assert self.execution_stats['changed'].get('localhost', 0) > 0
+        if check_idempotency:
+            assert not self._idempotency_check_stats['failures']
+            assert not self._idempotency_check_stats['changed']

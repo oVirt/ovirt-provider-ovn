@@ -27,18 +27,5 @@ PLAYBOOK_CONFIG = {
 
 
 def test_security_groups_api():
-    _run_playbook('create_sec_group_api.yml')
-    _run_playbook('cleanup_sec_group_api.yml')
-
-
-def _run_playbook(file_name):
-    create_playbook = get_playbook(file_name, PLAYBOOK_CONFIG)
-    create_playbook.run()
-    _assert_playbook_executed_successfully(create_playbook)
-
-
-def _assert_playbook_executed_successfully(playbook):
-    assert not playbook.execution_stats['failures']
-    assert playbook.execution_stats['changed'].get('localhost', 0) > 0
-    assert not playbook.idempotency_check_stats['failures']
-    assert not playbook.idempotency_check_stats['changed']
+    get_playbook('create_sec_group_api.yml', PLAYBOOK_CONFIG).run()
+    get_playbook('cleanup_sec_group_api.yml', PLAYBOOK_CONFIG).run()
