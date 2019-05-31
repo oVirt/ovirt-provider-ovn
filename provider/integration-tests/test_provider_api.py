@@ -23,6 +23,7 @@ import requests
 
 ENDPOINT = 'http://localhost:9696/v2.0/'
 SUBNET_ENDPOINT = ENDPOINT + 'subnets/'
+PORT_ENDPOINT = ENDPOINT + 'ports/'
 
 
 @pytest.fixture(scope='module')
@@ -69,6 +70,38 @@ def subnet(logical_switch):
         )
 
 
+@pytest.fixture(scope='module')
+def logical_port(logical_switch, subnet):
+    payload = {
+        'port': {
+            'admin_state_up': True,
+            'fixed_ips': [
+                {
+                    'subnet_id': subnet['id']
+                }
+            ],
+            'mac_address': 'fa:16:3e:c9:cb:f0',
+            'name': 'private-port',
+            'network_id': logical_switch['id'],
+            'port_security_enabled': True,
+            'project_id': 'd6700c0c9ffa4f1cb322cd4a1f3906fa',
+            'tenant_id': 'd6700c0c9ffa4f1cb322cd4a1f3906fa',
+        }
+    }
+    response = requests.post(
+        'http://localhost:9696/v2.0/ports/', json=payload
+    )
+    if response.status_code not in range(200, 205):
+        raise Exception('could not create port')
+    try:
+        yield response.json()['port']
+    finally:
+        requests.delete(
+            'http://localhost:9696/v2.0/ports/' +
+            response.json()['port']['id']
+        )
+
+
 def test_get_network(logical_switch):
     networks = _get_and_assert('networks')
     assert len(networks) == 1
@@ -106,6 +139,14 @@ def test_ipv6_address_mode_not_updateable(subnet):
     }
     r = requests.put(url, json=update_payload)
     _expect_failure(r, 400, 'Invalid data found: ipv6_address_mode')
+
+
+def test_get_port(subnet, logical_port):
+    ports = _get_and_assert('ports')
+    assert len(ports) == 1
+    assert ports[0]['id'] == logical_port['id']
+    assert ports[0]['mac_address'] == logical_port['mac_address']
+    assert ports[0]['fixed_ips'][0]['subnet_id'] == subnet['id']
 
 
 def _get_and_assert(entity_type, filter_key=None, filter_value=None):
