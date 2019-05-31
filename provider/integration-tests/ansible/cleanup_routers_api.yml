@@ -1,0 +1,47 @@
+---
+- name: Cleanup OpenStack's security group entities
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+  - name: Remove router router0
+    os_router:
+      cloud: "{{ cloud_name }}"
+      state: absent
+      name: router0
+
+  - name: Remove subnet net10_subnet1
+    os_subnet:
+      cloud: "{{ cloud_name }}"
+      state: absent
+      name: net10_subnet1
+
+  - name: Remove network net10
+    os_network:
+      cloud: "{{ cloud_name }}"
+      state: absent
+      name: net10
+
+  - name: Remove subnet net11_subnet1
+    os_subnet:
+      cloud: "{{ cloud_name }}"
+      state: absent
+      name: net11_subnet1
+
+  - name: Remove network net11
+    os_network:
+      cloud: "{{ cloud_name }}"
+      state: absent
+      name: net11
+
+  - name: Remove subnet net12_subnet1
+    os_subnet:
+      cloud: "{{ cloud_name }}"
+      state: absent
+      name: net12_subnet1
+
+  - name: Remove network net12
+    os_network:
+      cloud: "{{ cloud_name }}"
+      state: absent
+      name: net12

@@ -1,0 +1,73 @@
+---
+- name: Create OpenStack network / subnet / router entities
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+  - name: Create network net10
+    os_network:
+      cloud: "{{ cloud_name }}"
+      state: present
+      name: net10
+    register: net10
+
+  - name: Create subnet net10_subnet1
+    os_subnet:
+      cloud: "{{ cloud_name }}"
+      state: present
+      network_name: "{{ net10.id }}"
+      name: net10_subnet1
+      cidr: 10.10.0.0/24
+      gateway_ip: 10.10.0.1
+      enable_dhcp: yes
+    register: net10_subnet1
+
+  - name: Create network net11
+    os_network:
+      cloud: "{{ cloud_name }}"
+      state: present
+      name: net11
+    register: net11
+
+  - name: Create subnet net11_subnet1
+    os_subnet:
+      cloud: "{{ cloud_name }}"
+      state: present
+      network_name: "{{ net11.id }}"
+      name: net11_subnet1
+      cidr: 10.11.0.0/24
+      gateway_ip: 10.11.0.1
+      enable_dhcp: yes
+    register: net11_subnet1
+
+  - name: Create network net12
+    os_network:
+      cloud: "{{ cloud_name }}"
+      state: present
+      name: net12
+    register: net12
+
+  - name: Create subnet net12_subnet 1
+    os_subnet:
+      cloud: "{{ cloud_name }}"
+      state: present
+      network_name: "{{ net12.id }}"
+      name: net12_subnet1
+      cidr: 10.12.0.0/24
+      gateway_ip: 10.12.0.1
+      enable_dhcp: yes
+    register: net12_subnet1
+
+  - name: Create router router0
+    os_router:
+      cloud: "{{ cloud_name }}"
+      state: present
+      name: router0
+      network: "{{net12.id}}"
+      enable_snat: no
+      external_fixed_ips:
+        - subnet: "{{net12_subnet1.id}}"
+          ip: 10.12.0.100
+      interfaces:
+          - net10_subnet1
+          - net11_subnet1
