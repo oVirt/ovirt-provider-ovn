@@ -356,7 +356,7 @@ class PortMapper(Mapper):
             return func(
                 wrapped_self,
                 network_id=network_id,
-                name=name,
+                name=name or '',
                 mac=mac,
                 is_enabled=is_enabled,
                 device_id=device_id,
