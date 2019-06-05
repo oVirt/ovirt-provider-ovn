@@ -233,7 +233,7 @@ class OvnSecurityGroupRow(OvnRow):
 
 def assert_security_group_equal(rest_data, security_group):
     assert rest_data[SecurityGroupMapper.REST_SEC_GROUP_ID] == str(
-        security_group.sec_group.uuid
+        security_group.sec_group.name
     )
     assert rest_data.get(SecurityGroupMapper.REST_SEC_GROUP_NAME) == (
         security_group.sec_group.external_ids.get(
@@ -284,10 +284,11 @@ def get_sorted_rules(rest_rules, security_group_rules):
 
 class OvnSecurityGroupRuleRow(OvnRow):
     def __init__(
-            self, uuid, direction, match, priority, security_group_id, action,
-            external_ids=None
+            self, uuid, name, direction, match, priority, security_group_id,
+            action, external_ids=None
     ):
         self.uuid = uuid
+        self.name = name
         self.sec_group_id = security_group_id
         self.direction = direction
         self.match = match
@@ -298,7 +299,7 @@ class OvnSecurityGroupRuleRow(OvnRow):
 
 def assert_security_group_rule_equal(rest_data, security_group_rule):
     assert rest_data[SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ID] == str(
-        security_group_rule.uuid
+        security_group_rule.name
     )
     assert rest_data[
                SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_DIRECTION

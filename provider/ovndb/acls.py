@@ -18,6 +18,8 @@
 
 from __future__ import absolute_import
 
+import uuid
+
 import neutron.constants as neutron_constants
 
 from neutron.neutron_api_mappers import RestDataError
@@ -159,8 +161,8 @@ def create_acl(
     external_ids = get_acl_external_ids(
         description=description, ether_type=ether_type, ip_prefix=ip_prefix,
         max_port=port_max, min_port=port_min, protocol=protocol,
-        port_group_id=str(security_group.uuid),
-        remote_group_id=str(remote_group.uuid) if remote_group else None
+        port_group_id=str(security_group.name),
+        remote_group_id=str(remote_group.name) if remote_group else None
     )
     return dict(acl, external_ids=external_ids)
 
@@ -188,12 +190,13 @@ def create_acl_match_string(match_list):
 
 
 def build_acl_parameters(port_group, direction, match, action, priority):
+    acl_id = uuid.uuid4()
     return {
         'port_group': port_group,
         'priority': priority,
         'action': action,
         'log': False,
-        'name': '',
+        'name': str(acl_id),
         'severity': [],
         'direction': neutron_constants.API_TO_OVN_DIRECTION_MAPPER[direction],
         'match': match

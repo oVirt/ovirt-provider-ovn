@@ -1456,18 +1456,15 @@ class NeutronApi(object):
 
     @SecurityGroupMapper.validate_add
     @SecurityGroupMapper.map_from_rest
-    @SecurityGroupMapper.map_to_rest
     @assure_security_groups_support
     def add_security_group(
             self, name, project_id=None, tenant_id=None, description=None
     ):
-        group_data, egress_rules = self.ovn_north.add_security_group(
-                name, project_id, tenant_id, description
+        with self.tx_manager.transaction() as tx:
+            group_data, egress_rules = self.ovn_north.add_security_group(
+                name, project_id, tenant_id, description, transaction=tx
             )
-        return SecurityGroup(
-            sec_group=group_data,
-            sec_group_rules=egress_rules
-        )
+        return self.get_security_group(group_data.name)
 
     @assure_security_groups_support
     def delete_security_group(self, security_group_id):

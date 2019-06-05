@@ -40,7 +40,7 @@ def build_add_acl_command(f):
     @wraps(f)
     def build_command_from_dict(wrapped_self, port_group):
         return [
-            wrapped_self.create_add_acl_command(port_group.uuid, acl_data)
+            wrapped_self.create_add_acl_command(port_group.name, acl_data)
             for acl_data in f(wrapped_self, port_group)
         ]
     return build_command_from_dict
@@ -63,7 +63,7 @@ class OvnSecurityGroupApi(object):
             SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS: now,
             SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS: now,
             SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: '1',
-            SecurityGroupMapper.OVN_SECURITY_GROUP_NAME: name,
+            SecurityGroupMapper.OVN_SECURITY_GROUP_NAME: name
         }
         if description:
             external_ids[
@@ -78,7 +78,7 @@ class OvnSecurityGroupApi(object):
                 SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT
             ] = project_id
         return self._idl.pg_add(
-            pg_name, may_exist=False, external_ids=external_ids
+            pg_name, may_exist=False, acls=[], external_ids=external_ids
         )
 
     def delete_security_group(self, port_group_id):
@@ -111,16 +111,20 @@ class OvnSecurityGroupApi(object):
 
         DbSetCommand(
             self._idl, ovnconst.TABLE_PORT_GROUP, sec_group_id
-        ).add(ovnconst.ROW_PG_NAME, pg_name).add(
+        ).add(
+            ovnconst.ROW_PG_NAME, pg_name, add_condition=name is not None
+        ).add(
             ovnconst.ROW_PG_EXTERNAL_IDS,
             external_ids
         ).execute()
 
     @staticmethod
     def _generate_name_when_required(name):
-        return u'ovirt_{name}_{gen_id}'.format(
-            name=name, gen_id=str(uuid.uuid4()).replace('-', '_')
-        ) if name not in SecurityGroupMapper.WHITE_LIST_GROUP_NAMES else name
+        return (
+            str(uuid.uuid4())
+            if name not in SecurityGroupMapper.WHITE_LIST_GROUP_NAMES
+            else name
+        )
 
     @staticmethod
     def get_bumped_revision_number(security_group):
@@ -153,7 +157,7 @@ class OvnSecurityGroupApi(object):
     def create_add_acl_command(self, pg_uuid, acl):
         return self._idl.pg_acl_add(
             pg_uuid, acl['direction'], acl['priority'],
-            acl['match'], acl['action'], severity='alert', name='',
+            acl['match'], acl['action'], severity='alert', name=acl['name'],
             **acl.get('external_ids', {})
         )
 

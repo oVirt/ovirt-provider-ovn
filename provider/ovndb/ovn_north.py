@@ -284,13 +284,15 @@ class OvnNorth(object):
                 )
             )
 
-    def add_security_group(self, name, project_id, tenant_id, description):
-        security_group = ovn_connection.execute(
+    def add_security_group(
+        self, name, project_id, tenant_id, description, transaction=None
+    ):
+        security_group = transaction.add(
             self._ovn_sec_group_api.create_security_group(
                 name, project_id, tenant_id, description
             )
         )
-        egress_rules = self.activate_egress_rules(security_group)
+        egress_rules = self.activate_egress_rules(security_group, transaction)
         self.create_address_sets(security_group.name)
         return security_group, egress_rules
 
@@ -452,9 +454,9 @@ class OvnNorth(object):
             self._ovn_sec_group_api.create_security_group(sec_group_name)
         )
 
-    def activate_egress_rules(self, port_group):
+    def activate_egress_rules(self, port_group, transaction):
         return [
-            ovn_connection.execute(acl)
+            transaction.add(acl)
             for acl in self._ovn_sec_group_api.create_allow_all_egress_acls(
                 port_group
             )

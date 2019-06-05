@@ -239,18 +239,18 @@ class TestOvnNorth(object):
         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_MIN_PORT: '161'
     }
     SECURITY_GROUP_RULE_01 = OvnSecurityGroupRuleRow(
-        SECURITY_GROUP_RULE_ID_01,
+        SECURITY_GROUP_RULE_ID_01, str(SECURITY_GROUP_RULE_ID_01),
         'from-lport', 'ip4 && tcp', 1001, SECURITY_GROUP_ID, 'allow',
         SECURITY_GROUP_RULE_01_EXT_IDS
     )
 
     SECURITY_GROUP_RULE_02 = OvnSecurityGroupRuleRow(
-        SECURITY_GROUP_RULE_ID_02,
+        SECURITY_GROUP_RULE_ID_02, str(SECURITY_GROUP_RULE_ID_02),
         'to-lport', 'ip6 && udp', 1000, SECURITY_GROUP_ID, 'drop',
         SECURITY_GROUP_RULE_02_EXT_IDS
     )
     SECURITY_GROUP_RULE_03 = OvnSecurityGroupRuleRow(
-        SECURITY_GROUP_RULE_ID_03,
+        SECURITY_GROUP_RULE_ID_03, str(SECURITY_GROUP_RULE_ID_03),
         'from-lport', 'ip4 && udp && udp.dst == 161', 1001, SECURITY_GROUP_ID,
         'allow', SECURITY_GROUP_RULE_03_EXT_IDS
     )
@@ -1381,6 +1381,18 @@ class TestOvnNorth(object):
         )
 
     @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbListCommand.execute',
+        lambda idl, check_error: []
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
+        lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: TestOvnNorth.SECURITY_GROUP, []
+    )
+    @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbCreateCommand', autospec=False
     )
     @mock.patch(
@@ -1388,7 +1400,7 @@ class TestOvnNorth(object):
         lambda cmd, check_error: []
     )
     @mock.patch(
-        'ovsdbapp.schema.ovn_northbound.commands.PgAddCommand.execute',
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.add',
         lambda cmd, check_error: TestOvnNorth.SECURITY_GROUP
     )
     def test_add_security_group(self, db_create_mock, mock_connection):
@@ -1422,6 +1434,18 @@ class TestOvnNorth(object):
             }
         ) in db_create_mock.mock_calls
 
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbListCommand.execute',
+        lambda idl, check_error: []
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
+        lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: TestOvnNorth.SECURITY_GROUP, []
+    )
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbCreateCommand', autospec=False
     )
@@ -1504,6 +1528,18 @@ class TestOvnNorth(object):
             u'pg_ip6_{}'.format(TestOvnNorth.SECURITY_GROUP_ID)
         ) in db_destroy.mock_calls
 
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbListCommand.execute',
+        lambda idl, check_error: []
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
+        lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: TestOvnNorth.SECURITY_GROUP, []
+    )
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbCreateCommand', autospec=False
     )
@@ -1669,13 +1705,31 @@ class TestOvnNorth(object):
         )
 
     @mock.patch(
+        'ovsdbapp.backend.ovs_idl.command.DbListCommand.execute',
+        lambda idl, check_error: [
+            TestOvnNorth.SECURITY_GROUP_RULE_01,
+            TestOvnNorth.SECURITY_GROUP_RULE_03
+        ]
+    )
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
+        lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: TestOvnNorth.SECURITY_GROUP, [
+            SECURITY_GROUP_RULE_01,
+            SECURITY_GROUP_RULE_03
+        ]
+    )
+    @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbCreateCommand', autospec=False
     )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.PgAclAddCommand.execute'
     )
     @mock.patch(
-        'ovsdbapp.schema.ovn_northbound.commands.PgAddCommand.execute',
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.add',
         lambda cmd, check_error: TestOvnNorth.SECURITY_GROUP
     )
     def test_add_security_group_automatic_rule_install(
