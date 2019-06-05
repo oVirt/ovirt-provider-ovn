@@ -1082,12 +1082,12 @@ class SecurityGroupMapper(Mapper):
     OVN_SECURITY_GROUP_TENANT = 'ovirt_tenant_id'
     OVN_SECURITY_GROUP_UPDATE_TS = 'ovirt_updated_at'
 
-    _mandatory_add_data = set([REST_SEC_GROUP_NAME])
-    _optional_add_data = set(
-        [REST_SEC_GROUP_DESC, Mapper.REST_TENANT_ID, Mapper.REST_PROJECT_ID]
-    )
+    _mandatory_add_data = {REST_SEC_GROUP_NAME}
+    _optional_add_data = {
+        REST_SEC_GROUP_DESC, Mapper.REST_TENANT_ID, Mapper.REST_PROJECT_ID
+    }
     _mandatory_update_data = set()
-    _optional_update_data = set([REST_SEC_GROUP_NAME, REST_SEC_GROUP_DESC])
+    _optional_update_data = {REST_SEC_GROUP_NAME, REST_SEC_GROUP_DESC}
     optional_attr_ext_id_mapper = {
         REST_SEC_GROUP_CREATED_AT: OVN_SECURITY_GROUP_CREATE_TS,
         REST_SEC_GROUP_UPDATED_AT: OVN_SECURITY_GROUP_UPDATE_TS,
@@ -1192,15 +1192,15 @@ class SecurityGroupRuleMapper(Mapper):
     OVN_SEC_GROUP_RULE_DESCRIPTION = 'ovirt_rule_description'
     OVN_SEC_GROUP_RULE_REMOTE_GROUP_ID = 'ovirt_remote_group_id'
 
-    _mandatory_add_data = set(
-        [REST_SEC_GROUP_RULE_DIRECTION, REST_SEC_GROUP_RULE_SEC_GROUP_ID]
-    )
-    _optional_add_data = set([
+    _mandatory_add_data = {
+        REST_SEC_GROUP_RULE_DIRECTION, REST_SEC_GROUP_RULE_SEC_GROUP_ID
+    }
+    _optional_add_data = {
         REST_SEC_GROUP_RULE_PROTOCOL, REST_SEC_GROUP_RULE_ETHERTYPE,
         REST_SEC_GROUP_RULE_PORT_RANGE_MAX, REST_SEC_GROUP_RULE_PORT_RANGE_MIN,
         REST_SEC_GROUP_RULE_IP_PREFIX, REST_SEC_GROUP_RULE_DESCRIPTION,
         REST_SEC_GROUP_RULE_REMOTE_GROUP
-    ])
+    }
     optional_attr_ext_id_mapper = {
         REST_SEC_GROUP_RULE_DESCRIPTION: OVN_SEC_GROUP_RULE_DESCRIPTION,
         REST_SEC_GROUP_RULE_ETHERTYPE: OVN_SEC_GROUP_RULE_ETHERTYPE,
