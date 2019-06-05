@@ -717,7 +717,6 @@ class RouterMapper(Mapper):
     REST_ROUTER_IP_ADDRESS = 'ip_address'
     REST_ROUTER_SUBNET_ID = 'subnet_id'
 
-    REST_ROUTER_ROUTES = 'routes'
     REST_ROUTER_DESTINATION = 'destination'
     REST_ROUTER_NEXTHOP = 'nexthop'
 
