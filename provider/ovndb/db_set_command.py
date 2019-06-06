@@ -26,14 +26,18 @@ class DbSetCommand(object):
         self.values = list()
 
     def execute(self):
+        update_command = self.build_command()
+        if update_command:
+            update_command.execute()
+
+    def build_command(self):
         if not self.values:
             return
-        x = self.idl.db_set(
+        return self.idl.db_set(
             self.table,
             self.entity_id,
             *self.values
         )
-        x.execute()
 
     def add(self, column, value, add_condition=True):
         if add_condition:
