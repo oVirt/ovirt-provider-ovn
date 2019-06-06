@@ -296,7 +296,7 @@ class OvnNorth(object):
             )
 
     def add_security_group(
-        self, name, project_id, tenant_id, description, transaction=None
+        self, name, project_id, tenant_id, description, transaction
     ):
         security_group = transaction.add(
             self._ovn_sec_group_api.create_security_group(
@@ -304,7 +304,7 @@ class OvnNorth(object):
             )
         )
         egress_rules = self.activate_egress_rules(security_group, transaction)
-        self.create_address_sets(security_group.name)
+        self.create_address_sets(security_group.name, transaction)
         return security_group, egress_rules
 
     def remove_security_group(self, security_group_id):
@@ -420,47 +420,50 @@ class OvnNorth(object):
             SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
         ]
 
-    def activate_default_security_group(self, port_id):
-        self.activate_drop_all_security_group(port_id)
+    def activate_default_security_group(
+            self, port_id, transaction, update_port_association
+    ):
+        self.activate_drop_all_security_group(port_id, transaction)
         default_sec_group = self.assure_group_exists(
-            SecurityGroupMapper.DEFAULT_PG_NAME,
+            SecurityGroupMapper.DEFAULT_PG_NAME, transaction,
             self._ovn_sec_group_api.create_default_sec_group_acls
         )
-        ovn_connection.execute(
-            self._ovn_sec_group_api.add_security_group_ports(
-                default_sec_group.uuid, port_id
+        if update_port_association:
+            transaction.add(
+                self._ovn_sec_group_api.add_security_group_ports(
+                    default_sec_group.name, port_id
+                )
             )
-        )
 
     def assure_group_exists(
-            self, sec_group_name, provision_acl_function=None,
+            self, sec_group_name, transaction, provision_acl_function=None,
             create_address_sets=True
     ):
         try:
             sec_group = self.get_security_group(sec_group_name)
         except ElementNotFoundError:
-            sec_group = self._activate_group(sec_group_name)
+            sec_group = self._activate_group(sec_group_name, transaction)
             if create_address_sets:
-                self.create_address_sets(sec_group.name)
+                self.create_address_sets(sec_group.name, transaction)
             if provision_acl_function:
                 for acl in provision_acl_function(sec_group):
-                    ovn_connection.execute(acl)
+                    transaction.add(acl)
         return sec_group
 
-    def activate_drop_all_security_group(self, port_id):
+    def activate_drop_all_security_group(self, port_id, transaction):
         drop_all_port_group = self.assure_group_exists(
-            SecurityGroupMapper.DROP_ALL_IP_PG_NAME,
+            SecurityGroupMapper.DROP_ALL_IP_PG_NAME, transaction,
             self._ovn_sec_group_api.create_drop_all_traffic_acls,
             False
         )
-        ovn_connection.execute(
+        transaction.add(
             self._ovn_sec_group_api.add_security_group_ports(
-                drop_all_port_group.uuid, port_id
+                drop_all_port_group.name, port_id
             )
         )
 
-    def _activate_group(self, sec_group_name):
-        return ovn_connection.execute(
+    def _activate_group(self, sec_group_name, transaction):
+        return transaction.add(
             self._ovn_sec_group_api.create_security_group(sec_group_name)
         )
 
@@ -480,38 +483,42 @@ class OvnNorth(object):
             )
         )
 
-    def add_security_groups_to_port(self, port_id, security_groups):
+    def add_security_groups_to_port(
+        self, port_id, security_groups, transaction
+    ):
         for sec_group in security_groups:
-            ovn_connection.execute(
+            transaction.add(
                 self._ovn_sec_group_api.add_security_group_ports(
                     sec_group, port_id
                 )
             )
 
-    def remove_security_groups_from_port(self, port_id, security_groups):
+    def remove_security_groups_from_port(
+        self, port_id, security_groups, transaction
+    ):
         for sec_group in security_groups:
-            ovn_connection.execute(
+            transaction.add(
                 self._ovn_sec_group_api.delete_security_group_ports(
                     sec_group, port_id
                 )
             )
 
-    def deactivate_dropall_security_group(self, port_id):
+    def deactivate_dropall_security_group(self, port_id, transaction):
         try:
             drop_all_sec_group = self.get_security_group(
                 self._ovn_sec_group_api.get_drop_all_sec_group_name()
             )
-            ovn_connection.execute(
+            transaction.add(
                 self._ovn_sec_group_api.delete_security_group_ports(
                     drop_all_sec_group.uuid, port_id
                 )
             )
         except ElementNotFoundError:
-            raise BadRequestError('Default security group is not provisioned')
+            pass
 
-    def create_address_sets(self, sec_group_name):
+    def create_address_sets(self, sec_group_name, transaction):
         return [
-            ovn_connection.execute(
+            transaction.add(
                 self._ovn_sec_group_api.create_address_set(
                     ip_version, sec_group_name
                 )

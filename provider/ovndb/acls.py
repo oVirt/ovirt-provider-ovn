@@ -249,7 +249,7 @@ def create_drop_all_traffic_acls(port_group):
         acl_list.append(
             dict(
                 build_acl_parameters(
-                    port_group.uuid, openstack_direction,
+                    port_group.name, openstack_direction,
                     acl_direction(
                         openstack_direction,
                         SecurityGroupMapper.DROP_ALL_IP_PG_NAME
@@ -264,7 +264,7 @@ def create_drop_all_traffic_acls(port_group):
                     ),
                     ether_type=None, ip_prefix=None, max_port=None,
                     min_port=None, protocol=None,
-                    port_group_id=str(port_group.uuid),
+                    port_group_id=str(port_group.name),
                     remote_group_id=None
                 )
             )

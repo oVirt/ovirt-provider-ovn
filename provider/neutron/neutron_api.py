@@ -58,6 +58,7 @@ from ovirt_provider_config_common import default_port_security_enabled
 from ovirt_provider_config_common import ovs_version_29
 
 from ovndb.ovn_north import OvnNorth
+from ovndb.ovn_north import optionally_use_transactions
 
 
 def assure_security_groups_support(f):
@@ -224,9 +225,9 @@ class NeutronApi(object):
         elif localnet_port:
             self.ovn_north.remove_lsp(str(localnet_port.uuid))
 
-    def _set_port_localnet_values(self, port, localnet, vlan):
+    def _set_port_localnet_values(self, port_id, localnet, vlan):
         self.ovn_north.create_ovn_update_command(
-            ovnconst.TABLE_LSP, port.uuid
+            ovnconst.TABLE_LSP, port_id
         ).add(
             ovnconst.ROW_LSP_ADDRESSES,
             [ovnconst.LSP_ADDRESS_TYPE_UNKNOWN]
@@ -335,31 +336,41 @@ class NeutronApi(object):
         port_security=None,
         security_groups=None,
     ):
-        port = self._create_port(name, network_id)
-        self._update_port_values(
-            port, name, is_enabled, device_id, device_owner, binding_host
-        )
-        mac = mac or ip_utils.random_unique_mac(
-            self.ovn_north.list_lsp(),
-            self.ovn_north.list_lrp()
-        )
-        update_address_command = self.get_update_port_addr_command(
-            port, network_id=network_id, mac=mac, fixed_ips=fixed_ips
-        )
-        port_security = port_security or self._get_port_security_from_network(
-            network_id
-        )
-        self.update_port_security(
-            update_address_command, port, mac, port_security
-        ).execute()
-        if security_groups is None and port_security:
-            security_groups = [SecurityGroupMapper.DEFAULT_PG_NAME]
-        elif security_groups is None:
-            security_groups = []
-        self.ovn_north.add_security_groups_to_port(port.uuid, security_groups)
-        self._update_port_security_groups_command(port.uuid, security_groups)
+        with self.tx_manager.transaction() as tx:
+            port_id = self._create_port(name, network_id, transaction=tx)
+            self._update_port_values(
+                port_id, name, is_enabled, device_id, device_owner,
+                binding_host, transaction=tx
+            )
+            mac = mac or ip_utils.random_unique_mac(
+                self.ovn_north.list_lsp(),
+                self.ovn_north.list_lrp()
+            )
+            tx.add(
+                self.get_update_port_addr_command(
+                    port_id, network_id=network_id, mac=mac,
+                    fixed_ips=fixed_ips
+                ).build_command()
+            )
+            port_security = (
+                port_security
+                or self._get_port_security_from_network(network_id)
+            )
+
+            if security_groups is None and port_security:
+                security_groups = [SecurityGroupMapper.DEFAULT_PG_NAME]
+            elif security_groups is None:
+                security_groups = []
+
+            self.update_port_security(tx, port_id, mac, port_security)
+            self.ovn_north.add_security_groups_to_port(
+                port_id, security_groups, tx
+            )
+            self._update_port_security_groups_command(
+                port_id, security_groups, tx
+            )
         port_data = self._get_network_port(
-            self.ovn_north.get_lsp(ovirt_lsp_id=port.uuid)
+            self.ovn_north.get_lsp(ovirt_lsp_id=port_id)
         )
         with self.tx_manager.transaction() as tx:
             self.ovn_north.add_addr_set_ip(
@@ -386,16 +397,22 @@ class NeutronApi(object):
     ):
         port = self.ovn_north.get_lsp(ovirt_lsp_id=port_id)
         network_id = self._get_validated_port_network_id(port, network_id)
-        self._update_port_values(
-            port, name, is_enabled, device_id, device_owner, binding_host
-        )
-        update_address_command = self.get_update_port_addr_command(
-            port, network_id=network_id, mac=mac, fixed_ips=fixed_ips
-        )
-        self.update_port_security(
-            update_address_command, port, mac, port_security
-        ).execute()
+        mac = mac or ip_utils.get_port_mac(port)
         with self.tx_manager.transaction() as tx:
+            self._update_port_values(
+                port.uuid, name, is_enabled, device_id, device_owner,
+                binding_host, transaction=tx
+            )
+            tx.add(
+                self.get_update_port_addr_command(
+                    port.name, network_id=network_id, mac=mac,
+                    fixed_ips=fixed_ips, port_type=port.type
+                ).build_command()
+            )
+            self.update_port_security(
+                tx, port.name, mac, port_security,
+                update_port_association=False
+            )
             self._update_port_security_groups(
                 port, security_groups, tx, port_security=port_security,
                 ip=fixed_ips[0].get(
@@ -423,20 +440,13 @@ class NeutronApi(object):
             (ovnconst.ROW_LRP_NETWORKS, new_lrp_ip)
         )
 
+    @optionally_use_transactions
     def _update_port_values(
         self, port, name=None, is_enabled=None, device_id=None,
-        device_owner=None, binding_host=None,
+        device_owner=None, binding_host=None, transaction=None
     ):
-        # TODO(add transaction): setting of the individual values should
-        # one day be done in a transaction:
-        #   txn = Transaction(self.idl, self.ovsdb_connection)
-        #   txn.add(<command>)
-        #   ...
-        #   txn.commit()
-        # The ovsdbapp transactions seem to have synchronization issues at the
-        # moment, hence we'll be using individual transactions for now.
-        self.ovn_north.create_ovn_update_command(
-            ovnconst.TABLE_LSP, port.uuid
+        return self.ovn_north.create_ovn_update_command(
+            ovnconst.TABLE_LSP, port
         ).add(
             ovnconst.ROW_LSP_EXTERNAL_IDS,
             {PortMapper.OVN_DEVICE_ID: device_id},
@@ -457,20 +467,19 @@ class NeutronApi(object):
             ovnconst.ROW_LSP_OPTIONS,
             {PortMapper.OVN_REQUESTED_CHASSIS: binding_host},
             ovs_version_29() and binding_host
-        ).execute()
+        ).build_command()
 
     def get_update_port_addr_command(
-            self, port, network_id, mac=None, fixed_ips=None
+        self, port_id, network_id, mac=None, fixed_ips=None, port_type=None
     ):
-        if port.type == ovnconst.LSP_TYPE_ROUTER:
-            self._update_lsp_bound_lrp(port.uuid, fixed_ips)
+        if port_type == ovnconst.LSP_TYPE_ROUTER:
+            self._update_lsp_bound_lrp(port_id, fixed_ips)
             return
-        mac = mac or ip_utils.get_port_mac(port)
         subnet = self.ovn_north.get_dhcp(ls_id=network_id)
         validate.fixed_ip_matches_port_subnet(fixed_ips, subnet)
         validate.fixed_ips_require_stateful_dhcp(subnet, fixed_ips)
         db_set_command = self.ovn_north.create_ovn_update_command(
-            ovnconst.TABLE_LSP, port.uuid
+            ovnconst.TABLE_LSP, port_id
         )
         ip_version = int(
             subnet.external_ids.get(
@@ -484,7 +493,7 @@ class NeutronApi(object):
                     network_id, fixed_ips)
             else:
                 self.ovn_north.clear_row_column(
-                    ovnconst.TABLE_LSP, port.uuid,
+                    ovnconst.TABLE_LSP, port_id,
                     ovnconst.ROW_LSP_DHCPV4_OPTIONS
                 )
             db_set_command.add(ovnconst.ROW_LSP_ADDRESSES, [mac])
@@ -502,15 +511,26 @@ class NeutronApi(object):
         )
 
     def update_port_security(
-            self, update_db_command, port, mac, port_security
+        self, transaction, port_id, mac, port_security,
+            update_port_association=True
     ):
-        mac = mac or ip_utils.get_port_mac(port)
+        update_db_command = self.ovn_north.create_ovn_update_command(
+            ovnconst.TABLE_LSP, port_id
+        )
         if port_security is True:
-            self.ovn_north.activate_default_security_group(port.uuid)
-            update_db_command.add(ovnconst.ROW_LSP_PORT_SECURITY, [mac])
+            self.ovn_north.activate_default_security_group(
+                port_id, transaction, update_port_association
+            )
+            update_db_command.add(
+                ovnconst.ROW_LSP_PORT_SECURITY, [mac]
+            )
         elif port_security is False:
-            self.deactivate_port_security(port, update_db_command)
-        return update_db_command
+            update_db_command = self.deactivate_port_security(
+                port_id, transaction
+            )
+        cmd = update_db_command.build_command()
+        if cmd:
+            transaction.add(cmd)
 
     def _get_port_addesses_suffix(self, network_id, fixed_ips):
         if not fixed_ips:
@@ -549,7 +569,7 @@ class NeutronApi(object):
         )
 
         self.ovn_north.create_ovn_update_command(
-            ovnconst.TABLE_LSP, port.uuid
+            ovnconst.TABLE_LSP, port
         ).add(
             ovnconst.ROW_LSP_TYPE,
             ovnconst.LSP_TYPE_ROUTER,
@@ -562,7 +582,7 @@ class NeutronApi(object):
         ).execute()
 
         self.ovn_north.clear_row_column(
-            ovnconst.TABLE_LSP, port.uuid, ovnconst.ROW_LSP_DHCPV4_OPTIONS
+            ovnconst.TABLE_LSP, port, ovnconst.ROW_LSP_DHCPV4_OPTIONS
         )
 
     def _get_validated_port_network_id(self, port, network_id):
@@ -584,10 +604,12 @@ class NeutronApi(object):
             raise ValueError('Unable to change network of existing port')
         return network_id or old_network_id
 
-    def _create_port(self, name, network_id):
+    def _create_port(self, name, network_id, transaction=None):
         generated_id = str(uuid.uuid4())
-        port = self.ovn_north.add_lsp(generated_id, name, network_id)
-        return port
+        self.ovn_north.add_lsp(
+            generated_id, name, network_id, transaction
+        )
+        return generated_id
 
     def _update_port_security_groups(
         self, port, security_groups, transaction, port_security=None, ip=None
@@ -614,13 +636,13 @@ class NeutronApi(object):
         )
 
         self.ovn_north.add_security_groups_to_port(
-            port.uuid, sec_groups_to_install
+            port.uuid, sec_groups_to_install, transaction
         )
         self.ovn_north.remove_security_groups_from_port(
-            port.uuid, sec_groups_to_delete
+            port.uuid, sec_groups_to_delete, transaction
         )
         self._update_port_security_groups_command(
-            port.uuid, security_groups or sec_groups_to_install
+            port.uuid, security_groups or sec_groups_to_install, transaction
         )
 
     def _process_sec_groups_ip_update(
@@ -633,15 +655,19 @@ class NeutronApi(object):
             self.ovn_north.delete_addr_set_ip(to_remain, old_ip, transaction)
             self.ovn_north.add_addr_set_ip(to_remain, new_ip, transaction)
 
-    def _update_port_security_groups_command(self, port_id, security_groups):
-        self.ovn_north.create_ovn_update_command(
-            ovnconst.TABLE_LSP, port_id
-        ).add(
-            ovnconst.ROW_LSP_EXTERNAL_IDS,
-            {
-                PortMapper.OVN_SECURITY_GROUPS: ' '.join(security_groups)
-            }
-        ).execute()
+    def _update_port_security_groups_command(
+        self, port_id, security_groups, transaction
+    ):
+        transaction.add(
+            self.ovn_north.create_ovn_update_command(
+                ovnconst.TABLE_LSP, port_id
+            ).add(
+                ovnconst.ROW_LSP_EXTERNAL_IDS,
+                {
+                    PortMapper.OVN_SECURITY_GROUPS: ' '.join(security_groups)
+                }
+            ).build_command()
+        )
 
     def update_port_mac(self, port_id, macaddress):
         pass
@@ -658,11 +684,12 @@ class NeutronApi(object):
             )
 
     def deactivate_port_security(
-            self, port, db_update_command,
+        self, port_id, transaction,
     ):
-        if len(port.port_security) > 0:
-            self.ovn_north.deactivate_dropall_security_group(port.uuid)
-        return db_update_command.add(ovnconst.ROW_LSP_PORT_SECURITY, [])
+        self.ovn_north.deactivate_dropall_security_group(port_id, transaction)
+        return self.ovn_north.create_ovn_update_command(
+            ovnconst.TABLE_LSP, port_id
+        ).add(ovnconst.ROW_LSP_PORT_SECURITY, [])
 
     @SubnetMapper.map_to_rest
     def list_subnets(self):
@@ -1103,7 +1130,7 @@ class NeutronApi(object):
             network_id, subnet_id, router_id)
         lrp_ip = self._get_ip_from_subnet(subnet, network_id, router_id)
         port = self._create_port(ovnconst.ROUTER_SWITCH_PORT_NAME, network_id)
-        lrp_name = self._create_router_port_name(port.name)
+        lrp_name = self._create_router_port_name(port)
         self._connect_port_to_router(
             port,
             lrp_name,
@@ -1113,7 +1140,7 @@ class NeutronApi(object):
         )
         self._set_subnet_gateway_router(subnet_id, router_id)
         return (
-            str(port.uuid),
+            str(port),
             lrp_name,
             lrp_ip,
             network_id,
@@ -1145,7 +1172,7 @@ class NeutronApi(object):
         lrp_name = self._create_router_port_name(port.name)
         mac = ip_utils.get_port_mac(port)
         self._connect_port_to_router(
-            port,
+            port.uuid,
             lrp_name,
             router_id,
             is_enabled=True
@@ -1225,7 +1252,7 @@ class NeutronApi(object):
         )
 
         port = self._create_port(ovnconst.ROUTER_SWITCH_PORT_NAME, network_id)
-        lrp_name = self._create_router_port_name(port.uuid)
+        lrp_name = self._create_router_port_name(port)
         mac = ip_utils.random_unique_mac(
             self.ovn_north.list_lsp(),
             self.ovn_north.list_lrp()
@@ -1245,7 +1272,7 @@ class NeutronApi(object):
         ).add(
             ovnconst.ROW_LR_EXTERNAL_IDS,
             {
-                RouterMapper.OVN_ROUTER_GATEWAY_PORT: str(port.uuid),
+                RouterMapper.OVN_ROUTER_GATEWAY_PORT: str(port),
             }
         ).execute()
 

@@ -734,12 +734,12 @@ class TestOvnNorth(object):
             }
         )
 
-        assert mock_db_set.call_count == 3
+        assert mock_db_set.call_count == 4
 
         assert mock.call(
             ovn_north.idl,
             ovnconst.TABLE_LSP,
-            TestOvnNorth.PORT_ID01,
+            mock.ANY,
             (
                 ovnconst.ROW_LSP_EXTERNAL_IDS,
                 {PortMapper.OVN_DEVICE_ID: TestOvnNorth.DEVICE_ID}
@@ -768,7 +768,7 @@ class TestOvnNorth(object):
         assert mock.call(
             ovn_north.idl,
             ovnconst.TABLE_LSP,
-            TestOvnNorth.PORT_ID01,
+            mock.ANY,
             (ovnconst.ROW_LSP_DHCPV4_OPTIONS, TestOvnNorth.SUBNET_ID101),
             (
                 ovnconst.ROW_LSP_ADDRESSES,
@@ -777,7 +777,6 @@ class TestOvnNorth(object):
                     ip_address=TestOvnNorth.PORT_NAME01_FIXED_IP
                 )]
             ),
-            (ovnconst.ROW_LSP_PORT_SECURITY, []),
         ) in mock_db_set.mock_calls
 
     @mock.patch(
@@ -1955,6 +1954,10 @@ class TestOvnNorth(object):
             'to be /64'
         )
 
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda tx: None
+    )
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbSetCommand',
         autospec=False
