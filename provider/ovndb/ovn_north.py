@@ -52,6 +52,17 @@ def accepts_single_arg(f):
     return inner
 
 
+def optionally_use_transactions(f):
+    def inner(self, *args, **kwargs):
+        command = f(self, *args, **kwargs)
+        transaction = kwargs.get('transaction')
+        if transaction and command:
+            return transaction.add(command)
+        if command:
+            return ovn_connection.execute(command)
+    return inner
+
+
 class OvnNorth(object):
     def __init__(self, idl):
         self.idl = idl
@@ -69,14 +80,13 @@ class OvnNorth(object):
             )
         )
 
-    def add_lsp(self, port_id, name, network_id):
-        return ovn_connection.execute(
-            self.idl.lsp_add(
-                network_id,
-                port_id,
-                may_exist=False,
-                external_ids={PortMapper.OVN_NIC_NAME: name},
-            )
+    @optionally_use_transactions
+    def add_lsp(self, port_id, name, network_id, transaction=None):
+        return self.idl.lsp_add(
+            network_id,
+            port_id,
+            may_exist=False,
+            external_ids={PortMapper.OVN_NIC_NAME: name},
         )
 
     def add_lr(self, name, enabled):
