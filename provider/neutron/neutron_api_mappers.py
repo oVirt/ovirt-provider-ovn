@@ -23,6 +23,7 @@ from collections import namedtuple
 from functools import wraps
 
 from netaddr import AddrFormatError
+from netaddr import EUI
 from netaddr import IPNetwork
 import six
 
@@ -478,7 +479,15 @@ class PortMapper(Mapper):
             PortMapper.REST_PORT_SECURITY_ENABLED,
             rest_data.get(PortMapper.REST_PORT_SECURITY_ENABLED, False)
         )
-
+        rest_mac = rest_data.get(PortMapper.REST_PORT_MAC_ADDRESS)
+        if rest_mac:
+            try:
+                EUI(rest_mac)
+            except AddrFormatError:
+                raise RestDataError(
+                    'Invalid input for mac_address. Reason: \'{}\' is not a '
+                    'valid MAC address.'.format(rest_mac)
+                )
         fixed_ips = rest_data.get(PortMapper.REST_PORT_FIXED_IPS)
         if fixed_ips:
             if type(fixed_ips) is not list:

@@ -104,6 +104,35 @@ def logical_port(logical_switch, subnet):
         )
 
 
+@pytest.fixture(scope='module')
+def broken_port(logical_switch, subnet):
+    invalid_mac = 'fa:16:3e:c9:cb:xx'
+    payload = {
+        'port': {
+            'admin_state_up': True,
+            'fixed_ips': [
+                {
+                    'subnet_id': subnet['id']
+                }
+            ],
+            'mac_address': invalid_mac,
+            'name': 'broken-port',
+            'network_id': logical_switch['id'],
+            'port_security_enabled': True,
+            'project_id': 'd6700c0c9ffa4f1cb322cd4a1f3906fa',
+            'tenant_id': 'd6700c0c9ffa4f1cb322cd4a1f3906fa',
+        }
+    }
+    response = requests.post(
+        'http://localhost:9696/v2.0/ports/', json=payload
+    )
+    _expect_failure(
+        response, 400,
+        'Invalid input for mac_address. Reason: \'fa:16:3e:c9:cb:xx\' '
+        'is not a valid MAC address.'.format(invalid_mac)
+    )
+
+
 def test_get_network(logical_switch):
     networks = _get_and_assert('networks')
     assert len(networks) == 1
@@ -155,6 +184,20 @@ def test_update_port(subnet, logical_port):
     update_port_data = {"port": {"port_security_enabled": True}}
 
     update_and_assert('ports', logical_port['id'], update_port_data)
+
+
+def test_create_invalid_port_no_leftovers(subnet, broken_port):
+    json_response = _get_and_assert('ports')
+    assert len(json_response) == 1
+    assert json_response[0]['name'] == 'private-port'
+    broken_port_data = _get_and_assert(
+        'ports', filter_key='name', filter_value='broken-port'
+    )
+    assert len(broken_port_data) == 0
+    private_port_data = _get_and_assert(
+        'ports', filter_key='name', filter_value='private-port'
+    )
+    assert json_response == private_port_data
 
 
 def _get_and_assert(entity_type, filter_key=None, filter_value=None):
