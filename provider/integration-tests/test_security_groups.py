@@ -17,8 +17,12 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import contextlib
 import pytest
+
 from lib.ansiblelib import get_playbook
+from lib.api_lib import get_port_by_name
+from lib.api_lib import update_and_assert
 from lib.dockerlib import inner_ping
 from lib.dockerlib import get_container_id_from_img_name
 
@@ -75,8 +79,32 @@ def setup_dataplane():
 def test_port_security(setup_dataplane):
     icmp_client_conf = SAME_SUBNET['network_points'][0]
     icmp_server_conf = SAME_SUBNET['network_points'][1]
+    icmp_client_port_id = _get_port_id(icmp_client_conf['name'])
+    icmp_server_port_id = _get_port_id(icmp_server_conf['name'])
 
-    inner_ping(
-        CONTROLLER_CONTAINER_ID, icmp_client_conf['ns'],
-        icmp_server_conf['ip'], expected_result=0
-    )
+    with enable_port_security(icmp_client_port_id):
+        with enable_port_security(icmp_server_port_id):
+            inner_ping(
+                CONTROLLER_CONTAINER_ID, icmp_client_conf['ns'],
+                icmp_server_conf['ip'], expected_result=0
+            )
+
+
+def _get_port_id(port_name):
+    port = get_port_by_name(port_name)
+    assert port
+    return port.get('id')
+
+
+@contextlib.contextmanager
+def enable_port_security(port_uuid):
+    _update_port_security(port_uuid, port_security_value=True)
+    try:
+        yield
+    finally:
+        _update_port_security(port_uuid, port_security_value=False)
+
+
+def _update_port_security(port_uuid, port_security_value):
+    update_port_data = {"port": {"port_security_enabled": port_security_value}}
+    update_and_assert('ports', port_uuid, update_port_data)

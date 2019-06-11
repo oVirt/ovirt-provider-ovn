@@ -22,6 +22,7 @@ import pytest
 from time import sleep
 
 from lib.ansiblelib import get_playbook
+from lib.api_lib import get_network_by_name
 from lib.dockerlib import inner_ping
 from lib.dockerlib import get_container_id_from_img_name
 from lib.dockerlib import reconfigure_interface
@@ -354,7 +355,8 @@ def test_configure_network_mtu_via_ras(setup_dataplane_multiple_subnet):
     )
 
     # update the network MTU
-    network = _get_network_by_name(icmp_dst_conf.get('network'))
+    network = get_network_by_name(icmp_dst_conf.get('network'))
+    assert network
     _update_network_mtu(network['id'], 1300)
     reconfigure_interface(
         CONTROLLER_CONTAINER_ID, icmp_dst_conf['ns'], icmp_dst_conf['name']
@@ -389,16 +391,6 @@ def _get_routers():
     return requests.get(PROVIDER_URL + 'routers').json().get('routers')
 
 
-def _get_network_by_name(network_name):
-    return next(
-        (
-            network for network in _get_networks()
-            if network.get('name') == network_name
-        ),
-        None
-    )
-
-
 def _update_network_mtu(network_uuid, mtu):
     payload = {
         'network': {'mtu': mtu}
@@ -410,8 +402,3 @@ def _update_network_mtu(network_uuid, mtu):
         raise Exception(
             'Could not update network MTU for network: '.format(network_uuid)
         )
-
-
-def _get_networks():
-    reply = requests.get(PROVIDER_URL + 'networks')
-    return reply.json().get('networks')

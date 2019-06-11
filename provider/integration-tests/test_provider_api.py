@@ -20,6 +20,8 @@
 import pytest
 import requests
 
+from lib.api_lib import update_and_assert
+
 
 ENDPOINT = 'http://localhost:9696/v2.0/'
 SUBNET_ENDPOINT = ENDPOINT + 'subnets/'
@@ -152,7 +154,7 @@ def test_get_port(subnet, logical_port):
 def test_update_port(subnet, logical_port):
     update_port_data = {"port": {"port_security_enabled": True}}
 
-    _update_and_assert('ports', logical_port['id'], update_port_data)
+    update_and_assert('ports', logical_port['id'], update_port_data)
 
 
 def _get_and_assert(entity_type, filter_key=None, filter_value=None):
@@ -163,18 +165,6 @@ def _get_and_assert(entity_type, filter_key=None, filter_value=None):
     r = requests.get(url)
     assert r.status_code == 200
     return r.json()[entity_type]
-
-
-def _update_and_assert(entity_type, entity_id, update_payload):
-    url = ENDPOINT + entity_type + '/{}'.format(entity_id)
-    singular_entity_type = entity_type[0:len(entity_type)-1]
-    response = requests.put(url, json=update_payload)
-    assert response.status_code == 200
-    json_response = response.json()
-    updated_entity = json_response.get(singular_entity_type)
-    assert len(json_response) == 1
-    for k, v in update_payload[singular_entity_type].items():
-        assert updated_entity[k] == v
 
 
 def _expect_failure(response, expected_status_code, expected_error_message):
