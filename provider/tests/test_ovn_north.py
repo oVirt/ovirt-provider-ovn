@@ -661,6 +661,10 @@ class TestOvnNorth(object):
         assert mock_del_command.mock_calls[0] == expected_del_call
 
     @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: None
+    )
+    @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsListCommand.execute',
         lambda cmd, check_error: TestOvnNorth.networks
     )
@@ -776,6 +780,10 @@ class TestOvnNorth(object):
             (ovnconst.ROW_LSP_PORT_SECURITY, []),
         ) in mock_db_set.mock_calls
 
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: None
+    )
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbClearCommand.execute',
         lambda cmd, check_error: []
@@ -896,6 +904,10 @@ class TestOvnNorth(object):
         assert_port_equal(ports[0], first_port)
         assert_port_equal(ports[1], second_port)
 
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: None
+    )
     @mock.patch('ovsdbapp.schema.ovn_northbound.commands.LspGetCommand.'
                 'execute',
                 lambda cmd, check_error: OvnPortRow(

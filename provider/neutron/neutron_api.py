@@ -361,9 +361,11 @@ class NeutronApi(object):
         port_data = self._get_network_port(
             self.ovn_north.get_lsp(ovirt_lsp_id=port.uuid)
         )
-        self.ovn_north.add_addr_set_ip(
-            security_groups, ip_utils.get_port_ip(lsp=port_data.lsp)
-        )
+        with self.tx_manager.transaction() as tx:
+            self.ovn_north.add_addr_set_ip(
+                security_groups, ip_utils.get_port_ip(lsp=port_data.lsp),
+                transaction=tx
+            )
         return self._serialize_port(port_data)
 
     @PortMapper.validate_update
@@ -393,12 +395,13 @@ class NeutronApi(object):
         self.update_port_security(
             update_address_command, port, mac, port_security
         ).execute()
-        self._update_port_security_groups(
-            port, security_groups, port_security=port_security,
-            ip=fixed_ips[0].get(
-                PortMapper.REST_PORT_IP_ADDRESS
-            ) if fixed_ips else None
-        )
+        with self.tx_manager.transaction() as tx:
+            self._update_port_security_groups(
+                port, security_groups, tx, port_security=port_security,
+                ip=fixed_ips[0].get(
+                    PortMapper.REST_PORT_IP_ADDRESS
+                ) if fixed_ips else None
+            )
         return self.get_port(port_id)
 
     def _update_lsp_bound_lrp(self, port_id, fixed_ips):
@@ -587,7 +590,7 @@ class NeutronApi(object):
         return port
 
     def _update_port_security_groups(
-            self, port, security_groups, port_security=None, ip=None
+        self, port, security_groups, transaction, port_security=None, ip=None
     ):
         if security_groups is not None:
             new_groups = set(security_groups)
@@ -607,7 +610,7 @@ class NeutronApi(object):
             old_ip=ip_utils.get_port_ip(port),
             new_ip=ip or ip_utils.get_port_ip(port),
             to_install=sec_groups_to_install, to_remove=sec_groups_to_delete,
-            to_remain=sec_groups_to_remain
+            to_remain=sec_groups_to_remain, transaction=transaction
         )
 
         self.ovn_north.add_security_groups_to_port(
@@ -622,13 +625,13 @@ class NeutronApi(object):
 
     def _process_sec_groups_ip_update(
             self, old_ip, new_ip, to_install, to_remove,
-            to_remain
+            to_remain, transaction
     ):
-        self.ovn_north.delete_addr_set_ip(to_remove, old_ip)
-        self.ovn_north.add_addr_set_ip(to_install, new_ip)
+        self.ovn_north.delete_addr_set_ip(to_remove, old_ip, transaction)
+        self.ovn_north.add_addr_set_ip(to_install, new_ip, transaction)
         if to_remain and old_ip != new_ip:
-            self.ovn_north.delete_addr_set_ip(to_remain, old_ip)
-            self.ovn_north.add_addr_set_ip(to_remain, new_ip)
+            self.ovn_north.delete_addr_set_ip(to_remain, old_ip, transaction)
+            self.ovn_north.add_addr_set_ip(to_remain, new_ip, transaction)
 
     def _update_port_security_groups_command(self, port_id, security_groups):
         self.ovn_north.create_ovn_update_command(
@@ -647,11 +650,12 @@ class NeutronApi(object):
         lsp = self.ovn_north.get_lsp(lsp_id=port_id)
         validate.port_is_not_connected_to_router(lsp)
         self.ovn_north.remove_lsp(port_id)
-        self.ovn_north.delete_addr_set_ip(
-            security_groups=lsp.external_ids.get(
-                PortMapper.OVN_SECURITY_GROUPS, ''
-            ).split(), ip=ip_utils.get_port_ip(lsp)
-        )
+        with self.tx_manager.transaction() as tx:
+            self.ovn_north.delete_addr_set_ip(
+                security_groups=lsp.external_ids.get(
+                    PortMapper.OVN_SECURITY_GROUPS, ''
+                ).split(), ip=ip_utils.get_port_ip(lsp), transaction=tx
+            )
 
     def deactivate_port_security(
             self, port, db_update_command,

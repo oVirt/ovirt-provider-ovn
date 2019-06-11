@@ -210,29 +210,39 @@ class OvnSecurityGroupApi(object):
         )
 
     def add_address_set_ip(self, security_groups, ip, ip_version):
+        command_list = []
         for sec_group in security_groups:
             addr_set_name = acl_lib.get_assoc_addr_set_name(
                 sec_group.name, ip_version
             )
             current_ips = self.get_address_set_addresses(addr_set_name)
-            DbSetCommand(
-                self._idl, ovnconst.TABLE_ADDRESS_SET, addr_set_name
-            ).add('addresses', current_ips + [ip]).execute()
+            command_list += [
+                DbSetCommand(
+                    self._idl, ovnconst.TABLE_ADDRESS_SET, addr_set_name
+                ).add('addresses', current_ips + [ip]).build_command()
+            ]
+        return command_list
 
     def get_address_set_addresses(self, addr_set_name):
         row = self._idl.lookup(ovnconst.TABLE_ADDRESS_SET, addr_set_name)
         return row.addresses if row else []
 
-    def remove_address_set_ip(self, security_groups, ip, ip_version):
+    def remove_address_set_ip(
+        self, security_groups, ip, ip_version
+    ):
+        command_list = []
         for sec_group in security_groups:
             addr_set_name = acl_lib.get_assoc_addr_set_name(
                 sec_group.name, ip_version
             )
             current_ips = self.get_address_set_addresses(addr_set_name)
             current_ips.remove(ip)
-            DbSetCommand(
-                self._idl, ovnconst.TABLE_ADDRESS_SET, addr_set_name
-            ).add('addresses', current_ips).execute()
+            command_list += [
+                DbSetCommand(
+                    self._idl, ovnconst.TABLE_ADDRESS_SET, addr_set_name
+                ).add('addresses', current_ips).build_command()
+            ]
+        return command_list
 
 
 def only_rules_with_allowed_actions(f):

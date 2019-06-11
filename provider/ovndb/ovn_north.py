@@ -528,27 +528,31 @@ class OvnNorth(object):
             for ip_version in neutron_constants.OVN_IP_VERSIONS
         ]
 
-    def add_addr_set_ip(self, security_groups, ip):
+    def add_addr_set_ip(self, security_groups, ip, transaction):
         if not ip or not security_groups:
             return
         ip_version = get_ip_version(ip)
-        self._ovn_sec_group_api.add_address_set_ip(
+        commands = self._ovn_sec_group_api.add_address_set_ip(
             security_groups=[
                 self.get_security_group(sec_group_id)
                 for sec_group_id in security_groups
             ], ip=ip, ip_version=ip_version
         )
+        for command in commands:
+            transaction.add(command)
 
-    def delete_addr_set_ip(self, security_groups, ip):
+    def delete_addr_set_ip(self, security_groups, ip, transaction):
         if not ip or not security_groups:
             return
         ip_version = get_ip_version(ip)
-        self._ovn_sec_group_api.remove_address_set_ip(
+        commands = self._ovn_sec_group_api.remove_address_set_ip(
             security_groups=[
                 self.get_security_group(sec_group_id)
                 for sec_group_id in security_groups
             ], ip=ip, ip_version=ip_version
         )
+        for command in commands:
+            transaction.add(command)
 
     def get_lrp_by_subnet(self, subnet):
         router_id = subnet.external_ids.get(SubnetMapper.OVN_GATEWAY_ROUTER_ID)
