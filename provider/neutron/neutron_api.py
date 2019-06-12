@@ -649,8 +649,8 @@ class NeutronApi(object):
     def delete_port(self, port_id):
         lsp = self.ovn_north.get_lsp(lsp_id=port_id)
         validate.port_is_not_connected_to_router(lsp)
-        self.ovn_north.remove_lsp(port_id)
         with self.tx_manager.transaction() as tx:
+            self.ovn_north.remove_lsp(port_id, transaction=tx)
             self.ovn_north.delete_addr_set_ip(
                 security_groups=lsp.external_ids.get(
                     PortMapper.OVN_SECURITY_GROUPS, ''
