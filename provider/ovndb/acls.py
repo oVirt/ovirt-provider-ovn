@@ -21,11 +21,8 @@ from __future__ import absolute_import
 import neutron.constants as neutron_constants
 
 from neutron.neutron_api_mappers import RestDataError
+from neutron.neutron_api_mappers import SecurityGroupMapper
 from neutron.neutron_api_mappers import SecurityGroupRuleMapper
-
-
-DEFAULT_PG_NAME = 'Default'
-DROP_ALL_IP_PG_NAME = 'DropAll'
 
 
 class ProtocolNotSupported(RestDataError):
@@ -250,7 +247,10 @@ def create_drop_all_traffic_acls(port_group):
             dict(
                 build_acl_parameters(
                     port_group.uuid, openstack_direction,
-                    acl_direction(openstack_direction, DROP_ALL_IP_PG_NAME)
+                    acl_direction(
+                        openstack_direction,
+                        SecurityGroupMapper.DROP_ALL_IP_PG_NAME
+                    )
                     + ' && ip',
                     neutron_constants.ACL_ACTION_DROP,
                     neutron_constants.ACL_DROP_PRIORITY

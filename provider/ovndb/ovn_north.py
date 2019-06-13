@@ -265,7 +265,7 @@ class OvnNorth(object):
     def list_security_groups(self):
         return list(
             filter(
-                lambda pg: pg.name != acl_lib.DROP_ALL_IP_PG_NAME,
+                lambda pg: pg.name != SecurityGroupMapper.DROP_ALL_IP_PG_NAME,
                 ovn_connection.execute(
                     self.idl.db_list_rows(ovnconst.TABLE_PORT_GROUP)
                 )
@@ -411,7 +411,7 @@ class OvnNorth(object):
     def activate_default_security_group(self, port_id):
         self.activate_drop_all_security_group(port_id)
         default_sec_group = self.assure_group_exists(
-            acl_lib.DEFAULT_PG_NAME,
+            SecurityGroupMapper.DEFAULT_PG_NAME,
             self._ovn_sec_group_api.create_default_sec_group_acls
         )
         ovn_connection.execute(
@@ -437,7 +437,7 @@ class OvnNorth(object):
 
     def activate_drop_all_security_group(self, port_id):
         drop_all_port_group = self.assure_group_exists(
-            acl_lib.DROP_ALL_IP_PG_NAME,
+            SecurityGroupMapper.DROP_ALL_IP_PG_NAME,
             self._ovn_sec_group_api.create_drop_all_traffic_acls,
             False
         )

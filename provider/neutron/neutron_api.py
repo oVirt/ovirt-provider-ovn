@@ -56,7 +56,6 @@ from ovirt_provider_config_common import dhcp_mtu
 from ovirt_provider_config_common import default_port_security_enabled
 from ovirt_provider_config_common import ovs_version_29
 
-import ovndb.acls as acl_lib
 from ovndb.ovn_north import OvnNorth
 
 
@@ -336,7 +335,7 @@ class NeutronApi(object):
             update_address_command, port, mac, port_security
         ).execute()
         if security_groups is None and port_security:
-            security_groups = [acl_lib.DEFAULT_PG_NAME]
+            security_groups = [SecurityGroupMapper.DEFAULT_PG_NAME]
         elif security_groups is None:
             security_groups = []
         self.ovn_north.add_security_groups_to_port(port.uuid, security_groups)
@@ -575,7 +574,7 @@ class NeutronApi(object):
         if security_groups is not None:
             new_groups = set(security_groups)
         elif port_security is True:
-            new_groups = {acl_lib.DEFAULT_PG_NAME}
+            new_groups = {SecurityGroupMapper.DEFAULT_PG_NAME}
         else:
             return
         old_security_groups = port.external_ids.get(

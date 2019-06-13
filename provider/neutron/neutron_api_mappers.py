@@ -1095,6 +1095,12 @@ class SecurityGroupMapper(Mapper):
         REST_SEC_GROUP_DESC: OVN_SECURITY_GROUP_DESCRIPTION
     }
 
+    DEFAULT_PG_NAME = 'Default'
+    DROP_ALL_IP_PG_NAME = 'DropAll'
+    WHITE_LIST_GROUP_NAMES = [
+        DEFAULT_PG_NAME, DROP_ALL_IP_PG_NAME
+    ]
+
     @staticmethod
     def row2rest(security_group):
         if not security_group:
