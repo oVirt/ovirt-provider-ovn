@@ -1108,17 +1108,20 @@ class SecurityGroupMapper(Mapper):
 
         group_data = security_group.sec_group
         result = {
-            SecurityGroupMapper.REST_SEC_GROUP_ID: str(group_data.uuid),
-            SecurityGroupMapper.REST_SEC_GROUP_RULES: [
-                SecurityGroupRuleMapper.row2rest(rule)
-                for rule in security_group.sec_group_rules
-            ],
+            SecurityGroupMapper.REST_SEC_GROUP_ID:
+                str(SecurityGroupMapper._get_group_id_mapping(group_data)),
+            SecurityGroupMapper.REST_SEC_GROUP_RULES:
+                [
+                    SecurityGroupRuleMapper.row2rest(rule)
+                    for rule in security_group.sec_group_rules
+                ],
             SecurityGroupMapper.REST_SEC_GROUP_TAGS: [],
-            SecurityGroupMapper.REST_SEC_GROUP_REVISION_NR: int(
-                group_data.external_ids[
-                    SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER
-                ]
-            )
+            SecurityGroupMapper.REST_SEC_GROUP_REVISION_NR:
+                int(
+                    group_data.external_ids[
+                        SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER
+                    ]
+                )
         }
         rest_optional_values = SecurityGroupMapper.set_from_external_ids(
             group_data.external_ids,
@@ -1132,6 +1135,19 @@ class SecurityGroupMapper(Mapper):
         )
 
         return result
+
+    @staticmethod
+    def _get_group_id_mapping(group_data):
+        return group_data.uuid if SecurityGroupMapper._is_group_uuid_mapped(
+            group_data.name
+        ) else group_data.name
+
+    @staticmethod
+    def _is_group_uuid_mapped(group_name):
+        return (
+                group_name.startswith('ovirt_') or
+                group_name in SecurityGroupMapper.WHITE_LIST_GROUP_NAMES
+        )
 
     @staticmethod
     def rest2row(wrapped_self, func, rest_sec_group_data, security_group_id):

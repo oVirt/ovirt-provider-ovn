@@ -226,7 +226,7 @@ class TestOvnNorthMappers(object):
         assert str(expected_exception.value) == 'attr2 must be of type bool'
 
     def test_acl_to_rest_minimal(self):
-        name = 'sec1'
+        name = str(SECURITY_GROUP_UUID)
         desc = 'lotsofsafety'
         timestamp = datetime.utcnow().isoformat()
         external_ids = {
@@ -268,7 +268,7 @@ class TestOvnNorthMappers(object):
         )
 
     def test_port_group_to_rest_with_rules(self):
-        name = 'sec1'
+        name = str(SECURITY_GROUP_UUID)
         desc = 'lotsofsafety'
         timestamp = datetime.utcnow().isoformat()
         external_ids = {
