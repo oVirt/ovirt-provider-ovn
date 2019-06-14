@@ -1437,7 +1437,7 @@ class NeutronApi(object):
             SecurityGroup(
                 sec_group=group_data,
                 sec_group_rules=self.ovn_north.list_security_group_rules(
-                    group_data.uuid
+                    group_data
                 )
             )
             for group_data in self.ovn_north.list_security_groups()
@@ -1446,10 +1446,11 @@ class NeutronApi(object):
     @SecurityGroupMapper.map_to_rest
     @assure_security_groups_support
     def get_security_group(self, sec_group_id):
+        security_group = self.ovn_north.get_security_group(sec_group_id)
         return SecurityGroup(
-            sec_group=self.ovn_north.get_security_group(sec_group_id),
+            sec_group=security_group,
             sec_group_rules=self.ovn_north.list_security_group_rules(
-                sec_group_id
+                security_group
             )
         )
 

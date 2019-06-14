@@ -188,7 +188,7 @@ class TestOvnNorth(object):
     SECURITY_GROUP_DESCRIPTION = 'as safe as it gets'
     SECURITY_GROUP = OvnSecurityGroupRow(
         SECURITY_GROUP_ID,
-        SECURITY_GROUP_NAME,
+        str(SECURITY_GROUP_ID),
         external_ids={
             SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION:
                 SECURITY_GROUP_DESCRIPTION,
@@ -196,7 +196,8 @@ class TestOvnNorth(object):
             SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS: '',
             SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: '1',
             SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id(),
-            SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT: tenant_id()
+            SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT: tenant_id(),
+            SecurityGroupMapper.OVN_SECURITY_GROUP_NAME: SECURITY_GROUP_NAME
         }
     )
     DEFAULT_SECURITY_GROUP = OvnSecurityGroupRow(
@@ -1407,14 +1408,18 @@ class TestOvnNorth(object):
         assert mock.call(
             ovn_north.idl,
             ovnconst.TABLE_ADDRESS_SET,
-            name=u'pg_ip4_{}'.format(TestOvnNorth.SECURITY_GROUP_NAME),
-            external_ids={'sec_group_name': TestOvnNorth.SECURITY_GROUP_NAME}
+            name=u'pg_ip4_{}'.format(TestOvnNorth.SECURITY_GROUP_ID),
+            external_ids={
+                'sec_group_name': str(TestOvnNorth.SECURITY_GROUP_ID)
+            }
         ) in db_create_mock.mock_calls
         assert mock.call(
             ovn_north.idl,
             ovnconst.TABLE_ADDRESS_SET,
-            name=u'pg_ip6_{}'.format(TestOvnNorth.SECURITY_GROUP_NAME),
-            external_ids={'sec_group_name': TestOvnNorth.SECURITY_GROUP_NAME}
+            name=u'pg_ip6_{}'.format(TestOvnNorth.SECURITY_GROUP_ID),
+            external_ids={
+                'sec_group_name': str(TestOvnNorth.SECURITY_GROUP_ID)
+            }
         ) in db_create_mock.mock_calls
 
     @mock.patch(
@@ -1491,12 +1496,12 @@ class TestOvnNorth(object):
         assert mock.call(
             ovn_north.idl,
             ovnconst.TABLE_ADDRESS_SET,
-            u'pg_ip4_{}'.format(TestOvnNorth.SECURITY_GROUP_NAME)
+            u'pg_ip4_{}'.format(TestOvnNorth.SECURITY_GROUP_ID)
         ) in db_destroy.mock_calls
         assert mock.call(
             ovn_north.idl,
             ovnconst.TABLE_ADDRESS_SET,
-            u'pg_ip6_{}'.format(TestOvnNorth.SECURITY_GROUP_NAME)
+            u'pg_ip6_{}'.format(TestOvnNorth.SECURITY_GROUP_ID)
         ) in db_destroy.mock_calls
 
     @mock.patch(

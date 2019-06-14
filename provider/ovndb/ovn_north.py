@@ -315,18 +315,18 @@ class OvnNorth(object):
             raise BadRequestError(ex)
 
     @only_rules_with_allowed_actions
-    def list_security_group_rules(self, sec_group_id=None):
+    def list_security_group_rules(self, sec_group=None):
         all_rules = ovn_connection.execute(
             self.idl.db_list_rows(ovnconst.TABLE_ACL)
         )
 
         return (
-            all_rules if sec_group_id is None
+            all_rules if sec_group is None
             else list(
                 filter(
                     lambda sec_group_rule: sec_group_rule.external_ids.get(
                         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
-                    ) == str(sec_group_id), all_rules
+                    ) in (str(sec_group.name), str(sec_group.uuid)), all_rules
                 )
             )
         )
