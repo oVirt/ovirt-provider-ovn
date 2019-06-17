@@ -70,6 +70,23 @@ def assure_security_groups_support(f):
     return inner
 
 
+def wrap_default_group_id(f):
+    @wraps(f)
+    def inner(wrapped_self, *args, **kwargs):
+        try:
+            default_group = wrapped_self.ovn_north.get_security_group(
+                SecurityGroupMapper.DEFAULT_PG_NAME
+            )
+            default_group_id = default_group.uuid
+            return f(
+                wrapped_self, default_group_id=default_group_id,
+                *args, **kwargs
+            )
+        except ElementNotFoundError:
+            return f(wrapped_self, *args, **kwargs)
+    return inner
+
+
 class NeutronApi(object):
 
     def __init__(self, sec_group_support=None):
