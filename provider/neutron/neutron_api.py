@@ -44,6 +44,7 @@ from neutron.neutron_api_mappers import Router
 from neutron.neutron_api_mappers import RouterInterface
 from neutron.neutron_api_mappers import RouterMapper
 from neutron.neutron_api_mappers import SecurityGroup
+from neutron.neutron_api_mappers import SecurityGroupRule
 from neutron.neutron_api_mappers import SecurityGroupMapper
 from neutron.neutron_api_mappers import SecurityGroupRuleMapper
 from neutron.neutron_api_mappers import SubnetConfigError
@@ -1449,26 +1450,35 @@ class NeutronApi(object):
         )
 
     @SecurityGroupMapper.map_to_rest
-    def list_security_groups(self):
+    @wrap_default_group_id
+    def list_security_groups(self, default_group_id=None):
         return [
             SecurityGroup(
                 sec_group=group_data,
-                sec_group_rules=self.ovn_north.list_security_group_rules(
-                    group_data
-                )
+                sec_group_rules=[
+                    SecurityGroupRule(rule, default_group_id)
+                    for rule in self.ovn_north.list_security_group_rules(
+                        group_data
+                    )
+                ]
             )
             for group_data in self.ovn_north.list_security_groups()
         ] if self.are_security_groups_supported() else []
 
     @SecurityGroupMapper.map_to_rest
+    @wrap_default_group_id
     @assure_security_groups_support
-    def get_security_group(self, sec_group_id):
+    def get_security_group(self, sec_group_id, default_group_id=None):
         security_group = self.ovn_north.get_security_group(sec_group_id)
+        all_rules = self.ovn_north.list_security_group_rules(
+            security_group
+        )
         return SecurityGroup(
             sec_group=security_group,
-            sec_group_rules=self.ovn_north.list_security_group_rules(
-                security_group
-            )
+            sec_group_rules=[
+                SecurityGroupRule(rule, default_group_id)
+                for rule in all_rules
+            ]
         )
 
     @SecurityGroupMapper.validate_add
@@ -1498,14 +1508,23 @@ class NeutronApi(object):
         )
 
     @SecurityGroupRuleMapper.map_to_rest
+    @wrap_default_group_id
     @assure_security_groups_support
-    def list_security_group_rules(self):
-        return self.ovn_north.list_security_group_rules()
+    def list_security_group_rules(self, default_group_id=None):
+        rules = self.ovn_north.list_security_group_rules()
+        return [
+            SecurityGroupRule(rule, default_group_id)
+            for rule in rules
+        ]
 
     @SecurityGroupRuleMapper.map_to_rest
+    @wrap_default_group_id
     @assure_security_groups_support
-    def get_security_group_rule(self, security_group_rule_id):
-        return self.ovn_north.get_security_group_rule(security_group_rule_id)
+    def get_security_group_rule(
+            self, security_group_rule_id, default_group_id=None
+    ):
+        rule = self.ovn_north.get_security_group_rule(security_group_rule_id)
+        return SecurityGroupRule(rule, default_group_id)
 
     @SecurityGroupRuleMapper.validate_add
     @SecurityGroupRuleMapper.map_from_rest
@@ -1516,14 +1535,19 @@ class NeutronApi(object):
             ether_type=None, port_min=None, port_max=None,
             remote_ip_prefix=None, protocol=None, remote_group_id=None
     ):
+        sec_group = self.ovn_north.get_security_group(security_group_id)
         sec_group_rule = self.ovn_north.create_security_group_rule(
-            security_group_id, direction, description=description,
+            sec_group, direction, description=description,
             ether_type=ether_type, remote_ip_prefix=remote_ip_prefix,
             port_min=port_min, port_max=port_max, protocol=protocol,
             remote_group_id=remote_group_id
         )
-
-        return sec_group_rule
+        default_group_id = (
+            sec_group.uuid
+            if sec_group.name in SecurityGroupMapper.WHITE_LIST_GROUP_NAMES
+            else None
+        )
+        return SecurityGroupRule(sec_group_rule, default_group_id)
 
     @assure_security_groups_support
     def delete_security_group_rule(self, security_group_rule_id):

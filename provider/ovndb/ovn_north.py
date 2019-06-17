@@ -344,13 +344,12 @@ class OvnNorth(object):
             )
 
     def create_security_group_rule(
-            self, security_group_id, direction, description=None,
+            self, security_group, direction, description=None,
             ether_type=None, remote_ip_prefix=None, port_min=None,
             port_max=None, protocol=None, remote_group_id=None
     ):
-        sec_group = self.get_security_group(security_group_id)
         new_rev_number = self._ovn_sec_group_api.get_bumped_revision_number(
-            sec_group
+            security_group
         )
         remote_group = (
             self.get_security_group(remote_group_id)
@@ -358,7 +357,7 @@ class OvnNorth(object):
         )
         sec_group_rule_command = (
             self._ovn_sec_group_api.create_security_group_rule(
-                sec_group, direction, description=description,
+                security_group, direction, description=description,
                 ether_type=ether_type, ip_prefix=remote_ip_prefix,
                 port_min=port_min, port_max=port_max, protocol=protocol,
                 remote_group=remote_group
@@ -372,7 +371,7 @@ class OvnNorth(object):
             raise BadRequestError(e)
 
         sec_group_update_command = self.create_ovn_update_command(
-            ovnconst.TABLE_PORT_GROUP, security_group_id
+            ovnconst.TABLE_PORT_GROUP, security_group.uuid
         )
 
         sec_group_update_command.add(

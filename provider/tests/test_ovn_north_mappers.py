@@ -35,6 +35,7 @@ from neutron.neutron_api_mappers import RestDataError
 from neutron.neutron_api_mappers import Router
 from neutron.neutron_api_mappers import RouterMapper
 from neutron.neutron_api_mappers import SecurityGroup
+from neutron.neutron_api_mappers import SecurityGroupRule
 from neutron.neutron_api_mappers import SecurityGroupMapper
 from neutron.neutron_api_mappers import SecurityGroupRuleMapper
 
@@ -262,7 +263,9 @@ class TestOvnNorthMappers(object):
             'allow', acl_external_ids
         )
         assert_security_group_rule_equal(
-            SecurityGroupRuleMapper.row2rest(security_group_rule),
+            SecurityGroupRuleMapper.row2rest(
+                SecurityGroupRule(security_group_rule)
+            ),
             security_group_rule
         )
 
@@ -297,6 +300,8 @@ class TestOvnNorthMappers(object):
             SECURITY_GROUP_UUID, 'allow', acl_external_ids
         )
 
-        sec_group = SecurityGroup(row, [security_group_rule])
+        sec_group = SecurityGroup(
+            row, [SecurityGroupRule(security_group_rule)]
+        )
         sec_group_rest = SecurityGroupMapper.row2rest(sec_group)
         assert_security_group_equal(sec_group_rest, sec_group)

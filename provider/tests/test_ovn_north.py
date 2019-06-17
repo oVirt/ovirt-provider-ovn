@@ -34,6 +34,7 @@ from neutron.neutron_api_mappers import NetworkMapper
 from neutron.neutron_api_mappers import NetworkPort
 from neutron.neutron_api_mappers import PortMapper
 from neutron.neutron_api_mappers import SecurityGroup
+from neutron.neutron_api_mappers import SecurityGroupRule
 from neutron.neutron_api_mappers import SecurityGroupMapper
 from neutron.neutron_api_mappers import SecurityGroupRuleMapper
 from neutron.neutron_api_mappers import SubnetConfigError
@@ -1637,7 +1638,9 @@ class TestOvnNorth(object):
         assert_security_group_equal(
             result, SecurityGroup(
                 sec_group=TestOvnNorth.SECURITY_GROUP,
-                sec_group_rules=[TestOvnNorth.SECURITY_GROUP_RULE_01]
+                sec_group_rules=[
+                    SecurityGroupRule(TestOvnNorth.SECURITY_GROUP_RULE_01)
+                ]
             )
         )
 
@@ -1700,7 +1703,9 @@ class TestOvnNorth(object):
         assert_security_group_equal(
             result, SecurityGroup(
                 sec_group=TestOvnNorth.SECURITY_GROUP,
-                sec_group_rules=[TestOvnNorth.SECURITY_GROUP_RULE_01]
+                sec_group_rules=[
+                    SecurityGroupRule(TestOvnNorth.SECURITY_GROUP_RULE_01)
+                ]
             )
         )
 
@@ -1749,8 +1754,8 @@ class TestOvnNorth(object):
         security_group = SecurityGroup(
             sec_group=TestOvnNorth.SECURITY_GROUP,
             sec_group_rules=[
-                TestOvnNorth.SECURITY_GROUP_RULE_01,
-                TestOvnNorth.SECURITY_GROUP_RULE_03
+                SecurityGroupRule(TestOvnNorth.SECURITY_GROUP_RULE_01),
+                SecurityGroupRule(TestOvnNorth.SECURITY_GROUP_RULE_03)
             ]
         )
         assert_security_group_equal(result, security_group)

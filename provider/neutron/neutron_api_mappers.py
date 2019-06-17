@@ -1258,10 +1258,16 @@ class SecurityGroupRuleMapper(Mapper):
     }
 
     @staticmethod
-    def row2rest(rule):
-        if not rule:
+    def row2rest(rule_wrapper):
+        if not rule_wrapper:
             return {}
 
+        rule = rule_wrapper.rule
+        default_group_id = (
+            str(SecurityGroupRule.get_default_group_id())
+            if SecurityGroupRule.get_default_group_id()
+            else None
+        )
         result = {
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ID:
                 str(rule.uuid),
@@ -1270,12 +1276,21 @@ class SecurityGroupRuleMapper(Mapper):
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_SEC_GROUP_ID:
                 rule.external_ids[
                     SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
-                ]
+                ] if rule.external_ids[
+                    SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
+                ] not in SecurityGroupMapper.WHITE_LIST_GROUP_NAMES
+                else default_group_id
         }
         optional_rest_values = SecurityGroupRuleMapper.set_from_external_ids(
             rule.external_ids,
             SecurityGroupRuleMapper.optional_attr_ext_id_mapper
         )
+        if rule.external_ids.get(
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_REMOTE_GROUP_ID
+        ) in SecurityGroupMapper.WHITE_LIST_GROUP_NAMES:
+            optional_rest_values[
+                SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_REMOTE_GROUP
+            ] = default_group_id
         result.update(optional_rest_values)
         return result
 

@@ -272,13 +272,16 @@ def assert_security_group_equal(rest_data, security_group):
     for rest_rule, row_rule in get_sorted_rules(
             rest_rules, security_group.sec_group_rules
     ):
-        assert_security_group_rule_equal(rest_rule, row_rule)
+        assert_security_group_rule_equal(rest_rule, row_rule.rule)
 
 
 def get_sorted_rules(rest_rules, security_group_rules):
     return zip(
         sorted(rest_rules, key=lambda rule: rule.get('id')),
-        sorted(security_group_rules, key=lambda rule: str(rule.uuid))
+        sorted(
+            security_group_rules,
+            key=lambda rule_wrapper: str(rule_wrapper.rule.uuid)
+        )
     )
 
 
