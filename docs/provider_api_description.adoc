@@ -1,0 +1,315 @@
+= Features of ovirt-provider-ovn
+:toc:
+:toclevels: 3
+:sectnums:
+
+The oVirt external network provider for OVN (ovirt-provider-ovn) allows to
+integrate oVirt with the Open Virtual Network (OVN) solution.
+
+OVN is integrated into oVirt using oVirt’s external network API, which is a
+subset of the link:https://developer.openstack.org/api-ref/network/v2[OpenStack Networking API v2.0]
+and the OpenStack Identity API v2.0.
+
+It fulfills the CMS (*cloud management system*) role in the OVN architecture,
+defined in link:http://www.openvswitch.org/support/dist-docs/ovn-architecture.7.html[ovn-architecture].
+
+## Use Cases
+
+### Isolated overlay Networks
+
+ovirt-provider-ovn enables VM administrators, to provide VMs with virtual,
+isolated OSI layer 2 networks, without needing changes to the physical network
+device configuration.
+The networks can be customized according to a variety of parameters - MTU, and
+MAC spoofing protection, etc.
+These networks can also work at OSI layer 3, supporting features such as:
+ - IPAM
+ - dhcp
+ - routing
+ - security groups
+
+### Physical Networks
+
+It is possible to connect the OVN logical networks to a physical network,
+akin to OpenStack's link:https://ovirt.org/develop/release-management/features/network/provider-physical-network.html[physnet].
+The traffic on the physical external network can optionally be VLAN tagged.
+Connecting to external networks is **limited** to oVirt clusters configured to
+use *Open vSwitch* switch type, which is currently in tech-preview.
+
+## Implemented Subset of the Networking API
+
+This section lists all API features implemented by ovirt-provider-ovn
+
+The presence of an attribute not listed below will result in
+Bad Request response (HTTP 400 status code) in case of the following API methods:
+ - update subnet,
+ - create/update Security group rules
+ - create/update Security groups methods
+
+For all other methods, the attributes will simply be ignored.
+
+### Filtering
+The filter extension has been implemented for all the subsequent resources,
+meaning that the following examples are possible:
+
+- GET /v2.0/networks?name=<network_name>
+- GET /v2.0/networks?name=<network_name>?limit=10
+
+### Layer 2 Networking
+
+#### Networks
+
+GET /v2.0/networks :: No inputs.
+
+GET /v2.0/networks/<network_uuid> :: No inputs.
+
+DELETE /v2.0/networks/<network_uuid> :: No inputs.
+
+POST /v2.0/networks ::
++
+[options="header"]
+|=========================================================
+| Name                      | Description
+|name                       | network name
+|provider:physical_network  | the name of the physical network to which the
+                              logical network connects. Check <<physical-networks>>
+                              for added information.
+|provider:segmentation_id   | the VLAN ID of the isolated segment on the
+                              physical network. Check <<physical-networks>> for
+                              added information.
+|mtu                        | the maximum transmission unit value to address
+                              fragmentation
+|port_security_enabled      | boolean indicating the port security status of the network
+|=========================================================
+
+PUT /v2.0/networks/<network_uuid> ::
++
+[options="header"]
+|=========================================================
+| Name                      | Description
+|name                       | network name
+|provider:physical_network  | the name of the physical network to which the
+                              logical network connects
+|provider:segmentation_id   | the VLAN ID of the isolated segment on the
+                              physical network
+|mtu                        | the maximum transmission unit value to address fragmentation
+|port_security_enabled      | boolean indicating the port security status of the network
+|=========================================================
+
+#### Ports
+
+GET /v2.0/ports :: No inputs.
+
+GET /v2.0/ports/<port_uuid> :: No inputs.
+
+DELETE /v2.0/ports/<port_uuid> :: No inputs.
+
+POST /v2.0/ports ::
++
+[options="header"]
+|=========================================================
+| Name                  | Description
+| name                  | logical port name
+| network_id            | the ID of the network to which the port is attached to
+| mac_address           | the MAC address assigned to the port
+| admin_state_up        | a boolean representing the administrative state of the resource
+| device_id             | the ID of the device that uses this port
+| device_owner          | the entity type that uses this port
+| security_groups       | the IDs of security groups applied to the port
+| port_security_enabled | a boolean representing the port security status. If
+                          port security is enabled for the port, security
+                          group rules and anti MAC spoofing rules are applied
+                          to the traffic on the port.
+| fixed_ips             | The IP addresses for the port. The provider is
+                          limited to a single IP address per port. It is a
+                          list of dictionaries that can feature the
+                          'subnet_id', and the 'ip_address'. The 'ip_address'
+                          is optional, used to configure static ips.
+| binding:host_id       | the ID of the host where the port resides
+|=========================================================
+
+PUT /v2.0/ports/<port_uuid> ::
++
+[options="header"]
+|=========================================================
+| Name                  | Description
+| name                  | logical port name
+| network_id            | the ID of the network to which the port is attached to
+| mac_address           | the MAC address assigned to the port
+| admin_state_up        | a boolean representing the administrative state of
+                          the resource
+| device_id             | the ID of the device that uses this port
+| device_owner          | the entity type that uses this port
+| security_groups       | the IDs of security groups applied to the port
+| port_security_enabled | a boolean representing the port security status. If
+                          port security is enabled for the port, security
+                          group rules and anti MAC
+spoofing rules are applied to the traffic on the port.
+| fixed_ips             | The IP addresses for the port. The provider is
+                          limited to a single IP address per port. It is
+                          a list of dictionaries that can feature the
+                          'subnet_id', and the 'ip_address'. The 'ip_address'
+                          is optional, used to configure static ips.
+| binding:host_id       | the ID of the host where the port resides
+|=========================================================
+
+### Layer 3 Networking
+
+#### Routers
+
+GET /v2.0/routers::  No inputs.
+
+POST /v2.0/routers::
++
+[options="header"]
+|=========================================================
+| Name              | Description
+| name              | Like OpenStack Networking API.
+| admin_state_up    | Like OpenStack Networking API.
+| routes            | Like OpenStack Networking API.
+| external_gateway_info | Like OpenStack Networking API, while the nested
+                      attribute `enable_snat` has to be **false**.
+|=========================================================
+
+GET /v2.0/routers/<router_id>:: No inputs.
+
+PUT /v2.0/routers/<router_id>:: Same like POST /v2.0/routers.
+
+DELETE /v2.0/routers/<router_id>:: No inputs.
+
+PUT /v2.0/routers/<router_id>/add_router_interface:: Like OpenStack Networking API.
+
+PUT /v2.0/routers/{router_id}/remove_router_interface:: Like OpenStack Networking API.
+
+#### Subnets
+
+GET /v2.0/subnets :: No inputs.
+
+GET /v2.0/subnets/<subnet_uuid> :: No inputs.
+
+DELETE /v2.0/subnets/<subnet_uuid> :: No inputs.
+
+POST /v2.0/subnets ::
++
+[options="header"]
+|=========================================================
+| Name              | Description
+| name              | subnet name
+| cidr              | the CIDR of the subnet.
+| network_id        | the ID of the network to which the subnet belongs
+| dns_nameservers   | list of dns name servers associated with the subnet.
+                      Default is an empty list.
+| gateway_ip        | if the value is null - or unspecified - that implies no
+                      gateway is associated with the subnet
+| ip_version        | the IP protocol version. Value is 4 or 6
+| ipv6_address_mode | the IPv6 address modes specifies mechanisms for assigning
+                      IP addresses. Values are dhcpv6-stateful or
+                      dhcpv6-stateless
+| enable_dhcp       | Has to be *true*.
+|=========================================================
+
+PUT /v2.0/subnets/<subnet_uuid> ::
++
+[options="header"]
+|=========================================================
+| Name              | Description
+| name              | subnet name
+| cidr              | the CIDR of the subnet.
+| network_id        | the ID of the network to which the subnet belongs
+| dns_nameservers   | list of dns name servers associated with the subnet.
+                      Default is an empty list.
+| gateway_ip        | if the value is null - or unspecified - that implies no
+                      gateway is associated with the subnet
+|=========================================================
+
+
+### Security
+
+#### Security group rules
+
+GET /v2.0/security-group-rules :: No inputs.
+
+POST /v2.0/security-group-rules:: Like OpenStack Networking API.
+
+GET /v2.0/security-group-rules/<security_group_rule_id> :: No inputs.
+
+DELETE /v2.0/security-group-rules/<security_group_rule_id>:: No inputs.
+
+#### Security group
+
+GET /v2.0/security-groups :: No inputs.
+
+POST /v2.0/security-groups ::
++
+[options="header"]
+|=========================================================
+| Name              | Description
+| name              | Like OpenStack Networking API.
+| tenant_id         | Optional, any string is accepted and reflected, default
+                      is `null`.
+| project_id        | Optional, any string is accepted and reflected, default
+                      is `null`.
+| description       | Optional, any string is accepted and reflected, default
+                      is `null`.
+|=========================================================
+
+
+GET /v2.0/security-groups/<security_group_id>:: No inputs.
+
+PUT /v2.0/security-groups/<security_group_id>:: Like OpenStack Networking API.
+
+DELETE /v2.0/security-groups/<security_group_id>:: No inputs.
+
+
+### Limitations
+The following features are not implemented:
+
+- SNAT and DNAT
+- floating IPs
+- load balancing
+- the tag extension.
+
+#### Networking API deviations
+Remember that the overall goal of the ovirt-provider-api is to integrate
+ovirt-engine with OVN. Also remember that oVirt is a virtualization solution,
+pre-dating the cloud era - as such, it misses the 'tenant' / 'project' concept.
+
+To keep the API consistent, the networking API elements do return / accept
+tenant and project information, but, those are not processed, and are usually
+hardcoded.
+
+#### Network to Subnet association
+For simplicity sake, ovirt-provider-ovn imposes a one to one network to subnet
+association - meaning one network can have **at most** one subnet.
+
+This leads to some interesting side-effects: since IPv6 / IPv4 choice is
+defined at subnet level, if the user wants to have an IPv4 address *and* an
+IPv6 address in the same VM, he/she has to do so by using 2 different ports -
+each port attached to a network that has a subnet on top.
+
+#### Single IP Address per port
+Orthogonally to the limitation decribed <<network-to-subnet-association,above>>,
+but for the exact same reason (keeping things simple), ovirt-provider-ovn
+limits each port to feature a single IP address.
+
+## Implemented Subset of the Identity API
+The ovirt-provider-ovn implements the minimal subset of the Identity API v2.0.
+Upgrading to v3 is not part of the current roadmap.
+Please find below the implemented URLs and the inputs they accept:
+
+GET /v2.0/tenants :: No inputs.
+
+POST /v2.0/tokens ::
++
+[options="header"]
+|=========================================================
+|Name                | Description
+|passwordCredentials | username and password
+|username            | See "User Names for Authentication" in
+                       link:../README.adoc#user-names-for-authentication[README]
+|password            | The password for the user
+|token               | If no passwordCrendentials is provided, the token is validated.
+|=========================================================
+
+GET /v2.0 :: No inputs.
+
