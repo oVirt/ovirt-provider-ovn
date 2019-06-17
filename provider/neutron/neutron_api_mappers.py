@@ -48,6 +48,31 @@ RouterInterface = namedtuple(
 SecurityGroup = namedtuple('SecurityGroup', ['sec_group', 'sec_group_rules'])
 
 
+class SecurityGroupRule(object):
+    default_group_id = None
+
+    def __init__(self, rule, default_security_group=None):
+        self.__rule = rule
+        self._set_default_sec_group_id(default_security_group)
+
+    @property
+    def rule(self):
+        return self.__rule
+
+    @staticmethod
+    def _set_default_sec_group_id(default_security_group):
+        # default security group remains unchanged once created
+        if (
+            default_security_group and not
+            SecurityGroupRule.default_group_id
+        ):
+            SecurityGroupRule.default_group_id = default_security_group
+
+    @staticmethod
+    def get_default_group_id():
+        return SecurityGroupRule.default_group_id
+
+
 @six.add_metaclass(abc.ABCMeta)
 class Mapper(object):
 
