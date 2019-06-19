@@ -109,14 +109,14 @@ class OvnSecurityGroupApi(object):
                 SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION
             ] = description
 
-        DbSetCommand(
+        return DbSetCommand(
             self._idl, ovnconst.TABLE_PORT_GROUP, sec_group_id
         ).add(
             ovnconst.ROW_PG_NAME, pg_name, add_condition=name is not None
         ).add(
             ovnconst.ROW_PG_EXTERNAL_IDS,
             external_ids
-        ).execute()
+        ).build_command()
 
     @staticmethod
     def _generate_name_when_required(name):

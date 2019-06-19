@@ -1600,6 +1600,10 @@ class TestOvnNorth(object):
         assert mock_db_update.call_count == 1
 
     @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: TestOvnNorth.SECURITY_GROUP, []
+    )
+    @mock.patch(
         'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
         lambda self, table, the_id: TestOvnNorth.DEFAULT_SECURITY_GROUP
     )

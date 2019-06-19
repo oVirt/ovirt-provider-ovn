@@ -319,10 +319,14 @@ class OvnNorth(object):
         )
         self.remove_address_sets(security_group.name)
 
-    def update_security_group(self, sec_group_id, name, description):
+    def update_security_group(
+            self, sec_group_id, name, description, transaction
+    ):
         try:
-            self._ovn_sec_group_api.update_security_group(
-                sec_group_id, name, description
+            transaction.add(
+                self._ovn_sec_group_api.update_security_group(
+                    sec_group_id, name, description
+                )
             )
         except SecurityGroupException as ex:
             raise BadRequestError(ex)

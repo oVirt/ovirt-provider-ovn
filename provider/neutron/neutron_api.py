@@ -1532,7 +1532,10 @@ class NeutronApi(object):
     @SecurityGroupMapper.map_from_rest
     @assure_security_groups_support
     def update_security_group(self, sec_group_id, name, description=None):
-        self.ovn_north.update_security_group(sec_group_id, name, description)
+        with self.tx_manager.transaction() as tx:
+            self.ovn_north.update_security_group(
+                sec_group_id, name, description, transaction=tx
+            )
         return SecurityGroup(
             sec_group=self.get_security_group(sec_group_id),
             sec_group_rules=[]
