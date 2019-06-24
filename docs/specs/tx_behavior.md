@@ -320,3 +320,11 @@ The order of this list might change, depending on the output of the
 5. create subnet
 6. handle routing
 
+## Provider design rules
+- neutron api creates / commits the transaction.
+- The transaction object is passed to the ovn-north layer.
+- Ovn-north either:
+  * delegates command creation to other modules - e.g. ovn_security_groups.py
+  * creates the command objects.
+- transaction objects **must not** go beyond the ovn-north layer.
+- commands are added to the transaction in the ovn-north layer.
