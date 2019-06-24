@@ -70,7 +70,7 @@ def reconfigure_interface(container_name, target_namespace, interface_name):
     for status in ['down', 'up']:
         command = [
             CONTAINER_CLI, 'exec', container_name, 'bash', '-c',
-            'ip netns exec {ns} ifconfig {if_name} {status}'.format(
+            'ip netns exec {ns} ip link set {if_name} {status}'.format(
                 ns=target_namespace, if_name=interface_name, status=status
             )
         ]
