@@ -33,6 +33,10 @@ def get_network_by_name(network_name):
     return _get_entity_by_name('networks', network_name)
 
 
+def get_router_by_name(router_name):
+    return _get_entity_by_name('routers', router_name)
+
+
 def _get_entity_by_name(entity_type, entity_name):
     return next(
         (

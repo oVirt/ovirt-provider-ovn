@@ -1014,7 +1014,7 @@ class NeutronApi(object):
             ovnconst.TABLE_LR, router_id
         ).add(
             ovnconst.ROW_LR_NAME, name, name
-        ).add(ovnconst.ROW_LR_ENABLED, enabled, enabled).execute()
+        ).add(ovnconst.ROW_LR_ENABLED, enabled).execute()
 
         should_external_gw_be_added = (
             is_updated_gw_different_than_existing or

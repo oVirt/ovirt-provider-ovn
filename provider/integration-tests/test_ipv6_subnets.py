@@ -17,12 +17,15 @@
 # Refer to the README and COPYING files for full details of the license
 
 
+import contextlib
 import requests
 import pytest
 from time import sleep
 
 from lib.ansiblelib import get_playbook
 from lib.api_lib import get_network_by_name
+from lib.api_lib import get_router_by_name
+from lib.api_lib import update_and_assert
 from lib.dockerlib import inner_ping
 from lib.dockerlib import get_container_id_from_img_name
 from lib.dockerlib import reconfigure_interface
@@ -369,6 +372,29 @@ def test_configure_network_mtu_via_ras(setup_dataplane_multiple_subnet):
     )
 
 
+def test_disable_router(setup_dataplane_multiple_subnet):
+    icmp_src_conf = MULTIPLE_SUBNETS_STATELESS['network_points'][0]
+    icmp_dst_conf = MULTIPLE_SUBNETS_STATELESS['network_points'][1]
+
+    destination_ip = _get_port_ip_by_name(icmp_dst_conf.get('name'))
+    assert destination_ip
+
+    inner_ping(
+        container_name=CONTROLLER_CONTAINER_ID,
+        source_namespace=icmp_src_conf['ns'],
+        target_ip=destination_ip, expected_result=0, ip_version=6
+    )
+
+    router_name = MULTIPLE_SUBNETS_STATELESS['routers'][0]['name']
+    router_uuid = _get_router_uuid(router_name)
+    with disable_router(router_uuid):
+        inner_ping(
+            container_name=CONTROLLER_CONTAINER_ID,
+            source_namespace=icmp_src_conf['ns'],
+            target_ip=destination_ip, expected_result=1, ip_version=6
+        )
+
+
 def _get_port_ip_by_name(port_name):
     port_data = _get_networking_api_port_data(port_name)
     return (
@@ -402,3 +428,22 @@ def _update_network_mtu(network_uuid, mtu):
         raise Exception(
             'Could not update network MTU for network: '.format(network_uuid)
         )
+
+
+def _get_router_uuid(router_name):
+    router_data = get_router_by_name(router_name)
+    assert router_data
+    return router_data['id']
+
+
+@contextlib.contextmanager
+def disable_router(router_uuid):
+    _update_router(router_uuid, {'router': {'admin_state_up': False}})
+    try:
+        yield
+    finally:
+        _update_router(router_uuid, {'router': {'admin_state_up': True}})
+
+
+def _update_router(router_uuid, router_payload):
+    update_and_assert('routers', router_uuid, router_payload)
