@@ -44,12 +44,17 @@ install_provider_python_files: compile
 		install -m 644 -p -D $$file $(PROVIDER_PYTHON_FILES_DIR)/$${file/provider\///}; \
 	done
 
+replace_driver_shebangs:
+	for file in $(shell find driver/vdsm_hooks -regex ".*\.py[co]?"); do \
+		sed -ie 's+#!/usr/bin/python2+#!$(PYTHON)+' $$file; \
+	done
+
 install_driver_config_tool: compile
 	for file in $(shell find driver/vdsm_tool -regex ".*\.py[co]?"); do \
 		install -m 644 -p -D $$file $(DRIVER_CONFIG_PYTHON_FILES_DIR)/vdsm/tool/$${file/driver\/vdsm_tool\///}; \
 	done
 
-install: install_provider_python_files install_driver_config_tool provider/scripts/ovirt-provider-ovn.service
+install: replace_driver_shebangs install_provider_python_files install_driver_config_tool provider/scripts/ovirt-provider-ovn.service
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/conf.d
 	install -m 644 -D provider/readme.conf $(DESTDIR)/etc/ovirt-provider-ovn/conf.d/README
