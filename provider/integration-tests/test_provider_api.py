@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import contextlib
 import pytest
 import requests
 
@@ -30,46 +31,14 @@ PORT_ENDPOINT = ENDPOINT + 'ports/'
 
 @pytest.fixture(scope='module')
 def logical_switch():
-    payload = {
-        'network': {'name': 'ls0'}
-    }
-    response = requests.post(
-        'http://localhost:9696/v2.0/networks/', json=payload
-    )
-    if response.status_code not in range(200, 205):
-        raise Exception('could not create network')
-    try:
-        yield response.json()['network']
-    finally:
-        requests.delete(
-            'http://localhost:9696/v2.0/networks/' +
-            response.json()['network']['id']
-        )
+    with _network('ls0') as network:
+        yield network
 
 
 @pytest.fixture(scope='module')
 def subnet(logical_switch):
-    payload = {
-        'subnet': {
-            'network_id': logical_switch['id'],
-            'ip_version': 6,
-            'cidr': '1234::/64',
-            'gateway_ip': '1234::1',
-            'ipv6_address_mode': 'dhcpv6_stateless'
-        }
-    }
-    response = requests.post(
-        'http://localhost:9696/v2.0/subnets/', json=payload
-    )
-    if response.status_code not in range(200, 205):
-        raise Exception('could not create subnet')
-    try:
-        yield response.json()['subnet']
-    finally:
-        requests.delete(
-            'http://localhost:9696/v2.0/subnets/' +
-            response.json()['subnet']['id']
-        )
+    with _subnet(logical_switch) as subnet:
+        yield subnet
 
 
 @pytest.fixture(scope='module')
@@ -186,6 +155,24 @@ def test_update_port(subnet, logical_port):
     update_and_assert('ports', logical_port['id'], update_port_data)
 
 
+def test_update_network_mtu():
+    with _network('update_mtu_network') as network:
+        update_network_data = {'network': {'mtu': 1501}}
+        update_and_assert('networks', network['id'], update_network_data)
+
+
+def test_update_network_with_subnet_mtu(logical_switch, subnet):
+    orig_mtu = logical_switch['mtu']
+    update_network_data = {'network': {'mtu': 1501}}
+    try:
+        update_and_assert('networks', logical_switch['id'],
+                          update_network_data)
+    finally:
+        update_network_data['network']['mtu'] = orig_mtu
+        update_and_assert('networks', logical_switch['id'],
+                          update_network_data)
+
+
 def test_create_invalid_port_no_leftovers(subnet, broken_port):
     json_response = _get_and_assert('ports')
     assert len(json_response) == 1
@@ -213,3 +200,47 @@ def _get_and_assert(entity_type, filter_key=None, filter_value=None):
 def _expect_failure(response, expected_status_code, expected_error_message):
     assert response.status_code == expected_status_code
     assert response.json()['error']['message'] == expected_error_message
+
+
+@contextlib.contextmanager
+def _network(name):
+    payload = {
+        'network': {'name': name}
+    }
+    response = requests.post(
+        'http://localhost:9696/v2.0/networks/', json=payload
+    )
+    if response.status_code not in range(200, 205):
+        raise Exception('could not create network')
+    try:
+        yield response.json()['network']
+    finally:
+        requests.delete(
+            'http://localhost:9696/v2.0/networks/' +
+            response.json()['network']['id']
+        )
+
+
+@contextlib.contextmanager
+def _subnet(network):
+    payload = {
+        'subnet': {
+            'network_id': network['id'],
+            'ip_version': 6,
+            'cidr': '1234::/64',
+            'gateway_ip': '1234::1',
+            'ipv6_address_mode': 'dhcpv6_stateless'
+        }
+    }
+    response = requests.post(
+        'http://localhost:9696/v2.0/subnets/', json=payload
+    )
+    if response.status_code not in range(200, 205):
+        raise Exception('could not create subnet')
+    try:
+        yield response.json()['subnet']
+    finally:
+        requests.delete(
+            'http://localhost:9696/v2.0/subnets/' +
+            response.json()['subnet']['id']
+        )

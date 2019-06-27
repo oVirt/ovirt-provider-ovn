@@ -259,7 +259,7 @@ class NeutronApi(object):
             subnet.options.get(NetworkMapper.REST_MTU)
             if ip_utils.is_subnet_ipv4(subnet)
             else subnet.external_ids.get(SubnetMapper.OVN_DHCP_MTU)
-        )
+        ) if subnet else None
 
     def _update_ipv6_subnet_lrp_mtu(self, subnet, mtu):
         impacted_lrp = self.ovn_north.get_lrp_by_subnet(subnet)
