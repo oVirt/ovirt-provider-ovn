@@ -415,7 +415,8 @@ class PortMapper(Mapper):
                 lsp.external_ids.get(
                     PortMapper.OVN_SECURITY_GROUPS, ''
                 ).split(),
-            PortMapper.REST_PORT_SECURITY_ENABLED: len(lsp.port_security) > 0,
+            PortMapper.REST_PORT_SECURITY_ENABLED:
+                PortMapper.is_port_security_enabled(lsp),
             PortMapper.REST_TENANT_ID: tenant_id(),
             PortMapper.REST_PORT_FIXED_IPS:
                 PortMapper.get_fixed_ips(lsp, dhcp_options, lrp),
@@ -440,6 +441,10 @@ class PortMapper(Mapper):
             binding_host = lsp.options[PortMapper.OVN_REQUESTED_CHASSIS]
             rest_data[PortMapper.REST_PORT_BINDING_HOST] = binding_host
         return rest_data
+
+    @staticmethod
+    def is_port_security_enabled(lsp):
+        return len(lsp.port_security) > 0 if lsp else False
 
     @staticmethod
     def get_fixed_ips(lsp, dhcp_options, lrp):

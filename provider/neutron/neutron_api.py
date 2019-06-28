@@ -405,8 +405,7 @@ class NeutronApi(object):
                 ).build_command()
             )
             self.update_port_security(
-                tx, port.name, mac, port_security,
-                update_port_association=False
+                tx, port.name, mac, port_security, lsp=port
             )
             self._update_port_security_groups(
                 port, security_groups, tx, port_security=port_security
@@ -504,21 +503,25 @@ class NeutronApi(object):
 
     def update_port_security(
         self, transaction, port_id, mac, port_security,
-            update_port_association=True
+            lsp=None
     ):
         update_db_command = self.ovn_north.create_ovn_update_command(
             ovnconst.TABLE_LSP, port_id
         )
         if port_security is True:
             self.ovn_north.activate_default_security_group(
-                port_id, transaction, update_port_association
+                port_id, transaction,
+                update_port_association=lsp is None
             )
             update_db_command.add(
                 ovnconst.ROW_LSP_PORT_SECURITY, [mac]
             )
         elif port_security is False:
             update_db_command = self.deactivate_port_security(
-                port_id, transaction
+                port_id, transaction,
+                old_port_security=PortMapper.is_port_security_enabled(
+                    lsp=lsp
+                )
             )
         cmd = update_db_command.build_command()
         if cmd:
@@ -653,9 +656,12 @@ class NeutronApi(object):
             self.ovn_north.remove_lsp(port_id, transaction=tx)
 
     def deactivate_port_security(
-        self, port_id, transaction,
+        self, port_id, transaction, old_port_security
     ):
-        self.ovn_north.deactivate_dropall_security_group(port_id, transaction)
+        if old_port_security:
+            self.ovn_north.deactivate_dropall_security_group(
+                port_id, transaction
+            )
         return self.ovn_north.create_ovn_update_command(
             ovnconst.TABLE_LSP, port_id
         ).add(ovnconst.ROW_LSP_PORT_SECURITY, [])
