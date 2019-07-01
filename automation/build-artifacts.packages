@@ -4,5 +4,7 @@ python-openvswitch
 rpm-build
 systemd
 python2-ovsdbapp
+python2-setuptools
 dnf
 python3-devel
+python3-setuptools

@@ -24,7 +24,7 @@
 # this is needed to require a correct python-openvswitch package:
 # python-openvswitch or python3-openvswitch for fedora >=28 or
 # el >= 8
-%if 0%{?fedora} >= 28 || 0%{?rhel} >= 8
+%if 0%{?fedora} >= 30 || 0%{?rhel} >= 8
 %global required_python python%{python3_pkgversion}
 %global required_python_interpreter %{__python3}
 %define required_python_lib(l:) python%{python3_pkgversion}-%{*}

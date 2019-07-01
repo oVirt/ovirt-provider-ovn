@@ -2,7 +2,7 @@
 # Fedora official repository
 # (https://hub.docker.com/r/fedora/systemd-systemd/).
 # It enables systemd to be operational.
-FROM fedora:28
+FROM fedora:30
 LABEL maintainer="mdbarroso@redhat.com" purpose="ovirt_provider_ovn_integ_tests"
 ENV container docker
 
