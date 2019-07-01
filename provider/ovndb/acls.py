@@ -305,6 +305,6 @@ def build_remote_group_id_match(remote_group_name, ip_version, direction):
 
 
 def get_assoc_addr_set_name(sec_group_name, ip_version):
-    return u'pg_{ip_v}_{pg_name}'.format(
+    return u'{pg_name}_{ip_v}'.format(
         pg_name=sec_group_name, ip_v=ip_version
     )

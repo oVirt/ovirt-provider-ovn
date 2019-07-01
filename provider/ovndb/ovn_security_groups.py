@@ -195,55 +195,6 @@ class OvnSecurityGroupApi(object):
     def get_drop_all_sec_group_name():
         return SecurityGroupMapper.DROP_ALL_IP_PG_NAME
 
-    def create_address_set(self, ip_version, sec_group_name):
-        return self._idl.db_create(
-            ovnconst.TABLE_ADDRESS_SET,
-            name=acl_lib.get_assoc_addr_set_name(
-                sec_group_name, ip_version
-            ),
-            external_ids={'sec_group_name': sec_group_name}
-        )
-
-    def remove_address_set(self, address_set_name):
-        return self._idl.db_destroy(
-            ovnconst.TABLE_ADDRESS_SET, address_set_name
-        )
-
-    def add_address_set_ip(self, security_groups, ip, ip_version):
-        command_list = []
-        for sec_group in security_groups:
-            addr_set_name = acl_lib.get_assoc_addr_set_name(
-                sec_group.name, ip_version
-            )
-            current_ips = self.get_address_set_addresses(addr_set_name)
-            command_list += [
-                DbSetCommand(
-                    self._idl, ovnconst.TABLE_ADDRESS_SET, addr_set_name
-                ).add('addresses', current_ips + [ip]).build_command()
-            ]
-        return command_list
-
-    def get_address_set_addresses(self, addr_set_name):
-        row = self._idl.lookup(ovnconst.TABLE_ADDRESS_SET, addr_set_name)
-        return row.addresses if row else []
-
-    def remove_address_set_ip(
-        self, security_groups, ip, ip_version
-    ):
-        command_list = []
-        for sec_group in security_groups:
-            addr_set_name = acl_lib.get_assoc_addr_set_name(
-                sec_group.name, ip_version
-            )
-            current_ips = self.get_address_set_addresses(addr_set_name)
-            current_ips.remove(ip)
-            command_list += [
-                DbSetCommand(
-                    self._idl, ovnconst.TABLE_ADDRESS_SET, addr_set_name
-                ).add('addresses', current_ips).build_command()
-            ]
-        return command_list
-
 
 def only_rules_with_allowed_actions(f):
     def filter_rules(*args):

@@ -105,7 +105,7 @@ def test_create_acl_match():
         [
             'outport == @00000000-0000-0000-0000-000000000064',
             'ip4', 'ip4.src == 192.168.80.0/24', 'tcp', 'tcp.dst >= 5000',
-            'tcp.dst <= 5299', 'ip4.src == $pg_ip4_Default'
+            'tcp.dst <= 5299', 'ip4.src == $Default_ip4'
         ]
     )
 
@@ -141,7 +141,7 @@ def test_create_acl_match_output():
         )
     ) == (
         'outport == @00000000-0000-0000-0000-000000000064 && ip4 && '
-        'ip4.src == 192.168.80.0/24 && ip4.src == $pg_ip4_Default && tcp && '
+        'ip4.src == 192.168.80.0/24 && ip4.src == $Default_ip4 && tcp && '
         'tcp.dst >= 5000 && tcp.dst <= 5299'
     )
 
@@ -150,14 +150,14 @@ def test_remote_group_id_output():
     remote_group_name = 'Default'
     assert get_remote_group_id_match(
         remote_group_name, 'ip4', 'ingress'
-    ) == 'ip4.src == $pg_ip4_Default'
+    ) == 'ip4.src == $Default_ip4'
     assert get_remote_group_id_match(
         remote_group_name, 'ip6', 'ingress'
-    ) == 'ip6.src == $pg_ip6_Default'
+    ) == 'ip6.src == $Default_ip6'
     assert get_remote_group_id_match(
         remote_group_name, 'ip4', 'egress'
-    ) == 'ip4.dst == $pg_ip4_Default'
+    ) == 'ip4.dst == $Default_ip4'
     assert get_remote_group_id_match(
         remote_group_name, 'ip6', 'egress'
-    ) == 'ip6.dst == $pg_ip6_Default'
+    ) == 'ip6.dst == $Default_ip6'
     assert get_remote_group_id_match(None, 'ip4', 'ingress') == ''

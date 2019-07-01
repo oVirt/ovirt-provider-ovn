@@ -1405,9 +1405,6 @@ class TestOvnNorth(object):
         lambda x: TestOvnNorth.SECURITY_GROUP, []
     )
     @mock.patch(
-        'ovsdbapp.backend.ovs_idl.command.DbCreateCommand', autospec=False
-    )
-    @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.PgAclAddCommand.execute',
         lambda cmd, check_error: []
     )
@@ -1415,7 +1412,7 @@ class TestOvnNorth(object):
         'ovsdbapp.backend.ovs_idl.transaction.Transaction.add',
         lambda cmd, check_error: TestOvnNorth.SECURITY_GROUP
     )
-    def test_add_security_group(self, db_create_mock, mock_connection):
+    def test_add_security_group(self, mock_connection):
         ovn_north = NeutronApi(sec_group_support=True)
         rest_data = SecurityGroupApiInputMaker(
             TestOvnNorth.SECURITY_GROUP_NAME, tenant_id(), tenant_id(),
@@ -1428,23 +1425,6 @@ class TestOvnNorth(object):
             sec_group_rules=[]
         )
         assert_security_group_equal(result, security_group)
-        assert db_create_mock.call_count == 2
-        assert mock.call(
-            ovn_north.idl,
-            ovnconst.TABLE_ADDRESS_SET,
-            name=u'pg_ip4_{}'.format(TestOvnNorth.SECURITY_GROUP_ID),
-            external_ids={
-                'sec_group_name': str(TestOvnNorth.SECURITY_GROUP_ID)
-            }
-        ) in db_create_mock.mock_calls
-        assert mock.call(
-            ovn_north.idl,
-            ovnconst.TABLE_ADDRESS_SET,
-            name=u'pg_ip6_{}'.format(TestOvnNorth.SECURITY_GROUP_ID),
-            external_ids={
-                'sec_group_name': str(TestOvnNorth.SECURITY_GROUP_ID)
-            }
-        ) in db_create_mock.mock_calls
 
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbListCommand.execute',
@@ -1509,16 +1489,13 @@ class TestOvnNorth(object):
         assert 'Mandatory data name is missing' == str(invalid_data.value)
 
     @mock.patch(
-        'ovsdbapp.backend.ovs_idl.command.DbDestroyCommand', autospec=False
-    )
-    @mock.patch(
         'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
         lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP
     )
     @mock.patch('ovsdbapp.schema.ovn_northbound.commands.PgDelCommand',
                 autospec=False)
     def test_delete_security_group(
-            self, mock_pg_del_command, db_destroy, mock_connection
+        self, mock_pg_del_command, mock_connection
     ):
         ovn_north = NeutronApi(sec_group_support=True)
 
@@ -1528,17 +1505,6 @@ class TestOvnNorth(object):
             ovn_north.idl, TestOvnNorth.SECURITY_GROUP_ID, if_exists=False
         )
         assert mock_pg_del_command.mock_calls[0] == expected_del_call
-        assert db_destroy.call_count == 2
-        assert mock.call(
-            ovn_north.idl,
-            ovnconst.TABLE_ADDRESS_SET,
-            u'pg_ip4_{}'.format(TestOvnNorth.SECURITY_GROUP_ID)
-        ) in db_destroy.mock_calls
-        assert mock.call(
-            ovn_north.idl,
-            ovnconst.TABLE_ADDRESS_SET,
-            u'pg_ip6_{}'.format(TestOvnNorth.SECURITY_GROUP_ID)
-        ) in db_destroy.mock_calls
 
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.command.DbListCommand.execute',

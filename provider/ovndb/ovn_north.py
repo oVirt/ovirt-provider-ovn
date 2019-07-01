@@ -28,15 +28,12 @@ from handlers.base_handler import BadRequestError
 from handlers.base_handler import ElementNotFoundError
 
 import neutron.validation as validate
-import neutron.constants as neutron_constants
-from neutron.ip import get_ip_version
 from neutron.ip import get_mask_from_subnet
 from neutron.neutron_api_mappers import PortMapper
 from neutron.neutron_api_mappers import SecurityGroupMapper
 from neutron.neutron_api_mappers import SecurityGroupRuleMapper
 from neutron.neutron_api_mappers import SubnetMapper
 
-import ovndb.acls as acl_lib
 from ovndb.db_set_command import DbSetCommand
 from ovndb.ovn_security_groups import OvnSecurityGroupApi
 from ovndb.ovn_security_groups import SecurityGroupException
@@ -304,7 +301,6 @@ class OvnNorth(object):
             )
         )
         egress_rules = self.activate_egress_rules(security_group, transaction)
-        self.create_address_sets(security_group.name, transaction)
         return security_group, egress_rules
 
     def remove_security_group(self, security_group_id):
@@ -317,7 +313,6 @@ class OvnNorth(object):
         ovn_connection.execute(
             self._ovn_sec_group_api.delete_security_group(security_group_id)
         )
-        self.remove_address_sets(security_group.name)
 
     def update_security_group(
             self, sec_group_id, name, description, transaction
@@ -440,15 +435,12 @@ class OvnNorth(object):
             )
 
     def assure_group_exists(
-            self, sec_group_name, transaction, provision_acl_function=None,
-            create_address_sets=True
+        self, sec_group_name, transaction, provision_acl_function=None,
     ):
         try:
             sec_group = self.get_security_group(sec_group_name)
         except ElementNotFoundError:
             sec_group = self._activate_group(sec_group_name, transaction)
-            if create_address_sets:
-                self.create_address_sets(sec_group.name, transaction)
             if provision_acl_function:
                 for acl in provision_acl_function(sec_group):
                     transaction.add(acl)
@@ -457,8 +449,7 @@ class OvnNorth(object):
     def activate_drop_all_security_group(self, port_id, transaction):
         drop_all_port_group = self.assure_group_exists(
             SecurityGroupMapper.DROP_ALL_IP_PG_NAME, transaction,
-            self._ovn_sec_group_api.create_drop_all_traffic_acls,
-            False
+            self._ovn_sec_group_api.create_drop_all_traffic_acls
         )
         transaction.add(
             self._ovn_sec_group_api.add_security_group_ports(
@@ -519,52 +510,6 @@ class OvnNorth(object):
             )
         except ElementNotFoundError:
             pass
-
-    def create_address_sets(self, sec_group_name, transaction):
-        return [
-            transaction.add(
-                self._ovn_sec_group_api.create_address_set(
-                    ip_version, sec_group_name
-                )
-            )
-            for ip_version in neutron_constants.OVN_IP_VERSIONS
-        ]
-
-    def remove_address_sets(self, sec_group_name):
-        return [
-            ovn_connection.execute(
-                self._ovn_sec_group_api.remove_address_set(
-                    acl_lib.get_assoc_addr_set_name(sec_group_name, ip_version)
-                )
-            )
-            for ip_version in neutron_constants.OVN_IP_VERSIONS
-        ]
-
-    def add_addr_set_ip(self, security_groups, ip, transaction):
-        if not ip or not security_groups:
-            return
-        ip_version = get_ip_version(ip)
-        commands = self._ovn_sec_group_api.add_address_set_ip(
-            security_groups=[
-                self.get_security_group(sec_group_id)
-                for sec_group_id in security_groups
-            ], ip=ip, ip_version=ip_version
-        )
-        for command in commands:
-            transaction.add(command)
-
-    def delete_addr_set_ip(self, security_groups, ip, transaction):
-        if not ip or not security_groups:
-            return
-        ip_version = get_ip_version(ip)
-        commands = self._ovn_sec_group_api.remove_address_set_ip(
-            security_groups=[
-                self.get_security_group(sec_group_id)
-                for sec_group_id in security_groups
-            ], ip=ip, ip_version=ip_version
-        )
-        for command in commands:
-            transaction.add(command)
 
     def get_lrp_by_subnet(self, subnet):
         router_id = subnet.external_ids.get(SubnetMapper.OVN_GATEWAY_ROUTER_ID)
