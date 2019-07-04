@@ -69,12 +69,10 @@ class OvnNorth(object):
         return DbSetCommand(self.idl, table_name, entity_uuid)
 
     def add_ls(self, name, external_ids):
-        return ovn_connection.execute(
-            self.idl.ls_add(
-                switch=name,
-                may_exist=False,
-                external_ids=external_ids
-            )
+        return self.idl.ls_add(
+            switch=name,
+            may_exist=False,
+            external_ids=external_ids
         )
 
     @optionally_use_transactions

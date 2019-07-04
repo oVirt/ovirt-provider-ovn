@@ -133,16 +133,19 @@ class NeutronApi(object):
             self, name, localnet=None, vlan=None, mtu=None,
             port_security_enabled=None
     ):
-        if localnet:
-            return self._add_localnet_network(
-                name, localnet, vlan, mtu, port_security_enabled
-            )
-        else:
-            return self._get_network(
-                self._create_network(name, mtu, port_security_enabled)
-            )
+        with self.tx_manager.transaction() as tx:
+            if localnet:
+                network_id = self._add_localnet_network(
+                    name, localnet, vlan, mtu, port_security_enabled,
+                    transaction=tx
+                )
+            else:
+                network_id = self._create_network(
+                    name, tx, mtu, port_security_enabled
+                )
+        return self._get_network(self.ovn_north.get_ls(ls_id=network_id))
 
-    def _create_network(self, name, mtu=None, port_security=None):
+    def _create_network(self, name, transaction, mtu=None, port_security=None):
         external_ids_dict = {NetworkMapper.OVN_NETWORK_NAME: name}
         if mtu is not None:
             external_ids_dict[NetworkMapper.OVN_MTU] = str(mtu)
@@ -151,25 +154,33 @@ class NeutronApi(object):
             else default_port_security_enabled()
         )
         name = u'ovirt-{name}-{gen_id}'.format(name=name, gen_id=uuid.uuid4())
-        return self.ovn_north.add_ls(
-            name=name,
-            external_ids=self._generate_external_ids({}, **external_ids_dict)
+        transaction.add(
+            self.ovn_north.add_ls(
+                name=name, external_ids=self._generate_external_ids(
+                    {}, **external_ids_dict
+                )
+            )
         )
+        return name
 
     @staticmethod
     def _generate_external_ids(current_external_ids, **kwargs):
         return dict(current_external_ids, **kwargs)
 
     def _add_localnet_network(
-            self, name, localnet, vlan, mtu, port_security_enabled
+            self, name, localnet, vlan, mtu, port_security_enabled, transaction
     ):
-        network = self._create_network(name, mtu, port_security_enabled)
-        localnet_port = self._create_port(
-            ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid)
+        network_uuid = self._create_network(
+            name, transaction, mtu, port_security_enabled
         )
-        self._set_port_localnet_values(localnet_port, localnet, vlan)
-        updated_network = self.ovn_north.get_ls(ls_id=str(network.uuid))
-        return self._get_network(updated_network)
+        localnet_port = self._create_port(
+            ovnconst.LOCALNET_SWITCH_PORT_NAME, network_uuid,
+            transaction=transaction
+        )
+        transaction.add(
+            self._set_port_localnet_values(localnet_port, localnet, vlan)
+        )
+        return network_uuid
 
     @NetworkMapper.validate_update
     @NetworkMapper.map_from_rest
@@ -226,7 +237,7 @@ class NeutronApi(object):
             self.ovn_north.remove_lsp(str(localnet_port.uuid))
 
     def _set_port_localnet_values(self, port_id, localnet, vlan):
-        self.ovn_north.create_ovn_update_command(
+        return self.ovn_north.create_ovn_update_command(
             ovnconst.TABLE_LSP, port_id
         ).add(
             ovnconst.ROW_LSP_ADDRESSES,
@@ -236,7 +247,7 @@ class NeutronApi(object):
             {ovnconst.LSP_OPTION_NETWORK_NAME: localnet}
         ).add(
             ovnconst.ROW_LSP_TYPE, ovnconst.LSP_TYPE_LOCALNET
-        ).add(ovnconst.ROW_LSP_TAG_REQUEST, vlan).execute()
+        ).add(ovnconst.ROW_LSP_TAG, vlan).build_command()
 
     def _update_networks_mtu(self, network_id, mtu):
         subnet = self.ovn_north.get_dhcp(ls_id=network_id)
@@ -602,7 +613,7 @@ class NeutronApi(object):
     def _create_port(self, name, network_id, transaction=None):
         generated_id = str(uuid.uuid4())
         self.ovn_north.add_lsp(
-            generated_id, name, network_id, transaction
+            generated_id, name, network_id, transaction=transaction
         )
         return generated_id
 

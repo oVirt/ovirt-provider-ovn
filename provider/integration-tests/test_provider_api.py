@@ -36,9 +36,20 @@ SUBNET_ENDPOINT = ENDPOINT + 'subnets/'
 PORT_ENDPOINT = ENDPOINT + 'ports/'
 
 
+EXT_NET_NAME = 'extnet'
+PROVIDER_TYPE = 'vlan'
+VLAN_ID = 666
+
+
 @pytest.fixture(scope='module')
 def logical_switch():
     with _network('ls0') as network:
+        yield network
+
+
+@pytest.fixture
+def ext_net_logical_switch():
+    with _network('pls0', localnet=EXT_NET_NAME, vlan_id=VLAN_ID) as network:
         yield network
 
 
@@ -132,6 +143,18 @@ def test_get_network(logical_switch):
     networks = _get_and_assert('networks')
     assert len(networks) == 1
     assert networks.pop()['name'] == logical_switch['name']
+
+
+def test_get_physnet(ext_net_logical_switch):
+    networks = _get_and_assert(
+        'networks', filter_key='name', filter_value='pls0'
+    )
+    assert len(networks) == 1
+    physnet = networks.pop()
+    assert physnet['name'] == ext_net_logical_switch['name']
+    assert physnet['provider:physical_network'] == EXT_NET_NAME
+    assert physnet['provider:network_type'] == PROVIDER_TYPE
+    assert physnet['provider:segmentation_id'] == VLAN_ID
 
 
 def test_filter(logical_switch):
@@ -286,9 +309,15 @@ def _expect_failure(response, expected_status_code, expected_error_message):
 
 
 @contextlib.contextmanager
-def _network(name):
+def _network(name, localnet=None, vlan_id=None):
+    network_data = {'name': name}
+    if localnet:
+        network_data['provider:physical_network'] = localnet
+    if vlan_id:
+        network_data['provider:network_type'] = 'vlan'
+        network_data['provider:segmentation_id'] = vlan_id
     payload = {
-        'network': {'name': name}
+        'network': network_data
     }
     response = requests.post(
         'http://localhost:9696/v2.0/networks/', json=payload

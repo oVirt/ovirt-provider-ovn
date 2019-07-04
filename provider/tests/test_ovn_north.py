@@ -309,12 +309,28 @@ class TestOvnNorth(object):
         )
 
     @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
+        lambda cmd, check_error: TestOvnNorth.NETWORK_10
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: None
+    )
+    @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsAddCommand',
         autospec=False
     )
     def test_add_network(self, mock_add_command, mock_connection):
         self._test_add_network(mock_add_command, TestOvnNorth.NETWORK_10)
 
+    @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
+        lambda cmd, check_error: TestOvnNorth.NETWORK_UNICODE
+    )
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: None
+    )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsAddCommand',
         autospec=False
@@ -346,6 +362,10 @@ class TestOvnNorth(object):
             }
         )
 
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: None
+    )
     @mock.patch('ovsdbapp.schema.ovn_northbound.commands.LsAddCommand')
     @mock.patch('ovsdbapp.schema.ovn_northbound.commands.LsGetCommand')
     @mock.patch('ovsdbapp.schema.ovn_northbound.commands.LspAddCommand')
@@ -388,7 +408,7 @@ class TestOvnNorth(object):
         assert mock_lsp_add_command.call_count == 1
         assert mock_lsp_add_command.mock_calls[0] == mock.call(
             ovn_north.idl,
-            str(TestOvnNorth.NETWORK_LOCALNET_12.uuid),
+            mock.ANY,
             mock.ANY,
             None,
             None,
@@ -400,6 +420,10 @@ class TestOvnNorth(object):
         assert mock_db_set_command.call_count == 1
         assert mock_ls_get_command.call_count == 1
 
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: None
+    )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
         'execute',
@@ -476,6 +500,10 @@ class TestOvnNorth(object):
         assert mock_dbset_command.call_count == 1
         assert_subnet_equal(subnet_creation_result, TestOvnNorth.SUBNET_MTU)
 
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: None
+    )
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.DhcpOptionsGetCommand.'
         'execute',
