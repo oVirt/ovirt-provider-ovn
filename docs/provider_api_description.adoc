@@ -313,3 +313,43 @@ POST /v2.0/tokens ::
 
 GET /v2.0 :: No inputs.
 
+## Accessing ovirt-provider-ovn
+
+Simple management of <<networks,networks>> and <<subnets,subnets>> can be done via
+oVirt's Administration Portal.
+
+In addition to <<networks,networks>> and <<subnets,subnets>>,
+link:http://manageiq.org/[ManageIQ] and
+link:https://www.redhat.com/en/technologies/management/cloudforms[Red Hat CloudsForms]
+enable the usage of <<routers,routers>>.
+
+All features implemented by ovirt-provider-ovn, including <<security,security groups>>,
+are known to work with the the
+link:https://github.com/ansible/ansible/tree/devel/lib/ansible/modules/cloud/openstack[OpenStack modules]
+of Ansible and the
+link:https://docs.openstack.org/python-openstackclient/latest/[command-line client for OpenStack (OpenStackClient)].
+
+Ansible and the command-line client can be
+link:https://docs.openstack.org/python-openstackclient/latest/configuration/[configured]
+by by the environment variables:
+```
+unset OS_SERVICE_TOKEN
+export OS_USERNAME=admin@internal
+export OS_PASSWORD='123456'
+export OS_AUTH_URL=https://localhost:35357/v2.0
+export OS_CACERT=/etc/pki/ovirt-engine/ca.pem
+
+```
+or clouds.yml:
+```
+clouds:
+  ovirt:
+    auth:
+      auth_url: https://0.0.0.0:35357/v2.0
+      password: '123456'
+      username: admin@internal
+    verify: false
+```
+Examples of the usage of Ansible can be found in
+link:https://github.com/oVirt/ovirt-system-tests/tree/master/network-suite-master/ansible[network-suite of ovirt-system-tests]
+and the link:../provider/integration-tests/ansible/[integration-tests]
