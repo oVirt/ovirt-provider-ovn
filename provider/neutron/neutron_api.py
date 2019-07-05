@@ -314,13 +314,16 @@ class NeutronApi(object):
             self._get_localnet_lsp(network)
         )
 
-        subnets = self.ovn_north.list_dhcp()
-        for subnet in subnets:
-            subnet_network_id = subnet.external_ids.get('ovirt_network_id')
-            if subnet_network_id:
-                if network_id == subnet_network_id:
-                    self.ovn_north.remove_dhcp_options(subnet.uuid)
-        self.ovn_north.remove_ls(ls_id=network_id)
+        with self.tx_manager.transaction() as tx:
+            subnets = self.ovn_north.list_dhcp()
+            for subnet in subnets:
+                subnet_network_id = subnet.external_ids.get('ovirt_network_id')
+                if subnet_network_id:
+                    if network_id == subnet_network_id:
+                        self.ovn_north.remove_dhcp_options(
+                            subnet.uuid, transacion=tx
+                        )
+            tx.add(self.ovn_north.remove_ls(ls_id=network_id))
 
     def _get_localnet_lsp(self, ls):
         for lsp in ls.ports:

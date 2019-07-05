@@ -673,6 +673,10 @@ class TestOvnNorth(object):
         )
 
     @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: None
+    )
+    @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
         lambda cmd, check_error: TestOvnNorth.NETWORK_10
     )

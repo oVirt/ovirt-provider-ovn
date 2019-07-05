@@ -224,7 +224,7 @@ class OvnNorth(object):
         return ovn_connection.execute(self.idl.lr_list())
 
     def remove_ls(self, ls_id):
-        ovn_connection.execute(self.idl.ls_del(ls_id))
+        return self.idl.ls_del(ls_id)
 
     def remove_static_route(self, lr, ip_prefix):
         for route in lr.static_routes:
@@ -236,8 +236,9 @@ class OvnNorth(object):
                     route
                 ))
 
-    def remove_dhcp_options(self, id):
-        ovn_connection.execute(self.idl.dhcp_options_del(id))
+    @optionally_use_transactions
+    def remove_dhcp_options(self, id, transacion=None):
+        return self.idl.dhcp_options_del(id)
 
     @optionally_use_transactions
     def remove_lsp(self, lsp_id, transaction=None):
