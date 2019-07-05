@@ -76,7 +76,7 @@ def setup_dataplane():
         )
 
 
-def test_port_security(setup_dataplane):
+def test_port_security_default_group(setup_dataplane):
     icmp_client_conf = SAME_SUBNET['network_points'][0]
     icmp_server_conf = SAME_SUBNET['network_points'][1]
     icmp_client_port_id = _get_port_id(icmp_client_conf['name'])
@@ -90,6 +90,20 @@ def test_port_security(setup_dataplane):
             )
 
 
+def test_port_security_without_default_group(setup_dataplane):
+    icmp_client_conf = SAME_SUBNET['network_points'][0]
+    icmp_server_conf = SAME_SUBNET['network_points'][1]
+    icmp_client_port_id = _get_port_id(icmp_client_conf['name'])
+    icmp_server_port_id = _get_port_id(icmp_server_conf['name'])
+
+    with enable_port_security(icmp_client_port_id):
+        with enable_port_security(icmp_server_port_id, security_groups=[]):
+            inner_ping(
+                CONTROLLER_CONTAINER_ID, icmp_client_conf['ns'],
+                icmp_server_conf['ip'], expected_result=1
+            )
+
+
 def _get_port_id(port_name):
     port = get_port_by_name(port_name)
     assert port
@@ -97,14 +111,27 @@ def _get_port_id(port_name):
 
 
 @contextlib.contextmanager
-def enable_port_security(port_uuid):
-    _update_port_security(port_uuid, port_security_value=True)
+def enable_port_security(port_uuid, security_groups=None):
+    _update_port_security(
+        port_uuid, port_security_value=True,
+        security_groups=(
+            security_groups if security_groups is not None
+            else ['Default']
+        )
+    )
     try:
         yield
     finally:
-        _update_port_security(port_uuid, port_security_value=False)
+        _update_port_security(
+            port_uuid, port_security_value=False, security_groups=[]
+        )
 
 
-def _update_port_security(port_uuid, port_security_value):
-    update_port_data = {"port": {"port_security_enabled": port_security_value}}
+def _update_port_security(port_uuid, port_security_value, security_groups):
+    update_port_data = {
+        'port': {
+            'port_security_enabled': port_security_value,
+            'security_groups': security_groups
+        }
+    }
     update_and_assert('ports', port_uuid, update_port_data)
