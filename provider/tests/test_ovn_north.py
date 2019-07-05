@@ -599,6 +599,10 @@ class TestOvnNorth(object):
         assert expected_network_mtu_update in mock_dbset_command.mock_calls
 
     @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: None
+    )
+    @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.LsGetCommand.execute',
         lambda cmd, check_error: OvnNetworkRow(
             TestOvnNorth.NETWORK_ID10,
@@ -628,6 +632,10 @@ class TestOvnNorth(object):
             })
         )
 
+    @mock.patch(
+        'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
+        lambda x: None
+    )
     @mock.patch('ovsdbapp.schema.ovn_northbound.commands.LsGetCommand')
     @mock.patch('ovsdbapp.backend.ovs_idl.command.DbSetCommand')
     def test_update_localnet_network(self,

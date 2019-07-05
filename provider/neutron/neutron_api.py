@@ -193,11 +193,16 @@ class NeutronApi(object):
             mtu=None,
             port_security_enabled=None
     ):
-        self._update_network_data(network_id, name, mtu, port_security_enabled)
-        self._update_localnet_on_network(network_id, localnet, vlan)
+        with self.tx_manager.transaction() as tx:
+            self._update_network_data(
+                network_id, name, mtu, port_security_enabled, tx
+            )
+            self._update_localnet_on_network(network_id, localnet, vlan, tx)
         return self.get_network(network_id)
 
-    def _update_network_data(self, network_id, name, mtu, port_security):
+    def _update_network_data(
+            self, network_id, name, mtu, port_security, transaction
+    ):
         current_external_ids = self.ovn_north.get_ls(
             ls_id=network_id
         ).external_ids
@@ -217,24 +222,35 @@ class NeutronApi(object):
             current_external_ids,
             **relevant_external_ids
         )
-        self.ovn_north.create_ovn_update_command(
-            ovnconst.TABLE_LS, network_id).add(
-            ovnconst.ROW_LS_EXTERNAL_IDS,
-            new_external_ids
-        ).execute()
+        transaction.add(
+            self.ovn_north.create_ovn_update_command(
+                ovnconst.TABLE_LS, network_id
+            ).add(
+                ovnconst.ROW_LS_EXTERNAL_IDS,
+                new_external_ids
+            ).build_command()
+        )
         if mtu:
-            self._update_networks_mtu(network_id, mtu)
+            self._update_networks_mtu(network_id, mtu, transaction)
 
-    def _update_localnet_on_network(self, network_id, localnet, vlan):
+    def _update_localnet_on_network(
+            self, network_id, localnet, vlan, transaction
+    ):
         network = self.ovn_north.get_ls(ls_id=network_id)
         localnet_port = self._get_localnet_lsp(network)
         if localnet:
             if not localnet_port:
                 localnet_port = self._create_port(
-                    ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid))
-            self._set_port_localnet_values(localnet_port, localnet, vlan)
+                    ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid),
+                    transaction=transaction
+                )
+            transaction.add(
+                self._set_port_localnet_values(localnet_port, localnet, vlan)
+            )
         elif localnet_port:
-            self.ovn_north.remove_lsp(str(localnet_port.uuid))
+            self.ovn_north.remove_lsp(
+                str(localnet_port.uuid), transaction=transaction
+            )
 
     def _set_port_localnet_values(self, port_id, localnet, vlan):
         return self.ovn_north.create_ovn_update_command(
@@ -249,20 +265,22 @@ class NeutronApi(object):
             ovnconst.ROW_LSP_TYPE, ovnconst.LSP_TYPE_LOCALNET
         ).add(ovnconst.ROW_LSP_TAG, vlan).build_command()
 
-    def _update_networks_mtu(self, network_id, mtu):
+    def _update_networks_mtu(self, network_id, mtu, transaction=None):
         subnet = self.ovn_north.get_dhcp(ls_id=network_id)
         old_mtu = self._get_subnet_mtu(subnet)
         if subnet and old_mtu != mtu:
-            self.ovn_north.create_ovn_update_command(
-                ovnconst.TABLE_DHCP_Options, subnet.uuid
-            ).add(
-                ovnconst.ROW_DHCP_OPTIONS
-                if ip_utils.is_subnet_ipv4(subnet)
-                else ovnconst.ROW_DHCP_EXTERNAL_IDS,
-                {SubnetMapper.OVN_DHCP_MTU: str(mtu)}
-            ).execute()
+            transaction.add(
+                self.ovn_north.create_ovn_update_command(
+                    ovnconst.TABLE_DHCP_Options, subnet.uuid
+                ).add(
+                    ovnconst.ROW_DHCP_OPTIONS
+                    if ip_utils.is_subnet_ipv4(subnet)
+                    else ovnconst.ROW_DHCP_EXTERNAL_IDS,
+                    {SubnetMapper.OVN_DHCP_MTU: str(mtu)}
+                ).build_command()
+            )
             if ip_utils.is_subnet_ipv6(subnet):
-                self._update_ipv6_subnet_lrp_mtu(subnet, str(mtu))
+                self._update_ipv6_subnet_lrp_mtu(subnet, str(mtu), transaction)
 
     @staticmethod
     def _get_subnet_mtu(subnet):
@@ -272,18 +290,20 @@ class NeutronApi(object):
             else subnet.external_ids.get(SubnetMapper.OVN_DHCP_MTU)
         ) if subnet else None
 
-    def _update_ipv6_subnet_lrp_mtu(self, subnet, mtu):
+    def _update_ipv6_subnet_lrp_mtu(self, subnet, mtu, transaction):
         impacted_lrp = self.ovn_north.get_lrp_by_subnet(subnet)
         if impacted_lrp:
-            self._update_ipv6_lrp_mtu(impacted_lrp, subnet, mtu)
+            transaction.add(
+                self._update_ipv6_lrp_mtu(impacted_lrp, subnet, mtu)
+            )
 
     def _update_ipv6_lrp_mtu(self, router_port, subnet, mtu):
-        self.ovn_north.create_ovn_update_command(
+        return self.ovn_north.create_ovn_update_command(
             ovnconst.TABLE_LRP, self.ovn_north.get_lrp_id(router_port)
         ).add(
             ovnconst.ROW_LRP_IPV6_RA_CONFIGS,
             self._build_ra_config_dict(subnet, mtu)
-        ).execute()
+        ).build_command()
 
     def delete_network(self, network_id):
         network = self.ovn_north.get_ls(ls_id=network_id)
