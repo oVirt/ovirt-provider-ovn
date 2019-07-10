@@ -150,6 +150,9 @@ to OVN.
 
 
 %changelog
+* Wed Jul 10 2019 Miguel Duarte Barroso <mdbarroso@redhat.com> - 1.2.24
+- allow correct deployment of ovirt node on fedora29 hosts
+
 * Wed Jun 26 2019 Miguel Duarte Barroso <mdbarroso@redhat.com> - 1.2.23
 - create/update/remove logical ports within a single transaction object
 - create/update/remove security groups within a single transaction object
