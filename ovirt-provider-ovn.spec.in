@@ -41,6 +41,8 @@
 %global required_ovsdbapp_lib %{required_python_lib -l python- ovsdbapp}
 %global required_requests_lib %{required_python_lib -l python- requests}
 %global required_netaddr_lib %{required_python_lib -l python- netaddr}
+%global required_python_devel %{required_python_lib -l python- devel}
+%global required_python_setup_tools %{required_python_lib -l python- setuptools}
 
 Name:           ovirt-provider-ovn
 Version:        @VERSION@
@@ -69,7 +71,10 @@ Requires: %{required_netaddr_lib}
 Requires: %{required_ovsdbapp_lib}
 Requires: %{required_six_lib}
 
-BuildRequires: python
+BuildRequires: %{required_python}
+BuildRequires: %{required_ovsdbapp_lib}
+BuildRequires: %{required_python_devel}
+BuildRequires: %{required_python_setup_tools}
 BuildRequires: systemd
 
 %prep
@@ -121,6 +126,10 @@ Conflicts: %{required_ovs_lib} = 1:2.6.1
 Requires: vdsm
 Requires(post): firewalld-filesystem
 
+BuildRequires: %{required_python}
+BuildRequires: %{required_python_devel}
+BuildRequires: %{required_python_setup_tools}
+BuildRequires: systemd
 
 %description driver
 The virtual interface driver for oVirt external network provider for OVN.
