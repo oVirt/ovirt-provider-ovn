@@ -1,1 +1,6 @@
 vdsm  ALL=(ALL) NOPASSWD: /usr/bin/ovs-vsctl get Open_vSwitch . external_ids\:system-id, /usr/libexec/vdsm/vhostuser_permissions_setter
+vdsm  ALL=(ALL) NOPASSWD: /usr/bin/ovs-vsctl del-port *
+vdsm  ALL=(ALL) NOPASSWD: /usr/bin/ovs-vsctl --format=json list *
+vdsm  ALL=(ALL) NOPASSWD: /usr/bin/ovs-vsctl set Bridge br-int datapath_type=netdev
+vdsm  ALL=(ALL) NOPASSWD: /usr/bin/ovs-vsctl add-port br-int * -- set Interface * type=dpdkvhostuserclient options\:vhost-server-path=*
+vdsm  ALL=(ALL) NOPASSWD: /usr/bin/ovs-vsctl set Interface * external-ids\:iface-id=*
