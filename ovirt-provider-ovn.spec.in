@@ -158,6 +158,9 @@ to OVN.
 
 
 %changelog
+* Wed Jul 24 2019 Miguel Duarte Barroso <mdbarroso@redhat.com> - 1.2.25
+- update BuildRequires section with python-devel packages
+
 * Wed Jul 10 2019 Miguel Duarte Barroso <mdbarroso@redhat.com> - 1.2.24
 - allow correct deployment of ovirt node on fedora29 hosts
 
