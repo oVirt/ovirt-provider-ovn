@@ -72,7 +72,6 @@ Requires: %{required_ovsdbapp_lib}
 Requires: %{required_six_lib}
 
 BuildRequires: %{required_python}
-BuildRequires: %{required_ovsdbapp_lib}
 BuildRequires: %{required_python_devel}
 BuildRequires: %{required_python_setup_tools}
 BuildRequires: systemd
