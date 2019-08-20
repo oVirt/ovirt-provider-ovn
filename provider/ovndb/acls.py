@@ -161,8 +161,8 @@ def create_acl(
     external_ids = get_acl_external_ids(
         description=description, ether_type=ether_type, ip_prefix=ip_prefix,
         max_port=port_max, min_port=port_min, protocol=protocol,
-        port_group_id=str(security_group.name),
-        remote_group_id=str(remote_group.name) if remote_group else None
+        port_group_id=security_group.name,
+        remote_group_id=remote_group.name if remote_group else None
     )
     return dict(acl, external_ids=external_ids)
 

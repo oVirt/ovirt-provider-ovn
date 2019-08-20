@@ -37,6 +37,7 @@ from neutron.neutron_api_mappers import AddRouterInterfaceMapper
 from neutron.neutron_api_mappers import NetworkMapper
 from neutron.neutron_api_mappers import Network
 from neutron.neutron_api_mappers import NetworkPort
+from neutron.neutron_api_mappers import OVN_PREFIX
 from neutron.neutron_api_mappers import PortMapper
 from neutron.neutron_api_mappers import RemoveRouterInterfaceMapper
 from neutron.neutron_api_mappers import RestDataError
@@ -69,6 +70,30 @@ def assure_security_groups_support(f):
                 'Security Groups are only supported on ovirt <= 4.3'
             )
         return f(wrapped_self, *args, **kwargs)
+    return inner
+
+
+def map_security_group_id(f):
+    @wraps(f)
+    def inner(wrapped_self, security_group_id, *args, **kwargs):
+        if security_group_id.startswith(OVN_PREFIX):
+            return f(wrapped_self, security_group_id, *args, **kwargs)
+
+        try:
+            default_group = wrapped_self.ovn_north.get_security_group(
+                SecurityGroupMapper.DEFAULT_PG_NAME
+            )
+        except ElementNotFoundError:
+            default_group = None
+
+        if default_group and str(default_group.uuid) == security_group_id:
+            return f(wrapped_self, security_group_id, *args, **kwargs)
+        else:
+            port_group_name = SecurityGroupMapper.create_port_group_name(
+                security_group_id
+            )
+            return f(wrapped_self, port_group_name, *args, **kwargs)
+
     return inner
 
 
@@ -1474,6 +1499,7 @@ class NeutronApi(object):
     @SecurityGroupMapper.map_to_rest
     @wrap_default_group_id
     @assure_security_groups_support
+    @map_security_group_id
     def get_security_group(self, sec_group_id, default_group_id=None):
         security_group = self.ovn_north.get_security_group(sec_group_id)
         all_rules = self.ovn_north.list_security_group_rules(
@@ -1500,12 +1526,14 @@ class NeutronApi(object):
         return self.get_security_group(group_data.name)
 
     @assure_security_groups_support
+    @map_security_group_id
     def delete_security_group(self, security_group_id):
         self.ovn_north.remove_security_group(security_group_id)
 
     @SecurityGroupMapper.validate_update
     @SecurityGroupMapper.map_from_rest
     @assure_security_groups_support
+    @map_security_group_id
     def update_security_group(self, sec_group_id, name, description=None):
         with self.tx_manager.transaction() as tx:
             self.ovn_north.update_security_group(
@@ -1536,6 +1564,7 @@ class NeutronApi(object):
     @SecurityGroupRuleMapper.map_from_rest
     @SecurityGroupRuleMapper.map_to_rest
     @assure_security_groups_support
+    @map_security_group_id
     def add_security_group_rule(
             self, security_group_id, direction, description=None,
             ether_type=None, port_min=None, port_max=None,

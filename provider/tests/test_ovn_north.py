@@ -241,19 +241,19 @@ class TestOvnNorth(object):
     }
     SECURITY_GROUP_RULE_01 = OvnSecurityGroupRuleRow(
         SECURITY_GROUP_RULE_ID_01, str(SECURITY_GROUP_RULE_ID_01),
-        'from-lport', 'ip4 && tcp', 1001, SECURITY_GROUP_ID, 'allow',
+        'from-lport', 'ip4 && tcp', 1001, str(SECURITY_GROUP_ID), 'allow',
         SECURITY_GROUP_RULE_01_EXT_IDS
     )
 
     SECURITY_GROUP_RULE_02 = OvnSecurityGroupRuleRow(
         SECURITY_GROUP_RULE_ID_02, str(SECURITY_GROUP_RULE_ID_02),
-        'to-lport', 'ip6 && udp', 1000, SECURITY_GROUP_ID, 'drop',
+        'to-lport', 'ip6 && udp', 1000, str(SECURITY_GROUP_ID), 'drop',
         SECURITY_GROUP_RULE_02_EXT_IDS
     )
     SECURITY_GROUP_RULE_03 = OvnSecurityGroupRuleRow(
         SECURITY_GROUP_RULE_ID_03, str(SECURITY_GROUP_RULE_ID_03),
-        'from-lport', 'ip4 && udp && udp.dst == 161', 1001, SECURITY_GROUP_ID,
-        'allow', SECURITY_GROUP_RULE_03_EXT_IDS
+        'from-lport', 'ip4 && udp && udp.dst == 161', 1001,
+        str(SECURITY_GROUP_ID), 'allow', SECURITY_GROUP_RULE_03_EXT_IDS
     )
 
     ports = [PORT_1, PORT_2]
@@ -1384,7 +1384,7 @@ class TestOvnNorth(object):
     def test_get_security_group(self, mock_connection):
         ovn_north = NeutronApi(sec_group_support=True)
         result = ovn_north.get_security_group(
-            TestOvnNorth.SECURITY_GROUP_ID
+            str(TestOvnNorth.SECURITY_GROUP_ID)
         )
         assert_security_group_equal(
             result, SecurityGroup(
@@ -1499,10 +1499,12 @@ class TestOvnNorth(object):
     ):
         ovn_north = NeutronApi(sec_group_support=True)
 
-        ovn_north.delete_security_group(TestOvnNorth.SECURITY_GROUP_ID)
+        ovn_north.delete_security_group(str(TestOvnNorth.SECURITY_GROUP_ID))
         assert mock_pg_del_command.call_count == 1
         expected_del_call = mock.call(
-            ovn_north.idl, TestOvnNorth.SECURITY_GROUP_ID, if_exists=False
+            ovn_north.idl,
+            str(TestOvnNorth.SECURITY_GROUP_ID),
+            if_exists=False
         )
         assert mock_pg_del_command.mock_calls[0] == expected_del_call
 
@@ -1560,7 +1562,7 @@ class TestOvnNorth(object):
             SecurityGroupApiInputMaker(
                 new_name, description=new_description
             ).get(),
-            TestOvnNorth.SECURITY_GROUP_ID
+            str(TestOvnNorth.SECURITY_GROUP_ID)
         )
 
         assert mock_db_update.call_count == 1
@@ -1585,7 +1587,7 @@ class TestOvnNorth(object):
                 SecurityGroupApiInputMaker(
                     new_name, description=new_description
                 ).get(),
-                TestOvnNorth.SECURITY_GROUP_ID
+                str(TestOvnNorth.SECURITY_GROUP_ID)
             )
 
     @mock.patch(
@@ -1614,7 +1616,7 @@ class TestOvnNorth(object):
     def test_get_security_group_with_rules(self, mock_connection):
         ovn_north = NeutronApi(sec_group_support=True)
         result = ovn_north.get_security_group(
-            TestOvnNorth.SECURITY_GROUP_ID
+            str(TestOvnNorth.SECURITY_GROUP_ID)
         )
         assert_security_group_equal(
             result, SecurityGroup(
@@ -1626,13 +1628,17 @@ class TestOvnNorth(object):
         )
 
     @mock.patch(
+        'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
+        lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP
+    )
+    @mock.patch(
         'ovsdbapp.schema.ovn_northbound.commands.PgAclAddCommand.execute',
         lambda cmd, check_error: TestOvnNorth.SECURITY_GROUP_RULE_01
     )
     def test_add_security_group_rules(self, mock_connection):
         ovn_north = NeutronApi(sec_group_support=True)
         rest_data = SecurityGroupRuleApiInputMaker(
-            'ingress', TestOvnNorth.SECURITY_GROUP_ID, ether_type='IPv4',
+            'ingress', str(TestOvnNorth.SECURITY_GROUP_ID), ether_type='IPv4',
             protocol='tcp'
         ).get()
 
@@ -1679,7 +1685,7 @@ class TestOvnNorth(object):
     def test_filter_out_drop_security_rules(self, mock_connection):
         ovn_north = NeutronApi(sec_group_support=True)
         result = ovn_north.get_security_group(
-            TestOvnNorth.SECURITY_GROUP_ID
+            str(TestOvnNorth.SECURITY_GROUP_ID)
         )
         assert_security_group_equal(
             result, SecurityGroup(
@@ -1778,7 +1784,7 @@ class TestOvnNorth(object):
         mock_lookup.return_value = security_group_with_ports
         ovn_north = NeutronApi(sec_group_support=True)
         with pytest.raises(BadRequestError) as ex:
-            ovn_north.delete_security_group(security_group_id)
+            ovn_north.delete_security_group(str(security_group_id))
         assert 'Security Group {} in use'.format(
             security_group_id
         ) == str(ex.value)

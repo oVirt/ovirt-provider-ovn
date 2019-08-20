@@ -117,11 +117,9 @@ class OvnSecurityGroupApi(object):
 
     @staticmethod
     def _generate_name_when_required(name):
-        return (
-            str(uuid.uuid4())
-            if name not in SecurityGroupMapper.WHITE_LIST_GROUP_NAMES
-            else name
-        )
+        return u'ovirt_{gen_id}'.format(
+            gen_id=str(uuid.uuid4()).replace('-', '_')
+        ) if name not in SecurityGroupMapper.WHITE_LIST_GROUP_NAMES else name
 
     @staticmethod
     def get_bumped_revision_number(security_group):

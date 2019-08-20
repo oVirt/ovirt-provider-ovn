@@ -287,7 +287,7 @@ class TestOvnNorthMappers(object):
         rule_id = str(UUID(int=1))
         acl_external_ids = {
             SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID:
-                SECURITY_GROUP_UUID,
+                str(SECURITY_GROUP_UUID),
             SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE:
                 neutron_constants.IPV4_ETHERTYPE,
             SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_PROTOCOL:
@@ -297,7 +297,7 @@ class TestOvnNorthMappers(object):
         }
         security_group_rule = OvnSecurityGroupRuleRow(
             rule_id, rule_id, 'to-lport', 'ip4 && udp && ', 1001,
-            SECURITY_GROUP_UUID, 'allow', acl_external_ids
+            str(SECURITY_GROUP_UUID), 'allow', acl_external_ids
         )
 
         sec_group = SecurityGroup(
