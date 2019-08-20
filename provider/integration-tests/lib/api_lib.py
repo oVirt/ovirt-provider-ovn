@@ -70,3 +70,16 @@ def update_and_assert(entity_type, entity_id, update_payload):
     assert len(json_response) == 1
     for k, v in update_payload[singular_entity_type].items():
         assert updated_entity[k] == v
+
+
+def create_entity(entity_type, create_payload):
+    url = ENDPOINT + entity_type
+    response = requests.post(url, json=create_payload)
+    assert response.status_code == 201
+    return response.json()
+
+
+def delete_entity(entity_type, entity_id):
+    url = ENDPOINT + entity_type + '/{}'.format(entity_id)
+    response = requests.delete(url)
+    assert response.status_code in (200, 204)

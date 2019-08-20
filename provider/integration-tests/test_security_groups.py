@@ -21,6 +21,8 @@ import contextlib
 import pytest
 
 from lib.ansiblelib import get_playbook
+from lib.api_lib import create_entity
+from lib.api_lib import delete_entity
 from lib.api_lib import get_port_by_name
 from lib.api_lib import update_and_assert
 from lib.dockerlib import inner_ping
@@ -76,6 +78,27 @@ def setup_dataplane():
         )
 
 
+@pytest.fixture(scope='module')
+def icmp_security_group_no_rules():
+    icmp_group = _create_security_group('icmp_group', 'allow ICMP traffic')
+    try:
+        yield icmp_group
+    finally:
+        delete_entity('security-groups', icmp_group['id'])
+
+
+@pytest.fixture(scope='module')
+def icmp_security_group(icmp_security_group_no_rules):
+    allow_icmp_ipv4 = _create_security_group_rule(
+        icmp_security_group_no_rules['id'], 'ingress',
+        ether_type='IPv4', protocol='icmp'
+    )
+    try:
+        yield icmp_security_group_no_rules
+    finally:
+        delete_entity('security-group-rules', allow_icmp_ipv4['id'])
+
+
 def test_port_security_default_group(setup_dataplane):
     icmp_client_conf = SAME_SUBNET['network_points'][0]
     icmp_server_conf = SAME_SUBNET['network_points'][1]
@@ -102,6 +125,27 @@ def test_port_security_without_default_group(setup_dataplane):
                 CONTROLLER_CONTAINER_ID, icmp_client_conf['ns'],
                 icmp_server_conf['ip'], expected_result=1
             )
+
+
+def test_created_group(setup_dataplane, icmp_security_group):
+    icmp_client_conf = SAME_SUBNET['network_points'][0]
+    icmp_server_conf = SAME_SUBNET['network_points'][1]
+    icmp_client_port_id = _get_port_id(icmp_client_conf['name'])
+    icmp_server_port_id = _get_port_id(icmp_server_conf['name'])
+
+    configured_client = enable_port_security(
+        icmp_client_port_id, security_groups=[icmp_security_group['id']]
+    )
+    configured_server = enable_port_security(
+        icmp_server_port_id,
+        security_groups=[icmp_security_group['id']]
+    )
+
+    with configured_client, configured_server:
+        inner_ping(
+            CONTROLLER_CONTAINER_ID, icmp_client_conf['ns'],
+            icmp_server_conf['ip'], expected_result=0
+        )
 
 
 def _get_port_id(port_name):
@@ -135,3 +179,36 @@ def _update_port_security(port_uuid, port_security_value, security_groups):
         }
     }
     update_and_assert('ports', port_uuid, update_port_data)
+
+
+def _create_security_group(name, description):
+    create_group_data = {
+        'security_group': {
+            'name': name,
+            'description': description
+        }
+    }
+    return create_entity('security-groups', create_group_data).get(
+        'security_group'
+    )
+
+
+def _create_security_group_rule(
+        security_group_id, direction, ether_type,
+        protocol=None, remote_ip_prefix=None
+):
+    create_rule_data = {
+        'security_group_rule': {
+            'security_group_id': security_group_id,
+            'direction': direction,
+            'ethertype': ether_type
+        }
+    }
+    if remote_ip_prefix:
+        create_rule_data['remote_ip_prefix'] = remote_ip_prefix
+    if protocol:
+        create_rule_data['protocol'] = protocol
+
+    return create_entity('security-group-rules', create_rule_data).get(
+        'security_group_rule'
+    )
