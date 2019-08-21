@@ -96,7 +96,6 @@ class OvnSecurityGroupApi(object):
                 'Updating default security group not allowed.'
             )
         now = datetime.utcnow().isoformat()
-        pg_name = self._generate_name_when_required(name)
         external_ids = sec_group.external_ids
 
         external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS] = now
@@ -111,8 +110,6 @@ class OvnSecurityGroupApi(object):
 
         return DbSetCommand(
             self._idl, ovnconst.TABLE_PORT_GROUP, sec_group_id
-        ).add(
-            ovnconst.ROW_PG_NAME, pg_name, add_condition=name is not None
         ).add(
             ovnconst.ROW_PG_EXTERNAL_IDS,
             external_ids
