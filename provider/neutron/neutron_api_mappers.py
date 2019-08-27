@@ -37,6 +37,7 @@ from ovirt_provider_config_common import tenant_id
 from ovirt_provider_config_common import max_allowed_mtu
 from handlers.base_handler import MethodNotAllowedError
 from handlers.base_handler import BadRequestError
+from handlers.base_handler import ElementNotFoundError
 
 
 NetworkPort = namedtuple('NetworkPort', ['lsp', 'ls', 'dhcp_options', 'lrp'])
@@ -1267,6 +1268,29 @@ class SecurityGroupMapper(Mapper):
             cls._mandatory_update_data,
             cls._optional_update_data
         )
+
+    @staticmethod
+    def map_security_group_id(f):
+        @wraps(f)
+        def inner(wrapped_self, security_group_id, *args, **kwargs):
+            try:
+                default_group = wrapped_self.ovn_north.get_security_group(
+                    SecurityGroupMapper.DEFAULT_PG_NAME
+                )
+            except ElementNotFoundError:
+                default_group = None
+
+            if default_group and str(default_group.uuid) == security_group_id:
+                return f(wrapped_self, security_group_id, *args, **kwargs)
+            elif security_group_id.startswith(OVN_PREFIX):
+                return f(wrapped_self, security_group_id, *args, **kwargs)
+            else:
+                port_group_name = SecurityGroupMapper.create_port_group_name(
+                    security_group_id
+                )
+                return f(wrapped_self, port_group_name, *args, **kwargs)
+
+        return inner
 
 
 class SecurityGroupRuleMapper(Mapper):
