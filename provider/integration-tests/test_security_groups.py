@@ -99,6 +99,31 @@ def icmp_security_group(icmp_security_group_no_rules):
         delete_entity('security-group-rules', allow_icmp_ipv4['id'])
 
 
+@pytest.fixture(scope='module')
+def limited_access_group_no_rules():
+    limited_access_group = _create_security_group(
+        'remote_group', 'remote access requires \'icmp_group\' membership'
+    )
+    try:
+        yield limited_access_group
+    finally:
+        delete_entity('security-groups', limited_access_group['id'])
+
+
+@pytest.fixture(scope='module')
+def limited_access_group(limited_access_group_no_rules, icmp_security_group):
+    allow_remote_icmp_group_rule = _create_security_group_rule(
+        limited_access_group_no_rules['id'], 'ingress',
+        ether_type='IPv4', remote_group_id=icmp_security_group['id']
+    )
+    try:
+        yield limited_access_group_no_rules
+    finally:
+        delete_entity(
+            'security-group-rules', allow_remote_icmp_group_rule['id']
+        )
+
+
 def test_port_security_default_group(setup_dataplane):
     icmp_client_conf = SAME_SUBNET['network_points'][0]
     icmp_server_conf = SAME_SUBNET['network_points'][1]
@@ -148,6 +173,39 @@ def test_created_group(setup_dataplane, icmp_security_group):
         )
 
 
+@pytest.mark.xfail(reason='https://bugzilla.redhat.com/1744235', strict=True)
+def test_created_group_remote_group_id(
+        setup_dataplane, icmp_security_group, limited_access_group
+):
+    icmp_client_conf = SAME_SUBNET['network_points'][0]
+    icmp_server_conf = SAME_SUBNET['network_points'][1]
+    icmp_client_port_id = _get_port_id(icmp_client_conf['name'])
+    icmp_server_port_id = _get_port_id(icmp_server_conf['name'])
+
+    configured_client_no_connectivity = enable_port_security(
+        icmp_client_port_id, security_groups=[limited_access_group['id']]
+    )
+    configured_server = enable_port_security(
+        icmp_server_port_id,
+        security_groups=[limited_access_group['id']]
+    )
+
+    with configured_client_no_connectivity, configured_server:
+        inner_ping(
+            CONTROLLER_CONTAINER_ID, icmp_client_conf['ns'],
+            icmp_server_conf['ip'], expected_result=1
+        )
+
+        configured_client_connectivity = enable_port_security(
+            icmp_client_port_id, security_groups=[icmp_security_group['id']]
+        )
+        with configured_client_connectivity:
+            inner_ping(
+                CONTROLLER_CONTAINER_ID, icmp_client_conf['ns'],
+                icmp_server_conf['ip'], expected_result=0
+            )
+
+
 def _get_port_id(port_name):
     port = get_port_by_name(port_name)
     assert port
@@ -195,7 +253,7 @@ def _create_security_group(name, description):
 
 def _create_security_group_rule(
         security_group_id, direction, ether_type,
-        protocol=None, remote_ip_prefix=None
+        protocol=None, remote_ip_prefix=None, remote_group_id=None
 ):
     create_rule_data = {
         'security_group_id': security_group_id,
@@ -207,6 +265,8 @@ def _create_security_group_rule(
         create_rule_data['remote_ip_prefix'] = remote_ip_prefix
     if protocol:
         create_rule_data['protocol'] = protocol
+    if remote_group_id:
+        create_rule_data['remote_group_id'] = remote_group_id
 
     return create_entity(
         'security-group-rules', {'security_group_rule': create_rule_data}
