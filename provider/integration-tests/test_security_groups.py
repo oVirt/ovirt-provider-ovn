@@ -198,17 +198,16 @@ def _create_security_group_rule(
         protocol=None, remote_ip_prefix=None
 ):
     create_rule_data = {
-        'security_group_rule': {
-            'security_group_id': security_group_id,
-            'direction': direction,
-            'ethertype': ether_type
-        }
+        'security_group_id': security_group_id,
+        'direction': direction,
+        'ethertype': ether_type
     }
+
     if remote_ip_prefix:
         create_rule_data['remote_ip_prefix'] = remote_ip_prefix
     if protocol:
         create_rule_data['protocol'] = protocol
 
-    return create_entity('security-group-rules', create_rule_data).get(
-        'security_group_rule'
-    )
+    return create_entity(
+        'security-group-rules', {'security_group_rule': create_rule_data}
+    ).get('security_group_rule')
