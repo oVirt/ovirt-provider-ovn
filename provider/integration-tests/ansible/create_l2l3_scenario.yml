@@ -32,7 +32,8 @@
       yum:
         name: dhclient
         state: latest
-        disablerepo: delorean
+        disablerepo: "*"
+        enablerepo: "updates,base"
 
 - name: Create L2 and L3 ovn entities via ansible
   hosts: localhost
