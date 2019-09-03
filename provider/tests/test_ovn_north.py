@@ -1592,7 +1592,9 @@ class TestOvnNorth(object):
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
-        lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP_RULE_01
+        lambda idl, table, uuid:
+            TestOvnNorth.SECURITY_GROUP if table == 'Port_Group'
+            else TestOvnNorth.SECURITY_GROUP_RULE_01
     )
     def test_get_security_group_rule(
             self, mock_connection
@@ -1622,7 +1624,10 @@ class TestOvnNorth(object):
             result, SecurityGroup(
                 sec_group=TestOvnNorth.SECURITY_GROUP,
                 sec_group_rules=[
-                    SecurityGroupRule(TestOvnNorth.SECURITY_GROUP_RULE_01)
+                    SecurityGroupRule(
+                        TestOvnNorth.SECURITY_GROUP_RULE_01,
+                        TestOvnNorth.SECURITY_GROUP
+                    )
                 ]
             )
         )
@@ -1691,7 +1696,10 @@ class TestOvnNorth(object):
             result, SecurityGroup(
                 sec_group=TestOvnNorth.SECURITY_GROUP,
                 sec_group_rules=[
-                    SecurityGroupRule(TestOvnNorth.SECURITY_GROUP_RULE_01)
+                    SecurityGroupRule(
+                        TestOvnNorth.SECURITY_GROUP_RULE_01,
+                        TestOvnNorth.SECURITY_GROUP
+                    )
                 ]
             )
         )
@@ -1741,8 +1749,14 @@ class TestOvnNorth(object):
         security_group = SecurityGroup(
             sec_group=TestOvnNorth.SECURITY_GROUP,
             sec_group_rules=[
-                SecurityGroupRule(TestOvnNorth.SECURITY_GROUP_RULE_01),
-                SecurityGroupRule(TestOvnNorth.SECURITY_GROUP_RULE_03)
+                SecurityGroupRule(
+                    TestOvnNorth.SECURITY_GROUP_RULE_01,
+                    TestOvnNorth.SECURITY_GROUP
+                ),
+                SecurityGroupRule(
+                    TestOvnNorth.SECURITY_GROUP_RULE_03,
+                    TestOvnNorth.SECURITY_GROUP
+                )
             ]
         )
         assert_security_group_equal(result, security_group)

@@ -159,7 +159,6 @@ def test_created_group(setup_dataplane, icmp_security_group):
         )
 
 
-@pytest.mark.xfail(reason='https://bugzilla.redhat.com/1744235', strict=True)
 def test_created_group_remote_group_id(
         setup_dataplane, icmp_security_group, limited_access_group
 ):

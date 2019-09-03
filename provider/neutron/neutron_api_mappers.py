@@ -21,7 +21,6 @@ from __future__ import absolute_import
 import abc
 from collections import namedtuple
 from functools import wraps
-from uuid import UUID
 
 from netaddr import AddrFormatError
 from netaddr import EUI
@@ -37,7 +36,6 @@ from ovirt_provider_config_common import tenant_id
 from ovirt_provider_config_common import max_allowed_mtu
 from handlers.base_handler import MethodNotAllowedError
 from handlers.base_handler import BadRequestError
-from handlers.base_handler import ElementNotFoundError
 
 
 NetworkPort = namedtuple('NetworkPort', ['lsp', 'ls', 'dhcp_options', 'lrp'])
@@ -59,13 +57,18 @@ UUID_LENGTH = 36
 class SecurityGroupRule(object):
     default_group_id = None
 
-    def __init__(self, rule, default_security_group=None):
+    def __init__(self, rule, security_group, default_security_group=None):
         self.__rule = rule
+        self.__sec_group = security_group
         self._set_default_sec_group_id(default_security_group)
 
     @property
     def rule(self):
         return self.__rule
+
+    @property
+    def security_group(self):
+        return self.__sec_group
 
     @staticmethod
     def _set_default_sec_group_id(default_security_group):
@@ -369,13 +372,6 @@ class PortMapper(Mapper):
         binding_host = rest_data.get(PortMapper.REST_PORT_BINDING_HOST)
         port_security = rest_data.get(PortMapper.REST_PORT_SECURITY_ENABLED)
         security_groups = rest_data.get(PortMapper.REST_PORT_SECURITY_GROUPS)
-        if security_groups:
-            security_groups = [
-                SecurityGroupMapper.create_port_group_name(sec_group_id)
-                if sec_group_id != SecurityGroupMapper.DEFAULT_PG_NAME
-                else sec_group_id
-                for sec_group_id in security_groups
-            ]
 
         if port_id:
             return func(
@@ -1172,7 +1168,7 @@ class SecurityGroupMapper(Mapper):
         group_data = security_group.sec_group
         result = {
             SecurityGroupMapper.REST_SEC_GROUP_ID:
-                str(SecurityGroupMapper._get_group_id_mapping(group_data)),
+                str(group_data.uuid),
             SecurityGroupMapper.REST_SEC_GROUP_RULES:
                 [
                     SecurityGroupRuleMapper.row2rest(rule)
@@ -1198,26 +1194,6 @@ class SecurityGroupMapper(Mapper):
         )
 
         return result
-
-    @staticmethod
-    def _get_group_id_mapping(group_data):
-        port_group_name = group_data.name
-        return (
-            group_data.uuid
-            if SecurityGroupMapper._is_group_uuid_mapped(port_group_name)
-            else SecurityGroupMapper._extract_security_group_id(
-                port_group_name
-            )
-        )
-
-    @staticmethod
-    def _is_group_uuid_mapped(pg_name):
-        no_prefix_group_name = pg_name[OVN_PREFIX_LENGTH]
-        try:
-            UUID(no_prefix_group_name)
-            return True
-        except ValueError:
-            return pg_name in SecurityGroupMapper.WHITE_LIST_GROUP_NAMES
 
     @staticmethod
     def create_port_group_name(security_group_id):
@@ -1269,29 +1245,6 @@ class SecurityGroupMapper(Mapper):
             cls._optional_update_data
         )
 
-    @staticmethod
-    def map_security_group_id(f):
-        @wraps(f)
-        def inner(wrapped_self, security_group_id, *args, **kwargs):
-            try:
-                default_group = wrapped_self.ovn_north.get_security_group(
-                    SecurityGroupMapper.DEFAULT_PG_NAME
-                )
-            except ElementNotFoundError:
-                default_group = None
-
-            if default_group and str(default_group.uuid) == security_group_id:
-                return f(wrapped_self, security_group_id, *args, **kwargs)
-            elif security_group_id.startswith(OVN_PREFIX):
-                return f(wrapped_self, security_group_id, *args, **kwargs)
-            else:
-                port_group_name = SecurityGroupMapper.create_port_group_name(
-                    security_group_id
-                )
-                return f(wrapped_self, port_group_name, *args, **kwargs)
-
-        return inner
-
 
 class SecurityGroupRuleMapper(Mapper):
     REST_SEC_GROUP_RULE_ID = 'id'
@@ -1339,21 +1292,20 @@ class SecurityGroupRuleMapper(Mapper):
             return {}
 
         rule = rule_wrapper.rule
+        group = rule_wrapper.security_group
         default_group_id = (
             str(SecurityGroupRule.get_default_group_id())
             if SecurityGroupRule.get_default_group_id()
             else None
         )
-        sec_group_id = rule.external_ids[
-                    SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
-                ]
+        sec_group_id = str(group.uuid)
         result = {
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ID:
                 str(rule.uuid),
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_DIRECTION:
                 neutron_constants.OVN_TO_API_DIRECTION_MAPPER[rule.direction],
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_SEC_GROUP_ID:
-                SecurityGroupMapper._extract_security_group_id(sec_group_id)
+                sec_group_id
                 if sec_group_id != SecurityGroupMapper.DEFAULT_PG_NAME
                 else default_group_id
         }

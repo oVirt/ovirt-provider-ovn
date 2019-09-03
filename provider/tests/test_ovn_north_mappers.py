@@ -249,6 +249,22 @@ class TestOvnNorthMappers(object):
     def test_acl_to_rest_with_optionals(self):
         rule_id = str(UUID(int=1))
         group_id = str(UUID(int=3))
+
+        name = str(SECURITY_GROUP_UUID)
+        desc = 'lotsofsafety'
+        timestamp = datetime.utcnow().isoformat()
+        external_ids = {
+            SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION: desc,
+            SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS: timestamp,
+            SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS: timestamp,
+            SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: '1',
+            SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT: tenant_id(),
+            SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id()
+        }
+        sec_group = OvnSecurityGroupRow(
+            UUID(int=3), name=name, external_ids=external_ids
+        )
+
         acl_external_ids = {
             SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID: group_id,
             SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE:
@@ -264,7 +280,7 @@ class TestOvnNorthMappers(object):
         )
         assert_security_group_rule_equal(
             SecurityGroupRuleMapper.row2rest(
-                SecurityGroupRule(security_group_rule)
+                SecurityGroupRule(security_group_rule, sec_group)
             ),
             security_group_rule
         )
@@ -281,7 +297,7 @@ class TestOvnNorthMappers(object):
             SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT: tenant_id(),
             SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id()
         }
-        row = OvnSecurityGroupRow(
+        sec_group = OvnSecurityGroupRow(
             SECURITY_GROUP_UUID, name=name, external_ids=external_ids
         )
         rule_id = str(UUID(int=1))
@@ -301,7 +317,7 @@ class TestOvnNorthMappers(object):
         )
 
         sec_group = SecurityGroup(
-            row, [SecurityGroupRule(security_group_rule)]
+            sec_group, [SecurityGroupRule(security_group_rule, sec_group)]
         )
         sec_group_rest = SecurityGroupMapper.row2rest(sec_group)
         assert_security_group_equal(sec_group_rest, sec_group)

@@ -1458,11 +1458,14 @@ class NeutronApi(object):
     @SecurityGroupMapper.map_to_rest
     @wrap_default_group_id
     def list_security_groups(self, default_group_id=None):
+        return self._list_security_groups(default_group_id)
+
+    def _list_security_groups(self, default_group_id=None):
         return [
             SecurityGroup(
                 sec_group=group_data,
                 sec_group_rules=[
-                    SecurityGroupRule(rule, default_group_id)
+                    SecurityGroupRule(rule, group_data, default_group_id)
                     for rule in self.ovn_north.list_security_group_rules(
                         group_data
                     )
@@ -1473,7 +1476,6 @@ class NeutronApi(object):
 
     @SecurityGroupMapper.map_to_rest
     @wrap_default_group_id
-    @SecurityGroupMapper.map_security_group_id
     @assure_security_groups_support
     def get_security_group(self, sec_group_id, default_group_id=None):
         security_group = self.ovn_north.get_security_group(sec_group_id)
@@ -1483,7 +1485,7 @@ class NeutronApi(object):
         return SecurityGroup(
             sec_group=security_group,
             sec_group_rules=[
-                SecurityGroupRule(rule, default_group_id)
+                SecurityGroupRule(rule, security_group, default_group_id)
                 for rule in all_rules
             ]
         )
@@ -1500,14 +1502,12 @@ class NeutronApi(object):
             )
         return self.get_security_group(group_data.name)
 
-    @SecurityGroupMapper.map_security_group_id
     @assure_security_groups_support
     def delete_security_group(self, security_group_id):
         self.ovn_north.remove_security_group(security_group_id)
 
     @SecurityGroupMapper.validate_update
     @SecurityGroupMapper.map_from_rest
-    @SecurityGroupMapper.map_security_group_id
     @assure_security_groups_support
     def update_security_group(self, sec_group_id, name, description=None):
         with self.tx_manager.transaction() as tx:
@@ -1520,11 +1520,16 @@ class NeutronApi(object):
     @wrap_default_group_id
     @assure_security_groups_support
     def list_security_group_rules(self, default_group_id=None):
-        rules = self.ovn_north.list_security_group_rules()
-        return [
-            SecurityGroupRule(rule, default_group_id)
-            for rule in rules
-        ]
+        security_groups = self._list_security_groups(default_group_id)
+        security_group_rules = []
+        for sec_group in security_groups:
+            for rule in sec_group.sec_group_rules:
+                security_group_rules.append(
+                    SecurityGroupRule(
+                        rule.rule, sec_group.sec_group, default_group_id
+                    )
+                )
+        return security_group_rules
 
     @SecurityGroupRuleMapper.map_to_rest
     @wrap_default_group_id
@@ -1533,12 +1538,15 @@ class NeutronApi(object):
             self, security_group_rule_id, default_group_id=None
     ):
         rule = self.ovn_north.get_security_group_rule(security_group_rule_id)
-        return SecurityGroupRule(rule, default_group_id)
+        sec_group_id = rule.external_ids[
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
+        ]
+        sec_group = self.ovn_north.get_security_group(sec_group_id)
+        return SecurityGroupRule(rule, sec_group, default_group_id)
 
     @SecurityGroupRuleMapper.validate_add
     @SecurityGroupRuleMapper.map_from_rest
     @SecurityGroupRuleMapper.map_to_rest
-    @SecurityGroupMapper.map_security_group_id
     @assure_security_groups_support
     def add_security_group_rule(
             self, security_group_id, direction, description=None,
@@ -1557,7 +1565,7 @@ class NeutronApi(object):
             if sec_group.name in SecurityGroupMapper.WHITE_LIST_GROUP_NAMES
             else None
         )
-        return SecurityGroupRule(sec_group_rule, default_group_id)
+        return SecurityGroupRule(sec_group_rule, sec_group, default_group_id)
 
     @assure_security_groups_support
     def delete_security_group_rule(self, security_group_rule_id):
