@@ -353,8 +353,8 @@ class NeutronApi(object):
                 ).build_command()
             )
             port_security = (
-                port_security
-                or self._get_port_security_from_network(network_id)
+                port_security if port_security is not None
+                else self._get_port_security_from_network(network_id)
             )
 
             if security_groups is None and port_security:
