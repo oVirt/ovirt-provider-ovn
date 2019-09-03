@@ -1461,18 +1461,19 @@ class NeutronApi(object):
         return self._list_security_groups(default_group_id)
 
     def _list_security_groups(self, default_group_id=None):
-        return [
-            SecurityGroup(
-                sec_group=group_data,
-                sec_group_rules=[
-                    SecurityGroupRule(rule, group_data, default_group_id)
-                    for rule in self.ovn_north.list_security_group_rules(
-                        group_data
-                    )
-                ]
+        if not self.are_security_groups_supported():
+            return []
+        security_groups = []
+        for group_data in self.ovn_north.list_security_groups():
+            security_group_rules = self._process_acls(
+                default_group_id,
+                group_data,
+                self.ovn_north.list_security_group_rules(group_data)
             )
-            for group_data in self.ovn_north.list_security_groups()
-        ] if self.are_security_groups_supported() else []
+            security_groups.append(
+                SecurityGroup(group_data, security_group_rules)
+            )
+        return security_groups
 
     @SecurityGroupMapper.map_to_rest
     @wrap_default_group_id
@@ -1482,12 +1483,33 @@ class NeutronApi(object):
         all_rules = self.ovn_north.list_security_group_rules(
             security_group
         )
+        security_group_rules = self._process_acls(
+            default_group_id, security_group, all_rules
+        )
         return SecurityGroup(
             sec_group=security_group,
-            sec_group_rules=[
-                SecurityGroupRule(rule, security_group, default_group_id)
-                for rule in all_rules
-            ]
+            sec_group_rules=security_group_rules
+        )
+
+    def _process_acls(self, default_group_id, security_group, acls):
+        return [
+            self._build_security_group_rule_wrapper(
+                default_group_id, acl, security_group
+            ) for acl in acls
+        ]
+
+    def _build_security_group_rule_wrapper(
+            self, default_group_id, acl, security_group
+    ):
+        remote_group_id = acl.external_ids.get(
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_REMOTE_GROUP_ID
+        )
+        remote_group = self.ovn_north.get_security_group(
+            remote_group_id
+        ) if remote_group_id else None
+        return SecurityGroupRule(
+            acl, security_group, remote_group=remote_group,
+            default_security_group=default_group_id
         )
 
     @SecurityGroupMapper.validate_add
@@ -1523,12 +1545,16 @@ class NeutronApi(object):
         security_groups = self._list_security_groups(default_group_id)
         security_group_rules = []
         for sec_group in security_groups:
-            for rule in sec_group.sec_group_rules:
-                security_group_rules.append(
-                    SecurityGroupRule(
-                        rule.rule, sec_group.sec_group, default_group_id
-                    )
+            security_group_rules.extend(
+                self._process_acls(
+                    default_group_id,
+                    sec_group.sec_group,
+                    [
+                        rule_wrapper.rule
+                        for rule_wrapper in sec_group.sec_group_rules
+                    ]
                 )
+            )
         return security_group_rules
 
     @SecurityGroupRuleMapper.map_to_rest
@@ -1541,8 +1567,18 @@ class NeutronApi(object):
         sec_group_id = rule.external_ids[
             SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
         ]
+        remote_group_id = rule.external_ids.get(
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_REMOTE_GROUP_ID
+        )
         sec_group = self.ovn_north.get_security_group(sec_group_id)
-        return SecurityGroupRule(rule, sec_group, default_group_id)
+        remote_group = None
+        if remote_group_id:
+            remote_group = self.ovn_north.get_security_group(remote_group_id)
+
+        return SecurityGroupRule(
+            rule, sec_group, remote_group=remote_group,
+            default_security_group=default_group_id
+        )
 
     @SecurityGroupRuleMapper.validate_add
     @SecurityGroupRuleMapper.map_from_rest
@@ -1554,18 +1590,23 @@ class NeutronApi(object):
             remote_ip_prefix=None, protocol=None, remote_group_id=None
     ):
         sec_group = self.ovn_north.get_security_group(security_group_id)
-        sec_group_rule = self.ovn_north.create_security_group_rule(
-            sec_group, direction, description=description,
-            ether_type=ether_type, remote_ip_prefix=remote_ip_prefix,
-            port_min=port_min, port_max=port_max, protocol=protocol,
-            remote_group_id=remote_group_id
+        sec_group_rule, remote_group = (
+            self.ovn_north.create_security_group_rule(
+                sec_group, direction, description=description,
+                ether_type=ether_type, remote_ip_prefix=remote_ip_prefix,
+                port_min=port_min, port_max=port_max, protocol=protocol,
+                remote_group_id=remote_group_id
+            )
         )
         default_group_id = (
             sec_group.uuid
             if sec_group.name in SecurityGroupMapper.WHITE_LIST_GROUP_NAMES
             else None
         )
-        return SecurityGroupRule(sec_group_rule, sec_group, default_group_id)
+        return SecurityGroupRule(
+            sec_group_rule, sec_group, remote_group=remote_group,
+            default_security_group=default_group_id
+        )
 
     @assure_security_groups_support
     def delete_security_group_rule(self, security_group_rule_id):

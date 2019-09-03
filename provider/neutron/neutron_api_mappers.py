@@ -57,9 +57,13 @@ UUID_LENGTH = 36
 class SecurityGroupRule(object):
     default_group_id = None
 
-    def __init__(self, rule, security_group, default_security_group=None):
+    def __init__(
+            self, rule, security_group, remote_group=None,
+            default_security_group=None
+    ):
         self.__rule = rule
         self.__sec_group = security_group
+        self.__remote_group = remote_group
         self._set_default_sec_group_id(default_security_group)
 
     @property
@@ -69,6 +73,10 @@ class SecurityGroupRule(object):
     @property
     def security_group(self):
         return self.__sec_group
+
+    @property
+    def remote_group(self):
+        return self.__remote_group
 
     @staticmethod
     def _set_default_sec_group_id(default_security_group):
@@ -1292,13 +1300,14 @@ class SecurityGroupRuleMapper(Mapper):
             return {}
 
         rule = rule_wrapper.rule
-        group = rule_wrapper.security_group
+        security_group = rule_wrapper.security_group
+        remote_group = rule_wrapper.remote_group
         default_group_id = (
             str(SecurityGroupRule.get_default_group_id())
             if SecurityGroupRule.get_default_group_id()
             else None
         )
-        sec_group_id = str(group.uuid)
+        sec_group_id = str(security_group.uuid)
         result = {
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ID:
                 str(rule.uuid),
@@ -1313,12 +1322,11 @@ class SecurityGroupRuleMapper(Mapper):
             rule.external_ids,
             SecurityGroupRuleMapper.optional_attr_ext_id_mapper
         )
-        if rule.external_ids.get(
-            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_REMOTE_GROUP_ID
-        ) in SecurityGroupMapper.WHITE_LIST_GROUP_NAMES:
+        if remote_group:
             optional_rest_values[
                 SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_REMOTE_GROUP
-            ] = default_group_id
+            ] = str(remote_group.uuid)
+
         result.update(optional_rest_values)
         return result
 

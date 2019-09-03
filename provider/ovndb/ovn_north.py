@@ -389,7 +389,7 @@ class OvnNorth(object):
             {SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: new_rev_number}
         ).execute()
 
-        return add_sec_group_rule_result
+        return add_sec_group_rule_result, remote_group
 
     def remove_security_group_rule(self, security_group_rule_id):
         sec_group_rule = self.get_security_group_rule(security_group_rule_id)

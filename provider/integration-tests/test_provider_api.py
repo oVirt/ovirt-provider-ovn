@@ -230,9 +230,6 @@ class TestSecurityGroupsApi(object):
                 assert limited_group.id == sec_group_rule.security_group_id
                 assert icmp_group.id == sec_group_rule.remote_group_id
 
-    @pytest.mark.xfail(
-        reason='remote group id mapping not yet implemented', strict=True
-    )
     def test_rule_to_group_association_with_remote_group_id_on_get(
             self, icmp_group, limited_access_group
     ):
