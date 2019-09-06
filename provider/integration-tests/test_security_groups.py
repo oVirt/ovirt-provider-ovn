@@ -21,11 +21,10 @@ import contextlib
 import pytest
 
 from lib.ansiblelib import get_playbook
-from lib.api_lib import create_entity
-from lib.api_lib import delete_entity
 from lib.api_lib import get_port_by_name
 from lib.api_lib import update_and_assert
 from lib.api_lib import SecurityGroup
+from lib.api_lib import SecurityGroupRule
 from lib.dockerlib import inner_ping
 from lib.dockerlib import get_container_id_from_img_name
 
@@ -87,14 +86,11 @@ def icmp_security_group_no_rules():
 
 @pytest.fixture(scope='module')
 def icmp_security_group(icmp_security_group_no_rules):
-    allow_icmp_ipv4 = _create_security_group_rule(
-        icmp_security_group_no_rules.id, 'ingress',
-        ether_type='IPv4', protocol='icmp'
-    )
-    try:
+    with SecurityGroupRule(
+            icmp_security_group_no_rules.id, 'ingress',
+            ether_type='IPv4', protocol='icmp'
+    ):
         yield icmp_security_group_no_rules
-    finally:
-        delete_entity('security-group-rules', allow_icmp_ipv4['id'])
 
 
 @pytest.fixture(scope='module')
@@ -107,16 +103,11 @@ def limited_access_group_no_rules():
 
 @pytest.fixture(scope='module')
 def limited_access_group(limited_access_group_no_rules, icmp_security_group):
-    allow_remote_icmp_group_rule = _create_security_group_rule(
+    with SecurityGroupRule(
         limited_access_group_no_rules.id, 'ingress',
         ether_type='IPv4', remote_group_id=icmp_security_group.id
-    )
-    try:
+    ):
         yield limited_access_group_no_rules
-    finally:
-        delete_entity(
-            'security-group-rules', allow_remote_icmp_group_rule['id']
-        )
 
 
 def test_port_security_default_group(setup_dataplane):
@@ -232,25 +223,3 @@ def _update_port_security(port_uuid, port_security_value, security_groups):
         }
     }
     update_and_assert('ports', port_uuid, update_port_data)
-
-
-def _create_security_group_rule(
-        security_group_id, direction, ether_type,
-        protocol=None, remote_ip_prefix=None, remote_group_id=None
-):
-    create_rule_data = {
-        'security_group_id': security_group_id,
-        'direction': direction,
-        'ethertype': ether_type
-    }
-
-    if remote_ip_prefix:
-        create_rule_data['remote_ip_prefix'] = remote_ip_prefix
-    if protocol:
-        create_rule_data['protocol'] = protocol
-    if remote_group_id:
-        create_rule_data['remote_group_id'] = remote_group_id
-
-    return create_entity(
-        'security-group-rules', {'security_group_rule': create_rule_data}
-    ).get('security_group_rule')

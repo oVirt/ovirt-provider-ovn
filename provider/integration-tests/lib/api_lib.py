@@ -121,3 +121,71 @@ class SecurityGroup(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         return delete_entity('security-groups', self.id)
+
+
+class SecurityGroupRule(object):
+    def __init__(
+            self, security_group_id, direction, ether_type, protocol=None,
+            remote_ip_prefix=None, remote_group_id=None
+    ):
+        self._security_group_id = security_group_id
+        self._direction = direction
+        self._ether_type = ether_type
+        self._protocol = protocol
+        self._remote_ip_prefix = remote_ip_prefix
+        self._remote_group_id = remote_group_id
+        self._security_group_rule_id = None
+
+    @property
+    def security_group_id(self):
+        return self._security_group_id
+
+    @property
+    def direction(self):
+        return self._direction
+
+    @property
+    def ether_type(self):
+        return self._ether_type
+
+    @property
+    def protocol(self):
+        return self._protocol
+
+    @property
+    def remote_ip_prefix(self):
+        return self._remote_ip_prefix
+
+    @property
+    def remote_group_id(self):
+        return self._remote_group_id
+
+    @property
+    def id(self):
+        return self._security_group_rule_id
+
+    def __enter__(self):
+        security_group_rule = self._create_security_group_rule()
+        self._security_group_rule_id = security_group_rule['id']
+        return self
+
+    def _create_security_group_rule(self):
+        create_rule_data = {
+            'security_group_id': self._security_group_id,
+            'direction': self._direction,
+            'ethertype': self._ether_type
+        }
+
+        if self._remote_ip_prefix:
+            create_rule_data['remote_ip_prefix'] = self._remote_ip_prefix
+        if self._protocol:
+            create_rule_data['protocol'] = self._protocol
+        if self._remote_group_id:
+            create_rule_data['remote_group_id'] = self._remote_group_id
+
+        return create_entity(
+            'security-group-rules', {'security_group_rule': create_rule_data}
+        ).get('security_group_rule')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        delete_entity('security-group-rules', self._security_group_rule_id)
