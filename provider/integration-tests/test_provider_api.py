@@ -22,6 +22,8 @@ import pytest
 import requests
 
 from lib.api_lib import update_and_assert
+from lib.api_lib import SecurityGroup
+from lib.api_lib import SecurityGroupRule
 
 
 ENDPOINT = 'http://localhost:9696/v2.0/'
@@ -185,6 +187,16 @@ def test_create_invalid_port_no_leftovers(subnet, broken_port):
         'ports', filter_key='name', filter_value='private-port'
     )
     assert json_response == private_port_data
+
+
+class TestSecurityGroupsApi(object):
+    def test_rule_to_group_association(self):
+        with SecurityGroup('icmp_group', None) as sec_group:
+            with SecurityGroupRule(
+                    sec_group.id, 'ingress',
+                    ether_type='IPv4', protocol='icmp'
+            ) as sec_group_rule:
+                assert sec_group.id == sec_group_rule.security_group_id
 
 
 def _get_and_assert(entity_type, filter_key=None, filter_value=None):
