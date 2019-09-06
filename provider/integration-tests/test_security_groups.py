@@ -25,6 +25,7 @@ from lib.api_lib import create_entity
 from lib.api_lib import delete_entity
 from lib.api_lib import get_port_by_name
 from lib.api_lib import update_and_assert
+from lib.api_lib import SecurityGroup
 from lib.dockerlib import inner_ping
 from lib.dockerlib import get_container_id_from_img_name
 
@@ -80,17 +81,14 @@ def setup_dataplane():
 
 @pytest.fixture(scope='module')
 def icmp_security_group_no_rules():
-    icmp_group = _create_security_group('icmp_group', 'allow ICMP traffic')
-    try:
+    with SecurityGroup('icmp_group', 'allow ICMP traffic') as icmp_group:
         yield icmp_group
-    finally:
-        delete_entity('security-groups', icmp_group['id'])
 
 
 @pytest.fixture(scope='module')
 def icmp_security_group(icmp_security_group_no_rules):
     allow_icmp_ipv4 = _create_security_group_rule(
-        icmp_security_group_no_rules['id'], 'ingress',
+        icmp_security_group_no_rules.id, 'ingress',
         ether_type='IPv4', protocol='icmp'
     )
     try:
@@ -101,20 +99,17 @@ def icmp_security_group(icmp_security_group_no_rules):
 
 @pytest.fixture(scope='module')
 def limited_access_group_no_rules():
-    limited_access_group = _create_security_group(
-        'remote_group', 'remote access requires \'icmp_group\' membership'
-    )
-    try:
+    with SecurityGroup(
+            'remote_group', 'remote access requires \'icmp_group\' membership'
+    ) as limited_access_group:
         yield limited_access_group
-    finally:
-        delete_entity('security-groups', limited_access_group['id'])
 
 
 @pytest.fixture(scope='module')
 def limited_access_group(limited_access_group_no_rules, icmp_security_group):
     allow_remote_icmp_group_rule = _create_security_group_rule(
-        limited_access_group_no_rules['id'], 'ingress',
-        ether_type='IPv4', remote_group_id=icmp_security_group['id']
+        limited_access_group_no_rules.id, 'ingress',
+        ether_type='IPv4', remote_group_id=icmp_security_group.id
     )
     try:
         yield limited_access_group_no_rules
@@ -159,11 +154,11 @@ def test_created_group(setup_dataplane, icmp_security_group):
     icmp_server_port_id = _get_port_id(icmp_server_conf['name'])
 
     configured_client = enable_port_security(
-        icmp_client_port_id, security_groups=[icmp_security_group['id']]
+        icmp_client_port_id, security_groups=[icmp_security_group.id]
     )
     configured_server = enable_port_security(
         icmp_server_port_id,
-        security_groups=[icmp_security_group['id']]
+        security_groups=[icmp_security_group.id]
     )
 
     with configured_client, configured_server:
@@ -183,11 +178,11 @@ def test_created_group_remote_group_id(
     icmp_server_port_id = _get_port_id(icmp_server_conf['name'])
 
     configured_client_no_connectivity = enable_port_security(
-        icmp_client_port_id, security_groups=[limited_access_group['id']]
+        icmp_client_port_id, security_groups=[limited_access_group.id]
     )
     configured_server = enable_port_security(
         icmp_server_port_id,
-        security_groups=[limited_access_group['id']]
+        security_groups=[limited_access_group.id]
     )
 
     with configured_client_no_connectivity, configured_server:
@@ -197,7 +192,7 @@ def test_created_group_remote_group_id(
         )
 
         configured_client_connectivity = enable_port_security(
-            icmp_client_port_id, security_groups=[icmp_security_group['id']]
+            icmp_client_port_id, security_groups=[icmp_security_group.id]
         )
         with configured_client_connectivity:
             inner_ping(
@@ -237,18 +232,6 @@ def _update_port_security(port_uuid, port_security_value, security_groups):
         }
     }
     update_and_assert('ports', port_uuid, update_port_data)
-
-
-def _create_security_group(name, description):
-    create_group_data = {
-        'security_group': {
-            'name': name,
-            'description': description
-        }
-    }
-    return create_entity('security-groups', create_group_data).get(
-        'security_group'
-    )
 
 
 def _create_security_group_rule(

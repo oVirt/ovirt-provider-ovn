@@ -83,3 +83,41 @@ def delete_entity(entity_type, entity_id):
     url = ENDPOINT + entity_type + '/{}'.format(entity_id)
     response = requests.delete(url)
     assert response.status_code in (200, 204)
+
+
+class SecurityGroup(object):
+    def __init__(self, name, description):
+        self._name = name
+        self._description = description
+        self._security_group_id = None
+
+    @property
+    def description(self):
+        return self._description
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def id(self):
+        return self._security_group_id
+
+    def __enter__(self):
+        security_group = self._create_security_group()
+        self._security_group_id = security_group['id']
+        return self
+
+    def _create_security_group(self):
+        create_group_data = {
+            'security_group': {
+                'name': self._name,
+                'description': self._description
+            }
+        }
+        return create_entity('security-groups', create_group_data).get(
+            'security_group'
+        )
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return delete_entity('security-groups', self.id)
