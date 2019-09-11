@@ -49,7 +49,7 @@ def _update_openstack_binding_host_ids(caps):
 def _get_open_vswitch_host_id():
     retcode, out, err = hooking.execCmd(CMD_LINE, sudo=True)
     if retcode == 0:
-        return out[0].replace('"', '')
+        return out[0].decode('utf-8').replace('"', '')
 
     hooking.log('Failed to get Open VSwitch system-id . err = %s' % (err))
     return None
