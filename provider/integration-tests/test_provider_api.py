@@ -104,6 +104,25 @@ def broken_port(logical_switch, subnet):
     )
 
 
+@pytest.fixture(scope='module')
+def icmp_group():
+    with SecurityGroup('icmp_group', None) as sec_group:
+        yield sec_group
+
+
+@pytest.fixture(scope='module')
+def limited_access_group(icmp_group):
+    with SecurityGroup(
+            'limited_access',
+            'only members of the icmp group will access'
+    ) as limited_group:
+        with SecurityGroupRule(
+                limited_group.id, 'ingress',
+                ether_type='IPv4', protocol='icmp',
+                remote_group_id=icmp_group.id):
+            yield limited_group
+
+
 def test_get_network(logical_switch):
     networks = _get_and_assert('networks')
     assert len(networks) == 1
@@ -190,13 +209,49 @@ def test_create_invalid_port_no_leftovers(subnet, broken_port):
 
 
 class TestSecurityGroupsApi(object):
-    def test_rule_to_group_association(self):
-        with SecurityGroup('icmp_group', None) as sec_group:
+    def test_rule_to_group_association(self, icmp_group):
+        with SecurityGroupRule(
+                icmp_group.id, 'ingress',
+                ether_type='IPv4', protocol='icmp'
+        ) as sec_group_rule:
+            assert icmp_group.id == sec_group_rule.security_group_id
+
+    def test_rule_to_group_association_with_remote_group_id(self, icmp_group):
+        limited_access_group = SecurityGroup(
+            'limited_access',
+            'only members of the icmp group will access'
+        )
+        with limited_access_group as limited_group:
             with SecurityGroupRule(
-                    sec_group.id, 'ingress',
-                    ether_type='IPv4', protocol='icmp'
+                    limited_group.id, 'ingress',
+                    ether_type='IPv4', protocol='icmp',
+                    remote_group_id=icmp_group.id
             ) as sec_group_rule:
-                assert sec_group.id == sec_group_rule.security_group_id
+                assert limited_group.id == sec_group_rule.security_group_id
+                assert icmp_group.id == sec_group_rule.remote_group_id
+
+    @pytest.mark.xfail(
+        reason='remote group id mapping not yet implemented', strict=True
+    )
+    def test_rule_to_group_association_with_remote_group_id_on_get(
+            self, icmp_group, limited_access_group
+    ):
+        enabling_group = SecurityGroup.get_security_group_by_name(
+            'icmp_group'
+        )
+        limited_group = SecurityGroup.get_security_group_by_name(
+            'limited_access'
+        )
+
+        limited_group_rules = limited_group.rules
+        remote_group_rule = [
+            rule for rule in limited_group_rules
+            if rule.get('remote_group_id')
+        ][0]
+        assert remote_group_rule['remote_group_id'] == enabling_group.id
+        for group in (enabling_group, limited_group):
+            for rule in group.rules:
+                assert rule['security_group_id'] == group.id
 
 
 def _get_and_assert(entity_type, filter_key=None, filter_value=None):
