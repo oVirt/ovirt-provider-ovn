@@ -37,10 +37,10 @@ def get_router_by_name(router_name):
     return _get_entity_by_name('routers', router_name)
 
 
-def _get_entity_by_name(entity_type, entity_name):
+def _get_entity_by_name(entity_type, entity_name, mapper=None):
     return next(
         (
-            entity for entity in _get_entities_by_type(entity_type)
+            entity for entity in _get_entities_by_type(entity_type, mapper)
             if entity.get('name') == entity_name
         ),
         None
@@ -55,9 +55,9 @@ def get_ports():
     return _get_entities_by_type('ports')
 
 
-def _get_entities_by_type(entity_type):
+def _get_entities_by_type(entity_type, mapper=None):
     reply = requests.get(ENDPOINT + entity_type)
-    return reply.json().get(entity_type, [])
+    return reply.json().get(mapper or entity_type, [])
 
 
 def update_and_assert(entity_type, entity_id, update_payload):
@@ -86,10 +86,13 @@ def delete_entity(entity_type, entity_id):
 
 
 class SecurityGroup(object):
+    ENTITY_TYPE = 'security-groups'
+
     def __init__(self, name, description):
         self._name = name
         self._description = description
         self._security_group_id = None
+        self._security_group_rules = []
 
     @property
     def description(self):
@@ -100,8 +103,35 @@ class SecurityGroup(object):
         return self._name
 
     @property
+    def rules(self):
+        return self._security_group_rules
+
+    @property
     def id(self):
         return self._security_group_id
+
+    @staticmethod
+    def get_security_group_by_name(name):
+        security_group = _get_entity_by_name(
+            SecurityGroup.ENTITY_TYPE, name, mapper='security_groups'
+        )
+        security_group_id = security_group['id']
+        name = security_group['name']
+        description = security_group['description']
+        security_group_rules = security_group['security_group_rules']
+        return SecurityGroup._wrap_dict(
+            security_group_id, name, description, security_group_rules
+        )
+
+    @staticmethod
+    def _wrap_dict(
+            security_group_id, name, description=None,
+            security_group_rules=None
+    ):
+        sec_group = SecurityGroup(name, description)
+        sec_group._security_group_id = security_group_id
+        sec_group._security_group_rules = security_group_rules
+        return sec_group
 
     def __enter__(self):
         security_group = self._create_security_group()
