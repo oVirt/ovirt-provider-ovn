@@ -47,7 +47,8 @@ SAME_SUBNET = {
             'cidr': 'bef0:1234:a890:5678::/64',
             'network': 'net1',
             'ns': 'ns1',
-            'ip_version': 6
+            'ip_version': 6,
+            'gateway_ip': 'bef0:1234:a890:5678::1',
         },
         {
             'name': 'lport2',
@@ -55,8 +56,17 @@ SAME_SUBNET = {
             'cidr': 'bef0:1234:a890:5678::/64',
             'network': 'net1',
             'ns': 'ns2',
-            'ip_version': 6
+            'ip_version': 6,
+            'gateway_ip': 'bef0:1234:a890:5678::1',
         },
+    ],
+    'routers': [
+        {
+            'name': 'router0',
+            'interfaces': [
+                'subnet1',
+            ]
+        }
     ],
     'provider_container_id': PROVIDER_CONTAINER_ID,
     'controller_container_id': CONTROLLER_CONTAINER_ID
