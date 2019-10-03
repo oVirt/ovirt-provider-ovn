@@ -3,5 +3,6 @@ distros:
     - el7
     - el8
     - fc29
+    - fc30
 release_branches:
     master: [ovirt-master, ovirt-4.3]

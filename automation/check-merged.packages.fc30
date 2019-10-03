@@ -1,0 +1,15 @@
+dnf
+docker
+gcc
+git
+python3
+python3-devel
+python3-mock
+python3-openvswitch
+python3-ovsdbapp
+python3-pip
+python3-pytest
+python3-requests
+python3-requests-mock
+python3-setuptools
+python3-six
