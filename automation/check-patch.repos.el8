@@ -1,0 +1,6 @@
+# Provides python3-requests-mock, python3-openvswitch
+el8collection,https://copr-be.cloud.fedoraproject.org/results/sbonazzo/EL8_collection/epel-8-x86_64/
+# Provides python3-ovsdbapp
+mdbarroso-python-ovsdbapp,https://copr-be.cloud.fedoraproject.org/results/mdbarroso/ovsdbapp/epel-8-x86_64/
+# Provides vdsm
+ovirt-master-tested,https://resources.ovirt.org/repos/ovirt/tested/master/rpm/$distro
