@@ -130,8 +130,8 @@ def test_port_security_without_default_group(setup_dataplane):
     icmp_client_port_id = _get_port_id(icmp_client_conf['name'])
     icmp_server_port_id = _get_port_id(icmp_server_conf['name'])
 
-    with enable_port_security(icmp_client_port_id):
-        with enable_port_security(icmp_server_port_id, security_groups=[]):
+    with enable_port_security(icmp_server_port_id):
+        with enable_port_security(icmp_client_port_id, security_groups=[]):
             inner_ping(
                 CONTROLLER_CONTAINER_ID, icmp_client_conf['ns'],
                 icmp_server_conf['ip'], expected_result=1
