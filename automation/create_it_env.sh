@@ -64,7 +64,7 @@ function create_rpms {
 }
 
 function cleanup_past_builds {
-  rm -f "$PROJECT_ROOT"/*.tar.gz
+  rm -f "$PROJECT_ROOT"/ovirt-provider-ovn-*.tar.gz
 }
 
 function install_provider_on_container {
@@ -110,3 +110,4 @@ if [ -n "$RUN_INTEG_TESTS" ]; then
   destroy_env
 fi
 trap - EXIT
+cleanup_past_builds
