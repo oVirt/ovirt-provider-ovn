@@ -64,7 +64,7 @@ function create_rpms {
 }
 
 function cleanup_past_builds {
-  rm -f "$PROVIDER_PATH"/*.tar.gz
+  rm -f "$PROJECT_ROOT"/*.tar.gz
 }
 
 function install_provider_on_container {
