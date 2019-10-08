@@ -1,7 +1,7 @@
 #!/bin/sh -ex
 
 EXEC_PATH=$(dirname "$(realpath "$0")")
-PROJECT_ROOT="$EXEC_PATH/.."
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
 EXPORTED_ARTIFACTS_DIR="$PROJECT_ROOT/exported-artifacts/"
 
 OVN_CENTRAL_TRIPLEO_TAG="${CENTRAL_CONTAINER_TAG:-current-tripleo-rdo}"
@@ -10,7 +10,6 @@ OVN_CENTRAL_IMG="tripleomaster/centos-binary-ovn-northd:$OVN_CENTRAL_TRIPLEO_TAG
 OVN_CONTROLLER_IMG="tripleomaster/centos-binary-ovn-controller:$OVN_CONTROLLER_TRIPLEO_TAG"
 OVIRT_PROVIDER_OVN_IMG="${PROVIDER_IMG:-maiqueb/ovirt_provider_ovn}"
 
-PROJECT_ROOT=$(git rev-parse --show-toplevel)
 OVN_CONTAINER_FILES="$PROJECT_ROOT/automation/containers"
 OVN_NORTHD_FILES="${OVN_CONTAINER_FILES}/ovn-central"
 OVN_CONTROLLER_FILES="${OVN_CONTAINER_FILES}/ovn-controller/"
