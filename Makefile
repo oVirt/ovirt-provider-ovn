@@ -140,10 +140,10 @@ unittest:
 unittest3:
 	cd provider; python3 -m pytest tests/
 
-lint:
+lint: version.py
 	tox -e pylint
 
-lint3:
+lint3: version.py
 	tox -e pylint3
 
 integrationtest:
