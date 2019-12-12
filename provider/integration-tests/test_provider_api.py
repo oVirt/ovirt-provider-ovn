@@ -256,7 +256,6 @@ class TestSecurityGroupsApi(object):
                 assert rule['security_group_id'] == group.id
 
 
-@pytest.mark.xfail
 def test_not_found_escape():
     conn = http_client.HTTPConnection(ENDPOINT_HOST)
     conn.request(

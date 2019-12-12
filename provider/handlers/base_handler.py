@@ -43,7 +43,7 @@ JSON_SUFFIX = '.json'
 ERROR_MESSAGE = """
 {
   "error": {
-    "message": "%(explain)s",
+    "message": %(explain)s,
     "code": %(code)d,
     "title": "%(message)s"
   }
@@ -240,15 +240,16 @@ class BaseHandler(BaseHTTPRequestHandler):
         self._log_request(method, path, content, log_level=logging.ERROR)
         error_message = str(e) or message
         logging.exception(error_message)
+        explain = libjson.dumps(error_message)
         if six.PY2:
             self.send_error(response_code)
             self.wfile.write((ERROR_MESSAGE % {
                 'code': response_code,
-                'explain': error_message,
+                'explain': explain,
                 'message': http_client.responses[response_code]
             }).encode())
         else:
-            self.send_error(response_code, explain=error_message)  # noqa: E501 pylint: disable=E1123
+            self.send_error(response_code, explain=explain)  # noqa: E501 pylint: disable=E1123
 
     @staticmethod
     def _parse_request_path(full_path):
