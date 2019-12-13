@@ -18,7 +18,10 @@
 #
 
 import contextlib
+import json
+
 import pytest
+import six.moves.http_client as http_client
 import requests
 
 from lib.api_lib import update_and_assert
@@ -26,7 +29,9 @@ from lib.api_lib import SecurityGroup
 from lib.api_lib import SecurityGroupRule
 
 
-ENDPOINT = 'http://localhost:9696/v2.0/'
+ENDPOINT_HOST = 'localhost:9696'
+ENDPOINT_PATH = '/v2.0/'
+ENDPOINT = 'http://' + ENDPOINT_HOST + ENDPOINT_PATH
 SUBNET_ENDPOINT = ENDPOINT + 'subnets/'
 PORT_ENDPOINT = ENDPOINT + 'ports/'
 
@@ -249,6 +254,21 @@ class TestSecurityGroupsApi(object):
         for group in (enabling_group, limited_group):
             for rule in group.rules:
                 assert rule['security_group_id'] == group.id
+
+
+@pytest.mark.xfail
+def test_not_found_escape():
+    conn = http_client.HTTPConnection(ENDPOINT_HOST)
+    conn.request(
+        'GET',
+        ENDPOINT_PATH + 'xxx../","message":"<injected_message>'
+    )
+    response = conn.getresponse()
+    expected_code = 404
+    assert response.status == expected_code
+    data = json.loads(response.read())
+    assert data['error']['code'] == expected_code
+    assert data['error']['message'].startswith('Incorrect path')
 
 
 def _get_and_assert(entity_type, filter_key=None, filter_value=None):
