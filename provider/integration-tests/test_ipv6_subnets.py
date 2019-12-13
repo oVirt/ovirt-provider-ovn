@@ -31,7 +31,7 @@ from lib.dockerlib import get_container_id_from_img_name
 from lib.dockerlib import reconfigure_interface
 
 CONTROLLER_CONTAINER_ID = get_container_id_from_img_name(
-        'tripleomaster/centos-binary-ovn-controller:current-tripleo-rdo'
+        'tripleorocky/centos-binary-ovn-controller:current-tripleo-rdo'
 )
 PROVIDER_CONTAINER_ID = get_container_id_from_img_name(
             'maiqueb/ovirt_provider_ovn'

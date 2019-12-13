@@ -4,3 +4,7 @@ el8collection,https://copr-be.cloud.fedoraproject.org/results/sbonazzo/EL8_colle
 mdbarroso-python-ovsdbapp,https://copr-be.cloud.fedoraproject.org/results/mdbarroso/ovsdbapp/epel-8-x86_64/
 # Provides vdsm
 ovirt-master-tested,https://resources.ovirt.org/repos/ovirt/tested/master/rpm/$distro
+# Provides nmstate, required by vdsm
+nmstate,https://copr-be.cloud.fedoraproject.org/results/nmstate/nmstate-0.1/epel-8-x86_64/
+# Provides NetworkManager-libnm >= 1:1.20, required by nmstate
+https://copr-be.cloud.fedoraproject.org/results/networkmanager/NetworkManager-1.20/epel-8-x86_64/

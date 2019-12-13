@@ -16,7 +16,7 @@ RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == \
     rm -f /lib/systemd/system/anaconda.target.wants/*;
 
 RUN yum install -y \
-      http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm \
+      https://resources.ovirt.org/pub/yum-repo/ovirt-release43-snapshot.rpm \
       make \
       rpm-build \
       git \

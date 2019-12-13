@@ -6,8 +6,8 @@ EXPORTED_ARTIFACTS_DIR="$PROJECT_ROOT/exported-artifacts/"
 
 OVN_CENTRAL_TRIPLEO_TAG="${CENTRAL_CONTAINER_TAG:-current-tripleo-rdo}"
 OVN_CONTROLLER_TRIPLEO_TAG="${CONTROLLER_CONTAINER_TAG:-current-tripleo-rdo}"
-OVN_CENTRAL_IMG="tripleomaster/centos-binary-ovn-northd:$OVN_CENTRAL_TRIPLEO_TAG"
-OVN_CONTROLLER_IMG="tripleomaster/centos-binary-ovn-controller:$OVN_CONTROLLER_TRIPLEO_TAG"
+OVN_CENTRAL_IMG="tripleorocky/centos-binary-ovn-northd:$OVN_CENTRAL_TRIPLEO_TAG"
+OVN_CONTROLLER_IMG="tripleorocky/centos-binary-ovn-controller:$OVN_CONTROLLER_TRIPLEO_TAG"
 OVIRT_PROVIDER_OVN_IMG="${PROVIDER_IMG:-maiqueb/ovirt_provider_ovn}"
 
 OVN_CONTAINER_FILES="$PROJECT_ROOT/automation/containers"
