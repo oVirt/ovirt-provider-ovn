@@ -238,7 +238,7 @@ class BaseHandler(BaseHTTPRequestHandler):
         response_code=http_client.INTERNAL_SERVER_ERROR,
     ):
         self._log_request(method, path, content, log_level=logging.ERROR)
-        error_message = str(e) or message
+        error_message = str(e) or message or ''
         logging.exception(error_message)
         explain = libjson.dumps(error_message)
         if six.PY2:
