@@ -54,7 +54,7 @@ install_driver_config_tool: compile
 		install -m 644 -p -D $$file $(DRIVER_CONFIG_PYTHON_FILES_DIR)/vdsm/tool/$${file/driver\/vdsm_tool\///}; \
 	done
 
-install: replace_driver_shebangs install_provider_python_files install_driver_config_tool provider/scripts/ovirt-provider-ovn.service
+install: replace_driver_shebangs install_provider_python_files install_driver_config_tool provider/scripts/ovirt-provider-ovn.service provider/scripts/remove_chassis.sh
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/
 	install -d $(DESTDIR)/etc/ovirt-provider-ovn/conf.d
 	install -m 644 -D provider/readme.conf $(DESTDIR)/etc/ovirt-provider-ovn/conf.d/README
@@ -66,6 +66,7 @@ install: replace_driver_shebangs install_provider_python_files install_driver_co
 	install -m 644 -t $(DESTDIR)/usr/share/ovirt-provider-ovn/ AUTHORS
 	install -m 644 -D provider/scripts/ovirt-provider-ovn.service $(DESTDIR)/usr/lib/systemd/system/ovirt-provider-ovn.service
 	install -m 644 -D provider/scripts/ovirt-provider-ovn.xml $(DESTDIR)/usr/lib/firewalld/services/ovirt-provider-ovn.xml
+	install -m 544 -D provider/scripts/remove_chassis.sh $(PROVIDER_PYTHON_FILES_DIR)/scripts/remove_chassis.sh
 
 	# install driver hooks
 	install -m 555 -D driver/vdsm_hooks/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_device_create/10_ovirt_provider_ovn_hook
@@ -97,15 +98,13 @@ version.py: version.py.in
 	    < version.py.in \
 	    > provider/version.py
 
-provider/scripts/ovirt-provider-ovn.service: provider/scripts/ovirt-provider-ovn.service.in
-	sed -e "s|@PYTHON_EXECUTABLE@|${PYTHON}|" \
-		< provider/scripts/ovirt-provider-ovn.service.in \
-		> provider/scripts/ovirt-provider-ovn.service
+provider/scripts/ovirt-provider-ovn.service provider/scripts/remove_chassis.sh: % : %.in
+	sed -e "s|@PYTHON_EXECUTABLE@|${PYTHON}|" < $^ > $@
 
 dist: version.py
 	mkdir -p build/$(DIST_DIR)/
 
-	find ./provider \( -name "*py" -o -name "*conf" -o -name "*xml" -o -name "*service.in" \)   -exec cp --parents \{\} build/$(DIST_DIR)/ \;
+	find ./provider \( -name "*py" -o -name "*conf" -o -name "*xml" -o -name "*service.in" -o -name "*sh.in" \) -exec cp --parents \{\} build/$(DIST_DIR)/ \;
 	find ./driver \( -name "*py" -o -name "*conf" -o -name "*sh" \)   -exec cp --parents \{\} build/$(DIST_DIR)/ \;
 
 	cp Makefile build/$(DIST_DIR)/
