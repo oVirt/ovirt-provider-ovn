@@ -28,6 +28,7 @@ function destroy_env {
   if [ -n "$(filter_integration_test_containers)" ]; then
     collect_ovn_data
     collect_provider_logs
+    collect_journalctl_data
     docker rm -f $(filter_integration_test_containers)
   else
     echo "No containers to destroy; Bailing out."
@@ -101,6 +102,13 @@ function collect_ovn_data {
 function collect_provider_logs {
   if [ -n "$PROVIDER_ID" ]; then
     docker cp "$PROVIDER_ID":/var/log/ovirt-provider-ovn.log "$EXPORTED_ARTIFACTS_DIR"
+  fi
+}
+
+function collect_journalctl_data {
+  if [ -n "$PROVIDER_ID" ]; then
+    docker exec "$PROVIDER_ID" /bin/bash -c 'journalctl -xe' \
+	    > "$EXPORTED_ARTIFACTS_DIR"/journalctl.log
   fi
 }
 
