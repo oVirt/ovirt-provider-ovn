@@ -44,6 +44,9 @@ function create_ovn_containers {
 
   OVN_CONTROLLER_ID="$(docker run --privileged -itd -v ${OVN_CONTROLLER_FILES}/config.json:/var/lib/kolla/config_files/config.json -v ${OVN_CONTROLLER_FILES}/boot-controller.sh:/usr/bin/boot-controller -e KOLLA_CONFIG_STRATEGY=COPY_ONCE -e OVN_SB_IP=$OVN_CENTRAL_IP --label purpose=ovirt_provider_ovn_integ_tests $OVN_CONTROLLER_IMG)"
   OVN_CONTROLLER_IP="$(docker_ip $OVN_CONTROLLER_ID)"
+  docker exec -t "$OVN_CONTROLLER_ID" bash -c "
+    yum install -y dhclient --disablerepo='*' --enablerepo=base
+  "
 }
 
 function start_provider_container {
