@@ -137,8 +137,10 @@ to OVN.
 
 
 %files
-%config(noreplace) %{_sysconfdir}/ovirt-provider-ovn
 %config(noreplace) %{_sysconfdir}/logrotate.d/ovirt-provider-ovn
+%config(noreplace) %{_sysconfdir}/ovirt-provider-ovn/logger.conf
+%{_sysconfdir}/ovirt-provider-ovn/ovirt-provider-ovn.conf
+%{_sysconfdir}/ovirt-provider-ovn/conf.d/
 %{_datadir}/ovirt-provider-ovn
 %{_unitdir}/ovirt-provider-ovn.service
 /usr/lib/firewalld/services/ovirt-provider-ovn.xml
