@@ -1,15 +1,12 @@
 #!/bin/bash -xe
 
-if [ -x /usr/bin/pip-3 ] ; then
-    PIP=pip-3
-    VARIANT="3"
-else
-    PIP=pip
-    VARIANT=
-fi
-
 if [ "$(rpm --eval "%dist"|cut -c2-4)" == "el7" ] ; then
     pip install --upgrade pip
+    PIP=pip
+    VARIANT=
+else
+    PIP=pip-3
+    VARIANT="3"
 fi
 $PIP install -U tox
 $PIP install -U requests-mock==1.5.2
