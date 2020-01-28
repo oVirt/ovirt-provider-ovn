@@ -25,6 +25,7 @@ function docker_ip {
 
 function destroy_env {
   mkdir -p "$EXPORTED_ARTIFACTS_DIR"
+  collect_sys_info
   if [ -n "$(filter_integration_test_containers)" ]; then
     collect_ovn_data
     collect_provider_logs
@@ -103,6 +104,11 @@ function collect_provider_logs {
   if [ -n "$PROVIDER_ID" ]; then
     docker cp "$PROVIDER_ID":/var/log/ovirt-provider-ovn.log "$EXPORTED_ARTIFACTS_DIR"
   fi
+}
+
+function collect_sys_info {
+    cp /etc/redhat-release $EXPORTED_ARTIFACTS_DIR
+    uname -a > $EXPORTED_ARTIFACTS_DIR/kernel_info.txt
 }
 
 function collect_journalctl_data {
