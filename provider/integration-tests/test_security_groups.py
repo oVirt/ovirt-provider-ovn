@@ -32,9 +32,7 @@ CONTROLLER_CONTAINER_ID = get_container_id_from_img_name(
         'tripleorocky/centos-binary-ovn-controller:current-tripleo-rdo'
 )
 PROVIDER_CONTAINER_ID = get_container_id_from_img_name(
-            'maiqueb/ovirt_provider_ovn'
-) or get_container_id_from_img_name(
-            'maiqueb/ovirt_provider_ovn_fedora'
+            'quay.io/mdbarroso/ovirt_provider_ovn'
 )
 
 SAME_SUBNET = {

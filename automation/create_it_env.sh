@@ -6,9 +6,9 @@ EXPORTED_ARTIFACTS_DIR="$PROJECT_ROOT/exported-artifacts/"
 
 OVN_CENTRAL_TRIPLEO_TAG="${CENTRAL_CONTAINER_TAG:-current-tripleo-rdo}"
 OVN_CONTROLLER_TRIPLEO_TAG="${CONTROLLER_CONTAINER_TAG:-current-tripleo-rdo}"
-OVN_CENTRAL_IMG="tripleorocky/centos-binary-ovn-northd:$OVN_CENTRAL_TRIPLEO_TAG"
-OVN_CONTROLLER_IMG="tripleorocky/centos-binary-ovn-controller:$OVN_CONTROLLER_TRIPLEO_TAG"
-OVIRT_PROVIDER_OVN_IMG="${PROVIDER_IMG:-maiqueb/ovirt_provider_ovn}"
+OVN_CENTRAL_IMG="docker.io/tripleorocky/centos-binary-ovn-northd:$OVN_CENTRAL_TRIPLEO_TAG"
+OVN_CONTROLLER_IMG="docker.io/tripleorocky/centos-binary-ovn-controller:$OVN_CONTROLLER_TRIPLEO_TAG"
+OVIRT_PROVIDER_OVN_IMG="${PROVIDER_IMG:-quay.io/mdbarroso/ovirt_provider_ovn}"
 
 OVN_CONTAINER_FILES="$PROJECT_ROOT/automation/containers"
 OVN_NORTHD_FILES="${OVN_CONTAINER_FILES}/ovn-central"
@@ -53,7 +53,17 @@ function create_ovn_containers {
 }
 
 function start_provider_container {
-  PROVIDER_ID="$(docker run --privileged -d -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $PROJECT_ROOT/:$CONTAINER_SRC_CODE_PATH -p 9696:9696 -p 35357:35357 -e OVN_NB_IP=$OVN_CENTRAL_IP -e PROVIDER_SRC_CODE=$CONTAINER_SRC_CODE_PATH $OVIRT_PROVIDER_OVN_IMG)"
+  kernel_version="$(uname -r)"
+  PROVIDER_ID="$(
+      docker run --privileged -d \
+          -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+	  -v $PROJECT_ROOT/:$CONTAINER_SRC_CODE_PATH \
+	  -v /lib/modules/$kernel_version:/lib/modules/$kernel_version:ro \
+	  -p 9696:9696 -p 35357:35357 \
+	  -e OVN_NB_IP=$OVN_CENTRAL_IP \
+	  -e PROVIDER_SRC_CODE=$CONTAINER_SRC_CODE_PATH \
+        $OVIRT_PROVIDER_OVN_IMG
+  )"
   create_rpms
   install_provider_on_container
 }
@@ -78,6 +88,7 @@ function install_provider_on_container {
     yum install -y --disablerepo=* \
 	    ~/rpmbuild/RPMS/noarch/ovirt-provider-ovn-1.*.rpm && \
     sed -ie "s/PLACE_HOLDER/${OVN_NB_IP}/g" /etc/ovirt-provider-ovn/conf.d/10-integrationtest.conf && \
+    modprobe openvswitch && \
     systemctl start ovirt-provider-ovn
   '
 }

@@ -1,7 +1,7 @@
 # This Dockerfile is based on the recommendations provided in the
 # Centos official repository (https://hub.docker.com/_/centos/).
 # It enables systemd to be operational.
-FROM centos:7
+FROM centos:8
 LABEL maintainer="mdbarroso@redhat.com" purpose="ovirt_provider_ovn_integ_tests"
 ENV container docker
 
@@ -16,22 +16,21 @@ RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == \
     rm -f /lib/systemd/system/anaconda.target.wants/*;
 
 RUN yum install -y \
-      https://resources.ovirt.org/pub/yum-repo/ovirt-release43-snapshot.rpm \
+      https://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm \
       make \
       rpm-build \
       git \
-      python-devel && \
+      python3-devel && \
     mkdir -p /etc/ovirt-provider-ovn/conf.d/
 
 RUN yum install -y openvswitch \
       openvswitch-ovn-common \
       openvswitch-ovn-central \
-      python-ovsdbapp \
-      python-openvswitch \
       kernel \
-      linux-firmware \
-      python2-netaddr \
-      python2-requests && \
+      python3-ovsdbapp \
+      python3-openvswitch \
+      python3-netaddr \
+      python3-requests && \
     yum clean all
 
 COPY 10-integrationtest.conf /etc/ovirt-provider-ovn/conf.d/
