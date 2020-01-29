@@ -24,6 +24,7 @@ function docker_ip {
 }
 
 function destroy_env {
+  mkdir -p "$EXPORTED_ARTIFACTS_DIR"
   if [ -n "$(filter_integration_test_containers)" ]; then
     collect_ovn_data
     collect_provider_logs
@@ -87,7 +88,6 @@ function activate_provider_traces {
 
 function collect_ovn_data {
   echo "Collecting data from OVN containers ..."
-  mkdir -p "$EXPORTED_ARTIFACTS_DIR"
   if [ -n "$OVN_CENTRAL_ID" ]; then
     docker cp "$OVN_CENTRAL_ID":/etc/openvswitch/ovnnb_db.db "$EXPORTED_ARTIFACTS_DIR"
     docker cp "$OVN_CENTRAL_ID":/etc/openvswitch/ovnsb_db.db "$EXPORTED_ARTIFACTS_DIR"
