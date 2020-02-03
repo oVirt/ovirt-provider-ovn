@@ -12,6 +12,13 @@ else
     RPMS="exported-artifacts/ovirt-provider-ovn-*.noarch.rpm"
 fi
 
+# must override the advanced virt repo on el8
+# TODO: get rid of this once advanced virt hits centOS8
+if [[ "${DISTVER}" == "el8" ]]; then
+    source automation/common.sh
+    add_advanced_virt
+fi
+
 
 mkdir -p exported-artifacts
 
