@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -121,6 +121,37 @@ def broken_port(logical_switch, subnet):
 
 
 @pytest.fixture(scope='module')
+def broken_port_sec_group(logical_switch, subnet):
+    nonexistent_sec_group = '2d6a7cf1-0105-4864-b94b-8ff0b30c41a7'
+    payload = {
+        'port': {
+            'admin_state_up': True,
+            'fixed_ips': [
+                {
+                    'subnet_id': subnet['id']
+                }
+            ],
+            'mac_address': 'fa:16:3e:c9:cb:f0',
+            'name': 'broken-port',
+            'network_id': logical_switch['id'],
+            'port_security_enabled': True,
+            'project_id': 'd6700c0c9ffa4f1cb322cd4a1f3906fa',
+            'security_groups': [
+                nonexistent_sec_group
+            ],
+            'tenant_id': 'd6700c0c9ffa4f1cb322cd4a1f3906fa',
+        }
+    }
+    response = requests.post(
+        'http://localhost:9696/v2.0/ports/', json=payload
+    )
+    _expect_failure(
+        response, 500,
+        'Port group {} does not exist'.format(nonexistent_sec_group)
+    )
+
+
+@pytest.fixture(scope='module')
 def icmp_group():
     with SecurityGroup('icmp_group', None) as sec_group:
         yield sec_group
@@ -222,18 +253,30 @@ def test_update_network_with_subnet_mtu(logical_switch, subnet):
                           update_network_data)
 
 
-def test_create_invalid_port_no_leftovers(subnet, broken_port):
+def test_create_invalid_port_with_mac(subnet, broken_port):
     json_response = _get_and_assert('ports')
-    assert len(json_response) == 1
     assert json_response[0]['name'] == 'private-port'
-    broken_port_data = _get_and_assert(
-        'ports', filter_key='name', filter_value='broken-port'
-    )
-    assert len(broken_port_data) == 0
+
     private_port_data = _get_and_assert(
         'ports', filter_key='name', filter_value='private-port'
     )
     assert json_response == private_port_data
+
+    _expect_no_leftovers('broken-port')
+
+
+def test_create_port_with_nonexisting_sec_group(
+    subnet, broken_port_sec_group
+):
+    json_response = _get_and_assert('ports')
+    assert json_response[0]['name'] == 'private-port'
+
+    private_port_data = _get_and_assert(
+        'ports', filter_key='name', filter_value='private-port'
+    )
+    assert json_response == private_port_data
+
+    _expect_no_leftovers('broken-port')
 
 
 class TestSecurityGroupsApi(object):
@@ -291,6 +334,13 @@ def test_not_found_escape():
     data = json.loads(response.read())
     assert data['error']['code'] == expected_code
     assert data['error']['message'].startswith('Incorrect path')
+
+
+def _expect_no_leftovers(broken_port_name):
+    broken_port_data = _get_and_assert(
+        'ports', filter_key='name', filter_value=broken_port_name,
+    )
+    assert not broken_port_data
 
 
 def _get_and_assert(entity_type, filter_key=None, filter_value=None):
