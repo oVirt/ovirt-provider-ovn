@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2020 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -517,10 +517,7 @@ class NeutronApi(object):
                 mac += ' ' + self._get_port_addesses_suffix(
                     network_id, fixed_ips)
             else:
-                self.ovn_north.clear_row_column(
-                    ovnconst.TABLE_LSP, port_id,
-                    ovnconst.ROW_LSP_DHCPV4_OPTIONS
-                )
+                db_set_command.add(ovnconst.ROW_LSP_DHCPV4_OPTIONS, '')
             db_set_command.add(ovnconst.ROW_LSP_ADDRESSES, [mac])
         return db_set_command
 
