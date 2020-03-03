@@ -120,17 +120,14 @@ def broken_port(logical_switch, subnet):
     )
 
 
-@pytest.fixture(scope='module')
-def broken_port_sec_group(logical_switch, subnet):
+@pytest.fixture(
+    scope='module', params=[True, False], ids=['with_subnet', 'without_subnet']
+)
+def broken_port_sec_group(request, logical_switch, subnet):
     nonexistent_sec_group = '2d6a7cf1-0105-4864-b94b-8ff0b30c41a7'
     payload = {
         'port': {
             'admin_state_up': True,
-            'fixed_ips': [
-                {
-                    'subnet_id': subnet['id']
-                }
-            ],
             'mac_address': 'fa:16:3e:c9:cb:f0',
             'name': 'broken-port',
             'network_id': logical_switch['id'],
@@ -142,6 +139,9 @@ def broken_port_sec_group(logical_switch, subnet):
             'tenant_id': 'd6700c0c9ffa4f1cb322cd4a1f3906fa',
         }
     }
+    if request.param:
+        payload['fixed_ips'] = {'subnet_id': subnet['id']}
+
     response = requests.post(
         'http://localhost:9696/v2.0/ports/', json=payload
     )
@@ -266,7 +266,7 @@ def test_create_invalid_port_with_mac(subnet, broken_port):
 
 
 def test_create_port_with_nonexisting_sec_group(
-    subnet, broken_port_sec_group
+    broken_port_sec_group
 ):
     json_response = _get_and_assert('ports')
     assert json_response[0]['name'] == 'private-port'
