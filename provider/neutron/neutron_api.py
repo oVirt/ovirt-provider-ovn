@@ -333,10 +333,10 @@ class NeutronApi(object):
 
     @PortMapper.map_to_rest
     def list_ports(self):
-        ports_rows = self.ovn_north.list_lsp()
-        return [self._get_network_port(port_row)
-                for port_row in ports_rows
-                if self._is_port_ovirt_controlled(port_row)]
+        return [self._get_network_port(lsp, ls)
+                for ls in self.ovn_north.list_ls()
+                for lsp in ls.ports
+                if self._is_port_ovirt_controlled(lsp)]
 
     @PortMapper.map_to_rest
     def get_port(self, port_id):
@@ -348,8 +348,9 @@ class NeutronApi(object):
     def _serialize_port(self, port):
         return port
 
-    def _get_network_port(self, lsp):
-        ls = self._get_port_network(lsp)
+    def _get_network_port(self, lsp, ls=None):
+        if ls is None:
+            ls = self._get_port_network(lsp)
         dhcp_options = self.ovn_north.get_dhcp(lsp_id=lsp.uuid)
         lrp_name = lsp.options.get(ovnconst.LSP_OPTION_ROUTER_PORT)
         lrp = self.ovn_north.get_lrp(lrp_name=lrp_name) if lrp_name else None
