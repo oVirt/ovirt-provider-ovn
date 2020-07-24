@@ -256,7 +256,7 @@ class TestOvnNorth(object):
         str(SECURITY_GROUP_ID), 'allow', SECURITY_GROUP_RULE_03_EXT_IDS
     )
 
-    ports = [PORT_1, PORT_2]
+    ports = [PORT_1, PORT_2, PORT_3]
 
     networks = [NETWORK_10, NETWORK_11, NETWORK_LOCALNET_12]
 
@@ -922,7 +922,7 @@ class TestOvnNorth(object):
     def test_list_ports(self, mock_connection):
         ovn_north = NeutronApi()
         ports = ovn_north.list_ports()
-        assert len(ports) == 2
+        assert len(ports) == 3
         logical_switch = OvnNetworkRow(
             TestOvnNorth.NETWORK_ID11, name=TestOvnNorth.NETWORK_NAME11,
             ports=[TestOvnNorth.PORT_1, TestOvnNorth.PORT_2]
@@ -940,8 +940,18 @@ class TestOvnNorth(object):
             lrp=None
         )
 
+        third_port = NetworkPort(
+            lsp=TestOvnNorth.PORT_3,
+            ls=OvnNetworkRow(
+                TestOvnNorth.NETWORK_ID12
+            ),
+            dhcp_options=None,
+            lrp=None
+        )
+
         assert_port_equal(ports[0], first_port)
         assert_port_equal(ports[1], second_port)
+        assert_port_equal(ports[2], third_port)
 
     @mock.patch(
         'ovsdbapp.backend.ovs_idl.transaction.Transaction.commit',
