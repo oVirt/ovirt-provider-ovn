@@ -518,7 +518,7 @@ class NeutronApi(object):
                 mac += ' ' + self._get_port_addesses_suffix(
                     network_id, fixed_ips)
             else:
-                db_set_command.add(ovnconst.ROW_LSP_DHCPV4_OPTIONS, '')
+                db_set_command.add(ovnconst.ROW_LSP_DHCPV4_OPTIONS, [])
             db_set_command.add(ovnconst.ROW_LSP_ADDRESSES, [mac])
         return db_set_command
 
