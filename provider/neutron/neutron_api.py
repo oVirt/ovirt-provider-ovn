@@ -351,10 +351,22 @@ class NeutronApi(object):
     def _get_network_port(self, lsp, ls=None):
         if ls is None:
             ls = self._get_port_network(lsp)
-        dhcp_options = self.ovn_north.get_dhcp(lsp_id=lsp.uuid)
+        dhcp_options = self._get_dhcp(lsp, ls)
         lrp_name = lsp.options.get(ovnconst.LSP_OPTION_ROUTER_PORT)
         lrp = self.ovn_north.get_lrp(lrp_name=lrp_name) if lrp_name else None
         return NetworkPort(lsp=lsp, ls=ls, dhcp_options=dhcp_options, lrp=lrp)
+
+    def _get_dhcp(self, lsp, ls):
+        dhcp_id = None
+        if lsp.dhcpv4_options:
+            dhcp_id = lsp.dhcpv4_options[0].uuid
+        if lsp.dhcpv6_options:
+            dhcp_id = lsp.dhcpv6_options[0].uuid
+
+        if dhcp_id:
+            return self.ovn_north.get_dhcp(dhcp_id=dhcp_id)
+        else:
+            return self.ovn_north.get_dhcp(ls_id=ls.uuid)
 
     @PortMapper.validate_add
     @PortMapper.map_from_rest

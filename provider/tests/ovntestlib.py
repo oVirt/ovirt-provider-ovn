@@ -103,6 +103,7 @@ class OvnPortRow(OvnRow):
             PortMapper.OVN_DEVICE_ID: device_id
         }
         self.dhcpv4_options = None
+        self.dhcpv6_options = None
         self.addresses = addresses or ['unknown']
         self.up = None
         self.enabled = None
