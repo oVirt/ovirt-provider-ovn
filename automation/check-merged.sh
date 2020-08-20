@@ -2,13 +2,14 @@
 
 if [ "$(rpm --eval "%dist"|cut -c2-4)" == "el7" ] ; then
     pip install --upgrade pip
+    export TOX_PIP_VERSION=20.1
     PIP=pip
     VARIANT=
 else
     PIP=pip-3
     VARIANT="3"
 fi
-$PIP install -U tox
+$PIP install -U tox tox-pip-version
 $PIP install -U requests-mock==1.5.2
 
 export PATH=/usr/local/bin:$PATH
