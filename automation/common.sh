@@ -7,15 +7,11 @@ add_advanced_virt() {
     cat >>/etc/dnf/dnf.conf <<EOF
 
 
-[copr:copr.fedorainfracloud.org:sbonazzo:AdvancedVirtualization]
-name=Copr repo for AdvancedVirtualization owned by sbonazzo
-baseurl=https://copr-be.cloud.fedoraproject.org/results/sbonazzo/AdvancedVirtualization/centos-stream-\$basearch/
-type=rpm-md
-gpgcheck=1
-gpgkey=https://copr-be.cloud.fedoraproject.org/results/sbonazzo/AdvancedVirtualization/pubkey.gpg
-repo_gpgcheck=0
+[ovirt-master-advanced-virtualization-testing]
+name=Advanced Virtualization testing packages
+baseurl=https://buildlogs.centos.org/centos/8/virt/x86_64/advanced-virtualization/
 enabled=1
-enabled_metadata=1
+gpgcheck=0
 module_hotfixes=1
 EOF
 }
