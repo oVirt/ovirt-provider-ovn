@@ -160,6 +160,9 @@ to OVN.
 
 
 %changelog
+* Tue Aug 25 2020 Dominik Holler <dholler@redhat.com> - 1.2.31
+- improve scaling of port listing - bz#1835550
+
 * Tue Mar 24 2020 Dominik Holler <dholler@redhat.com> - 1.2.30
 - ovirt-provider-ovn.conf is no config file - bz#1701121
 - clear the port dhcp_options in tx scope - bz#1795236
