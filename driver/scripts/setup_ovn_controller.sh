@@ -24,6 +24,8 @@ systemctl start ovsdb-server
 ovs-vsctl --no-wait set open . external-ids:ovn-remote=ssl:$1:6642
 ovs-vsctl --no-wait set open . external-ids:ovn-encap-type=geneve
 ovs-vsctl --no-wait set open . external-ids:ovn-encap-ip=$2
+ovs-vsctl --no-wait set open . external_ids:ovn-remote-probe-interval=60000
+ovs-vsctl --no-wait set open . external_ids:ovn-openflow-probe-interval=60
 
 if [ $# -eq 5 ]; then
     key_file=$3

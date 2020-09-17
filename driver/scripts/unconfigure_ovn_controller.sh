@@ -34,6 +34,8 @@ systemctl start ovsdb-server    # commands below require ovsdb-server
 ovs-vsctl --no-wait remove open . external-ids ovn-remote
 ovs-vsctl --no-wait remove open . external-ids ovn-encap-type
 ovs-vsctl --no-wait remove open . external-ids ovn-encap-ip
+ovs-vsctl --no-wait remove open . external_ids ovn-remote-probe-interval
+ovs-vsctl --no-wait remove open . external_ids ovn-openflow-probe-interval
 if [ "$OVSDB_STATUS" -ne 0 ]; then
   systemctl stop ovsdb-server
 fi
