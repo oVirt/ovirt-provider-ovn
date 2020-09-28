@@ -160,6 +160,9 @@ to OVN.
 
 
 %changelog
+* Mon Sep 28 2020 Dominik Holler <dholler@redhat.com> - 1.2.32
+- configure for scaling scenarios - bz#1871819
+
 * Tue Aug 25 2020 Dominik Holler <dholler@redhat.com> - 1.2.31
 - improve scaling of port listing - bz#1835550
 
