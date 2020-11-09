@@ -37,8 +37,10 @@ PORT_ENDPOINT = ENDPOINT + 'ports/'
 
 
 EXT_NET_NAME = 'extnet'
+EXT_NET_NAME1 = 'extnet1'
 PROVIDER_TYPE = 'vlan'
 VLAN_ID = 666
+VLAN_ID_25 = 25
 
 
 @pytest.fixture(scope='module')
@@ -186,6 +188,22 @@ def test_get_physnet(ext_net_logical_switch):
     assert physnet['provider:physical_network'] == EXT_NET_NAME
     assert physnet['provider:network_type'] == PROVIDER_TYPE
     assert physnet['provider:segmentation_id'] == VLAN_ID
+
+
+def test_update_physnet(ext_net_logical_switch):
+    networks = _get_and_assert(
+        'networks', filter_key='name', filter_value='pls0'
+    )
+    assert len(networks) == 1
+    physnet = networks.pop()
+    update_network_data = {
+        'network': {
+            'provider:physical_network': EXT_NET_NAME1,
+            'provider:network_type': PROVIDER_TYPE,
+            'provider:segmentation_id': VLAN_ID_25,
+        }
+    }
+    update_and_assert('networks', physnet['id'], update_network_data)
 
 
 def test_filter(logical_switch):

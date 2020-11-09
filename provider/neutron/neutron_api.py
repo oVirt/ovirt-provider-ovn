@@ -173,12 +173,12 @@ class NeutronApi(object):
         network_uuid = self._create_network(
             name, transaction, mtu, port_security_enabled
         )
-        localnet_port = self._create_port(
+        lsp_id = self._create_port(
             ovnconst.LOCALNET_SWITCH_PORT_NAME, network_uuid,
             transaction=transaction
         )
         transaction.add(
-            self._set_port_localnet_values(localnet_port, localnet, vlan)
+            self._set_port_localnet_values(lsp_id, localnet, vlan)
         )
         return network_uuid
 
@@ -240,12 +240,14 @@ class NeutronApi(object):
         localnet_port = self._get_localnet_lsp(network)
         if localnet:
             if not localnet_port:
-                localnet_port = self._create_port(
+                lsp_id = self._create_port(
                     ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid),
                     transaction=transaction
                 )
+            else:
+                lsp_id = localnet_port.name
             transaction.add(
-                self._set_port_localnet_values(localnet_port, localnet, vlan)
+                self._set_port_localnet_values(lsp_id, localnet, vlan)
             )
         elif localnet_port:
             self.ovn_north.remove_lsp(
@@ -1148,10 +1150,13 @@ class NeutronApi(object):
         self._validate_create_routing_lsp_by_subnet(
             network_id, subnet_id, router_id)
         lrp_ip = self._get_ip_from_subnet(subnet, network_id, router_id)
-        port = self._create_port(ovnconst.ROUTER_SWITCH_PORT_NAME, network_id)
-        lrp_name = self._create_router_port_name(port)
+        lsp_id = self._create_port(
+            ovnconst.ROUTER_SWITCH_PORT_NAME,
+            network_id,
+        )
+        lrp_name = self._create_router_port_name(lsp_id)
         self._connect_port_to_router(
-            port,
+            lsp_id,
             lrp_name,
             router_id,
             name=ovnconst.ROUTER_SWITCH_PORT_NAME,
@@ -1159,7 +1164,7 @@ class NeutronApi(object):
         )
         self._set_subnet_gateway_router(subnet_id, router_id)
         return (
-            str(port),
+            str(lsp_id),
             lrp_name,
             lrp_ip,
             network_id,
@@ -1270,15 +1275,18 @@ class NeutronApi(object):
             )
         )
 
-        port = self._create_port(ovnconst.ROUTER_SWITCH_PORT_NAME, network_id)
-        lrp_name = self._create_router_port_name(port)
+        lsp_id = self._create_port(
+            ovnconst.ROUTER_SWITCH_PORT_NAME,
+            network_id,
+        )
+        lrp_name = self._create_router_port_name(lsp_id)
         mac = ip_utils.random_unique_mac(
             self.ovn_north.list_lsp(),
             self.ovn_north.list_lrp()
         )
         self.ovn_north.add_lrp(router_id, lrp_name, mac=mac, lrp_ip=port_ip)
         self._connect_port_to_router(
-            port,
+            lsp_id,
             lrp_name,
             router_id,
             name=ovnconst.ROUTER_SWITCH_PORT_NAME,
@@ -1291,7 +1299,7 @@ class NeutronApi(object):
         ).add(
             ovnconst.ROW_LR_EXTERNAL_IDS,
             {
-                RouterMapper.OVN_ROUTER_GATEWAY_PORT: str(port),
+                RouterMapper.OVN_ROUTER_GATEWAY_PORT: str(lsp_id),
             }
         ).execute()
 
