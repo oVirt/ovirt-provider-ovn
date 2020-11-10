@@ -155,7 +155,7 @@ to OVN.
 %{_libexecdir}/vdsm/vhostuser_permissions_setter
 %{_libexecdir}/ovirt-provider-ovn
 %{required_python_sitelib}/vdsm/tool/
-%{_sysconfdir}/sudoers.d/50_vdsm_hook_ovirt_provider_ovn_hook
+%attr(440, root, root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_ovirt_provider_ovn_hook
 %license LICENSE
 
 
