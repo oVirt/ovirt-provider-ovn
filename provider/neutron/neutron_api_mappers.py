@@ -583,6 +583,7 @@ class SubnetMapper(Mapper):
     OVN_DHCP_SERVER_MAC = 'server_mac'
     OVN_DHCP_LEASE_TIME = 'lease_time'
     OVN_DHCP_MTU = 'mtu'
+    OVN_DHCPV6_STATEFUL = 'dhcpv6_stateful'
     OVN_DHCPV6_STATELESS = 'dhcpv6_stateless'
     OVN_GATEWAY_ROUTER_ID = 'gateway_router'
     OVN_IP_VERSION = 'ip_version'
@@ -592,11 +593,27 @@ class SubnetMapper(Mapper):
     IP_VERSION_6 = 6
     ALLOWED_IP_VERSIONS = [IP_VERSION_4, IP_VERSION_6]
 
-    IPV6_ADDRESS_MODE_STATEFUL = 'dhcpv6_stateful'
-    IPV6_ADDRESS_MODE_STATELESS = 'dhcpv6_stateless'
-    ALLOWED_IPV6_ADDRESS_MODES = [
-        IPV6_ADDRESS_MODE_STATEFUL, IPV6_ADDRESS_MODE_STATELESS
-    ]
+    IPV6_ADDRESS_MODE_STATEFUL = 'dhcpv6-stateful'
+    IPV6_ADDRESS_MODE_STATELESS = 'dhcpv6-stateless'
+
+    rest_ipv6_address_mode = {
+        OVN_DHCPV6_STATEFUL: IPV6_ADDRESS_MODE_STATEFUL,
+        OVN_DHCPV6_STATELESS: IPV6_ADDRESS_MODE_STATELESS
+    }
+
+    ovn_ipv6_address_mode = {
+        v: k for k, v in six.iteritems(rest_ipv6_address_mode)
+    }
+
+    # allow raw OVN values on OpenStack API for backward compatibility
+    ovn_ipv6_address_mode.update(
+        {
+            OVN_DHCPV6_STATEFUL: OVN_DHCPV6_STATEFUL,
+            OVN_DHCPV6_STATELESS: OVN_DHCPV6_STATELESS
+        }
+    )
+
+    ALLOWED_IPV6_ADDRESS_MODES = sorted(list(ovn_ipv6_address_mode.keys()))
 
     _optional_update_data = {
         REST_SUBNET_NAME, REST_SUBNET_ENABLE_DHCP, REST_SUBNET_DNS_NAMESERVERS,
@@ -612,9 +629,11 @@ class SubnetMapper(Mapper):
         dns = dnses[0] if dnses else None
         gateway = rest_data.get(SubnetMapper.REST_SUBNET_GATEWAY_IP)
         ip_version = rest_data.get(SubnetMapper.REST_SUBNET_IP_VERSION)
-        ipv6_address_mode = rest_data.get(
-            SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE,
-            dhcp_ipv6_address_mode() if ip_version == 6 else None
+        ipv6_address_mode = SubnetMapper.ovn_ipv6_address_mode.get(
+            rest_data.get(
+                SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE,
+                dhcp_ipv6_address_mode() if ip_version == 6 else None
+            )
         )
 
         if subnet_id:
@@ -673,9 +692,13 @@ class SubnetMapper(Mapper):
                 external_ids[SubnetMapper.OVN_GATEWAY]
             )
         if SubnetMapper.OVN_IPV6_ADDRESS_MODE in external_ids:
-            result[SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE] = external_ids[
-                SubnetMapper.OVN_IPV6_ADDRESS_MODE
-            ]
+            result[SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE] = (
+                SubnetMapper.rest_ipv6_address_mode[
+                    external_ids[
+                        SubnetMapper.OVN_IPV6_ADDRESS_MODE
+                    ]
+                ]
+            )
 
         return result
 

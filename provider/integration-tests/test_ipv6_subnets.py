@@ -81,7 +81,7 @@ MULTIPLE_SUBNETS_STATELESS = {
             'ns': 'ns1',
             'ip_version': 6,
             'gateway_ip': 'bef0:1234:a890:5678::1',
-            'ipv6_address_mode': 'dhcpv6_stateless'
+            'ipv6_address_mode': 'dhcpv6-stateless'
         },
         {
             'name': 'lport2',
@@ -92,7 +92,7 @@ MULTIPLE_SUBNETS_STATELESS = {
             'ns': 'ns2',
             'ip_version': 6,
             'gateway_ip': 'def0:abcd::1',
-            'ipv6_address_mode': 'dhcpv6_stateless'
+            'ipv6_address_mode': 'dhcpv6-stateless'
         },
     ],
     'routers': [

@@ -89,7 +89,7 @@ DEFAULT_DHCP_MTU = '1442'
 # Setting MTU by DHCP is enabled by default, until there is a better way to
 # set the MTU
 DEFAULT_DHCP_ENABLE_MTU = True
-DEFAULT_DHCP_DEFAULT_IPV6_ADDRESS_MODE = 'dhcpv6_stateful'
+DEFAULT_DHCP_DEFAULT_IPV6_ADDRESS_MODE = 'dhcpv6-stateful'
 
 CONFIG_SECTION_AUTH = 'AUTH'
 KEY_AUTH_PLUGIN = 'auth-plugin'

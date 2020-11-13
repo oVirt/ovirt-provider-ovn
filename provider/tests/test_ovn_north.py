@@ -1921,18 +1921,25 @@ class TestOvnNorth(object):
     def test_ipv6_support(
             self, mock_setoptions_command, mock_dbset_command, mock_connection
     ):
-        ovn_north = NeutronApi()
-        rest_data = SubnetApiInputMaker(
-            TestOvnNorth.SUBNET_IPV6.external_ids.get(
-                SubnetMapper.OVN_NAME
-            ),
-            cidr=TestOvnNorth.SUBNET_IPV6_CIDR,
-            network_id=str(TestOvnNorth.NETWORK_IDMTU),
-            gateway_ip=TestOvnNorth.SUBNET_IPV6_GATEWAY, ip_version=6
-        ).get()
+        for mode in [
+            None,
+            'dhcpv6-stateful', 'dhcpv6-stateless',
+            'dhcpv6_stateful', 'dhcpv6_stateless'
+        ]:
+            ovn_north = NeutronApi()
+            rest_data = SubnetApiInputMaker(
+                TestOvnNorth.SUBNET_IPV6.external_ids.get(
+                    SubnetMapper.OVN_NAME
+                ),
+                cidr=TestOvnNorth.SUBNET_IPV6_CIDR,
+                network_id=str(TestOvnNorth.NETWORK_IDMTU),
+                gateway_ip=TestOvnNorth.SUBNET_IPV6_GATEWAY,
+                ip_version=6,
+                address_mode=mode
+            ).get()
 
-        created_subnet = ovn_north.add_subnet(rest_data)
-        assert_subnet_equal(created_subnet, TestOvnNorth.SUBNET_IPV6)
+            created_subnet = ovn_north.add_subnet(rest_data)
+            assert_subnet_equal(created_subnet, TestOvnNorth.SUBNET_IPV6)
 
     def test_ipv6_allowed_ra_modes(
             self, mock_connection
@@ -1952,7 +1959,8 @@ class TestOvnNorth(object):
             ovn_north.add_subnet(slaac_rest_data)
         assert str(error.value) == (
             'Setting ipv6_address_mode value to slaac is not supported. '
-            'Allowed values are: [\'dhcpv6_stateful\', \'dhcpv6_stateless\']'
+            'Allowed values are: [\'dhcpv6-stateful\', \'dhcpv6-stateless\','
+            ' \'dhcpv6_stateful\', \'dhcpv6_stateless\']'
         )
 
     def test_v4_subnet_having_v6_attributes(self, mock_connection):
@@ -1964,7 +1972,7 @@ class TestOvnNorth(object):
             cidr=TestOvnNorth.SUBNET_CIDR,
             network_id=str(TestOvnNorth.NETWORK_ID10),
             dns_nameservers=['1.1.1.1'], gateway_ip='1.1.1.0',
-            ip_version=4, address_mode='dhcpv6_stateful'
+            ip_version=4, address_mode='dhcpv6-stateful'
         ).get()
 
         with pytest.raises(BadRequestError) as bre:
@@ -1983,7 +1991,7 @@ class TestOvnNorth(object):
             cidr='bef0:1234:a890:5678::/96',
             network_id=str(TestOvnNorth.NETWORK_IDMTU),
             gateway_ip=TestOvnNorth.SUBNET_IPV6_GATEWAY, ip_version=6,
-            address_mode='dhcpv6_stateless'
+            address_mode='dhcpv6-stateless'
         ).get()
 
         with pytest.raises(BadRequestError) as bre:

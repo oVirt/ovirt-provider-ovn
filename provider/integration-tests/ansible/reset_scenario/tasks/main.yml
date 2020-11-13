@@ -78,7 +78,7 @@
     - "'ip' not in item[0]"
     - "'ipv6_address_mode' in item[0]"
     - item[0].cidr | ipv6
-    - item[0].ipv6_address_mode == 'dhcpv6_stateless'
+    - item[0].ipv6_address_mode == 'dhcpv6-stateless'
   with_nested:
     - "{{ network_points }}"
     - [ 'autoconf', 'accept_ra', 'accept_redirects' ,'accept_ra_pinfo' ]

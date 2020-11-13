@@ -233,7 +233,7 @@ def test_get_subnet(subnet):
 def test_ipv6_address_mode_not_updateable(subnet):
     url = SUBNET_ENDPOINT + subnet['id']
     update_payload = {
-        'subnet': {'ipv6_address_mode': 'dhcpv6_stateful'}
+        'subnet': {'ipv6_address_mode': 'dhcpv6-stateful'}
     }
     r = requests.put(url, json=update_payload)
     _expect_failure(r, 400, 'Invalid data found: ipv6_address_mode')
@@ -409,7 +409,7 @@ def _subnet(network):
             'ip_version': 6,
             'cidr': '1234::/64',
             'gateway_ip': '1234::1',
-            'ipv6_address_mode': 'dhcpv6_stateless'
+            'ipv6_address_mode': 'dhcpv6-stateless'
         }
     }
     response = requests.post(

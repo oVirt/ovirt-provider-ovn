@@ -40,7 +40,7 @@ below:
             'gateway_ip': '192.168.10.1',
             'network': 'net1',
             'ns': 'ns1',
-            'ipv6_address_mode': 'dhcpv6_stateless'
+            'ipv6_address_mode': 'dhcpv6-stateless'
         },
         {
             'name': 'lport2',
@@ -51,7 +51,7 @@ below:
             'gateway_ip': '192.168.10.1',
             'network': 'net1',
             'ns': 'ns2',
-            'ipv6_address_mode': 'dhcpv6_stateless'
+            'ipv6_address_mode': 'dhcpv6-stateless'
         }
     ],
     'routers': [
@@ -89,7 +89,7 @@ Example Playbook
                gateway_ip: 192.168.10.1
                network: net1
                ns: ns1
-               ipv6_address_mode: dhcpv6_stateless
+               ipv6_address_mode: dhcpv6-stateless
              - name: lport2
                ip: 192.168.10.3
                mac': 00:00:00:22:22:22
@@ -98,7 +98,7 @@ Example Playbook
                gateway_ip: 192.168.10.1
                network: net1
                ns: ns2
-               ipv6_address_mode: dhcpv6_stateless
+               ipv6_address_mode: dhcpv6-stateless
            routers:
              - name: router0
                interfaces:
