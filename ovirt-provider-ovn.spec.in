@@ -160,6 +160,11 @@ to OVN.
 
 
 %changelog
+* Fri Nov 20 2020 Dominik Holler <dholler@redhat.com> - 1.2.33
+- provider: Fix localnet update
+- spec: Fix sudoers drop-in config permissions - bz#1895015
+- provider: Fix ipv6_address_mode
+
 * Mon Sep 28 2020 Dominik Holler <dholler@redhat.com> - 1.2.32
 - configure for scaling scenarios - bz#1871819
 
