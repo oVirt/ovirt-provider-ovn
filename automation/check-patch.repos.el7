@@ -1,3 +1,0 @@
-ovirt-snapshot-static,http://resources.ovirt.org/pub/ovirt-4.3-snapshot-static/rpm/$distro
-ovirt-43-tested,http://resources.ovirt.org/repos/ovirt/tested/4.3/rpm/$distro
-centos-ovirt-43-el7,https://buildlogs.centos.org/centos/7/virt/x86_64/ovirt-4.3/

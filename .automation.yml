@@ -1,7 +1,5 @@
 ---
 distros:
-    - el7
-    - el8
-    - fc30
+    - el8stream
 release_branches:
-    master: [ovirt-master, ovirt-4.3]
+    master: [ovirt-master]

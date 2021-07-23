@@ -1,11 +1,8 @@
+dnf
 git
-python
-python-openvswitch
+python3
+python3-devel
+python3-openvswitch
+python3-setuptools
 rpm-build
 systemd
-python2-devel
-python2-ovsdbapp
-python2-setuptools
-dnf
-python3-devel
-python3-setuptools

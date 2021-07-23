@@ -1,0 +1,8 @@
+# Provides python3-requests-mock
+el8collection,https://copr-be.cloud.fedoraproject.org/results/sbonazzo/EL8_collection/epel-8-$basearch/
+# Provides python3-ovsdbapp
+ovirt-master-centos-ovirt44-el8s,https://buildlogs.centos.org/centos/8-stream/virt/$basearch/ovirt-44/
+# Provides vdsm
+ovirt-master-tested,https://resources.ovirt.org/repos/ovirt/tested/master/rpm/el8
+# Provides openvswitch
+nfv-master-centos-el8s,https://buildlogs.centos.org/centos/8-stream/nfv/$basearch/openvswitch-2/
