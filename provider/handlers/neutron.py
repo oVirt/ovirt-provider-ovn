@@ -32,8 +32,7 @@ class NeutronHandler(SelectingHandler):
         if not validate_token(self.headers.get(
                 TOKEN_HTTP_HEADER_FIELD_NAME, '')):
             raise Forbidden()
-        with NeutronApi() as ovn_north:
-            return response_handler(ovn_north, content, parameters)
+        return response_handler(NeutronApi(), content, parameters)
 
     @staticmethod
     def get_responses():

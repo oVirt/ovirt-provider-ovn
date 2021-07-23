@@ -38,14 +38,24 @@ from ovirt_provider_config_common import ssl_key_file
 from ovirt_provider_config_common import ssl_cacert_file
 from ovirt_provider_config_common import ssl_cert_file
 
+_api_impl = None
+
 
 def connect():
+    global _api_impl
+    if _api_impl:
+        return _api_impl
+    _api_impl = _create_new_connection()
+    return _api_impl
+
+
+def _create_new_connection():
     configure_ssl_connection()
     ovsidl = ovsdbapp.backend.ovs_idl.connection.OvsdbIdl.from_server(
         ovn_remote(),
         ovnconst.OVN_NORTHBOUND
     )
-    return ovsidl, OvnNbApiIdlImpl(
+    return OvnNbApiIdlImpl(
         ovsdbapp.backend.ovs_idl.connection.Connection(
             idl=ovsidl,
             timeout=100

@@ -92,7 +92,7 @@ def wrap_default_group_id(f):
 class NeutronApi(object):
 
     def __init__(self, sec_group_support=None):
-        self.ovsidl, self.idl = ovn_connection.connect()
+        self.idl = ovn_connection.connect()
         self.ovn_north = OvnNorth(self.idl)
         self.security_group_support = (
                 sec_group_support or self.are_security_groups_supported()
@@ -1665,10 +1665,4 @@ class NeutronApi(object):
         self.ovn_north.remove_security_group_rule(security_group_rule_id)
 
     def are_security_groups_supported(self):
-        return ovnconst.TABLE_PORT_GROUP in self.ovsidl.tables
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, tb):
-        self.ovsidl.close()
+        return ovnconst.TABLE_PORT_GROUP in self.idl.tables
