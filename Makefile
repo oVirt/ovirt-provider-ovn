@@ -24,7 +24,7 @@ TIMESTAMP:=$(shell date +'%Y%m%d%H%M%S')
 RELEASE_SUFFIX=0.$(TIMESTAMP).git$(GITHASH)
 
 DIST_FILE=$(NAME)-$(VERSION).tar.gz
-PYTHON ?= python2
+PYTHON ?= python3
 GET_LIB_PATH_COMMAND='from distutils.sysconfig import get_python_lib; print(get_python_lib())'
 
 PYTHON_LIBS=$(shell $(PYTHON) -c $(GET_LIB_PATH_COMMAND))
@@ -134,23 +134,14 @@ flake8:
 	@echo 'FLAKE8 test passed.'
 
 unittest:
-	cd provider; python -m pytest tests/
-
-unittest3:
-	cd provider; python3 -m pytest tests/
+	cd provider; $(PYTHON) -m pytest tests/
 
 lint: version.py
 	tox -e pylint
 
-lint3: version.py
-	tox -e pylint3
-
 integrationtest:
-	RUN_INTEG_TESTS="defined" automation/create_it_env.sh
-
-integrationtest3:
 	RUN_INTEG_TESTS="defined" \
-	TEST_TARGET="integration-tests3" \
+	TEST_TARGET="integration-tests" \
 		automation/create_it_env.sh
 
 coverage:
