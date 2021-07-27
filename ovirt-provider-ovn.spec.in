@@ -20,30 +20,6 @@
 %define          debug_package %{nil}
 %define        __os_install_post %{_dbpath}/brp-compress
 
-# define the python package prefix based on distribution version
-# this is needed to require a correct python-openvswitch package:
-# python-openvswitch or python3-openvswitch for fedora >=28 or
-# el >= 8
-%if 0%{?fedora} >= 30 || 0%{?rhel} >= 8
-%global required_python python%{python3_pkgversion}
-%global required_python_interpreter %{__python3}
-%define required_python_lib(l:) python%{python3_pkgversion}-%{*}
-%global required_python_sitelib %{python3_sitelib}
-%else
-%global required_python python
-%global required_python_interpreter %{__python2}
-%global required_python_sitelib %{python2_sitelib}
-%define required_python_lib(l:) %{-l*}%{*}
-%endif
-
-%global required_ovs_lib %{required_python_lib -l python- openvswitch}
-%global required_six_lib %{required_python_lib -l python- six}
-%global required_ovsdbapp_lib %{required_python_lib -l python- ovsdbapp}
-%global required_requests_lib %{required_python_lib -l python- requests}
-%global required_netaddr_lib %{required_python_lib -l python- netaddr}
-%global required_python_devel %{required_python_lib -l python- devel}
-%global required_python_setup_tools %{required_python_lib -l python- setuptools}
-
 Name:           ovirt-provider-ovn
 Version:        @VERSION@
 Release:        @RELEASE_SUFFIX@%{?dist}
@@ -59,21 +35,21 @@ Requires: kernel >= 3.10.0-512
 Requires: openvswitch >= 0:2.7
 Requires: openvswitch-ovn-central >= 0:2.7
 Requires: openvswitch-ovn-common >= 0:2.7
-Requires: %{required_ovs_lib} >= 0:2.7
+Requires: python3-openvswitch >= 0:2.7
 
 Conflicts: openvswitch = 1:2.6.1
 Conflicts: openvswitch-ovn-central = 1:2.6.1
 Conflicts: openvswitch-ovn-common = 1:2.6.1
-Conflicts: %{required_ovs_lib} = 1:2.6.1
+Conflicts: python3-openvswitch = 1:2.6.1
 
-Requires: %{required_requests_lib}
-Requires: %{required_netaddr_lib}
-Requires: %{required_ovsdbapp_lib}
-Requires: %{required_six_lib}
+Requires: python3-requests
+Requires: python3-netaddr
+Requires: python3-ovsdbapp
+Requires: python3-six
 
-BuildRequires: %{required_python}
-BuildRequires: %{required_python_devel}
-BuildRequires: %{required_python_setup_tools}
+BuildRequires: python3
+BuildRequires: python3-devel
+BuildRequires: python3-setuptools
 BuildRequires: systemd
 
 %prep
@@ -83,7 +59,7 @@ BuildRequires: systemd
 
 %install
 rm -rf $RPM_BUILD_ROOT
-%make_install PYTHON="%{required_python_interpreter}"
+%make_install PYTHON="%{__python3}"
 
 
 %description
@@ -115,19 +91,19 @@ Requires: kernel >= 3.10.0-512
 Requires: openvswitch >= 0:2.7
 Requires: openvswitch-ovn-host >= 0:2.7
 Requires: openvswitch-ovn-common >= 0:2.7
-Requires: %{required_ovs_lib} >= 0:2.7
+Requires: python3-openvswitch >= 0:2.7
 
 Conflicts: openvswitch = 1:2.6.1
 Conflicts: openvswitch-ovn-host = 1:2.6.1
 Conflicts: openvswitch-ovn-common = 1:2.6.1
-Conflicts: %{required_ovs_lib} = 1:2.6.1
+Conflicts: python3-openvswitch = 1:2.6.1
 
 Requires: vdsm
 Requires(post): firewalld-filesystem
 
-BuildRequires: %{required_python}
-BuildRequires: %{required_python_devel}
-BuildRequires: %{required_python_setup_tools}
+BuildRequires: python3
+BuildRequires: python3-devel
+BuildRequires: python3-setuptools
 BuildRequires: systemd
 
 %description driver
@@ -154,7 +130,7 @@ to OVN.
 %{_libexecdir}/vdsm/hooks/after_vm_destroy/
 %{_libexecdir}/vdsm/vhostuser_permissions_setter
 %{_libexecdir}/ovirt-provider-ovn
-%{required_python_sitelib}/vdsm/tool/
+%{python3_sitelib}/vdsm/tool/
 %attr(440, root, root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_ovirt_provider_ovn_hook
 %license LICENSE
 
