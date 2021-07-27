@@ -136,6 +136,11 @@ to OVN.
 
 
 %changelog
+* Fri Jul 30 2021 Ales Musil <amusil@redhat.com> - 1.2.34
+- Bump required ovsdbapp version to 0.17.5 or higher
+- Use global connection for ovn north db
+- Remove py2 and fc30 builds
+
 * Fri Nov 20 2020 Dominik Holler <dholler@redhat.com> - 1.2.33
 - provider: Fix localnet update
 - spec: Fix sudoers drop-in config permissions - bz#1895015
