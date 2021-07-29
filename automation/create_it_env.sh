@@ -1,4 +1,6 @@
-#!/bin/sh -ex
+#!/bin/bash -ex
+
+CONTAINER_CMD=${CONTAINER_CMD:=podman}
 
 EXEC_PATH=$(dirname "$(realpath "$0")")
 PROJECT_ROOT=$(git rev-parse --show-toplevel)
@@ -19,8 +21,8 @@ CONTAINER_SRC_CODE_PATH="/ovirt-provider-ovn"
 
 AUTOMATED_TEST_TARGET="${TEST_TARGET:-integration-tests27}"
 
-function docker_ip {
-    docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $1
+function container_ip {
+    ${CONTAINER_CMD} inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $1
 }
 
 function destroy_env {
@@ -30,7 +32,7 @@ function destroy_env {
     collect_ovn_data
     collect_provider_logs
     collect_journalctl_data
-    docker rm -f $(filter_integration_test_containers)
+    ${CONTAINER_CMD} rm -f $(filter_integration_test_containers)
   else
     echo "No containers to destroy; Bailing out."
     return 0
@@ -38,16 +40,16 @@ function destroy_env {
 }
 
 function filter_integration_test_containers {
-  docker ps -q --filter "label=purpose=ovirt_provider_ovn_integ_tests"
+  ${CONTAINER_CMD} ps -q --filter "label=purpose=ovirt_provider_ovn_integ_tests"
 }
 
 function create_ovn_containers {
-  OVN_CENTRAL_ID="$(docker run --privileged -itd -v ${OVN_NORTHD_FILES}/config.json:/var/lib/kolla/config_files/config.json -v ${OVN_NORTHD_FILES}/boot-northd.sh:/usr/bin/boot-northd -e "KOLLA_CONFIG_STRATEGY=COPY_ONCE" --label purpose=ovirt_provider_ovn_integ_tests $OVN_CENTRAL_IMG)"
-  OVN_CENTRAL_IP="$(docker_ip $OVN_CENTRAL_ID)"
+  OVN_CENTRAL_ID="$(${CONTAINER_CMD} run --privileged -itd -v ${OVN_NORTHD_FILES}/config.json:/var/lib/kolla/config_files/config.json -v ${OVN_NORTHD_FILES}/boot-northd.sh:/usr/bin/boot-northd -e "KOLLA_CONFIG_STRATEGY=COPY_ONCE" --label purpose=ovirt_provider_ovn_integ_tests $OVN_CENTRAL_IMG)"
+  OVN_CENTRAL_IP="$(container_ip $OVN_CENTRAL_ID)"
 
-  OVN_CONTROLLER_ID="$(docker run --privileged -itd -v ${OVN_CONTROLLER_FILES}/config.json:/var/lib/kolla/config_files/config.json -v ${OVN_CONTROLLER_FILES}/boot-controller.sh:/usr/bin/boot-controller -e KOLLA_CONFIG_STRATEGY=COPY_ONCE -e OVN_SB_IP=$OVN_CENTRAL_IP --label purpose=ovirt_provider_ovn_integ_tests $OVN_CONTROLLER_IMG)"
-  OVN_CONTROLLER_IP="$(docker_ip $OVN_CONTROLLER_ID)"
-  docker exec -t "$OVN_CONTROLLER_ID" bash -c "
+  OVN_CONTROLLER_ID="$(${CONTAINER_CMD} run --privileged -itd -v ${OVN_CONTROLLER_FILES}/config.json:/var/lib/kolla/config_files/config.json -v ${OVN_CONTROLLER_FILES}/boot-controller.sh:/usr/bin/boot-controller -e KOLLA_CONFIG_STRATEGY=COPY_ONCE -e OVN_SB_IP=$OVN_CENTRAL_IP --label purpose=ovirt_provider_ovn_integ_tests $OVN_CONTROLLER_IMG)"
+  OVN_CONTROLLER_IP="$(container_ip $OVN_CONTROLLER_ID)"
+  ${CONTAINER_CMD} exec -t "$OVN_CONTROLLER_ID" bash -c "
     yum install -y dhclient --disablerepo='*' --enablerepo=base
   "
 }
@@ -55,7 +57,7 @@ function create_ovn_containers {
 function start_provider_container {
   kernel_version="$(uname -r)"
   PROVIDER_ID="$(
-      docker run --privileged -d \
+      ${CONTAINER_CMD} run --privileged -d \
           -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
 	  -v $PROJECT_ROOT/:$CONTAINER_SRC_CODE_PATH \
 	  -v /lib/modules/$kernel_version:/lib/modules/$kernel_version:ro \
@@ -70,10 +72,10 @@ function start_provider_container {
 
 function create_rpms {
   cleanup_past_builds
-  docker exec -t "$PROVIDER_ID" /bin/bash -c '
+  ${CONTAINER_CMD} exec -t "$PROVIDER_ID" /bin/bash -c '
     touch /var/log/ovirt-provider-ovn.log
   '
-  docker exec -t "$PROVIDER_ID" /bin/bash -c '
+  ${CONTAINER_CMD} exec -t "$PROVIDER_ID" /bin/bash -c '
     cd $PROVIDER_SRC_CODE && \
     make rpm
   '
@@ -84,7 +86,7 @@ function cleanup_past_builds {
 }
 
 function install_provider_on_container {
-  docker exec -t "$PROVIDER_ID" /bin/bash -c '
+  ${CONTAINER_CMD} exec -t "$PROVIDER_ID" /bin/bash -c '
     yum install -y --disablerepo=* \
 	    ~/rpmbuild/RPMS/noarch/ovirt-provider-ovn-1.*.rpm && \
     sed -ie "s/PLACE_HOLDER/${OVN_NB_IP}/g" /etc/ovirt-provider-ovn/conf.d/10-integrationtest.conf && \
@@ -94,7 +96,7 @@ function install_provider_on_container {
 }
 
 function activate_provider_traces {
-  docker exec -t "$PROVIDER_ID" /bin/bash -c '
+  ${CONTAINER_CMD} exec -t "$PROVIDER_ID" /bin/bash -c '
     sed -i_backup 's/INFO/DEBUG/g' /etc/ovirt-provider-ovn/logger.conf
   '
 }
@@ -102,18 +104,18 @@ function activate_provider_traces {
 function collect_ovn_data {
   echo "Collecting data from OVN containers ..."
   if [ -n "$OVN_CENTRAL_ID" ]; then
-    docker cp "$OVN_CENTRAL_ID":/etc/openvswitch/ovnnb_db.db "$EXPORTED_ARTIFACTS_DIR"
-    docker cp "$OVN_CENTRAL_ID":/etc/openvswitch/ovnsb_db.db "$EXPORTED_ARTIFACTS_DIR"
-    docker cp "$OVN_CENTRAL_ID":/var/log/openvswitch/ovn-northd.log "$EXPORTED_ARTIFACTS_DIR"
+    ${CONTAINER_CMD} cp "$OVN_CENTRAL_ID":/etc/openvswitch/ovnnb_db.db "$EXPORTED_ARTIFACTS_DIR"
+    ${CONTAINER_CMD} cp "$OVN_CENTRAL_ID":/etc/openvswitch/ovnsb_db.db "$EXPORTED_ARTIFACTS_DIR"
+    ${CONTAINER_CMD} cp "$OVN_CENTRAL_ID":/var/log/openvswitch/ovn-northd.log "$EXPORTED_ARTIFACTS_DIR"
   fi
   if [ -n "$OVN_CONTROLLER_ID" ]; then
-    docker cp "$OVN_CONTROLLER_ID":/var/log/openvswitch/ovn-controller.log "$EXPORTED_ARTIFACTS_DIR"
+    ${CONTAINER_CMD} cp "$OVN_CONTROLLER_ID":/var/log/openvswitch/ovn-controller.log "$EXPORTED_ARTIFACTS_DIR"
   fi
 }
 
 function collect_provider_logs {
   if [ -n "$PROVIDER_ID" ]; then
-    docker cp "$PROVIDER_ID":/var/log/ovirt-provider-ovn.log "$EXPORTED_ARTIFACTS_DIR"
+    ${CONTAINER_CMD} cp "$PROVIDER_ID":/var/log/ovirt-provider-ovn.log "$EXPORTED_ARTIFACTS_DIR"
   fi
 }
 
@@ -124,7 +126,7 @@ function collect_sys_info {
 
 function collect_journalctl_data {
   if [ -n "$PROVIDER_ID" ]; then
-    docker exec "$PROVIDER_ID" /bin/bash -c 'journalctl -xe' \
+    ${CONTAINER_CMD} exec "$PROVIDER_ID" /bin/bash -c 'journalctl -xe' \
 	    > "$EXPORTED_ARTIFACTS_DIR"/journalctl.log
   fi
 }
