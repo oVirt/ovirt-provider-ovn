@@ -21,8 +21,14 @@ CONTAINER_SRC_CODE_PATH="/ovirt-provider-ovn"
 
 AUTOMATED_TEST_TARGET="${TEST_TARGET:-integration-tests27}"
 
+test -t 1 && USE_TTY="t"
+
 function container_ip {
     ${CONTAINER_CMD} inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $1
+}
+
+function container_exec {
+    ${CONTAINER_CMD} exec "-i$USE_TTY" "$1" /bin/bash -c "$2"
 }
 
 function destroy_env {
@@ -49,9 +55,7 @@ function create_ovn_containers {
 
   OVN_CONTROLLER_ID="$(${CONTAINER_CMD} run --privileged -itd -v ${OVN_CONTROLLER_FILES}/config.json:/var/lib/kolla/config_files/config.json -v ${OVN_CONTROLLER_FILES}/boot-controller.sh:/usr/bin/boot-controller -e KOLLA_CONFIG_STRATEGY=COPY_ONCE -e OVN_SB_IP=$OVN_CENTRAL_IP --label purpose=ovirt_provider_ovn_integ_tests $OVN_CONTROLLER_IMG)"
   OVN_CONTROLLER_IP="$(container_ip $OVN_CONTROLLER_ID)"
-  ${CONTAINER_CMD} exec -t "$OVN_CONTROLLER_ID" bash -c "
-    yum install -y dhclient --disablerepo='*' --enablerepo=base
-  "
+  container_exec "$OVN_CONTROLLER_ID" "yum install -y dhclient --disablerepo='*' --enablerepo=base"
 }
 
 function start_provider_container {
@@ -72,10 +76,8 @@ function start_provider_container {
 
 function create_rpms {
   cleanup_past_builds
-  ${CONTAINER_CMD} exec -t "$PROVIDER_ID" /bin/bash -c '
-    touch /var/log/ovirt-provider-ovn.log
-  '
-  ${CONTAINER_CMD} exec -t "$PROVIDER_ID" /bin/bash -c '
+  container_exec "$PROVIDER_ID" "touch /var/log/ovirt-provider-ovn.log"
+  container_exec "$PROVIDER_ID" '
     cd $PROVIDER_SRC_CODE && \
     make rpm
   '
@@ -86,7 +88,7 @@ function cleanup_past_builds {
 }
 
 function install_provider_on_container {
-  ${CONTAINER_CMD} exec -t "$PROVIDER_ID" /bin/bash -c '
+  container_exec "$PROVIDER_ID" '
     yum install -y --disablerepo=* \
 	    ~/rpmbuild/RPMS/noarch/ovirt-provider-ovn-1.*.rpm && \
     sed -ie "s/PLACE_HOLDER/${OVN_NB_IP}/g" /etc/ovirt-provider-ovn/conf.d/10-integrationtest.conf && \
@@ -96,9 +98,7 @@ function install_provider_on_container {
 }
 
 function activate_provider_traces {
-  ${CONTAINER_CMD} exec -t "$PROVIDER_ID" /bin/bash -c '
-    sed -i_backup 's/INFO/DEBUG/g' /etc/ovirt-provider-ovn/logger.conf
-  '
+  container_exec "$PROVIDER_ID" "sed -i_backup s/INFO/DEBUG/g /etc/ovirt-provider-ovn/logger.conf"
 }
 
 function collect_ovn_data {
@@ -126,8 +126,7 @@ function collect_sys_info {
 
 function collect_journalctl_data {
   if [ -n "$PROVIDER_ID" ]; then
-    ${CONTAINER_CMD} exec "$PROVIDER_ID" /bin/bash -c 'journalctl -xe' \
-	    > "$EXPORTED_ARTIFACTS_DIR"/journalctl.log
+    container_exec "$PROVIDER_ID" "journalctl -xe" > "$EXPORTED_ARTIFACTS_DIR"/journalctl.log
   fi
 }
 
