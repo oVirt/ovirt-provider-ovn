@@ -14,7 +14,7 @@ OVIRT_PROVIDER_OVN_IMG="${PROVIDER_IMG:-quay.io/mdbarroso/ovirt_provider_ovn}"
 
 OVN_CONTAINER_FILES="$PROJECT_ROOT/automation/containers"
 OVN_NORTHD_FILES="${OVN_CONTAINER_FILES}/ovn-central"
-OVN_CONTROLLER_FILES="${OVN_CONTAINER_FILES}/ovn-controller/"
+OVN_CONTROLLER_FILES="${OVN_CONTAINER_FILES}/ovn-controller"
 
 PROVIDER_PATH="$PROJECT_ROOT"/provider
 CONTAINER_SRC_CODE_PATH="/ovirt-provider-ovn"
@@ -34,26 +34,25 @@ function container_exec {
 function destroy_env {
   mkdir -p "$EXPORTED_ARTIFACTS_DIR"
   collect_sys_info
-  if [ -n "$(filter_integration_test_containers)" ]; then
-    collect_ovn_data
-    collect_provider_logs
-    collect_journalctl_data
-    ${CONTAINER_CMD} rm -f $(filter_integration_test_containers)
-  else
-    echo "No containers to destroy; Bailing out."
-    return 0
+  collect_ovn_data
+  collect_provider_logs
+  collect_journalctl_data
+  if [ -n "$OVN_CENTRAL_ID" ]; then
+     ${CONTAINER_CMD} rm -f "$OVN_CENTRAL_ID"
+  fi
+  if [ -n "$OVN_CONTROLLER_ID" ]; then
+     ${CONTAINER_CMD} rm -f "$OVN_CONTROLLER_ID"
+  fi
+  if [ -n "$PROVIDER_ID" ]; then
+     ${CONTAINER_CMD} rm -f "$PROVIDER_ID"
   fi
 }
 
-function filter_integration_test_containers {
-  ${CONTAINER_CMD} ps -q --filter "label=purpose=ovirt_provider_ovn_integ_tests"
-}
-
 function create_ovn_containers {
-  OVN_CENTRAL_ID="$(${CONTAINER_CMD} run --privileged -itd -v ${OVN_NORTHD_FILES}/config.json:/var/lib/kolla/config_files/config.json -v ${OVN_NORTHD_FILES}/boot-northd.sh:/usr/bin/boot-northd -e "KOLLA_CONFIG_STRATEGY=COPY_ONCE" --label purpose=ovirt_provider_ovn_integ_tests $OVN_CENTRAL_IMG)"
+  OVN_CENTRAL_ID="$(${CONTAINER_CMD} run --privileged -d -v ${OVN_NORTHD_FILES}/config.json:/var/lib/kolla/config_files/config.json -v ${OVN_NORTHD_FILES}/boot-northd.sh:/usr/bin/boot-northd -e "KOLLA_CONFIG_STRATEGY=COPY_ONCE" $OVN_CENTRAL_IMG)"
   OVN_CENTRAL_IP="$(container_ip $OVN_CENTRAL_ID)"
 
-  OVN_CONTROLLER_ID="$(${CONTAINER_CMD} run --privileged -itd -v ${OVN_CONTROLLER_FILES}/config.json:/var/lib/kolla/config_files/config.json -v ${OVN_CONTROLLER_FILES}/boot-controller.sh:/usr/bin/boot-controller -e KOLLA_CONFIG_STRATEGY=COPY_ONCE -e OVN_SB_IP=$OVN_CENTRAL_IP --label purpose=ovirt_provider_ovn_integ_tests $OVN_CONTROLLER_IMG)"
+  OVN_CONTROLLER_ID="$(${CONTAINER_CMD} run --privileged -d -v ${OVN_CONTROLLER_FILES}/config.json:/var/lib/kolla/config_files/config.json -v ${OVN_CONTROLLER_FILES}/boot-controller.sh:/usr/bin/boot-controller -e KOLLA_CONFIG_STRATEGY=COPY_ONCE -e OVN_SB_IP=$OVN_CENTRAL_IP $OVN_CONTROLLER_IMG)"
   OVN_CONTROLLER_IP="$(container_ip $OVN_CONTROLLER_ID)"
   container_exec "$OVN_CONTROLLER_ID" "yum install -y dhclient --disablerepo='*' --enablerepo=base"
 }
@@ -61,14 +60,12 @@ function create_ovn_containers {
 function start_provider_container {
   kernel_version="$(uname -r)"
   PROVIDER_ID="$(
-      ${CONTAINER_CMD} run --privileged -d \
-          -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+    ${CONTAINER_CMD} run --privileged -d \
+    -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
 	  -v $PROJECT_ROOT/:$CONTAINER_SRC_CODE_PATH \
 	  -v /lib/modules/$kernel_version:/lib/modules/$kernel_version:ro \
 	  -p 9696:9696 -p 35357:35357 \
-	  -e OVN_NB_IP=$OVN_CENTRAL_IP \
-	  -e PROVIDER_SRC_CODE=$CONTAINER_SRC_CODE_PATH \
-        $OVIRT_PROVIDER_OVN_IMG
+    $OVIRT_PROVIDER_OVN_IMG
   )"
   create_rpms
   install_provider_on_container
@@ -77,10 +74,10 @@ function start_provider_container {
 function create_rpms {
   cleanup_past_builds
   container_exec "$PROVIDER_ID" "touch /var/log/ovirt-provider-ovn.log"
-  container_exec "$PROVIDER_ID" '
-    cd $PROVIDER_SRC_CODE && \
+  container_exec "$PROVIDER_ID" "
+    cd $CONTAINER_SRC_CODE_PATH && \
     make rpm
-  '
+  "
 }
 
 function cleanup_past_builds {
@@ -88,13 +85,13 @@ function cleanup_past_builds {
 }
 
 function install_provider_on_container {
-  container_exec "$PROVIDER_ID" '
+  container_exec "$PROVIDER_ID" "
     yum install -y --disablerepo=* \
-	    ~/rpmbuild/RPMS/noarch/ovirt-provider-ovn-1.*.rpm && \
-    sed -ie "s/PLACE_HOLDER/${OVN_NB_IP}/g" /etc/ovirt-provider-ovn/conf.d/10-integrationtest.conf && \
+	  ~/rpmbuild/RPMS/noarch/ovirt-provider-ovn-1.*.rpm && \
+    sed -ie s/PLACE_HOLDER/${OVN_CENTRAL_IP}/g /etc/ovirt-provider-ovn/conf.d/10-integrationtest.conf && \
     modprobe openvswitch && \
     systemctl start ovirt-provider-ovn
-  '
+  "
 }
 
 function activate_provider_traces {
@@ -126,7 +123,8 @@ function collect_sys_info {
 
 function collect_journalctl_data {
   if [ -n "$PROVIDER_ID" ]; then
-    container_exec "$PROVIDER_ID" "journalctl -xe" > "$EXPORTED_ARTIFACTS_DIR"/journalctl.log
+    container_exec "$PROVIDER_ID" "journalctl -xe > /var/log/journalctl.log"
+    ${CONTAINER_CMD} cp "$PROVIDER_ID":/var/log/journalctl.log "$EXPORTED_ARTIFACTS_DIR"
   fi
 }
 
