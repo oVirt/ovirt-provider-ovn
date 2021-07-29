@@ -17,20 +17,21 @@
 #
 # Refer to the README and COPYING files for full details of the license
 
+import os
 import subprocess
 
 
-CONTAINER_CLI = 'docker'
+CONTAINER_CLI = os.environ['CONTAINER_PLATFORM']
 
 
 def get_container_ip(container_name):
-    docker_ip_command = [
+    container_ip_command = [
         CONTAINER_CLI, 'inspect', '-f',
         '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}',
         container_name
     ]
     return subprocess.check_output(
-        docker_ip_command, stderr=subprocess.STDOUT
+        container_ip_command, stderr=subprocess.STDOUT
     ).decode().strip()
 
 

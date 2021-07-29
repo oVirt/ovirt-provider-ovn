@@ -19,7 +19,7 @@ OVN_CONTROLLER_FILES="${OVN_CONTAINER_FILES}/ovn-controller"
 PROVIDER_PATH="$PROJECT_ROOT"/provider
 CONTAINER_SRC_CODE_PATH="/ovirt-provider-ovn"
 
-AUTOMATED_TEST_TARGET="${TEST_TARGET:-integration-tests27}"
+AUTOMATED_TEST_TARGET="${TEST_TARGET:-integration-tests}"
 
 test -t 1 && USE_TTY="t"
 
@@ -135,6 +135,7 @@ activate_provider_traces
 if [ -n "$RUN_INTEG_TESTS" ]; then
   export PROVIDER_CONTAINER_ID=$PROVIDER_ID
   export CONTROLLER_CONTAINER_ID=$OVN_CONTROLLER_ID
+  export CONTAINER_PLATFORM=$CONTAINER_CMD
   tox -e "$AUTOMATED_TEST_TARGET"
   destroy_env
 fi

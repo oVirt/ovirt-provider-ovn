@@ -26,7 +26,7 @@ from lib.api_lib import get_port_by_name
 from lib.api_lib import update_and_assert
 from lib.api_lib import SecurityGroup
 from lib.api_lib import SecurityGroupRule
-from lib.dockerlib import inner_ping
+from lib.containerlib import inner_ping
 
 CONTROLLER_CONTAINER_ID = os.environ['CONTROLLER_CONTAINER_ID']
 

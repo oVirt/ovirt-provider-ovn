@@ -27,8 +27,8 @@ from lib.ansiblelib import get_playbook
 from lib.api_lib import get_network_by_name
 from lib.api_lib import get_router_by_name
 from lib.api_lib import update_and_assert
-from lib.dockerlib import inner_ping
-from lib.dockerlib import reconfigure_interface
+from lib.containerlib import inner_ping
+from lib.containerlib import reconfigure_interface
 
 CONTROLLER_CONTAINER_ID = os.environ['CONTROLLER_CONTAINER_ID']
 

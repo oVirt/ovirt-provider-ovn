@@ -13,7 +13,7 @@ based on the addresses reported by ovn. When the IP address is ommitted, the
 client configures its IP address - either through a dhcp client, or via RA
 messages, depending on the subnet address mode configuration.
 
-The playbook importing this role *needs to* add the ovn controller docker
+The playbook importing this role *needs to* add the ovn controller
 container to the inventory, by calling the
 [add_host](https://docs.ansible.com/ansible/latest/modules/add_host_module.html) module.
 
@@ -37,7 +37,7 @@ Example Playbook
       tasks:
         - add_host:
             name: "{{ controller_container_id }}"
-            ansible_connection: docker
+            ansible_connection: "{{ container_platform }}"
             ansible_user: root
 
     - hosts: servers

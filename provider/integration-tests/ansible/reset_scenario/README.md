@@ -28,7 +28,7 @@ Example Playbook
       tasks:
         - add_host:
             name: "{{ controller_container_id }}"
-            ansible_connection: docker
+            ansible_connection: "{{ container_platform }}"
             ansible_user: root
 
     - hosts: servers

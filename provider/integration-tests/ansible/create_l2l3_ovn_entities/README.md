@@ -5,7 +5,7 @@ This role can be used to create simple L2 / L3 network scenarios through
 OpenStack's networking API.
 
 It creates Networks, Subnets, and Ports, through the ovirt-provider-ovn
-docker container.
+container.
 
 Requirements
 ------------

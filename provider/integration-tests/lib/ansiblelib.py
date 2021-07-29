@@ -23,7 +23,8 @@ import os
 
 COMMON_PLAYBOOK_VARS = {
     'provider_container_id': os.environ['PROVIDER_CONTAINER_ID'],
-    'controller_container_id': os.environ['CONTROLLER_CONTAINER_ID']
+    'controller_container_id': os.environ['CONTROLLER_CONTAINER_ID'],
+    'container_platform': os.environ['CONTAINER_PLATFORM'],
 }
 
 PLAYBOOK_DIR = os.path.join(os.environ['INTEG_TEST_ROOT_FOLDER'], 'ansible')
