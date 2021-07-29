@@ -25,10 +25,11 @@
 - name: read current ports from provider ...
   os_port_facts:
     cloud: "{{ cloud_name }}"
+  register: result
 
 - fail:
     msg: 'ports were not deleted'
-  when: openstack_ports | length > 0
+  when: result.openstack_ports | length > 0
 
 - name: delete all subnets
   os_subnet:
@@ -41,10 +42,11 @@
 - name: read current subnets from provider ...
   os_subnets_facts:
     cloud: "{{ cloud_name }}"
+  register: result
 
 - fail:
     msg: 'Networks were not deleted'
-  when: openstack_subnets | length > 0
+  when: result.openstack_subnets | length > 0
 
 - name: delete all networks
   os_network:
@@ -57,10 +59,11 @@
 - name: read current networks from provider ...
   os_networks_facts:
     cloud: "{{ cloud_name }}"
+  register: result
 
 - fail:
     msg: 'Networks were not deleted'
-  when: openstack_networks | length > 0
+  when: result.openstack_networks | length > 0
 
 - name: delete the dhcp leases
   delegate_to: "{{ controller_container_id }}"
