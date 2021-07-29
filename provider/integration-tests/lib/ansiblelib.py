@@ -21,12 +21,17 @@ from __future__ import absolute_import
 import ansible_runner
 import os
 
+COMMON_PLAYBOOK_VARS = {
+    'provider_container_id': os.environ['PROVIDER_CONTAINER_ID'],
+    'controller_container_id': os.environ['CONTROLLER_CONTAINER_ID']
+}
 
 PLAYBOOK_DIR = os.path.join(os.environ['INTEG_TEST_ROOT_FOLDER'], 'ansible')
 PY_INTERPRETER = os.environ['PY_INTERPRETER']
 
 
 def get_playbook(playbook_name, playbook_vars):
+    playbook_vars.update(COMMON_PLAYBOOK_VARS)
     playbook_path = os.path.join(PLAYBOOK_DIR, playbook_name)
     return Playbook(playbook_path, extra_vars=playbook_vars)
 

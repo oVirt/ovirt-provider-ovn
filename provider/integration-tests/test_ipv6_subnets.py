@@ -19,6 +19,7 @@
 
 import contextlib
 import requests
+import os
 import pytest
 from time import sleep
 
@@ -27,15 +28,9 @@ from lib.api_lib import get_network_by_name
 from lib.api_lib import get_router_by_name
 from lib.api_lib import update_and_assert
 from lib.dockerlib import inner_ping
-from lib.dockerlib import get_container_id_from_img_name
 from lib.dockerlib import reconfigure_interface
 
-CONTROLLER_CONTAINER_ID = get_container_id_from_img_name(
-        'tripleorocky/centos-binary-ovn-controller:current-tripleo-rdo'
-)
-PROVIDER_CONTAINER_ID = get_container_id_from_img_name(
-            'quay.io/mdbarroso/ovirt_provider_ovn'
-)
+CONTROLLER_CONTAINER_ID = os.environ['CONTROLLER_CONTAINER_ID']
 
 SAME_SUBNET = {
     'network_points': [
@@ -66,8 +61,6 @@ SAME_SUBNET = {
             ]
         }
     ],
-    'provider_container_id': PROVIDER_CONTAINER_ID,
-    'controller_container_id': CONTROLLER_CONTAINER_ID
 }
 
 MULTIPLE_SUBNETS_STATELESS = {
@@ -104,8 +97,6 @@ MULTIPLE_SUBNETS_STATELESS = {
             ]
         }
     ],
-    'provider_container_id': PROVIDER_CONTAINER_ID,
-    'controller_container_id': CONTROLLER_CONTAINER_ID
 }
 
 MULTIPLE_SUBNETS_STATEFUL = {
@@ -140,8 +131,6 @@ MULTIPLE_SUBNETS_STATEFUL = {
             ]
         }
     ],
-    'provider_container_id': PROVIDER_CONTAINER_ID,
-    'controller_container_id': CONTROLLER_CONTAINER_ID
 }
 
 MULTIPLE_SUBNETS_STATEFUL_NO_ROUTER = {
@@ -167,8 +156,6 @@ MULTIPLE_SUBNETS_STATEFUL_NO_ROUTER = {
             'gateway_ip': 'def0:abcd::1'
         },
     ],
-    'provider_container_id': PROVIDER_CONTAINER_ID,
-    'controller_container_id': CONTROLLER_CONTAINER_ID
 }
 
 SINGLE_SUBNET_STATEFUL_WEIRD_PREFIX = {
@@ -196,8 +183,6 @@ SINGLE_SUBNET_STATEFUL_WEIRD_PREFIX = {
             'gateway_ip': 'fc00::1'
         },
     ],
-    'provider_container_id': PROVIDER_CONTAINER_ID,
-    'controller_container_id': CONTROLLER_CONTAINER_ID
 }
 
 PROVIDER_URL = 'http://localhost:9696/v2.0/'

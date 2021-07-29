@@ -18,6 +18,7 @@
 #
 
 import contextlib
+import os
 import pytest
 
 from lib.ansiblelib import get_playbook
@@ -26,14 +27,8 @@ from lib.api_lib import update_and_assert
 from lib.api_lib import SecurityGroup
 from lib.api_lib import SecurityGroupRule
 from lib.dockerlib import inner_ping
-from lib.dockerlib import get_container_id_from_img_name
 
-CONTROLLER_CONTAINER_ID = get_container_id_from_img_name(
-        'tripleorocky/centos-binary-ovn-controller:current-tripleo-rdo'
-)
-PROVIDER_CONTAINER_ID = get_container_id_from_img_name(
-            'quay.io/mdbarroso/ovirt_provider_ovn'
-)
+CONTROLLER_CONTAINER_ID = os.environ['CONTROLLER_CONTAINER_ID']
 
 SAME_SUBNET = {
     'network_points': [
@@ -58,8 +53,6 @@ SAME_SUBNET = {
             'ns': 'ns2'
         }
     ],
-    'provider_container_id': PROVIDER_CONTAINER_ID,
-    'controller_container_id': CONTROLLER_CONTAINER_ID
 }
 
 

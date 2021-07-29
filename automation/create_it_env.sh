@@ -133,6 +133,8 @@ create_ovn_containers
 start_provider_container
 activate_provider_traces
 if [ -n "$RUN_INTEG_TESTS" ]; then
+  export PROVIDER_CONTAINER_ID=$PROVIDER_ID
+  export CONTROLLER_CONTAINER_ID=$OVN_CONTROLLER_ID
   tox -e "$AUTOMATED_TEST_TARGET"
   destroy_env
 fi
