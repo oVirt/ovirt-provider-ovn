@@ -20,27 +20,18 @@ RUN dnf install -y \
     dnf update -y \
     && \
     dnf install -y \
-        git \
-        kernel \
-        make \
+        dhclient \
+        iputils \
+        NetworkManager-config-server \
         openvswitch \
-        openvswitch-ovn-central \
         openvswitch-ovn-common \
-        python3-devel  \
-        python3-netaddr \
+        openvswitch-ovn-host \
         python3-openvswitch \
-        python3-ovsdbapp \
-        python3-requests \
-        rpm-build \
     && \
-    dnf clean all \
-    && \
-    mkdir -p /etc/ovirt-provider-ovn/conf.d/
+    dnf clean all
 
-COPY 10-integrationtest.conf /etc/ovirt-provider-ovn/conf.d/
+COPY boot-controller.sh /boot-controller.sh
 
-COPY boot-northd.sh /boot-northd.sh
-
-VOLUME [ "/sys/fs/cgroup" , "/ovirt-provider-ovn-rpms"]
+VOLUME ["/sys/fs/cgroup"]
 
 CMD ["/usr/sbin/init"]

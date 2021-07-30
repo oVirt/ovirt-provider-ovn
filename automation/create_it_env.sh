@@ -6,15 +6,8 @@ EXEC_PATH=$(dirname "$(realpath "$0")")
 PROJECT_ROOT=$(git rev-parse --show-toplevel)
 EXPORTED_ARTIFACTS_DIR="$PROJECT_ROOT/exported-artifacts/"
 
-OVN_CENTRAL_TRIPLEO_TAG="${CENTRAL_CONTAINER_TAG:-current-tripleo-rdo}"
-OVN_CONTROLLER_TRIPLEO_TAG="${CONTROLLER_CONTAINER_TAG:-current-tripleo-rdo}"
-OVN_CENTRAL_IMG="docker.io/tripleorocky/centos-binary-ovn-northd:$OVN_CENTRAL_TRIPLEO_TAG"
-OVN_CONTROLLER_IMG="docker.io/tripleorocky/centos-binary-ovn-controller:$OVN_CONTROLLER_TRIPLEO_TAG"
-OVIRT_PROVIDER_OVN_IMG="${PROVIDER_IMG:-quay.io/mdbarroso/ovirt_provider_ovn}"
-
-OVN_CONTAINER_FILES="$PROJECT_ROOT/automation/containers"
-OVN_NORTHD_FILES="${OVN_CONTAINER_FILES}/ovn-central"
-OVN_CONTROLLER_FILES="${OVN_CONTAINER_FILES}/ovn-controller"
+OVN_CONTROLLER_IMG="${CONTROLLER_IMG:=ovirt/ovn-controller}"
+OVIRT_PROVIDER_OVN_IMG="${PROVIDER_IMG:=ovirt/ovirt-provider-ovn}"
 
 PROVIDER_PATH="$PROJECT_ROOT"/provider
 CONTAINER_SRC_CODE_PATH="/ovirt-provider-ovn"
@@ -31,30 +24,22 @@ function container_exec {
     ${CONTAINER_CMD} exec "-i$USE_TTY" "$1" /bin/bash -c "$2"
 }
 
+function load_kernel_modules {
+  modprobe openvswitch
+}
+
 function destroy_env {
   mkdir -p "$EXPORTED_ARTIFACTS_DIR"
   collect_sys_info
   collect_ovn_data
   collect_provider_logs
   collect_journalctl_data
-  if [ -n "$OVN_CENTRAL_ID" ]; then
-     ${CONTAINER_CMD} rm -f "$OVN_CENTRAL_ID"
-  fi
   if [ -n "$OVN_CONTROLLER_ID" ]; then
      ${CONTAINER_CMD} rm -f "$OVN_CONTROLLER_ID"
   fi
   if [ -n "$PROVIDER_ID" ]; then
      ${CONTAINER_CMD} rm -f "$PROVIDER_ID"
   fi
-}
-
-function create_ovn_containers {
-  OVN_CENTRAL_ID="$(${CONTAINER_CMD} run --privileged -d -v ${OVN_NORTHD_FILES}/config.json:/var/lib/kolla/config_files/config.json -v ${OVN_NORTHD_FILES}/boot-northd.sh:/usr/bin/boot-northd -e "KOLLA_CONFIG_STRATEGY=COPY_ONCE" $OVN_CENTRAL_IMG)"
-  OVN_CENTRAL_IP="$(container_ip $OVN_CENTRAL_ID)"
-
-  OVN_CONTROLLER_ID="$(${CONTAINER_CMD} run --privileged -d -v ${OVN_CONTROLLER_FILES}/config.json:/var/lib/kolla/config_files/config.json -v ${OVN_CONTROLLER_FILES}/boot-controller.sh:/usr/bin/boot-controller -e KOLLA_CONFIG_STRATEGY=COPY_ONCE -e OVN_SB_IP=$OVN_CENTRAL_IP $OVN_CONTROLLER_IMG)"
-  OVN_CONTROLLER_IP="$(container_ip $OVN_CONTROLLER_ID)"
-  container_exec "$OVN_CONTROLLER_ID" "yum install -y dhclient --disablerepo='*' --enablerepo=base"
 }
 
 function start_provider_container {
@@ -67,8 +52,16 @@ function start_provider_container {
 	  -p 9696:9696 -p 35357:35357 \
     $OVIRT_PROVIDER_OVN_IMG
   )"
+  PROVIDER_IP="$(container_ip $PROVIDER_ID)"
   create_rpms
   install_provider_on_container
+  start_provider_container_services
+}
+
+function start_controller_container {
+  OVN_CONTROLLER_ID="$(${CONTAINER_CMD} run --privileged -d $OVN_CONTROLLER_IMG)"
+  OVN_CONTROLLER_IP="$(container_ip $OVN_CONTROLLER_ID)"
+  container_exec "$OVN_CONTROLLER_ID" "OVN_SB_IP=$PROVIDER_IP ./boot-controller.sh"
 }
 
 function create_rpms {
@@ -85,13 +78,11 @@ function cleanup_past_builds {
 }
 
 function install_provider_on_container {
-  container_exec "$PROVIDER_ID" "
-    yum install -y --disablerepo=* \
-	  ~/rpmbuild/RPMS/noarch/ovirt-provider-ovn-1.*.rpm && \
-    sed -ie s/PLACE_HOLDER/${OVN_CENTRAL_IP}/g /etc/ovirt-provider-ovn/conf.d/10-integrationtest.conf && \
-    modprobe openvswitch && \
-    systemctl start ovirt-provider-ovn
-  "
+  container_exec "$PROVIDER_ID" "dnf install -y --disablerepo=* ~/rpmbuild/RPMS/noarch/ovirt-provider-ovn-1.*.rpm"
+}
+
+function start_provider_container_services {
+  container_exec "$PROVIDER_ID" "./boot-northd.sh && systemctl start ovirt-provider-ovn"
 }
 
 function activate_provider_traces {
@@ -100,10 +91,10 @@ function activate_provider_traces {
 
 function collect_ovn_data {
   echo "Collecting data from OVN containers ..."
-  if [ -n "$OVN_CENTRAL_ID" ]; then
-    ${CONTAINER_CMD} cp "$OVN_CENTRAL_ID":/etc/openvswitch/ovnnb_db.db "$EXPORTED_ARTIFACTS_DIR"
-    ${CONTAINER_CMD} cp "$OVN_CENTRAL_ID":/etc/openvswitch/ovnsb_db.db "$EXPORTED_ARTIFACTS_DIR"
-    ${CONTAINER_CMD} cp "$OVN_CENTRAL_ID":/var/log/openvswitch/ovn-northd.log "$EXPORTED_ARTIFACTS_DIR"
+  if [ -n "$PROVIDER_ID" ]; then
+    ${CONTAINER_CMD} cp "$PROVIDER_ID":/etc/openvswitch/ovnnb_db.db "$EXPORTED_ARTIFACTS_DIR"
+    ${CONTAINER_CMD} cp "$PROVIDER_ID":/etc/openvswitch/ovnsb_db.db "$EXPORTED_ARTIFACTS_DIR"
+    ${CONTAINER_CMD} cp "$PROVIDER_ID":/var/log/openvswitch/ovn-northd.log "$EXPORTED_ARTIFACTS_DIR"
   fi
   if [ -n "$OVN_CONTROLLER_ID" ]; then
     ${CONTAINER_CMD} cp "$OVN_CONTROLLER_ID":/var/log/openvswitch/ovn-controller.log "$EXPORTED_ARTIFACTS_DIR"
@@ -129,8 +120,9 @@ function collect_journalctl_data {
 }
 
 trap destroy_env EXIT
-create_ovn_containers
+load_kernel_modules
 start_provider_container
+start_controller_container
 activate_provider_traces
 if [ -n "$RUN_INTEG_TESTS" ]; then
   export PROVIDER_CONTAINER_ID=$PROVIDER_ID

@@ -13,7 +13,3 @@ ovs-vsctl --retry --timeout=2 --no-wait set Open_vSwitch . \
 
 echo "Start ovn-controller ..."
 /usr/share/openvswitch/scripts/ovn-ctl --no-monitor start_controller --ovn-controller-log=-vconsole:dbg
-
-while true; do
-    sleep 1
-done

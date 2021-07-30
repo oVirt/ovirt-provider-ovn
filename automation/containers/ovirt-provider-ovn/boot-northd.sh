@@ -11,7 +11,3 @@ ovn-nbctl set-connection ptcp:6641:0.0.0.0 -- \
 
 ovn-sbctl set-connection ptcp:6642:0.0.0.0 -- \
     set connection . inactivity_probe=60000
-
-while true; do
-    sleep 1
-done
