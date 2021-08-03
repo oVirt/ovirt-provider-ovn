@@ -46,9 +46,9 @@ if [ $# -eq 5 ]; then
     fi
 else
     echo "Using default PKI files"
-    key_file=/etc/pki/vdsm/keys/vdsmkey.pem
-    cert_file=/etc/pki/vdsm/certs/vdsmcert.pem
-    ca_file=/etc/pki/vdsm/certs/cacert.pem
+    key_file=/etc/pki/vdsm/ovn/ovn-key.pem
+    cert_file=/etc/pki/vdsm/ovn/ovn-cert.pem
+    ca_file=/etc/pki/vdsm/ovn/ca-cert.pem
 fi
 
 cat > /etc/sysconfig/ovn-controller << EOF
