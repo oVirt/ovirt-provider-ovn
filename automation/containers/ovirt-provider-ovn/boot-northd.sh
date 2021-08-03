@@ -1,7 +1,5 @@
 #!/bin/bash
 
-mkdir -p /var/run/openvswitch/
-
 systemctl start ovn-northd
 
 ovn-nbctl set-connection ptcp:6641:0.0.0.0 -- \

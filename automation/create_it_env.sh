@@ -34,6 +34,7 @@ function destroy_env {
   collect_ovn_data
   collect_provider_logs
   collect_journalctl_data
+  chmod -R a+rw "$EXPORTED_ARTIFACTS_DIR"
   if [ -n "$OVN_CONTROLLER_ID" ]; then
      ${CONTAINER_CMD} rm -f "$OVN_CONTROLLER_ID"
   fi
@@ -93,12 +94,12 @@ function activate_provider_traces {
 function collect_ovn_data {
   echo "Collecting data from OVN containers ..."
   if [ -n "$PROVIDER_ID" ]; then
-    ${CONTAINER_CMD} cp "$PROVIDER_ID":/var/lib/openvswitch/ovnnb_db.db "$EXPORTED_ARTIFACTS_DIR"
-    ${CONTAINER_CMD} cp "$PROVIDER_ID":/var/lib/openvswitch/ovnsb_db.db "$EXPORTED_ARTIFACTS_DIR"
-    ${CONTAINER_CMD} cp "$PROVIDER_ID":/var/log/openvswitch/ovn-northd.log "$EXPORTED_ARTIFACTS_DIR"
+    ${CONTAINER_CMD} cp "$PROVIDER_ID":/var/lib/ovn/ovnnb_db.db "$EXPORTED_ARTIFACTS_DIR"
+    ${CONTAINER_CMD} cp "$PROVIDER_ID":/var/lib/ovn/ovnsb_db.db "$EXPORTED_ARTIFACTS_DIR"
+    ${CONTAINER_CMD} cp "$PROVIDER_ID":/var/log/ovn/ovn-northd.log "$EXPORTED_ARTIFACTS_DIR"
   fi
   if [ -n "$OVN_CONTROLLER_ID" ]; then
-    ${CONTAINER_CMD} cp "$OVN_CONTROLLER_ID":/var/log/openvswitch/ovn-controller.log "$EXPORTED_ARTIFACTS_DIR"
+    ${CONTAINER_CMD} cp "$OVN_CONTROLLER_ID":/var/log/ovn/ovn-controller.log "$EXPORTED_ARTIFACTS_DIR"
   fi
 }
 

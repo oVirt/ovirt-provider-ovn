@@ -1,7 +1,5 @@
 #!/bin/bash
 
-mkdir -p /var/run/openvswitch/
-
 echo "Start ovsdb-server ..."
 systemctl start ovsdb-server
 
