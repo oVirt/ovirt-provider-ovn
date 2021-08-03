@@ -55,6 +55,7 @@ function start_provider_container {
   PROVIDER_IP="$(container_ip $PROVIDER_ID)"
   create_rpms
   install_provider_on_container
+  activate_provider_traces
   start_provider_container_services
 }
 
@@ -92,8 +93,8 @@ function activate_provider_traces {
 function collect_ovn_data {
   echo "Collecting data from OVN containers ..."
   if [ -n "$PROVIDER_ID" ]; then
-    ${CONTAINER_CMD} cp "$PROVIDER_ID":/etc/openvswitch/ovnnb_db.db "$EXPORTED_ARTIFACTS_DIR"
-    ${CONTAINER_CMD} cp "$PROVIDER_ID":/etc/openvswitch/ovnsb_db.db "$EXPORTED_ARTIFACTS_DIR"
+    ${CONTAINER_CMD} cp "$PROVIDER_ID":/var/lib/openvswitch/ovnnb_db.db "$EXPORTED_ARTIFACTS_DIR"
+    ${CONTAINER_CMD} cp "$PROVIDER_ID":/var/lib/openvswitch/ovnsb_db.db "$EXPORTED_ARTIFACTS_DIR"
     ${CONTAINER_CMD} cp "$PROVIDER_ID":/var/log/openvswitch/ovn-northd.log "$EXPORTED_ARTIFACTS_DIR"
   fi
   if [ -n "$OVN_CONTROLLER_ID" ]; then
@@ -123,7 +124,6 @@ trap destroy_env EXIT
 load_kernel_modules
 start_provider_container
 start_controller_container
-activate_provider_traces
 if [ -n "$RUN_INTEG_TESTS" ]; then
   export PROVIDER_CONTAINER_ID=$PROVIDER_ID
   export CONTROLLER_CONTAINER_ID=$OVN_CONTROLLER_ID

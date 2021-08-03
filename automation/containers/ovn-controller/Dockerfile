@@ -30,6 +30,8 @@ RUN dnf install -y \
     && \
     dnf clean all
 
+COPY ovn-controller.conf /etc/sysconfig/ovn-controller
+
 COPY boot-controller.sh /boot-controller.sh
 
 VOLUME ["/sys/fs/cgroup"]

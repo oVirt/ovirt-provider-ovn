@@ -2,8 +2,8 @@
 
 mkdir -p /var/run/openvswitch/
 
-echo "Start ovsdb-server & ovs-vswitchd ..."
-/usr/share/openvswitch/scripts/ovs-ctl --no-monitor --system-id=random start
+echo "Start ovsdb-server ..."
+systemctl start ovsdb-server
 
 echo "Configuring controller ..."
 ovs-vsctl --retry --timeout=2 --no-wait set Open_vSwitch . \
@@ -12,4 +12,4 @@ ovs-vsctl --retry --timeout=2 --no-wait set Open_vSwitch . \
 	external_ids:ovn-encap-type=geneve
 
 echo "Start ovn-controller ..."
-/usr/share/openvswitch/scripts/ovn-ctl --no-monitor start_controller --ovn-controller-log=-vconsole:dbg
+systemctl start ovn-controller

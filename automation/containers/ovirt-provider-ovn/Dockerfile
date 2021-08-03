@@ -39,6 +39,8 @@ RUN dnf install -y \
 
 COPY 10-integrationtest.conf /etc/ovirt-provider-ovn/conf.d/
 
+COPY ovn-northd.conf /etc/sysconfig/ovn-northd
+
 COPY boot-northd.sh /boot-northd.sh
 
 VOLUME [ "/sys/fs/cgroup" , "/ovirt-provider-ovn-rpms"]
