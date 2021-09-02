@@ -23,15 +23,12 @@ RUN dnf install -y \
         git \
         kernel \
         make \
-        openvswitch \
-        openvswitch-ovn-central \
-        openvswitch-ovn-common \
         python3-devel  \
-        python3-netaddr \
-        python3-openvswitch \
-        python3-ovsdbapp \
-        python3-requests \
         rpm-build \
+        # Install ovirt-provider-ovn for its dependencies
+        ovirt-provider-ovn \
+    && \
+    dnf remove -y --noautoremove ovirt-provider-ovn \
     && \
     dnf clean all \
     && \

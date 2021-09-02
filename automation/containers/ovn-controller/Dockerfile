@@ -23,10 +23,10 @@ RUN dnf install -y \
         dhclient \
         iputils \
         NetworkManager-config-server \
-        openvswitch \
-        openvswitch-ovn-common \
-        openvswitch-ovn-host \
-        python3-openvswitch \
+        ovirt-openvswitch \
+        ovirt-openvswitch-ovn-common \
+        ovirt-openvswitch-ovn-host \
+        ovirt-python-openvswitch \
     && \
     dnf clean all
 
