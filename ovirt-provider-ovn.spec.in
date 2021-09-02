@@ -32,15 +32,10 @@ Source0:        %{name}-%{version}.tar.gz
 Requires: firewalld-filesystem
 Requires: kernel >= 3.10.0-512
 
-Requires: openvswitch >= 0:2.7
-Requires: openvswitch-ovn-central >= 0:2.7
-Requires: openvswitch-ovn-common >= 0:2.7
-Requires: python3-openvswitch >= 0:2.7
-
-Conflicts: openvswitch = 1:2.6.1
-Conflicts: openvswitch-ovn-central = 1:2.6.1
-Conflicts: openvswitch-ovn-common = 1:2.6.1
-Conflicts: python3-openvswitch = 1:2.6.1
+Requires: ovirt-openvswitch >= 2.15
+Requires: ovirt-openvswitch-ovn-central >= 2.15
+Requires: ovirt-openvswitch-ovn-common >= 2.15
+Requires: ovirt-python-openvswitch >= 2.15
 
 Requires: python3-requests
 Requires: python3-netaddr
@@ -88,15 +83,10 @@ BuildArch: noarch
 Requires: firewalld-filesystem
 Requires: kernel >= 3.10.0-512
 
-Requires: openvswitch >= 0:2.7
-Requires: openvswitch-ovn-host >= 0:2.7
-Requires: openvswitch-ovn-common >= 0:2.7
-Requires: python3-openvswitch >= 0:2.7
-
-Conflicts: openvswitch = 1:2.6.1
-Conflicts: openvswitch-ovn-host = 1:2.6.1
-Conflicts: openvswitch-ovn-common = 1:2.6.1
-Conflicts: python3-openvswitch = 1:2.6.1
+Requires: ovirt-openvswitch >= 2.15
+Requires: ovirt-openvswitch-ovn-host >= 2.15
+Requires: ovirt-openvswitch-ovn-common >= 2.15
+Requires: ovirt-python-openvswitch >= 2.15
 
 Requires: vdsm
 Requires(post): firewalld-filesystem
