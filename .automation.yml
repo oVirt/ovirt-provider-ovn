@@ -2,4 +2,7 @@
 distros:
     - el8stream
 release_branches:
-    master: [ovirt-master, ovirt-4.4]
+  master:
+    - ovirt-master
+  ovirt-4.4:
+    - ovirt-4.4
