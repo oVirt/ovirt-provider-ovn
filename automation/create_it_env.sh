@@ -47,7 +47,6 @@ function start_provider_container {
   kernel_version="$(uname -r)"
   PROVIDER_ID="$(
     ${CONTAINER_CMD} run --privileged -d \
-    -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
 	  -v $PROJECT_ROOT/:$CONTAINER_SRC_CODE_PATH \
 	  -v /lib/modules/$kernel_version:/lib/modules/$kernel_version:ro \
 	  -p 9696:9696 -p 35357:35357 \
