@@ -6,3 +6,5 @@ ovirt-master-centos-ovirt44-el8s,https://buildlogs.centos.org/centos/8-stream/vi
 ovirt-master-tested,https://resources.ovirt.org/repos/ovirt/tested/master/rpm/el8
 # Provides openvswitch
 nfv-master-centos-el8s,https://buildlogs.centos.org/centos/8-stream/nfv/$basearch/openvswitch-2/
+# Provides advanced virt
+advancedvirt-common-centos-el8s,https://buildlogs.centos.org/centos/8-stream/virt/$basearch/advancedvirt-common/
