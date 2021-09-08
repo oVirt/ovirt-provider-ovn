@@ -46,16 +46,17 @@ class IpAddressNotFoundError(Exception):
 @expose('ovn-config')
 def ovn_config(*args):
     """
-    ovn-config IP-central [tunneling-IP|tunneling-network]
+    ovn-config IP-central [tunneling-IP|tunneling-network] host-fqdn
     Configures the ovn-controller on the host.
 
     Parameters:
     IP-central - the IP of the engine (the host where OVN central is located)
     tunneling-IP - the local IP which is to be used for OVN tunneling
     tunneling-network - the vdsm network meant to be used for OVN tunneling
+    host-fqdn - FQDN that will be set as system-id for OvS
     """
-    if len(args) != 3:
-        raise ExtraArgsError(n=2)
+    if len(args) != 4:
+        raise ExtraArgsError(n=3)
 
     if is_ipaddress(args[2]):
         ip_address = args[2]
@@ -65,7 +66,12 @@ def ovn_config(*args):
         if not ip_address:
             raise IpAddressNotFoundError(net_name)
 
-    cmd = [OVN_CONFIG_SCRIPT, format_literal_ipaddress(args[1]), ip_address]
+    cmd = [
+        OVN_CONFIG_SCRIPT,
+        args[3],
+        format_literal_ipaddress(args[1]),
+        ip_address,
+    ]
     exec_command(cmd, 'Failed to configure OVN controller.')
 
 

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,18 +19,21 @@
 
 set -e
 
-systemctl start ovsdb-server
+# Set system-id before starting ovsdb-server to be the same as host FQDN
+echo "$1" > /etc/openvswitch/system-id.conf
 
-ovs-vsctl --no-wait set open . external-ids:ovn-remote=ssl:$1:6642
+systemctl restart ovsdb-server
+
+ovs-vsctl --no-wait set open . external-ids:ovn-remote=ssl:$2:6642
 ovs-vsctl --no-wait set open . external-ids:ovn-encap-type=geneve
-ovs-vsctl --no-wait set open . external-ids:ovn-encap-ip=$2
+ovs-vsctl --no-wait set open . external-ids:ovn-encap-ip=$3
 ovs-vsctl --no-wait set open . external_ids:ovn-remote-probe-interval=60000
 ovs-vsctl --no-wait set open . external_ids:ovn-openflow-probe-interval=60
 
-if [ $# -eq 5 ]; then
-    key_file=$3
-    cert_file=$4
-    ca_file=$5
+if [ $# -eq 6 ]; then
+    key_file=$4
+    cert_file=$5
+    ca_file=$6
 
     if  [ ! -f "${key_file}" ]; then
        echo "Key file does not exist. Please check the parameters and try again."
@@ -56,8 +59,14 @@ cat > /etc/sysconfig/ovn-controller << EOF
 OVN_CONTROLLER_OPTS="--ovn-controller-ssl-key=${key_file} --ovn-controller-ssl-cert=${cert_file} --ovn-controller-ssl-ca-cert=${ca_file}"
 EOF
 
+ovs-vsctl --no-wait set open . other_config:private_key=${key_file}
+ovs-vsctl --no-wait set open . other_config:certificate=${cert_file}
+ovs-vsctl --no-wait set open . other_config:ca_cert=${ca_file}
+
 systemctl enable openvswitch
+systemctl enable openvswitch-ipsec
 systemctl enable ovn-controller
 
 systemctl restart openvswitch
+systemctl restart openvswitch-ipsec
 systemctl restart ovn-controller

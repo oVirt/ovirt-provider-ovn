@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,9 @@ ovs-vsctl --no-wait remove open . external-ids ovn-encap-type
 ovs-vsctl --no-wait remove open . external-ids ovn-encap-ip
 ovs-vsctl --no-wait remove open . external_ids ovn-remote-probe-interval
 ovs-vsctl --no-wait remove open . external_ids ovn-openflow-probe-interval
+ovs-vsctl --no-wait remove open . other_config private_key
+ovs-vsctl --no-wait remove open . other_config certificate
+ovs-vsctl --no-wait remove open . other_config ca_cert
 if [ "$OVSDB_STATUS" -ne 0 ]; then
   systemctl stop ovsdb-server
 fi
