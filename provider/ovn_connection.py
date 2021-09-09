@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -52,14 +52,10 @@ def connect():
 def _create_new_connection():
     configure_ssl_connection()
     ovsidl = ovsdbapp.backend.ovs_idl.connection.OvsdbIdl.from_server(
-        ovn_remote(),
-        ovnconst.OVN_NORTHBOUND
+        ovn_remote(), ovnconst.OVN_NORTHBOUND
     )
     return OvnNbApiIdlImpl(
-        ovsdbapp.backend.ovs_idl.connection.Connection(
-            idl=ovsidl,
-            timeout=100
-        )
+        ovsdbapp.backend.ovs_idl.connection.Connection(idl=ovsidl, timeout=100)
     )
 
 
@@ -86,8 +82,11 @@ class OvnTransactionManager(OvnNbApiIdlImpl):
 
     def create_transaction(self, check_error=False, log_errors=True, **kwargs):
         tx = Transaction(
-            self, self.ovsdb_connection, self.ovsdb_connection.timeout,
-            check_error, log_errors
+            self,
+            self.ovsdb_connection,
+            self.ovsdb_connection.timeout,
+            check_error,
+            log_errors,
         )
         self._tx = tx
         return tx

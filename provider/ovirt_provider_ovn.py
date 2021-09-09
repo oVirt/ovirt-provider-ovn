@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -74,8 +74,7 @@ def setup_thread_excepthook():
 
 def uncaught_error_hook(exc_type, exc_value, exc_traceback):
     logging.error(
-        "Uncaught exception",
-        exc_info=(exc_type, exc_value, exc_traceback)
+        "Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback)
     )
     logging.error("Irrecoverable error. Exiting!")
     logging.getLogger().handlers[0].flush()
@@ -144,12 +143,14 @@ class HTTPServerIPv6(HTTPServer):
 
 def _ssl_wrap(server):
     if ssl_enabled():
-        server.socket = ssl.wrap_socket(server.socket,
-                                        keyfile=ssl_key_file(),
-                                        certfile=ssl_cert_file(),
-                                        server_side=True,
-                                        ssl_version=ssl.PROTOCOL_TLSv1_2,
-                                        ciphers=ssl_ciphers_string())
+        server.socket = ssl.wrap_socket(
+            server.socket,
+            keyfile=ssl_key_file(),
+            certfile=ssl_cert_file(),
+            server_side=True,
+            ssl_version=ssl.PROTOCOL_TLSv1_2,
+            ciphers=ssl_ciphers_string(),
+        )
 
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,8 +69,9 @@ KEY_SSL_CIPHERS_STRING = 'ssl-ciphers-string'
 DEFAULT_SSL_KEY_FILE = '/etc/pki/ovirt-engine/keys/ovirt-provider-ovn.pem'
 DEFAULT_SSL_CERT_FILE = '/etc/pki/ovirt-engine/certs/ovirt-provider-ovn.cer'
 DEFAULT_SSL_CACERT_FILE = '/etc/pki/ovirt-engine/ca.pem'
-DEFAULT_SSL_CIPHERS_STRING = 'kECDHE+FIPS:kDHE+FIPS:kRSA+FIPS:!eNULL:!aNULL:' \
-                             '-3DES'
+DEFAULT_SSL_CIPHERS_STRING = (
+    'kECDHE+FIPS:kDHE+FIPS:kRSA+FIPS:!eNULL:!aNULL:' '-3DES'
+)
 DEFAULT_SSL_ENABLED = False
 
 CONFIG_SECTION_DHCP = 'DHCP'
@@ -121,8 +122,7 @@ DEFAULT_OVIRT_SSO_CLIENT_SECRET = 'secret'
 DEFAULT_OVIRT_AUTH_TIMEOUT = 110.0
 DEFAULT_ENGINE_NETWORK_ADMIN_USER_NAME = 'netadmin@internal'
 DEFAULT_ENGINE_NETWORK_ADMIN_ROLE_ID = 'def00005-0000-0000-0000-def000000005'
-DEFAULT_ENGINE_ADMIN_GROUP_ATTRIBUTE_NAME = \
-  'AAA_AUTHZ_GROUP_NAME;java.lang.String;0eebe54f-b429-44f3-aa80-4704cbb16835'
+DEFAULT_ENGINE_ADMIN_GROUP_ATTRIBUTE_NAME = 'AAA_AUTHZ_GROUP_NAME;java.lang.String;0eebe54f-b429-44f3-aa80-4704cbb16835'  # noqa: E501
 DEFAULT_ENGINE_ADMIN_GROUP_ATTRIBUTE_VALUE = 'NetAdmin'
 
 CONFIG_SECTION_VALIDATION = 'VALIDATION'
@@ -144,13 +144,7 @@ def load():
     global _config
     _config = configparser.ConfigParser()
     _config.read(CONFIG_FILE)
-    _config.read(
-        sorted(
-            glob.glob(
-                os.path.join(CONFD_DIR, CONFD_FILES)
-            )
-        )
-    )
+    _config.read(sorted(glob.glob(os.path.join(CONFD_DIR, CONFD_FILES))))
 
 
 def get(section, key, default=None):
