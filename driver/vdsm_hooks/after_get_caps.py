@@ -1,6 +1,6 @@
 #!/usr/bin/python2
 #
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ CMD_LINE = ['ovs-vsctl', 'get', 'Open_vSwitch', '.', 'external_ids:system-id']
 
 
 def _usage():
-    print('Usage: %s option' % (sys.argv[0], ))
+    print('Usage: %s option' % (sys.argv[0],))
     print('\t-h, --help\t\tdisplay this help')
     print('\t-t, --test\t\trun tests')
 
@@ -96,8 +96,10 @@ if __name__ == '__main__':
     try:
         import hooking
     except ImportError:
-        print('Could not import hooking module. You should only run this '
-              'script directly with option specified.')
+        print(
+            'Could not import hooking module. You should only run this '
+            'script directly with option specified.'
+        )
         _usage()
         sys.exit(1)
 

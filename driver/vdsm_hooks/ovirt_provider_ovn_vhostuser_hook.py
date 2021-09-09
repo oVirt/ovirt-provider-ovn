@@ -1,5 +1,5 @@
 #!/usr/bin/python2
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,8 +34,7 @@ VHOST_PERM_SETTER = '/usr/libexec/vdsm/vhostuser_permissions_setter'
 def exec_cmd(*args):
     retcode, out, err = hooking.execCmd(args, sudo=True)
     if retcode != 0:
-        raise RuntimeError("Failed to execute %s, due to: %s" %
-                           (args, err))
+        raise RuntimeError("Failed to execute %s, due to: %s" % (args, err))
     return out
 
 
@@ -63,13 +62,23 @@ def set_br_int_datapath_type():
 def add_vhostuser_client():
     vhostuser = vhostuser_name()
     exec_cmd(
-        'ovs-vsctl', 'add-port', 'br-int', vhostuser, '--', 'set',
-        'Interface', vhostuser, 'type=dpdkvhostuserclient',
-        'options:vhost-server-path={}'.format(vhostuser_path())
+        'ovs-vsctl',
+        'add-port',
+        'br-int',
+        vhostuser,
+        '--',
+        'set',
+        'Interface',
+        vhostuser,
+        'type=dpdkvhostuserclient',
+        'options:vhost-server-path={}'.format(vhostuser_path()),
     )
     exec_cmd(
-        'ovs-vsctl', 'set', 'Interface', vhostuser,
-        'external-ids:iface-id={}'.format(get_lsp_name())
+        'ovs-vsctl',
+        'set',
+        'Interface',
+        vhostuser,
+        'external-ids:iface-id={}'.format(get_lsp_name()),
     )
 
 

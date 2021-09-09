@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -80,8 +80,7 @@ def ovn_unconfigure(*args):
         raise ExtraArgsError(n=0)
 
     exec_command(
-        [OVN_UNCONFIGURE_SCRIPT],
-        'Failed to unconfigure OVN controller.'
+        [OVN_UNCONFIGURE_SCRIPT], 'Failed to unconfigure OVN controller.'
     )
 
 

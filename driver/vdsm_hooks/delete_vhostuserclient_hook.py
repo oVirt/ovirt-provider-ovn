@@ -1,5 +1,5 @@
 #!/usr/bin/python2
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,8 +24,7 @@ import hooking
 def exec_cmd(*args):
     retcode, out, err = hooking.execCmd(args, sudo=True)
     if retcode != 0:
-        raise RuntimeError("Failed to execute %s, due to: %s" %
-                           (args, err))
+        raise RuntimeError("Failed to execute %s, due to: %s" % (args, err))
     return out
 
 

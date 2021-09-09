@@ -1,5 +1,5 @@
 #!/usr/bin/python2
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -68,7 +68,6 @@ EXPECTED_XML_2 = """<?xml version="1.0" encoding="utf-8"?>
 
 
 class TestOvirtProviderOvnHook(object):
-
     @mock.patch.object(os, 'environ', {VNIC_ID_KEY: '7'})
     def test_ovs_device(self):
         self._test_ovs_device(INPUT_XML_1, EXPECTED_XML_1)
@@ -79,7 +78,8 @@ class TestOvirtProviderOvnHook(object):
         ovirt_provider_ovn_hook.ovs_device(domxml)
 
         output_xml = domxml.toprettyxml(encoding='utf-8')
-        output_xml = ('\n'.join(line.strip() for line in output_xml.split('\n')
-                                if line.strip()))
+        output_xml = '\n'.join(
+            line.strip() for line in output_xml.split('\n') if line.strip()
+        )
 
         assert output_xml == EXPECTED_XML
