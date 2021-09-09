@@ -1,5 +1,5 @@
 #!/usr/bin/python2
-# Copyright 2020 Red Hat, Inc.
+# Copyright 2020-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,19 +34,15 @@ class HostnameNotFoundError(ValueError):
 
 
 def _usage():
-    print('Usage: %s <hostname>' % (sys.argv[0], ))
+    print('Usage: %s <hostname>' % (sys.argv[0],))
 
 
 def _connect_sb(connection_string):
     ovsidl = ovsdbapp.backend.ovs_idl.connection.OvsdbIdl.from_server(
-        connection_string,
-        OVN_SOUTHBOUND
+        connection_string, OVN_SOUTHBOUND
     )
     return OvnSbApiIdlImpl(
-        ovsdbapp.backend.ovs_idl.connection.Connection(
-            idl=ovsidl,
-            timeout=100
-        )
+        ovsdbapp.backend.ovs_idl.connection.Connection(idl=ovsidl, timeout=100)
     )
 
 
