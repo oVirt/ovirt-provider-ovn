@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,17 +24,17 @@ from auth import Forbidden
 from auth import Timeout
 
 API_PATH = '/api'
-HEADERS = {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json'}
+HEADERS = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 
 
 def search_request(rel_path, query, engine_url, token, ca_file, timeout):
-    return _http_get(url='{}/{}'.format(_get_api_url(engine_url), rel_path),
-                     token=token,
-                     ca_file=ca_file,
-                     timeout=timeout,
-                     params={'search': query})
+    return _http_get(
+        url='{}/{}'.format(_get_api_url(engine_url), rel_path),
+        token=token,
+        ca_file=ca_file,
+        timeout=timeout,
+        params={'search': query},
+    )
 
 
 def follow_link(obj, rel, engine_host, token, ca_file, timeout):
@@ -46,11 +46,13 @@ def follow_link(obj, rel, engine_host, token, ca_file, timeout):
 
 def _http_get(url, token, ca_file, timeout, params=None):
     try:
-        response = requests.get(url,
-                                headers=_get_headers(token),
-                                verify=ca_file,
-                                timeout=timeout,
-                                params=params)
+        response = requests.get(
+            url,
+            headers=_get_headers(token),
+            verify=ca_file,
+            timeout=timeout,
+            params=params,
+        )
     except requests.exceptions.Timeout as e:
         raise Timeout(e)
 

@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,19 +38,21 @@ def init():
 def _load_plugin(plugin_name):
     try:
         module_name, class_name = plugin_name.rsplit(':', 1)
-        plugin_class = getattr(importlib.import_module(module_name),
-                               class_name)
+        plugin_class = getattr(
+            importlib.import_module(module_name), class_name
+        )
         try:
             assert issubclass(plugin_class, Plugin)
             return plugin_class()
         except TypeError as e:
             logging.error(
                 "Auth plugin '%s' is of wrong type: %s",
-                plugin_class.__name__, e)
+                plugin_class.__name__,
+                e,
+            )
             raise e
     except Exception as e:
-        logging.error(
-            "Unable to load auth plugin '%s'", plugin_name)
+        logging.error("Unable to load auth plugin '%s'", plugin_name)
         raise e
 
 

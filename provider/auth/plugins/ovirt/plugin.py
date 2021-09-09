@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,13 +39,14 @@ from . import sso
 
 
 class OVirtPlugin(Plugin):
-
     def create_token(self, user_at_domain, user_password):
-        return sso.create_token(username=user_at_domain,
-                                password=user_password,
-                                engine_url=self._engine_url(),
-                                ca_file=self._engine_ca_file(),
-                                timeout=self._timeout())
+        return sso.create_token(
+            username=user_at_domain,
+            password=user_password,
+            engine_url=self._engine_url(),
+            ca_file=self._engine_ca_file(),
+            timeout=self._timeout(),
+        )
 
     @staticmethod
     def _engine_url():
@@ -54,25 +55,19 @@ class OVirtPlugin(Plugin):
     @staticmethod
     def _engine_host():
         return ovirt_provider_config.get(
-            CONFIG_SECTION_OVIRT,
-            KEY_OVIRT_HOST,
-            DEFAULT_OVIRT_HOST
+            CONFIG_SECTION_OVIRT, KEY_OVIRT_HOST, DEFAULT_OVIRT_HOST
         )
 
     @staticmethod
     def _engine_base():
         return ovirt_provider_config.get(
-            CONFIG_SECTION_OVIRT,
-            KEY_OVIRT_BASE,
-            DEFAULT_OVIRT_BASE
+            CONFIG_SECTION_OVIRT, KEY_OVIRT_BASE, DEFAULT_OVIRT_BASE
         )
 
     @staticmethod
     def _engine_ca_file():
         return ovirt_provider_config.get(
-            CONFIG_SECTION_OVIRT,
-            KEY_OVIRT_CA_FILE,
-            DEFAULT_OVIRT_CA_FILE
+            CONFIG_SECTION_OVIRT, KEY_OVIRT_CA_FILE, DEFAULT_OVIRT_CA_FILE
         )
 
     @staticmethod
@@ -80,7 +75,7 @@ class OVirtPlugin(Plugin):
         return ovirt_provider_config.getfloat(
             CONFIG_SECTION_OVIRT,
             KEY_OVIRT_AUTH_TIMEOUT,
-            DEFAULT_OVIRT_AUTH_TIMEOUT
+            DEFAULT_OVIRT_AUTH_TIMEOUT,
         )
 
     @staticmethod
@@ -88,7 +83,7 @@ class OVirtPlugin(Plugin):
         return ovirt_provider_config.get(
             CONFIG_SECTION_OVIRT,
             KEY_OVIRT_SSO_CLIENT_ID,
-            DEFAULT_OVIRT_SSO_CLIENT_ID
+            DEFAULT_OVIRT_SSO_CLIENT_ID,
         )
 
     @staticmethod
@@ -96,5 +91,5 @@ class OVirtPlugin(Plugin):
         return ovirt_provider_config.get(
             CONFIG_SECTION_OVIRT,
             KEY_OVIRT_SSO_CLIENT_SECRET,
-            DEFAULT_OVIRT_SSO_CLIENT_SECRET
+            DEFAULT_OVIRT_SSO_CLIENT_SECRET,
         )

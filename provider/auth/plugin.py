@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ import six
 
 @six.add_metaclass(abc.ABCMeta)
 class Plugin(object):
-
     @abc.abstractmethod
     def create_token(self, user_at_domain, user_password):
         """Create a new token and return it."""

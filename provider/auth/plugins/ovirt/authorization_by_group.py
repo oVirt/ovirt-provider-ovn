@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,10 +35,12 @@ from ovirt_provider_config import DEFAULT_ENGINE_NETWORK_ADMIN_ROLE_ID
 
 
 class AuthorizationByGroup(OVirtPlugin):
-
     def validate_token(self, token):
-        return self._has_group(token, _admin_group_attribute_name(),
-                               _admin_group_attribute_value())
+        return self._has_group(
+            token,
+            _admin_group_attribute_name(),
+            _admin_group_attribute_value(),
+        )
 
     @staticmethod
     def _has_group(token, attribute_name, attribute_value):
@@ -49,13 +51,18 @@ class AuthorizationByGroup(OVirtPlugin):
             ca_file=AuthorizationByGroup._engine_ca_file(),
             timeout=AuthorizationByGroup._timeout(),
             client_id=AuthorizationByGroup._sso_client_id(),
-            client_secret=AuthorizationByGroup._sso_client_secret())
+            client_secret=AuthorizationByGroup._sso_client_secret(),
+        )
 
         if not is_active(token_info):
             raise Unauthorized('Token is not active.')
 
-        return any([_contains(group, attribute_name, attribute_value)
-                    for group in extract_groups(token_info)])
+        return any(
+            [
+                _contains(group, attribute_name, attribute_value)
+                for group in extract_groups(token_info)
+            ]
+        )
 
 
 def _contains(d, key, value):
@@ -66,7 +73,7 @@ def _admin_group_attribute_name():
     return ovirt_provider_config.get(
         CONFIG_SECTION_OVIRT,
         KEY_OVIRT_ADMIN_GROUP_ATTRIBUTE_NAME,
-        DEFAULT_ENGINE_NETWORK_ADMIN_USER_NAME
+        DEFAULT_ENGINE_NETWORK_ADMIN_USER_NAME,
     )
 
 
@@ -74,5 +81,5 @@ def _admin_group_attribute_value():
     return ovirt_provider_config.get(
         CONFIG_SECTION_OVIRT,
         KEY_OVIRT_ADMIN_GROUP_ATTRIBUTE_VALUE,
-        DEFAULT_ENGINE_NETWORK_ADMIN_ROLE_ID
+        DEFAULT_ENGINE_NETWORK_ADMIN_ROLE_ID,
     )

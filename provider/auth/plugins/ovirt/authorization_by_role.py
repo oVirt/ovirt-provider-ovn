@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,6 @@ STRING_ENCODING = 'ascii'
 
 
 class AuthorizationByRole(OVirtPlugin):
-
     def validate_token(self, token):
         return self._has_role(token, _admin_role_id())
 
@@ -55,7 +54,8 @@ class AuthorizationByRole(OVirtPlugin):
             ca_file=AuthorizationByRole._engine_ca_file(),
             timeout=AuthorizationByRole._timeout(),
             client_id=AuthorizationByRole._sso_client_id(),
-            client_secret=AuthorizationByRole._sso_client_secret())
+            client_secret=AuthorizationByRole._sso_client_secret(),
+        )
 
         token_info = get_token_info(
             token=token,
@@ -63,7 +63,8 @@ class AuthorizationByRole(OVirtPlugin):
             ca_file=AuthorizationByRole._engine_ca_file(),
             timeout=AuthorizationByRole._timeout(),
             client_id=AuthorizationByRole._sso_client_id(),
-            client_secret=AuthorizationByRole._sso_client_secret())
+            client_secret=AuthorizationByRole._sso_client_secret(),
+        )
 
         if not is_active(token_info):
             raise Unauthorized('Token is not active.')
@@ -73,13 +74,14 @@ class AuthorizationByRole(OVirtPlugin):
         authz_name = extract_authz_name(profiles, authn_name)
 
         principal_id = _encode(get_principal_id(token_info))
-        users = search_request(rel_path='users',
-                               query='usrname={}@{}'.format(user_name,
-                                                            authz_name),
-                               engine_url=AuthorizationByRole._engine_url(),
-                               ca_file=AuthorizationByRole._engine_ca_file(),
-                               timeout=AuthorizationByRole._timeout(),
-                               token=token)
+        users = search_request(
+            rel_path='users',
+            query='usrname={}@{}'.format(user_name, authz_name),
+            engine_url=AuthorizationByRole._engine_url(),
+            ca_file=AuthorizationByRole._engine_ca_file(),
+            timeout=AuthorizationByRole._timeout(),
+            token=token,
+        )
 
         for user in users:
             if user['domain_entry_id'] == principal_id:
@@ -89,7 +91,8 @@ class AuthorizationByRole(OVirtPlugin):
                     engine_host=AuthorizationByRole._engine_host(),
                     ca_file=AuthorizationByRole._engine_ca_file(),
                     timeout=AuthorizationByRole._timeout(),
-                    token=token)
+                    token=token,
+                )
                 for role in roles:
                     if role['id'] == role_id:
                         return True
@@ -97,13 +100,16 @@ class AuthorizationByRole(OVirtPlugin):
 
 
 def _encode(string):
-    return binascii.b2a_hex(string.encode(STRING_ENCODING)).decode(
-            STRING_ENCODING
-        ).upper()
+    return (
+        binascii.b2a_hex(string.encode(STRING_ENCODING))
+        .decode(STRING_ENCODING)
+        .upper()
+    )
 
 
 def _admin_role_id():
     return ovirt_provider_config.get(
         CONFIG_SECTION_OVIRT,
         KEY_OVIRT_ADMIN_ROLE_ID,
-        DEFAULT_ENGINE_NETWORK_ADMIN_ROLE_ID)
+        DEFAULT_ENGINE_NETWORK_ADMIN_ROLE_ID,
+    )

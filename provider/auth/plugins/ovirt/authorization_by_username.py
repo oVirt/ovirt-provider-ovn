@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@ from ovirt_provider_config import DEFAULT_ENGINE_NETWORK_ADMIN_USER_NAME
 
 
 class AuthorizationByUserName(OVirtPlugin):
-
     def validate_token(self, token):
         return self._is_user_name(token, _admin_user_name())
 
@@ -44,7 +43,8 @@ class AuthorizationByUserName(OVirtPlugin):
             ca_file=AuthorizationByUserName._engine_ca_file(),
             client_id=AuthorizationByUserName._sso_client_id(),
             client_secret=AuthorizationByUserName._sso_client_secret(),
-            timeout=AuthorizationByUserName._timeout())
+            timeout=AuthorizationByUserName._timeout(),
+        )
 
         if not is_active(token_info):
             raise Unauthorized('Token is not active.')
@@ -56,5 +56,5 @@ def _admin_user_name():
     return ovirt_provider_config.get(
         CONFIG_SECTION_OVIRT,
         KEY_OVIRT_ADMIN_USER_NAME,
-        DEFAULT_ENGINE_NETWORK_ADMIN_USER_NAME
+        DEFAULT_ENGINE_NETWORK_ADMIN_USER_NAME,
     )

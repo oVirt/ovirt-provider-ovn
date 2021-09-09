@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,8 @@ TOKEN_INFO_PATH = '/token-info'
 TOKEN_NAME = 'access_token'
 AUTH_HEADERS = {
     'Accept': 'application/json',
-    'Content-type': 'application/x-www-form-urlencoded'}
+    'Content-type': 'application/x-www-form-urlencoded',
+}
 PUBLIC_AUTHZ_SEARCH_SCOPE = 'ovirt-ext=token-info:public-authz-search'
 TOKEN_SCOPE = 'ovirt-app-api ovirt-ext=token-info:validate'
 
@@ -45,6 +46,7 @@ def _translate_request_exception(func):
             raise Timeout(e)
         except requests.exceptions.RequestException as e:
             raise BadGateway(e)
+
     return wrapper
 
 
@@ -55,14 +57,16 @@ def _inspect_response(func):
         _check_for_error(response)
         response.raise_for_status()
         return response.json()
+
     return wrapper
 
 
 @_inspect_response
 @_translate_request_exception
 def _post(url, *args, **kwargs):
-    _get_logger().debug('Connecting to oVirt engine\'s SSO module: {}'
-                        .format(url))
+    _get_logger().debug(
+        'Connecting to oVirt engine\'s SSO module: {}'.format(url)
+    )
     return requests.post(url, *args, **kwargs)
 
 
@@ -72,7 +76,8 @@ def _get_logger():
 
 def create_token(username, password, engine_url, ca_file, timeout):
     sso_response = _get_sso_token(
-        username, password, engine_url, ca_file, timeout)
+        username, password, engine_url, ca_file, timeout
+    )
     return sso_response[TOKEN_NAME]
 
 
@@ -81,54 +86,60 @@ def _get_sso_token(username, password, engine_url, ca_file, timeout):
         'grant_type': 'password',
         'scope': TOKEN_SCOPE,
         'username': username,
-        'password': password
+        'password': password,
     }
     return _post(
         _token_url(engine_url),
         headers=AUTH_HEADERS,
         data=post_data,
         verify=ca_file,
-        timeout=timeout
+        timeout=timeout,
     )
 
 
 def get_profiles(
-        token, engine_url, ca_file, timeout, client_id, client_secret):
-    profiles = _profile_list(token, engine_url,
-                             ca_file=ca_file,
-                             timeout=timeout,
-                             client_id=client_id,
-                             client_secret=client_secret)['result'][1][0]
+    token, engine_url, ca_file, timeout, client_id, client_secret
+):
+    profiles = _profile_list(
+        token,
+        engine_url,
+        ca_file=ca_file,
+        timeout=timeout,
+        client_id=client_id,
+        client_secret=client_secret,
+    )['result'][1][0]
     # first element of container is corresponding data type in java
     profiles.pop(0)
     return profiles
 
 
 def _profile_list(
-        token, engine_url, ca_file, timeout, client_id, client_secret):
+    token, engine_url, ca_file, timeout, client_id, client_secret
+):
     return _post(
         _token_info_url(engine_url),
         headers=AUTH_HEADERS,
         data={
             'token': token,
             'query_type': 'profile-list',
-            'scope': PUBLIC_AUTHZ_SEARCH_SCOPE
+            'scope': PUBLIC_AUTHZ_SEARCH_SCOPE,
         },
         auth=(client_id, client_secret),
         verify=ca_file,
-        timeout=timeout
+        timeout=timeout,
     )
 
 
 def get_token_info(
-        token, engine_url, ca_file, timeout, client_id, client_secret):
+    token, engine_url, ca_file, timeout, client_id, client_secret
+):
     return _post(
         _token_info_url(engine_url),
         headers=AUTH_HEADERS,
         data={'token': token},
         auth=(client_id, client_secret),
         verify=ca_file,
-        timeout=timeout
+        timeout=timeout,
     )
 
 
@@ -161,8 +172,10 @@ def get_principal_id(token_info):
 
 
 def extract_groups(token_info):
-    return [group_container[1]
-            for group_container in token_info['ovirt'][1]['group_ids'][1]]
+    return [
+        group_container[1]
+        for group_container in token_info['ovirt'][1]['group_ids'][1]
+    ]
 
 
 def _token_url(engine_url):
@@ -174,10 +187,14 @@ def _check_for_error(response):
         try:
             result = response.json()
             if 'error' in result:
-                details = '{}{}'.format(result.get('error_code', ''),
-                                        result.get('error_description', ''))
+                details = '{}{}'.format(
+                    result.get('error_code', ''),
+                    result.get('error_description', ''),
+                )
                 raise Unauthorized(
                     'Error during SSO authentication {} : {}'.format(
-                        result['error'], details))
+                        result['error'], details
+                    )
+                )
         except ValueError:
             pass
