@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,10 +20,7 @@
 from lib.ansiblelib import get_playbook
 
 
-PLAYBOOK_CONFIG = {
-        'cloud': 'ovirt',
-        'secgroup_name': 'test_group'
-    }
+PLAYBOOK_CONFIG = {'cloud': 'ovirt', 'secgroup_name': 'test_group'}
 
 
 def test_security_groups_api():

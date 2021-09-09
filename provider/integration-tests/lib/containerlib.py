@@ -1,5 +1,5 @@
 #
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,26 +26,40 @@ CONTAINER_CLI = os.environ['CONTAINER_PLATFORM']
 
 def get_container_ip(container_name):
     container_ip_command = [
-        CONTAINER_CLI, 'inspect', '-f',
+        CONTAINER_CLI,
+        'inspect',
+        '-f',
         '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}',
-        container_name
+        container_name,
     ]
-    return subprocess.check_output(
-        container_ip_command, stderr=subprocess.STDOUT
-    ).decode().strip()
+    return (
+        subprocess.check_output(container_ip_command, stderr=subprocess.STDOUT)
+        .decode()
+        .strip()
+    )
 
 
 def inner_ping(
-        container_name, source_namespace, target_ip, expected_result=0,
-        ip_version=4, data_size=56
+    container_name,
+    source_namespace,
+    target_ip,
+    expected_result=0,
+    ip_version=4,
+    data_size=56,
 ):
     command = [
-        CONTAINER_CLI, 'exec', container_name, 'bash', '-c',
+        CONTAINER_CLI,
+        'exec',
+        container_name,
+        'bash',
+        '-c',
         'ip netns exec {ns} ping -{ip_version} -c 1 '
         '-M do -s {size} {ip}'.format(
-            ns=source_namespace, ip_version=ip_version, size=data_size,
-            ip=target_ip
-        )
+            ns=source_namespace,
+            ip_version=ip_version,
+            size=data_size,
+            ip=target_ip,
+        ),
     ]
     result = subprocess.call(command)
     if result != expected_result:
@@ -59,20 +73,29 @@ def inner_ping(
 
 def get_container_id_from_img_name(image_name):
     command = [
-        CONTAINER_CLI, 'ps', '-q', '--filter',
-        'ancestor={img}'.format(img=image_name)
+        CONTAINER_CLI,
+        'ps',
+        '-q',
+        '--filter',
+        'ancestor={img}'.format(img=image_name),
     ]
-    return subprocess.check_output(
-        command, stderr=subprocess.STDOUT
-    ).decode().strip()
+    return (
+        subprocess.check_output(command, stderr=subprocess.STDOUT)
+        .decode()
+        .strip()
+    )
 
 
 def reconfigure_interface(container_name, target_namespace, interface_name):
     for status in ['down', 'up']:
         command = [
-            CONTAINER_CLI, 'exec', container_name, 'bash', '-c',
+            CONTAINER_CLI,
+            'exec',
+            container_name,
+            'bash',
+            '-c',
             'ip netns exec {ns} ip link set {if_name} {status}'.format(
                 ns=target_namespace, if_name=interface_name, status=status
-            )
+            ),
         ]
         subprocess.call(command)

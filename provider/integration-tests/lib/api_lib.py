@@ -1,4 +1,4 @@
-# Copyright 2019 Red Hat, Inc.
+# Copyright 2019-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,10 +40,11 @@ def get_router_by_name(router_name):
 def _get_entity_by_name(entity_type, entity_name, mapper=None):
     return next(
         (
-            entity for entity in _get_entities_by_type(entity_type, mapper)
+            entity
+            for entity in _get_entities_by_type(entity_type, mapper)
             if entity.get('name') == entity_name
         ),
-        None
+        None,
     )
 
 
@@ -62,7 +63,7 @@ def _get_entities_by_type(entity_type, mapper=None):
 
 def update_and_assert(entity_type, entity_id, update_payload):
     url = ENDPOINT + entity_type + '/{}'.format(entity_id)
-    singular_entity_type = entity_type[0:len(entity_type)-1]
+    singular_entity_type = entity_type[0 : len(entity_type) - 1]
     response = requests.put(url, json=update_payload)
     assert response.status_code == 200
     json_response = response.json()
@@ -125,8 +126,7 @@ class SecurityGroup(object):
 
     @staticmethod
     def _wrap_dict(
-            security_group_id, name, description=None,
-            security_group_rules=None
+        security_group_id, name, description=None, security_group_rules=None
     ):
         sec_group = SecurityGroup(name, description)
         sec_group._security_group_id = security_group_id
@@ -142,7 +142,7 @@ class SecurityGroup(object):
         create_group_data = {
             'security_group': {
                 'name': self._name,
-                'description': self._description
+                'description': self._description,
             }
         }
         return create_entity('security-groups', create_group_data).get(
@@ -155,8 +155,13 @@ class SecurityGroup(object):
 
 class SecurityGroupRule(object):
     def __init__(
-            self, security_group_id, direction, ether_type, protocol=None,
-            remote_ip_prefix=None, remote_group_id=None
+        self,
+        security_group_id,
+        direction,
+        ether_type,
+        protocol=None,
+        remote_ip_prefix=None,
+        remote_group_id=None,
     ):
         self._security_group_id = security_group_id
         self._direction = direction
@@ -203,7 +208,7 @@ class SecurityGroupRule(object):
         create_rule_data = {
             'security_group_id': self._security_group_id,
             'direction': self._direction,
-            'ethertype': self._ether_type
+            'ethertype': self._ether_type,
         }
 
         if self._remote_ip_prefix:

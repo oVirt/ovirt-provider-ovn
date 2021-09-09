@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ class Playbook(object):
             playbook=self._playbook,
             extravars=self._extra_vars,
             inventory='localhost ansible_connection=local '
-                      'ansible_python_interpreter={}'.format(PY_INTERPRETER)
+            'ansible_python_interpreter={}'.format(PY_INTERPRETER),
         )
         if runner.status != 'successful':
             raise AnsibleExecutionFailure
@@ -77,20 +77,21 @@ class Playbook(object):
     def _stats(runner):
         last_event = list(
             filter(
-                lambda x:
-                'event' in x and x['event'] == 'playbook_on_stats',
-                runner.events
+                lambda x: 'event' in x and x['event'] == 'playbook_on_stats',
+                runner.events,
             )
         )
         if not last_event:
             return None
         last_event = last_event[0]['event_data']
-        return dict(skipped=last_event['skipped'],
-                    ok=last_event['ok'],
-                    dark=last_event['dark'],
-                    failures=last_event['failures'],
-                    processed=last_event['processed'],
-                    changed=last_event['changed'])
+        return dict(
+            skipped=last_event['skipped'],
+            ok=last_event['ok'],
+            dark=last_event['dark'],
+            failures=last_event['failures'],
+            processed=last_event['processed'],
+            changed=last_event['changed'],
+        )
 
     def _assert_playbook_executed_successfully(self, check_idempotency):
         assert not self.execution_stats['failures']

@@ -1,4 +1,4 @@
-# Copyright 2019 Red Hat, Inc.
+# Copyright 2019-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@ from lib.ansiblelib import get_playbook
 
 
 PLAYBOOK_CONFIG = {
-        'cloud_name': 'ovirt',
-    }
+    'cloud_name': 'ovirt',
+}
 
 
 def test_router_api():

@@ -1,4 +1,4 @@
-# Copyright 2019 Red Hat, Inc.
+# Copyright 2019-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ SAME_SUBNET = {
             'name': 'router0',
             'interfaces': [
                 'subnet1',
-            ]
+            ],
         }
     ],
 }
@@ -74,7 +74,7 @@ MULTIPLE_SUBNETS_STATELESS = {
             'ns': 'ns1',
             'ip_version': 6,
             'gateway_ip': 'bef0:1234:a890:5678::1',
-            'ipv6_address_mode': 'dhcpv6-stateless'
+            'ipv6_address_mode': 'dhcpv6-stateless',
         },
         {
             'name': 'lport2',
@@ -85,18 +85,10 @@ MULTIPLE_SUBNETS_STATELESS = {
             'ns': 'ns2',
             'ip_version': 6,
             'gateway_ip': 'def0:abcd::1',
-            'ipv6_address_mode': 'dhcpv6-stateless'
+            'ipv6_address_mode': 'dhcpv6-stateless',
         },
     ],
-    'routers': [
-        {
-            'name': 'router0',
-            'interfaces': [
-                'subnet1',
-                'subnet2'
-            ]
-        }
-    ],
+    'routers': [{'name': 'router0', 'interfaces': ['subnet1', 'subnet2']}],
 }
 
 MULTIPLE_SUBNETS_STATEFUL = {
@@ -109,7 +101,7 @@ MULTIPLE_SUBNETS_STATEFUL = {
             'network': 'net1',
             'ns': 'ns1',
             'ip_version': 6,
-            'gateway_ip': 'bef0:1234:a890:5678::1'
+            'gateway_ip': 'bef0:1234:a890:5678::1',
         },
         {
             'name': 'lport2',
@@ -119,18 +111,10 @@ MULTIPLE_SUBNETS_STATEFUL = {
             'network': 'net2',
             'ns': 'ns2',
             'ip_version': 6,
-            'gateway_ip': 'def0:abcd::1'
+            'gateway_ip': 'def0:abcd::1',
         },
     ],
-    'routers': [
-        {
-            'name': 'router0',
-            'interfaces': [
-                'subnet1',
-                'subnet2'
-            ]
-        }
-    ],
+    'routers': [{'name': 'router0', 'interfaces': ['subnet1', 'subnet2']}],
 }
 
 MULTIPLE_SUBNETS_STATEFUL_NO_ROUTER = {
@@ -143,7 +127,7 @@ MULTIPLE_SUBNETS_STATEFUL_NO_ROUTER = {
             'network': 'net1',
             'ns': 'ns1',
             'ip_version': 6,
-            'gateway_ip': 'bef0:1234:a890:5678::1'
+            'gateway_ip': 'bef0:1234:a890:5678::1',
         },
         {
             'name': 'lport2',
@@ -153,7 +137,7 @@ MULTIPLE_SUBNETS_STATEFUL_NO_ROUTER = {
             'network': 'net2',
             'ns': 'ns2',
             'ip_version': 6,
-            'gateway_ip': 'def0:abcd::1'
+            'gateway_ip': 'def0:abcd::1',
         },
     ],
 }
@@ -169,7 +153,7 @@ SINGLE_SUBNET_STATEFUL_WEIRD_PREFIX = {
             'network': 'net1',
             'ns': 'ns1',
             'ip_version': 6,
-            'gateway_ip': 'fc00::1'
+            'gateway_ip': 'fc00::1',
         },
         {
             'name': 'lport2',
@@ -180,7 +164,7 @@ SINGLE_SUBNET_STATEFUL_WEIRD_PREFIX = {
             'network': 'net1',
             'ns': 'ns2',
             'ip_version': 6,
-            'gateway_ip': 'fc00::1'
+            'gateway_ip': 'fc00::1',
         },
     ],
 }
@@ -229,15 +213,15 @@ def setup_dataplane_multiple_subnet_stateful_no_router():
 
 @pytest.fixture
 def setup_dataplane_multiple_subnet_stateful_with_router():
-    get_playbook(
-        'create_l2l3_scenario.yml', MULTIPLE_SUBNETS_STATEFUL
-    ).run(enable_idempotency_checker=False)
+    get_playbook('create_l2l3_scenario.yml', MULTIPLE_SUBNETS_STATEFUL).run(
+        enable_idempotency_checker=False
+    )
     try:
         yield
     finally:
-        get_playbook(
-            'reset_scenario.yml', MULTIPLE_SUBNETS_STATEFUL
-        ).run(enable_idempotency_checker=False)
+        get_playbook('reset_scenario.yml', MULTIPLE_SUBNETS_STATEFUL).run(
+            enable_idempotency_checker=False
+        )
 
 
 @pytest.fixture
@@ -263,12 +247,14 @@ def test_single_subnet(setup_dataplane_single_subnet):
     inner_ping(
         container_name=CONTROLLER_CONTAINER_ID,
         source_namespace=icmp_src_conf['ns'],
-        target_ip=destination_ip, expected_result=0, ip_version=6
+        target_ip=destination_ip,
+        expected_result=0,
+        ip_version=6,
     )
 
 
 def test_single_subnet_weird_prefix(
-        setup_dataplane_single_subnet_weird_prefix
+    setup_dataplane_single_subnet_weird_prefix,
 ):
     icmp_src_conf = SINGLE_SUBNET_STATEFUL_WEIRD_PREFIX['network_points'][0]
     icmp_dst_conf = SINGLE_SUBNET_STATEFUL_WEIRD_PREFIX['network_points'][1]
@@ -280,7 +266,9 @@ def test_single_subnet_weird_prefix(
     inner_ping(
         container_name=CONTROLLER_CONTAINER_ID,
         source_namespace=icmp_src_conf['ns'],
-        target_ip=destination_ip, expected_result=0, ip_version=6
+        target_ip=destination_ip,
+        expected_result=0,
+        ip_version=6,
     )
 
 
@@ -295,12 +283,14 @@ def test_multiple_subnets(setup_dataplane_multiple_subnet):
     inner_ping(
         container_name=CONTROLLER_CONTAINER_ID,
         source_namespace=icmp_src_conf['ns'],
-        target_ip=destination_ip, expected_result=0, ip_version=6
+        target_ip=destination_ip,
+        expected_result=0,
+        ip_version=6,
     )
 
 
 def test_multiple_subnets_stateful(
-        setup_dataplane_multiple_subnet_stateful_with_router
+    setup_dataplane_multiple_subnet_stateful_with_router,
 ):
     icmp_src_conf = MULTIPLE_SUBNETS_STATEFUL['network_points'][0]
     icmp_dst_conf = MULTIPLE_SUBNETS_STATEFUL['network_points'][1]
@@ -312,12 +302,14 @@ def test_multiple_subnets_stateful(
     inner_ping(
         container_name=CONTROLLER_CONTAINER_ID,
         source_namespace=icmp_src_conf['ns'],
-        target_ip=destination_ip, expected_result=0, ip_version=6
+        target_ip=destination_ip,
+        expected_result=0,
+        ip_version=6,
     )
 
 
 def test_multiple_subnets_stateful_no_connectivity(
-        setup_dataplane_multiple_subnet_stateful_no_router
+    setup_dataplane_multiple_subnet_stateful_no_router,
 ):
     icmp_src_conf = MULTIPLE_SUBNETS_STATEFUL_NO_ROUTER['network_points'][0]
     icmp_dst_conf = MULTIPLE_SUBNETS_STATEFUL_NO_ROUTER['network_points'][1]
@@ -329,7 +321,9 @@ def test_multiple_subnets_stateful_no_connectivity(
     inner_ping(
         container_name=CONTROLLER_CONTAINER_ID,
         source_namespace=icmp_src_conf['ns'],
-        target_ip=destination_ip, expected_result=2, ip_version=6
+        target_ip=destination_ip,
+        expected_result=2,
+        ip_version=6,
     )
 
 
@@ -344,8 +338,10 @@ def test_configure_network_mtu_via_ras(setup_dataplane_multiple_subnet):
     inner_ping(
         container_name=CONTROLLER_CONTAINER_ID,
         source_namespace=icmp_src_conf['ns'],
-        target_ip=destination_ip, expected_result=0, ip_version=6,
-        data_size=1301
+        target_ip=destination_ip,
+        expected_result=0,
+        ip_version=6,
+        data_size=1301,
     )
 
     # update the network MTU
@@ -358,8 +354,10 @@ def test_configure_network_mtu_via_ras(setup_dataplane_multiple_subnet):
     inner_ping(
         container_name=CONTROLLER_CONTAINER_ID,
         source_namespace=icmp_src_conf['ns'],
-        target_ip=destination_ip, expected_result=1, ip_version=6,
-        data_size=1301
+        target_ip=destination_ip,
+        expected_result=1,
+        ip_version=6,
+        data_size=1301,
     )
 
 
@@ -373,7 +371,9 @@ def test_disable_router(setup_dataplane_multiple_subnet):
     inner_ping(
         container_name=CONTROLLER_CONTAINER_ID,
         source_namespace=icmp_src_conf['ns'],
-        target_ip=destination_ip, expected_result=0, ip_version=6
+        target_ip=destination_ip,
+        expected_result=0,
+        ip_version=6,
     )
 
     router_name = MULTIPLE_SUBNETS_STATELESS['routers'][0]['name']
@@ -382,7 +382,9 @@ def test_disable_router(setup_dataplane_multiple_subnet):
         inner_ping(
             container_name=CONTROLLER_CONTAINER_ID,
             source_namespace=icmp_src_conf['ns'],
-            target_ip=destination_ip, expected_result=1, ip_version=6
+            target_ip=destination_ip,
+            expected_result=1,
+            ip_version=6,
         )
 
 
@@ -390,7 +392,8 @@ def _get_port_ip_by_name(port_name):
     port_data = _get_networking_api_port_data(port_name)
     return (
         port_data['fixed_ips'][0].get('ip_address')
-        if 'fixed_ips' in port_data else None
+        if 'fixed_ips' in port_data
+        else None
     )
 
 
@@ -399,7 +402,7 @@ def _get_networking_api_port_data(port_name):
     return list(
         filter(
             lambda port: port.get('name') == port_name,
-            reply.json().get('ports')
+            reply.json().get('ports'),
         )
     )[0]
 
@@ -409,9 +412,7 @@ def _get_routers():
 
 
 def _update_network_mtu(network_uuid, mtu):
-    payload = {
-        'network': {'mtu': mtu}
-    }
+    payload = {'network': {'mtu': mtu}}
     reply = requests.put(
         PROVIDER_URL + 'networks/' + network_uuid, json=payload
     )

@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ SAME_SUBNET = {
             'cidr': '192.168.10.0/24',
             'gateway_ip': '192.168.10.1',
             'network': 'net1',
-            'ns': 'ns1'
+            'ns': 'ns1',
         },
         {
             'name': 'lport2',
@@ -50,8 +50,8 @@ SAME_SUBNET = {
             'cidr': '192.168.10.0/24',
             'gateway_ip': '192.168.10.1',
             'network': 'net1',
-            'ns': 'ns2'
-        }
+            'ns': 'ns2',
+        },
     ],
 }
 
@@ -78,8 +78,10 @@ def icmp_security_group_no_rules():
 @pytest.fixture(scope='module')
 def icmp_security_group(icmp_security_group_no_rules):
     with SecurityGroupRule(
-            icmp_security_group_no_rules.id, 'ingress',
-            ether_type='IPv4', protocol='icmp'
+        icmp_security_group_no_rules.id,
+        'ingress',
+        ether_type='IPv4',
+        protocol='icmp',
     ):
         yield icmp_security_group_no_rules
 
@@ -87,7 +89,7 @@ def icmp_security_group(icmp_security_group_no_rules):
 @pytest.fixture(scope='module')
 def limited_access_group_no_rules():
     with SecurityGroup(
-            'remote_group', 'remote access requires \'icmp_group\' membership'
+        'remote_group', 'remote access requires \'icmp_group\' membership'
     ) as limited_access_group:
         yield limited_access_group
 
@@ -95,8 +97,10 @@ def limited_access_group_no_rules():
 @pytest.fixture(scope='module')
 def limited_access_group(limited_access_group_no_rules, icmp_security_group):
     with SecurityGroupRule(
-        limited_access_group_no_rules.id, 'ingress',
-        ether_type='IPv4', remote_group_id=icmp_security_group.id
+        limited_access_group_no_rules.id,
+        'ingress',
+        ether_type='IPv4',
+        remote_group_id=icmp_security_group.id,
     ):
         yield limited_access_group_no_rules
 
@@ -110,8 +114,10 @@ def test_port_security_default_group(setup_dataplane):
     with enable_port_security(icmp_client_port_id):
         with enable_port_security(icmp_server_port_id):
             inner_ping(
-                CONTROLLER_CONTAINER_ID, icmp_client_conf['ns'],
-                icmp_server_conf['ip'], expected_result=0
+                CONTROLLER_CONTAINER_ID,
+                icmp_client_conf['ns'],
+                icmp_server_conf['ip'],
+                expected_result=0,
             )
 
 
@@ -124,8 +130,10 @@ def test_port_security_without_default_group(setup_dataplane):
     with enable_port_security(icmp_server_port_id):
         with enable_port_security(icmp_client_port_id, security_groups=[]):
             inner_ping(
-                CONTROLLER_CONTAINER_ID, icmp_client_conf['ns'],
-                icmp_server_conf['ip'], expected_result=1
+                CONTROLLER_CONTAINER_ID,
+                icmp_client_conf['ns'],
+                icmp_server_conf['ip'],
+                expected_result=1,
             )
 
 
@@ -139,19 +147,20 @@ def test_created_group(setup_dataplane, icmp_security_group):
         icmp_client_port_id, security_groups=[icmp_security_group.id]
     )
     configured_server = enable_port_security(
-        icmp_server_port_id,
-        security_groups=[icmp_security_group.id]
+        icmp_server_port_id, security_groups=[icmp_security_group.id]
     )
 
     with configured_client, configured_server:
         inner_ping(
-            CONTROLLER_CONTAINER_ID, icmp_client_conf['ns'],
-            icmp_server_conf['ip'], expected_result=0
+            CONTROLLER_CONTAINER_ID,
+            icmp_client_conf['ns'],
+            icmp_server_conf['ip'],
+            expected_result=0,
         )
 
 
 def test_created_group_remote_group_id(
-        setup_dataplane, icmp_security_group, limited_access_group
+    setup_dataplane, icmp_security_group, limited_access_group
 ):
     icmp_client_conf = SAME_SUBNET['network_points'][0]
     icmp_server_conf = SAME_SUBNET['network_points'][1]
@@ -162,14 +171,15 @@ def test_created_group_remote_group_id(
         icmp_client_port_id, security_groups=[limited_access_group.id]
     )
     configured_server = enable_port_security(
-        icmp_server_port_id,
-        security_groups=[limited_access_group.id]
+        icmp_server_port_id, security_groups=[limited_access_group.id]
     )
 
     with configured_client_no_connectivity, configured_server:
         inner_ping(
-            CONTROLLER_CONTAINER_ID, icmp_client_conf['ns'],
-            icmp_server_conf['ip'], expected_result=1
+            CONTROLLER_CONTAINER_ID,
+            icmp_client_conf['ns'],
+            icmp_server_conf['ip'],
+            expected_result=1,
         )
 
         configured_client_connectivity = enable_port_security(
@@ -177,8 +187,10 @@ def test_created_group_remote_group_id(
         )
         with configured_client_connectivity:
             inner_ping(
-                CONTROLLER_CONTAINER_ID, icmp_client_conf['ns'],
-                icmp_server_conf['ip'], expected_result=0
+                CONTROLLER_CONTAINER_ID,
+                icmp_client_conf['ns'],
+                icmp_server_conf['ip'],
+                expected_result=0,
             )
 
 
@@ -191,11 +203,11 @@ def _get_port_id(port_name):
 @contextlib.contextmanager
 def enable_port_security(port_uuid, security_groups=None):
     _update_port_security(
-        port_uuid, port_security_value=True,
+        port_uuid,
+        port_security_value=True,
         security_groups=(
-            security_groups if security_groups is not None
-            else ['Default']
-        )
+            security_groups if security_groups is not None else ['Default']
+        ),
     )
     try:
         yield
@@ -209,7 +221,7 @@ def _update_port_security(port_uuid, port_security_value, security_groups):
     update_port_data = {
         'port': {
             'port_security_enabled': port_security_value,
-            'security_groups': security_groups
+            'security_groups': security_groups,
         }
     }
     update_and_assert('ports', port_uuid, update_port_data)
