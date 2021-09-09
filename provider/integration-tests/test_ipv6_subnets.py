@@ -418,7 +418,7 @@ def _update_network_mtu(network_uuid, mtu):
     )
     if reply.status_code not in (200, 204):
         raise Exception(
-            'Could not update network MTU for network: '.format(network_uuid)
+            f'Could not update network MTU for network: {network_uuid}'
         )
 
 

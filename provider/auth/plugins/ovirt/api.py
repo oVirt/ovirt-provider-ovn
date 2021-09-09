@@ -78,7 +78,7 @@ def _handle_fail(response):
     try:
         content = response.json()
         raise Forbidden('{}: {}'.format(content['reason'], content['detail']))
-    except:
+    except (Exception,):
         response.raise_for_status()
 
 

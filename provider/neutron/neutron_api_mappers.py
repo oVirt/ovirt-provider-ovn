@@ -784,7 +784,7 @@ class SubnetMapper(Mapper):
             len(
                 {ip_version, cidr_ip_version, gateway_ip_version or ip_version}
             )
-            is not 1
+            != 1
         ):
             raise BadRequestError(
                 'The provided ip_version [{ip}] does not match the supplied '

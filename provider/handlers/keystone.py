@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,6 +43,6 @@ class TokenHandler(SelectingHandler):
                 credentials = content_json['auth']['passwordCredentials']
                 credentials['password'] = TokenHandler.OBFUSCATED_PASSWORD
                 return json.dumps(content_json)
-            except:
+            except (Exception,):
                 pass
         return content

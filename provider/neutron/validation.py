@@ -87,12 +87,8 @@ def fixed_ips_require_stateful_dhcp(subnet, fixed_ips):
 def ip_available_in_network(network, ip):
     if not ip_utils.is_ip_available_in_network(network, ip):
         raise RestDataError(
-            'The ip {ip} specified is already in use on '
-            'network {network_id}'.format(
-                ip=ip,
-                fixed_ips=PortMapper.REST_PORT_FIXED_IPS,
-                network_id=str(network.uuid),
-            )
+            f'The ip {ip} specified is already in use on '
+            f'network {str(network.uuid)}'
         )
 
 
@@ -163,12 +159,8 @@ def _validate_subnet_is_connected_to_another_router(
 ):
     if existing_router_for_subnet and existing_router_for_subnet != router_id:
         raise BadRequestError(
-            'Can not add subnet {subnet} to router. Subnet is'
-            ' already connected to router {old_router}'.format(
-                subnet=subnet_id,
-                router=router_id,
-                old_router=existing_router_for_subnet,
-            )
+            f'Can not add subnet {subnet_id} to router {router_id}. Subnet is'
+            f' already connected to router {existing_router_for_subnet}'
         )
 
 

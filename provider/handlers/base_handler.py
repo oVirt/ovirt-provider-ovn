@@ -294,7 +294,7 @@ class BaseHandler(BaseHTTPRequestHandler):
         else:
             self.send_error(
                 response_code, explain=explain
-            )  # noqa: E501 pylint: disable=E1123
+            )  # pylint: disable=E1123
 
     @staticmethod
     def _parse_request_path(full_path):

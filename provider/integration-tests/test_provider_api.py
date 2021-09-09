@@ -105,8 +105,8 @@ def broken_port(logical_switch, subnet):
     _expect_failure(
         response,
         400,
-        'Invalid input for mac_address. Reason: \'fa:16:3e:c9:cb:xx\' '
-        'is not a valid MAC address.'.format(invalid_mac),
+        f'Invalid input for mac_address. Reason: \'{invalid_mac}\' '
+        'is not a valid MAC address.',
     )
 
 
