@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,21 +49,18 @@ INCOMPLETE_PLUGIN_NAME = '{}:{}'.format(__name__, IncompletePlugin.__name__)
 NO_PLUGIN_NAME = '{}:{}'.format(__name__, NoPlugin.__name__)
 
 
-@mock.patch('auth.core.auth_plugin',
-            return_value=VALID_PLUGIN_NAME)
+@mock.patch('auth.core.auth_plugin', return_value=VALID_PLUGIN_NAME)
 def test_auth_core_init_valid(mock_get):
     init()
 
 
-@mock.patch('auth.core.auth_plugin',
-            return_value=INCOMPLETE_PLUGIN_NAME)
+@mock.patch('auth.core.auth_plugin', return_value=INCOMPLETE_PLUGIN_NAME)
 def test_auth_core_init_incomplete(mock_get):
     with pytest.raises(TypeError):
         init()
 
 
-@mock.patch('auth.core.auth_plugin',
-            return_value=NO_PLUGIN_NAME)
+@mock.patch('auth.core.auth_plugin', return_value=NO_PLUGIN_NAME)
 def test_auth_core_init_no_plugin(mock_get):
     with pytest.raises(AssertionError):
         init()

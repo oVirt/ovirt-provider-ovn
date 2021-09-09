@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,29 +29,33 @@ from handlers.selecting_handler import SelectingHandler
 
 NOT_RELEVANT = None
 TOKEN = 'the_secret_token'
-TOKEN_REQUEST = json.dumps({
-    'auth': {
-        'tenantName': 'customer-x',
-        'passwordCredentials': {
-            'username': 'joeuser',
-            'password': 'secret'
+TOKEN_REQUEST = json.dumps(
+    {
+        'auth': {
+            'tenantName': 'customer-x',
+            'passwordCredentials': {
+                'username': 'joeuser',
+                'password': 'secret',
+            },
         }
     }
-})
+)
 
 
-@mock.patch('handlers.keystone_responses.auth.validate_token',
-            return_value=True)
-@mock.patch('handlers.keystone_responses.auth.create_token',
-            return_value=TOKEN)
+@mock.patch(
+    'handlers.keystone_responses.auth.validate_token', return_value=True
+)
+@mock.patch(
+    'handlers.keystone_responses.auth.create_token', return_value=TOKEN
+)
 def test_post_tokens(mock_create_token, validate_token):
     handler, parameters = SelectingHandler.get_response_handler(
         responses(), POST, [TOKENS]
     )
     response = handler(content=TOKEN_REQUEST, parameters=parameters)
     mock_create_token.assert_called_once_with(
-        user_at_domain='joeuser',
-        user_password='secret')
+        user_at_domain='joeuser', user_password='secret'
+    )
     validate_token.assert_called_once_with(TOKEN)
     assert response.body['access']['token']['id'] == TOKEN
     assert response.code == 200

@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,35 +53,33 @@ def delete_handler(nb_db, content, path_parts):
 
 @rest('POST', 'testports', response_handlers)
 def post_handler(nb_db, content, path_parts):
-    return Response({
-        'method:': REST_RESPONSE_POST,
-        'value:': content
-    })
+    return Response({'method:': REST_RESPONSE_POST, 'value:': content})
 
 
 @rest('POST', 'response_code_201', response_handlers)
 def response_code_201(nb_db, content, path_parts):
     return Response(
-        {
-            'method:': REST_RESPONSE_POST,
-            'value:': content
-        },
-        code=http_client.CREATED
+        {'method:': REST_RESPONSE_POST, 'value:': content},
+        code=http_client.CREATED,
     )
 
 
 @mock.patch('handlers.neutron.NeutronHandler._run_server', lambda *args: None)
 @mock.patch('handlers.neutron_responses._responses', response_handlers)
 class TestNeutronHandler(object):
-
     @mock.patch('handlers.neutron.NeutronApi', autospec=True)
     @mock.patch('handlers.neutron.NeutronHandler.end_headers')
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
     @mock.patch('handlers.neutron.validate_token', return_value=True)
-    def test_handle_get_request(self, mock_validate_token, mock_send_response,
-                                mock_send_header, mock_end_headers,
-                                mock_ndb_api):
+    def test_handle_get_request(
+        self,
+        mock_validate_token,
+        mock_send_response,
+        mock_send_header,
+        mock_end_headers,
+        mock_ndb_api,
+    ):
 
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
@@ -92,9 +90,7 @@ class TestNeutronHandler(object):
         handler.do_GET()
 
         assert mock_send_response.call_args[0][1] == 200
-        expected_response = json.dumps(
-            {'method:': REST_RESPONSE_GET}
-        ).encode()
+        expected_response = json.dumps({'method:': REST_RESPONSE_GET}).encode()
         assert handler.wfile.write.call_args[0][0] == expected_response
         assert mock_send_response.call_count == 1
         assert mock_validate_token.call_count == 1
@@ -102,8 +98,9 @@ class TestNeutronHandler(object):
     @mock.patch('handlers.neutron.validate_token', return_value=False)
     @mock.patch('handlers.neutron.NeutronHandler.log_error')
     @mock.patch('handlers.neutron.NeutronHandler.send_error')
-    def test_handle_get_request_auth_fail(self, mock_send_error,
-                                          mock_log_error, mock_validate_token):
+    def test_handle_get_request_auth_fail(
+        self, mock_send_error, mock_log_error, mock_validate_token
+    ):
 
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
@@ -121,10 +118,14 @@ class TestNeutronHandler(object):
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
     @mock.patch('handlers.neutron.validate_token', return_value=True)
-    def test_handle_get_request_with_id(self, mock_validate_token,
-                                        mock_send_response, mock_send_header,
-                                        mock_end_headers,
-                                        mock_ovn_north):
+    def test_handle_get_request_with_id(
+        self,
+        mock_validate_token,
+        mock_send_response,
+        mock_send_header,
+        mock_end_headers,
+        mock_ovn_north,
+    ):
 
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
@@ -148,9 +149,14 @@ class TestNeutronHandler(object):
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
     @mock.patch('handlers.neutron.validate_token', return_value=True)
-    def test_handle_delete_request(self, mock_validate_token,
-                                   mock_send_response, mock_send_header,
-                                   mock_end_headers, mock_ovn_north):
+    def test_handle_delete_request(
+        self,
+        mock_validate_token,
+        mock_send_response,
+        mock_send_header,
+        mock_end_headers,
+        mock_ovn_north,
+    ):
 
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
@@ -171,9 +177,14 @@ class TestNeutronHandler(object):
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_error')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
-    def test_handle_delete_with_no_id(self, mock_send_response, send_error,
-                                      mock_send_header, mock_end_headers,
-                                      mock_ovn_north):
+    def test_handle_delete_with_no_id(
+        self,
+        mock_send_response,
+        send_error,
+        mock_send_header,
+        mock_end_headers,
+        mock_ovn_north,
+    ):
 
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
@@ -188,9 +199,14 @@ class TestNeutronHandler(object):
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
     @mock.patch('handlers.neutron.validate_token', return_value=True)
-    def test_handle_post_request(self, mock_validate_token, mock_send_response,
-                                 mock_send_header, mock_end_headers,
-                                 mock_ovn_north):
+    def test_handle_post_request(
+        self,
+        mock_validate_token,
+        mock_send_response,
+        mock_send_header,
+        mock_end_headers,
+        mock_ovn_north,
+    ):
 
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
@@ -204,10 +220,9 @@ class TestNeutronHandler(object):
         handler.do_POST()
 
         assert mock_send_response.call_args[0][1] == 201
-        expected_response = json.dumps({
-            'method:': REST_RESPONSE_POST,
-            'value:': 'content'
-        }).encode()
+        expected_response = json.dumps(
+            {'method:': REST_RESPONSE_POST, 'value:': 'content'}
+        ).encode()
         assert handler.wfile.write.call_args[0][0] == expected_response
         assert mock_send_response.call_count == 1
         assert mock_validate_token.call_count == 1
@@ -217,9 +232,14 @@ class TestNeutronHandler(object):
     @mock.patch('handlers.neutron.NeutronHandler.send_header')
     @mock.patch('handlers.neutron.NeutronHandler.send_response', autospec=True)
     @mock.patch('handlers.neutron.validate_token', return_value=True)
-    def test_response_code_201(self, mock_validate_token, mock_send_response,
-                               mock_send_header, mock_end_headers,
-                               mock_ovn_north):
+    def test_response_code_201(
+        self,
+        mock_validate_token,
+        mock_send_response,
+        mock_send_header,
+        mock_end_headers,
+        mock_ovn_north,
+    ):
 
         handler = NeutronHandler(None, None, None)
         handler.wfile = MagicMock()
@@ -233,10 +253,9 @@ class TestNeutronHandler(object):
         handler.do_POST()
 
         assert mock_send_response.call_args[0][1] == http_client.CREATED
-        expected_response = json.dumps({
-            'method:': REST_RESPONSE_POST,
-            'value:': 'content'
-        }).encode()
+        expected_response = json.dumps(
+            {'method:': REST_RESPONSE_POST, 'value:': 'content'}
+        ).encode()
         assert handler.wfile.write.call_args[0][0] == expected_response
         assert mock_send_response.call_count == 1
         assert mock_validate_token.call_count == 1

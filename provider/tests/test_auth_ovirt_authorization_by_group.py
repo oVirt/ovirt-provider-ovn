@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,27 +31,48 @@ ENGINE_ADMIN_GROUP_ATTRIBUTE_VALUE = 'NetAdmin'
 
 INFO_VALID = {
     'active': True,
-    'ovirt': ['java.util.HashMap',
-              {
-                  'group_ids': ['java.util.ArrayList', [
-                      ['org.ovirt.engine.api.extensions.ExtMap', {
-                          ENGINE_ADMIN_GROUP_ATTRIBUTE_NAME:
-                              ENGINE_ADMIN_GROUP_ATTRIBUTE_VALUE}],
-                      ['org.ovirt.engine.api.extensions.ExtMap', {
-                          ENGINE_ADMIN_GROUP_ATTRIBUTE_NAME: 'otherGroup',
-                      }]]],
-              }]
+    'ovirt': [
+        'java.util.HashMap',
+        {
+            'group_ids': [
+                'java.util.ArrayList',
+                [
+                    [
+                        'org.ovirt.engine.api.extensions.ExtMap',
+                        {
+                            ENGINE_ADMIN_GROUP_ATTRIBUTE_NAME: ENGINE_ADMIN_GROUP_ATTRIBUTE_VALUE  # noqa: E501
+                        },
+                    ],
+                    [
+                        'org.ovirt.engine.api.extensions.ExtMap',
+                        {
+                            ENGINE_ADMIN_GROUP_ATTRIBUTE_NAME: 'otherGroup',
+                        },
+                    ],
+                ],
+            ],
+        },
+    ],
 }
 
 INFO_INVALID = {
     'active': True,
-    'ovirt': ['java.util.HashMap',
-              {
-                  'group_ids': ['java.util.ArrayList', [
-                      ['org.ovirt.engine.api.extensions.ExtMap', {
-                          ENGINE_ADMIN_GROUP_ATTRIBUTE_NAME: 'otherGroup',
-                      }]]],
-              }]
+    'ovirt': [
+        'java.util.HashMap',
+        {
+            'group_ids': [
+                'java.util.ArrayList',
+                [
+                    [
+                        'org.ovirt.engine.api.extensions.ExtMap',
+                        {
+                            ENGINE_ADMIN_GROUP_ATTRIBUTE_NAME: 'otherGroup',
+                        },
+                    ]
+                ],
+            ],
+        },
+    ],
 }
 
 
@@ -66,29 +87,45 @@ def provider_config_get(section, key, default):
 
 @mock.patch(
     'auth.plugins.ovirt.authorization_by_group.get_token_info',
-    return_value=INFO_VALID, autospec=True)
+    return_value=INFO_VALID,
+    autospec=True,
+)
 @mock.patch(
     'auth.plugins.ovirt.authorization_by_group.ovirt_provider_config.get',
-    side_effect=provider_config_get, autospec=True)
+    side_effect=provider_config_get,
+    autospec=True,
+)
 def test_validate_token_success(mock_provider_config_get, mock_get_token_info):
     authorizationByGroup = AuthorizationByGroup()
     assert authorizationByGroup.validate_token(TOKEN)
-    mock_get_token_info.assert_called_once_with(ca_file=ANY, client_id=ANY,
-                                                client_secret=ANY,
-                                                engine_url=ANY, token=TOKEN,
-                                                timeout=ANY)
+    mock_get_token_info.assert_called_once_with(
+        ca_file=ANY,
+        client_id=ANY,
+        client_secret=ANY,
+        engine_url=ANY,
+        token=TOKEN,
+        timeout=ANY,
+    )
 
 
 @mock.patch(
     'auth.plugins.ovirt.authorization_by_group.get_token_info',
-    return_value=INFO_INVALID, autospec=True)
+    return_value=INFO_INVALID,
+    autospec=True,
+)
 @mock.patch(
     'auth.plugins.ovirt.authorization_by_group.ovirt_provider_config.get',
-    side_effect=provider_config_get, autospec=True)
+    side_effect=provider_config_get,
+    autospec=True,
+)
 def test_validate_token_fail(mock_provider_config_get, mock_get_token_info):
     authorizationByGroup = AuthorizationByGroup()
     assert not authorizationByGroup.validate_token(TOKEN)
-    mock_get_token_info.assert_called_once_with(ca_file=ANY, client_id=ANY,
-                                                client_secret=ANY,
-                                                engine_url=ANY, token=TOKEN,
-                                                timeout=ANY)
+    mock_get_token_info.assert_called_once_with(
+        ca_file=ANY,
+        client_id=ANY,
+        client_secret=ANY,
+        engine_url=ANY,
+        token=TOKEN,
+        timeout=ANY,
+    )

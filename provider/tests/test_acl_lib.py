@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -60,12 +60,12 @@ def test_ip_prefix():
 
 
 def test_acl_icmp_handler():
-    assert handle_icmp_protocol(
-        'icmp', 0, None
-    ) == ['icmp', 'icmp.type == 0']
+    assert handle_icmp_protocol('icmp', 0, None) == ['icmp', 'icmp.type == 0']
 
     assert handle_icmp_protocol('icmp', 3, 4) == [
-        'icmp', 'icmp.type == 3', 'icmp.code == 4'
+        'icmp',
+        'icmp.type == 3',
+        'icmp.code == 4',
     ]
 
 
@@ -74,7 +74,9 @@ def test_acl_port_matches():
     assert handle_ports('tcp', 80, None) == ['tcp', 'tcp.dst >= 80']
     assert handle_ports('tcp', None, None) == ['tcp']
     assert handle_ports('tcp', 80, 90) == [
-        'tcp', 'tcp.dst >= 80', 'tcp.dst <= 90'
+        'tcp',
+        'tcp.dst >= 80',
+        'tcp.dst <= 90',
     ]
 
 
@@ -87,40 +89,55 @@ def test_create_acl_match():
         'ingress', 'IPv4', None, 5000, 5299, 'tcp', pg_id
     ) == [
         'outport == @00000000-0000-0000-0000-000000000064',
-        'ip4', 'tcp', 'tcp.dst >= 5000', 'tcp.dst <= 5299'
+        'ip4',
+        'tcp',
+        'tcp.dst >= 5000',
+        'tcp.dst <= 5299',
     ]
     assert create_acl_match(
         'ingress', 'IPv4', '192.168.80.0/24', 5000, 5299, 'tcp', pg_id
     ) == [
         'outport == @00000000-0000-0000-0000-000000000064',
-        'ip4', 'ip4.src == 192.168.80.0/24', 'tcp', 'tcp.dst >= 5000',
-        'tcp.dst <= 5299'
+        'ip4',
+        'ip4.src == 192.168.80.0/24',
+        'tcp',
+        'tcp.dst >= 5000',
+        'tcp.dst <= 5299',
     ]
     assert sorted(
         create_acl_match(
-            'ingress', 'IPv4', '192.168.80.0/24', 5000, 5299, 'tcp', pg_id,
-            remote_group_name='Default'
+            'ingress',
+            'IPv4',
+            '192.168.80.0/24',
+            5000,
+            5299,
+            'tcp',
+            pg_id,
+            remote_group_name='Default',
         )
     ) == sorted(
         [
             'outport == @00000000-0000-0000-0000-000000000064',
-            'ip4', 'ip4.src == 192.168.80.0/24', 'tcp', 'tcp.dst >= 5000',
-            'tcp.dst <= 5299', 'ip4.src == $Default_ip4'
+            'ip4',
+            'ip4.src == 192.168.80.0/24',
+            'tcp',
+            'tcp.dst >= 5000',
+            'tcp.dst <= 5299',
+            'ip4.src == $Default_ip4',
         ]
     )
 
 
 def test_create_acl_match_output():
     pg_id = uuid.UUID(int=100)
-    assert create_acl_match_string(
-        create_acl_match(
-            'ingress', 'IPv4', None, None, None, 'tcp', pg_id
+    assert (
+        create_acl_match_string(
+            create_acl_match('ingress', 'IPv4', None, None, None, 'tcp', pg_id)
         )
-    ) == 'outport == @00000000-0000-0000-0000-000000000064 && ip4 && tcp'
+        == 'outport == @00000000-0000-0000-0000-000000000064 && ip4 && tcp'
+    )
     assert create_acl_match_string(
-        create_acl_match(
-            'ingress', 'IPv4', None, 5000, 5299, 'tcp', pg_id
-        )
+        create_acl_match('ingress', 'IPv4', None, 5000, 5299, 'tcp', pg_id)
     ) == (
         'outport == @00000000-0000-0000-0000-000000000064 && ip4 && '
         'tcp && tcp.dst >= 5000 && tcp.dst <= 5299'
@@ -136,8 +153,14 @@ def test_create_acl_match_output():
     )
     assert create_acl_match_string(
         create_acl_match(
-            'ingress', 'IPv4', '192.168.80.0/24', 5000, 5299, 'tcp', pg_id,
-            remote_group_name='Default'
+            'ingress',
+            'IPv4',
+            '192.168.80.0/24',
+            5000,
+            5299,
+            'tcp',
+            pg_id,
+            remote_group_name='Default',
         )
     ) == (
         'outport == @00000000-0000-0000-0000-000000000064 && ip4 && '
@@ -148,16 +171,20 @@ def test_create_acl_match_output():
 
 def test_remote_group_id_output():
     remote_group_name = 'Default'
-    assert get_remote_group_id_match(
-        remote_group_name, 'ip4', 'ingress'
-    ) == 'ip4.src == $Default_ip4'
-    assert get_remote_group_id_match(
-        remote_group_name, 'ip6', 'ingress'
-    ) == 'ip6.src == $Default_ip6'
-    assert get_remote_group_id_match(
-        remote_group_name, 'ip4', 'egress'
-    ) == 'ip4.dst == $Default_ip4'
-    assert get_remote_group_id_match(
-        remote_group_name, 'ip6', 'egress'
-    ) == 'ip6.dst == $Default_ip6'
+    assert (
+        get_remote_group_id_match(remote_group_name, 'ip4', 'ingress')
+        == 'ip4.src == $Default_ip4'
+    )
+    assert (
+        get_remote_group_id_match(remote_group_name, 'ip6', 'ingress')
+        == 'ip6.src == $Default_ip6'
+    )
+    assert (
+        get_remote_group_id_match(remote_group_name, 'ip4', 'egress')
+        == 'ip4.dst == $Default_ip4'
+    )
+    assert (
+        get_remote_group_id_match(remote_group_name, 'ip6', 'egress')
+        == 'ip6.dst == $Default_ip6'
+    )
     assert get_remote_group_id_match(None, 'ip4', 'ingress') == ''

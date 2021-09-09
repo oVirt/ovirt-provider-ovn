@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,9 +38,7 @@ response_handlers = {}
 
 @rest('POST', 'tokens', response_handlers)
 def tokens_handler(content, id):
-    return Response(
-        {'value': REST_RESPONSE_POST + json.loads(content)['key']}
-    )
+    return Response({'value': REST_RESPONSE_POST + json.loads(content)['key']})
 
 
 @rest('POST', 'empty', response_handlers)
@@ -52,14 +50,17 @@ def empty_handler(content, id):
     'POST', 'domains/{domain_id}/{config}/{group}/{option}', response_handlers
 )
 def domains_handler(content, params):
-    return Response({
-        'value': '{domain_id}/{config}/{group}/{option}{key}'.format(
-            domain_id=params['domain_id'],
-            config=params['config'],
-            group=params['group'],
-            option=params['option'],
-            key=str(json.loads(content)['key'])
-        )})
+    return Response(
+        {
+            'value': '{domain_id}/{config}/{group}/{option}{key}'.format(
+                domain_id=params['domain_id'],
+                config=params['config'],
+                group=params['group'],
+                option=params['option'],
+                key=str(json.loads(content)['key']),
+            )
+        }
+    )
 
 
 @rest('POST', 'bad_req', response_handlers)
@@ -78,13 +79,14 @@ def timeout_producer(content, id):
 @mock.patch('handlers.keystone.TokenHandler.send_header')
 @mock.patch('handlers.keystone.TokenHandler.send_response', autospec=True)
 class TestKeystoneHandler(object):
-
-    def _test_handle_post_request_ok(self, mock_send_response, path,
-                                     expected_string):
+    def _test_handle_post_request_ok(
+        self, mock_send_response, path, expected_string
+    ):
         handler = self._test_handle_post_request(path)
         mock_send_response.assert_called_once_with(handler, 201)
-        handler.wfile.write.assert_called_once_with(json.dumps(
-            {'value': expected_string + 'value'}).encode())
+        handler.wfile.write.assert_called_once_with(
+            json.dumps({'value': expected_string + 'value'}).encode()
+        )
 
     def _test_handle_post_request(self, path):
         handler = self._create_tokenhandler(path)
@@ -108,20 +110,24 @@ class TestKeystoneHandler(object):
         handler.path = path
         return handler
 
-    def test_handle_post_request(self, mock_send_response, mock_send_header,
-                                 mock_end_headers):
-        self._test_handle_post_request_ok(mock_send_response, '/v2.0/tokens',
-                                          REST_RESPONSE_POST)
+    def test_handle_post_request(
+        self, mock_send_response, mock_send_header, mock_end_headers
+    ):
+        self._test_handle_post_request_ok(
+            mock_send_response, '/v2.0/tokens', REST_RESPONSE_POST
+        )
 
-    def test_handle_post_request_double_slashes(self, mock_send_response,
-                                                mock_send_header,
-                                                mock_end_headers):
+    def test_handle_post_request_double_slashes(
+        self, mock_send_response, mock_send_header, mock_end_headers
+    ):
 
-        self._test_handle_post_request_ok(mock_send_response, '/v2.0//tokens',
-                                          REST_RESPONSE_POST)
+        self._test_handle_post_request_ok(
+            mock_send_response, '/v2.0//tokens', REST_RESPONSE_POST
+        )
 
-    def test_handle_post_request_long(self, mock_send_response,
-                                      mock_send_header, mock_end_headers):
+    def test_handle_post_request_long(
+        self, mock_send_response, mock_send_header, mock_end_headers
+    ):
         key = 'domains'
         values = 'domain_id/config/group/option'
         path = '/v3/{}/{}'.format(key, values)
@@ -129,42 +135,51 @@ class TestKeystoneHandler(object):
         self._test_handle_post_request_ok(mock_send_response, path, values)
 
     @mock.patch('handlers.keystone.TokenHandler.send_error', autospec=True)
-    def test_handle_post_request_timeout(self, mock_send_error,
-                                         mock_send_response,
-                                         mock_send_header,
-                                         mock_end_headers):
+    def test_handle_post_request_timeout(
+        self,
+        mock_send_error,
+        mock_send_response,
+        mock_send_header,
+        mock_end_headers,
+    ):
         self._test_handle_post_request('/v2.0/timeout')
         self._assert_send_error_correctly_called(mock_send_error, 504)
 
     @mock.patch('handlers.keystone.TokenHandler.send_error', autospec=True)
-    def test_handle_get_request_not_allowed(self, mock_send_error,
-                                            mock_send_response,
-                                            mock_send_header,
-                                            mock_end_headers):
+    def test_handle_get_request_not_allowed(
+        self,
+        mock_send_error,
+        mock_send_response,
+        mock_send_header,
+        mock_end_headers,
+    ):
         self._test_handle_get_request('/v2.0/tokens')
         self._assert_send_error_correctly_called(mock_send_error, 405)
 
     @mock.patch('handlers.keystone.TokenHandler.send_error', autospec=True)
-    def test_handle_post_request_not_found(self, mock_send_error,
-                                           mock_send_response,
-                                           mock_send_header,
-                                           mock_end_headers):
+    def test_handle_post_request_not_found(
+        self,
+        mock_send_error,
+        mock_send_response,
+        mock_send_header,
+        mock_end_headers,
+    ):
         self._test_handle_post_request('/v2/garbage')
         self._assert_send_error_correctly_called(mock_send_error, 404)
 
     @mock.patch('handlers.keystone.TokenHandler.send_error', autospec=True)
-    def test_handle_post_request_bad_req(self, mock_send_error,
-                                         mock_send_response,
-                                         mock_send_header,
-                                         mock_end_headers):
+    def test_handle_post_request_bad_req(
+        self,
+        mock_send_error,
+        mock_send_response,
+        mock_send_header,
+        mock_end_headers,
+    ):
         self._test_handle_post_request('/v2/bad_req')
         self._assert_send_error_correctly_called(mock_send_error, 400)
 
     def test_empty_content(
-        self,
-        mock_send_response,
-        mock_send_header,
-        mock_end_headers
+        self, mock_send_response, mock_send_header, mock_end_headers
     ):
         handler = self._create_tokenhandler('/v2.0/empty')
         handler.rfile.read.return_value = None

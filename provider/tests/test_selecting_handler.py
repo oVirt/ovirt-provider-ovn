@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -52,26 +52,32 @@ class TestSelectingHandler(object):
 
         assert response_handlers['test1'][RESPONSE_VALUE_KEY]['TEST1']() == 1
         assert (
-            response_handlers['test2']['test3'][RESPONSE_VALUE_KEY]
-            ['TEST2']() == 2
+            response_handlers['test2']['test3'][RESPONSE_VALUE_KEY]['TEST2']()
+            == 2
         )
         assert (
-            response_handlers['test4']['*']['test5']['*']
-            [RESPONSE_VALUE_KEY]['TEST3']() == 3
+            response_handlers['test4']['*']['test5']['*'][RESPONSE_VALUE_KEY][
+                'TEST3'
+            ]()
+            == 3
         )
         assert (
-            response_handlers['test4']['test6']['test5']['*']
-            [RESPONSE_VALUE_KEY]['TEST3']() == 4
+            response_handlers['test4']['test6']['test5']['*'][
+                RESPONSE_VALUE_KEY
+            ]['TEST3']()
+            == 4
         )
         assert (
-            response_handlers['test4'][RESPONSE_VALUE_PARAMETER]['id1']
-            ['test5'][RESPONSE_VALUE_PARAMETER]['id2'][RESPONSE_VALUE_KEY]
-            ['TEST3']() == 5
+            response_handlers['test4'][RESPONSE_VALUE_PARAMETER]['id1'][
+                'test5'
+            ][RESPONSE_VALUE_PARAMETER]['id2'][RESPONSE_VALUE_KEY]['TEST3']()
+            == 5
         )
 
         url = 'http://localhost:8080/v2.0/test4/11/test5/12'
-        elements = list(filter(
-            None, six.moves.urllib_parse.urlparse(url).path.split('/')))[1:]
+        elements = list(
+            filter(None, six.moves.urllib_parse.urlparse(url).path.split('/'))
+        )[1:]
         handler, params = SelectingHandler.get_response_handler(
             response_handlers, 'TEST3', elements
         )

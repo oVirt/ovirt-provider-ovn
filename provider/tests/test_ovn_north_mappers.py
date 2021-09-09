@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,10 +69,15 @@ SUBNET_CIDR = '1.1.1.0/24'
 
 class TestOvnNorthMappers(object):
     def test_subnet_to_rest_minimal(self):
-        row = OvnSubnetRow(SUBNET_ID102, cidr=SUBNET_CIDR, external_ids={
-            SubnetMapper.OVN_NETWORK_ID: NETWORK_ID1,
-            SubnetMapper.OVN_IP_VERSION: '6'
-        }, ip_version=6)
+        row = OvnSubnetRow(
+            SUBNET_ID102,
+            cidr=SUBNET_CIDR,
+            external_ids={
+                SubnetMapper.OVN_NETWORK_ID: NETWORK_ID1,
+                SubnetMapper.OVN_IP_VERSION: '6',
+            },
+            ip_version=6,
+        )
         subnet = SubnetMapper.row2rest(row)
         assert_subnet_equal(subnet, row)
 
@@ -89,8 +94,9 @@ class TestOvnNorthMappers(object):
 
     def test_network_to_rest_with_options(self):
         localnet_lsp = OvnPortRow(
-            PORT_UUID, name=PORT_NAME,
-            options={LSP_OPTION_NETWORK_NAME: PORT_NAME}
+            PORT_UUID,
+            name=PORT_NAME,
+            options={LSP_OPTION_NETWORK_NAME: PORT_NAME},
         )
         ls = OvnNetworkRow(
             NETWORK_UUID, name=NETWORK_NAME, ports=[localnet_lsp]
@@ -101,8 +107,10 @@ class TestOvnNorthMappers(object):
 
     def test_network_to_rest_with_tag(self):
         localnet_lsp = OvnPortRow(
-            PORT_UUID, name=PORT_NAME,
-            options={LSP_OPTION_NETWORK_NAME: PORT_NAME}, tag=2
+            PORT_UUID,
+            name=PORT_NAME,
+            options={LSP_OPTION_NETWORK_NAME: PORT_NAME},
+            tag=2,
         )
         ls = OvnNetworkRow(
             NETWORK_UUID, name=NETWORK_NAME, ports=[localnet_lsp]
@@ -113,8 +121,7 @@ class TestOvnNorthMappers(object):
 
     def test_network_to_rest_with_tag_missing_port_name(self):
         localnet_lsp = OvnPortRow(
-            PORT_UUID, tag=2,
-            options={LSP_OPTION_NETWORK_NAME: PORT_NAME}
+            PORT_UUID, tag=2, options={LSP_OPTION_NETWORK_NAME: PORT_NAME}
         )
         ls = OvnNetworkRow(
             NETWORK_UUID, name=NETWORK_NAME, ports=[localnet_lsp]
@@ -125,9 +132,7 @@ class TestOvnNorthMappers(object):
 
     @staticmethod
     def __assert_port_data_equal(port_data):
-        ls = OvnNetworkRow(
-            NETWORK_UUID, name=NETWORK_NAME, ports=[port_data]
-        )
+        ls = OvnNetworkRow(NETWORK_UUID, name=NETWORK_NAME, ports=[port_data])
         port = NetworkPort(port_data, ls, None, None)
         port_rest_data = PortMapper.row2rest(port)
         assert_port_equal(port_rest_data, port)
@@ -141,7 +146,7 @@ class TestOvnNorthMappers(object):
                 PortMapper.OVN_DEVICE_ID: str(PORT_UUID),
                 PortMapper.OVN_DEVICE_OWNER: 'ovirt',
             },
-            options={LSP_OPTION_NETWORK_NAME: PORT_NAME}
+            options={LSP_OPTION_NETWORK_NAME: PORT_NAME},
         )
         self.__assert_port_data_equal(port_data)
 
@@ -155,7 +160,7 @@ class TestOvnNorthMappers(object):
                 PortMapper.OVN_DEVICE_ID: str(PORT_UUID),
                 PortMapper.OVN_DEVICE_OWNER: 'ovirt',
             },
-            options={LSP_OPTION_NETWORK_NAME: PORT_NAME}
+            options={LSP_OPTION_NETWORK_NAME: PORT_NAME},
         )
         self.__assert_port_data_equal(port_data)
 
@@ -169,7 +174,7 @@ class TestOvnNorthMappers(object):
                 PortMapper.OVN_DEVICE_ID: str(PORT_UUID),
                 PortMapper.OVN_DEVICE_OWNER: 'ovirt',
             },
-            options={LSP_OPTION_NETWORK_NAME: PORT_NAME}
+            options={LSP_OPTION_NETWORK_NAME: PORT_NAME},
         )
         self.__assert_port_data_equal(port_data)
 
@@ -184,17 +189,20 @@ class TestOvnNorthMappers(object):
                 PortMapper.OVN_DEVICE_OWNER: 'ovirt',
             },
             options={LSP_OPTION_NETWORK_NAME: PORT_NAME},
-            port_security=[MAC_ADDRESS]
+            port_security=[MAC_ADDRESS],
         )
         self.__assert_port_data_equal(port_data)
 
     def test_router_to_rest_minimal(self):
-        row = OvnRouterRow(SUBNET_ID102, external_ids={
-            SubnetMapper.OVN_NETWORK_ID: NETWORK_ID1
-        })
+        row = OvnRouterRow(
+            SUBNET_ID102,
+            external_ids={SubnetMapper.OVN_NETWORK_ID: NETWORK_ID1},
+        )
         router = Router(
-            lr=row, ext_gw_ls_id=NETWORK_ID1,
-            ext_gw_dhcp_options_id=SUBNET_ID102, gw_ip='1.1.1.1'
+            lr=row,
+            ext_gw_ls_id=NETWORK_ID1,
+            ext_gw_dhcp_options_id=SUBNET_ID102,
+            gw_ip='1.1.1.1',
         )
         router_rest = RouterMapper.row2rest(router)
         assert_router_equal(router_rest, router)
@@ -202,16 +210,16 @@ class TestOvnNorthMappers(object):
     def test_router_to_rest_with_routes(self):
         row = OvnRouterRow(
             SUBNET_ID102,
-            external_ids={
-                SubnetMapper.OVN_NETWORK_ID: NETWORK_ID1
-            },
+            external_ids={SubnetMapper.OVN_NETWORK_ID: NETWORK_ID1},
             static_routes=[
                 StaticRouteRow(ip_prefix='0.0.0.0/24', nexthop='1.1.1.1')
-            ]
+            ],
         )
         router = Router(
-            lr=row, ext_gw_ls_id=NETWORK_ID1,
-            ext_gw_dhcp_options_id=SUBNET_ID102, gw_ip='1.1.1.1',
+            lr=row,
+            ext_gw_ls_id=NETWORK_ID1,
+            ext_gw_dhcp_options_id=SUBNET_ID102,
+            gw_ip='1.1.1.1',
         )
         router_rest = RouterMapper.row2rest(router)
         assert_router_equal(router_rest, router)
@@ -236,7 +244,7 @@ class TestOvnNorthMappers(object):
             SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS: timestamp,
             SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: '1',
             SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT: tenant_id(),
-            SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id()
+            SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id(),
         }
         row = OvnSecurityGroupRow(
             SECURITY_GROUP_UUID, name=name, external_ids=external_ids
@@ -259,7 +267,7 @@ class TestOvnNorthMappers(object):
             SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS: timestamp,
             SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: '1',
             SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT: tenant_id(),
-            SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id()
+            SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id(),
         }
         sec_group = OvnSecurityGroupRow(
             UUID(int=3), name=name, external_ids=external_ids
@@ -267,22 +275,26 @@ class TestOvnNorthMappers(object):
 
         acl_external_ids = {
             SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID: group_id,
-            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE:
-                neutron_constants.IPV4_ETHERTYPE,
-            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_PROTOCOL:
-                neutron_constants.PROTO_NAME_UDP,
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE: neutron_constants.IPV4_ETHERTYPE,  # noqa: E501
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_PROTOCOL: neutron_constants.PROTO_NAME_UDP,  # noqa: E501
             SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_MIN_PORT: 6780,
             SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_MAX_PORT: 6799,
         }
         security_group_rule = OvnSecurityGroupRuleRow(
-            rule_id, rule_id, 'from-lport', 'ip4 && udp && ', 1001, group_id,
-            'allow', acl_external_ids
+            rule_id,
+            rule_id,
+            'from-lport',
+            'ip4 && udp && ',
+            1001,
+            group_id,
+            'allow',
+            acl_external_ids,
         )
         assert_security_group_rule_equal(
             SecurityGroupRuleMapper.row2rest(
                 SecurityGroupRule(security_group_rule, sec_group)
             ),
-            security_group_rule
+            security_group_rule,
         )
 
     def test_port_group_to_rest_with_rules(self):
@@ -295,25 +307,30 @@ class TestOvnNorthMappers(object):
             SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS: timestamp,
             SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: '1',
             SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT: tenant_id(),
-            SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id()
+            SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT: tenant_id(),
         }
         sec_group = OvnSecurityGroupRow(
             SECURITY_GROUP_UUID, name=name, external_ids=external_ids
         )
         rule_id = str(UUID(int=1))
         acl_external_ids = {
-            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID:
-                str(SECURITY_GROUP_UUID),
-            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE:
-                neutron_constants.IPV4_ETHERTYPE,
-            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_PROTOCOL:
-                neutron_constants.PROTO_NAME_UDP,
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID: str(
+                SECURITY_GROUP_UUID
+            ),
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_ETHERTYPE: neutron_constants.IPV4_ETHERTYPE,  # noqa: E501
+            SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_PROTOCOL: neutron_constants.PROTO_NAME_UDP,  # noqa: E501
             SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_MIN_PORT: 6780,
             SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_MAX_PORT: 6799,
         }
         security_group_rule = OvnSecurityGroupRuleRow(
-            rule_id, rule_id, 'to-lport', 'ip4 && udp && ', 1001,
-            str(SECURITY_GROUP_UUID), 'allow', acl_external_ids
+            rule_id,
+            rule_id,
+            'to-lport',
+            'ip4 && udp && ',
+            1001,
+            str(SECURITY_GROUP_UUID),
+            'allow',
+            acl_external_ids,
         )
 
         sec_group = SecurityGroup(

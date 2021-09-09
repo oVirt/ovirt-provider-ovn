@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,34 +26,42 @@ from auth.plugins.ovirt import AuthorizationByUserName
 TOKEN = 'the_secret_token'
 
 
-INFO_VALID = {
-    'user_id': 'netadmin@internal',
-    'active': True
-}
+INFO_VALID = {'user_id': 'netadmin@internal', 'active': True}
 
-INFO_INVALID = {
-    'user_id': 'user@internal',
-    'active': True
-}
+INFO_INVALID = {'user_id': 'user@internal', 'active': True}
 
 
-@mock.patch('auth.plugins.ovirt.authorization_by_username.get_token_info',
-            return_value=INFO_VALID, autospec=True)
+@mock.patch(
+    'auth.plugins.ovirt.authorization_by_username.get_token_info',
+    return_value=INFO_VALID,
+    autospec=True,
+)
 def test_validate_token_success(mock_get_token_info):
     authorizationByUserName = AuthorizationByUserName()
     assert authorizationByUserName.validate_token(TOKEN)
-    mock_get_token_info.assert_called_once_with(ca_file=ANY, client_id=ANY,
-                                                client_secret=ANY,
-                                                engine_url=ANY, token=TOKEN,
-                                                timeout=ANY)
+    mock_get_token_info.assert_called_once_with(
+        ca_file=ANY,
+        client_id=ANY,
+        client_secret=ANY,
+        engine_url=ANY,
+        token=TOKEN,
+        timeout=ANY,
+    )
 
 
-@mock.patch('auth.plugins.ovirt.authorization_by_username.get_token_info',
-            return_value=INFO_INVALID, autospec=True)
+@mock.patch(
+    'auth.plugins.ovirt.authorization_by_username.get_token_info',
+    return_value=INFO_INVALID,
+    autospec=True,
+)
 def test_validate_token_fail(mock_get_token_info):
     authorizationByUserName = AuthorizationByUserName()
     assert not authorizationByUserName.validate_token(TOKEN)
-    mock_get_token_info.assert_called_once_with(ca_file=ANY, client_id=ANY,
-                                                client_secret=ANY,
-                                                engine_url=ANY, token=TOKEN,
-                                                timeout=ANY)
+    mock_get_token_info.assert_called_once_with(
+        ca_file=ANY,
+        client_id=ANY,
+        client_secret=ANY,
+        engine_url=ANY,
+        token=TOKEN,
+        timeout=ANY,
+    )

@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,11 +27,16 @@ ADDRESS_DATA = [
     (None, 'unknown', None),
     (None, '80:fa:5b:06:72:b7', None),
     ('10.0.0.4', '80:fa:5b:06:72:b7 10.0.0.4 20.0.0.4', None),
-    ('fdaa:15f2:72cf:0:f816:3eff:fe20:3f41',
-     '80:fa:5b:06:72:b7 fdaa:15f2:72cf:0:f816:3eff:fe20:3f41', None),
-    ('10.0.0.4',
-     '80:fa:5b:06:72:b7 10.0.0.4 fdaa:15f2:72cf:0:f816:3eff:fe20:3f41',
-     None),
+    (
+        'fdaa:15f2:72cf:0:f816:3eff:fe20:3f41',
+        '80:fa:5b:06:72:b7 fdaa:15f2:72cf:0:f816:3eff:fe20:3f41',
+        None,
+    ),
+    (
+        '10.0.0.4',
+        '80:fa:5b:06:72:b7 10.0.0.4 fdaa:15f2:72cf:0:f816:3eff:fe20:3f41',
+        None,
+    ),
     ('10.0.0.4', 'dynamic', '80:fa:5b:06:72:b7 10.0.0.4'),
     ('10.0.0.4', '80:fa:5b:06:72:b7 dynamic', '80:fa:5b:06:72:b7 10.0.0.4'),
     (None, '80:fa:5b:06:72:b7 unknown', None),
@@ -46,14 +51,15 @@ def test_get_port_ip():
 def test_get_port_ip_router():
     assert '10.0.0.1' == ip_utils.get_port_ip(
         lsp=Lsp(addresses=['router'], dynamic_addresses=None),
-        lrp=Lrp(networks=['10.0.0.1/24'])
+        lrp=Lrp(networks=['10.0.0.1/24']),
     )
 
 
 def test_get_port_ip_empty():
-    assert ip_utils.get_port_ip(
-        lsp=Lsp(addresses=[], dynamic_addresses=None)
-    ) is None
+    assert (
+        ip_utils.get_port_ip(lsp=Lsp(addresses=[], dynamic_addresses=None))
+        is None
+    )
 
 
 def test_ip_in_cidr():
@@ -80,7 +86,7 @@ def test_diff_routes():
     db_routes = [
         Route('1.1.2.0/24', '1.1.2.100'),
         Route('1.1.3.0/24', '1.1.3.1'),
-        Route('1.1.4.0/24', '1.1.4.1')
+        Route('1.1.4.0/24', '1.1.4.1'),
     ]
 
     added, deleted = ip_utils.diff_routes(rest_routes, db_routes)
@@ -100,12 +106,13 @@ def test_diff_routes_all_empty():
 def test_diff_routes_only_new():
     route = {'destination': '1.1.1.0/24', 'nexthop': '1.1.1.1'}
     assert (
-        {route['destination']: route['nexthop']}, {}
+        {route['destination']: route['nexthop']},
+        {},
     ) == ip_utils.diff_routes([route], [])
 
 
 def test_diff_routes_only_db():
     route = Route('1.1.2.0/24', '1.1.2.100')
-    assert (
-        {}, {route.ip_prefix: route.nexthop}
-    ) == ip_utils.diff_routes(None, [route])
+    assert ({}, {route.ip_prefix: route.nexthop}) == ip_utils.diff_routes(
+        None, [route]
+    )

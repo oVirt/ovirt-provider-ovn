@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -95,7 +95,7 @@ class TestNeutronResponse(object):
                 NETWORK_ENTITY.format(network_id=7),
                 PORT_ENTITY.format(port_id=7),
                 SUBNET_ENTITY.format(subnet_id=7),
-                ROUTER_ENTITY.format(router_id=7)
+                ROUTER_ENTITY.format(router_id=7),
             ]:
                 handler, params = SelectingHandler.get_response_handler(
                     responses(), method, path.split('/')
@@ -106,7 +106,7 @@ class TestNeutronResponse(object):
 
         for path in [
             ADD_ROUTER_INTERFACE.format(router_id=7),
-            DELETE_ROUTER_INTERFACE.format(router_id=7)
+            DELETE_ROUTER_INTERFACE.format(router_id=7),
         ]:
             handler, params = SelectingHandler.get_response_handler(
                 responses(), PUT, path.split('/')
@@ -115,10 +115,7 @@ class TestNeutronResponse(object):
             assert params is not None
             assert params['router_id'] == '7'
 
-        for path in [
-            FLOATINGIPS,
-            SECURITY_GROUPS
-        ]:
+        for path in [FLOATINGIPS, SECURITY_GROUPS]:
             handler, params = SelectingHandler.get_response_handler(
                 responses(), GET, path.split('/')
             )
@@ -146,7 +143,7 @@ class TestNeutronResponse(object):
         for path in [
             NETWORK_ENTITY.format(network_id=7),
             PORT_ENTITY.format(port_id=7),
-            SUBNET_ENTITY.format(subnet_id=7)
+            SUBNET_ENTITY.format(subnet_id=7),
         ]:
             handler, params = SelectingHandler.get_response_handler(
                 responses(), PUT, path.split('/')
@@ -195,10 +192,12 @@ class TestNeutronResponse(object):
 
     def test_get_networks(self):
         nb_db = Mock()
-        nb_db.list_networks.return_value = [{
-            NetworkMapper.REST_NETWORK_ID: str(NETWORK_ID01),
-            NetworkMapper.REST_NETWORK_NAME: NETWORK_NAME1,
-        }]
+        nb_db.list_networks.return_value = [
+            {
+                NetworkMapper.REST_NETWORK_ID: str(NETWORK_ID01),
+                NetworkMapper.REST_NETWORK_NAME: NETWORK_NAME1,
+            }
+        ]
         handler, params = SelectingHandler.get_response_handler(
             responses(), GET, NETWORKS.split('/')
         )
@@ -210,11 +209,13 @@ class TestNeutronResponse(object):
 
     def test_get_ports(self):
         nb_db = Mock()
-        nb_db.list_ports.return_value = [{
-            PortMapper.REST_PORT_ID: str(PORT_ID07),
-            PortMapper.REST_PORT_NAME: 'port_name',
-            PortMapper.REST_PORT_SECURITY_GROUPS: [],
-        }]
+        nb_db.list_ports.return_value = [
+            {
+                PortMapper.REST_PORT_ID: str(PORT_ID07),
+                PortMapper.REST_PORT_NAME: 'port_name',
+                PortMapper.REST_PORT_SECURITY_GROUPS: [],
+            }
+        ]
         handler, params = SelectingHandler.get_response_handler(
             responses(), GET, PORTS.split('/')
         )
@@ -232,7 +233,7 @@ class TestNeutronResponse(object):
         handler, params = SelectingHandler.get_response_handler(
             responses(),
             DELETE,
-            NETWORK_ENTITY.format(network_id=NETWORK_ID01).split('/')
+            NETWORK_ENTITY.format(network_id=NETWORK_ID01).split('/'),
         )
         handler(nb_db, NOT_RELEVANT, params)
 
@@ -245,7 +246,7 @@ class TestNeutronResponse(object):
         handler, params = SelectingHandler.get_response_handler(
             responses(),
             DELETE,
-            PORT_ENTITY.format(port_id=PORT_ID07).split('/')
+            PORT_ENTITY.format(port_id=PORT_ID07).split('/'),
         )
         handler(nb_db, NOT_RELEVANT, params)
 
@@ -256,7 +257,7 @@ class TestNeutronResponse(object):
         nb_db.add_network.return_value = {
             NetworkMapper.REST_NETWORK_ID: str(NETWORK_ID01),
             NetworkMapper.REST_NETWORK_NAME: NETWORK_NAME1,
-            NetworkMapper.REST_TENANT_ID: ''
+            NetworkMapper.REST_TENANT_ID: '',
         }
         rest_input = '{"network":{"name":"network_name"}}'
 
@@ -280,10 +281,12 @@ class TestNeutronResponse(object):
             PortMapper.REST_PORT_DEVICE_ID: 'device_id',
             PortMapper.REST_PORT_DEVICE_OWNER: 'oVirt',
             PortMapper.REST_PORT_NETWORK_ID: str(NETWORK_ID01),
-            PortMapper.REST_PORT_MAC_ADDRESS: 'mac'
+            PortMapper.REST_PORT_MAC_ADDRESS: 'mac',
         }
-        rest_input = ('{"port":{"name":"port_name", "mac_address":"mac",'
-                      '"device_id":"device_id"}}')
+        rest_input = (
+            '{"port":{"name":"port_name", "mac_address":"mac",'
+            '"device_id":"device_id"}}'
+        )
 
         handler, params = SelectingHandler.get_response_handler(
             responses(), POST, PORTS.split('/')
@@ -319,13 +322,18 @@ class TestNeutronResponse(object):
         nb_db._add_router = Mock()
         nb_db.ovn_north.idl = Mock()
 
-        nb_db._add_router.return_value = Router(OvnRouterRow(
-            'uuid',
-            'router1',
-            {
-                RouterMapper.OVN_ROUTER_GATEWAY_PORT: 'port_id',
-            }
-        ), 'network_id', 'subnet_id', '1.1.1.1')
+        nb_db._add_router.return_value = Router(
+            OvnRouterRow(
+                'uuid',
+                'router1',
+                {
+                    RouterMapper.OVN_ROUTER_GATEWAY_PORT: 'port_id',
+                },
+            ),
+            'network_id',
+            'subnet_id',
+            '1.1.1.1',
+        )
         rest_input = '''{
             "router": {
                 "name": "router1",
@@ -362,5 +370,5 @@ class TestNeutronResponse(object):
             'ae34051f-aa6c-4c75-abf5-50dc9ac99ef3',
             'b930d7f6-ceb7-40a0-8b81-a425dd994ccf',
             '172.24.4.6',
-            None
+            None,
         )
