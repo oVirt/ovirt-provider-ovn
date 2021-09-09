@@ -1,5 +1,10 @@
 #!/bin/bash -xe
 
+# mock runner is not setting up the system correctly
+# https://issues.redhat.com/browse/CPDEVOPS-242
+readarray -t pkgs < automation/check-merged.packages
+dnf install -y "${pkgs[@]}"
+
 pip3 install -U tox tox-pip-version
 pip3 install -U requests-mock==1.5.2
 
