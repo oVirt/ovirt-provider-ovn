@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -59,8 +59,8 @@ def post_tokens(content, parameters):
             user_at_domain = password_credentials['username']
             user_password = password_credentials['password']
             token = auth.create_token(
-                user_at_domain=user_at_domain,
-                user_password=user_password)
+                user_at_domain=user_at_domain, user_password=user_password
+            )
         else:
             token = received_auth['token']['id']
     except KeyError as e:
@@ -80,65 +80,65 @@ def post_tokens(content, parameters):
     # successful token creation
     http_code = http_client.OK
 
-    return Response({
-        'access': {
-            'token': {
-                'id': token,
-                'expires': _get_token_expires()
-            },
-            'user': {
-                'username': 'admin',
-                'roles_links': [],
-                'id': '',
-                'roles': [{'name': 'admin'}],
-                'name': 'admin'
-            },
-            'serviceCatalog': [
-                {
-                    'endpoints': [
-                        {
-                            'adminURL': neutronurl,
-                            'internalURL': neutronurl,
-                            'publicURL': neutronurl,
-                            'region': region,
-                            'id': neutron_id,
-                        }
-                    ],
-                    'endpoints_links': [],
-                    'type': 'network',
-                    'name': 'neutron',
+    return Response(
+        {
+            'access': {
+                'token': {'id': token, 'expires': _get_token_expires()},
+                'user': {
+                    'username': 'admin',
+                    'roles_links': [],
+                    'id': '',
+                    'roles': [{'name': 'admin'}],
+                    'name': 'admin',
                 },
-                {
-                    'endpoints': [
-                        {
-                            'adminURL': keystoneurl,
-                            'region': region,
-                            'internalURL': keystoneurl,
-                            'id': keystone_id,
-                            'publicURL': keystoneurl
-                        }
-                    ],
-                    'endpoints_links': [],
-                    'type': 'identity',
-                    'name': 'keystone'
-                },
-                {
-                    'endpoints': [
-                        {
-                            'adminURL': novaurl,
-                            'region': region,
-                            'internalURL': novaurl,
-                            'id': keystone_id,
-                            'publicURL': novaurl
-                        }
-                    ],
-                    'endpoints_links': [],
-                    'type': 'compute',
-                    'name': 'nova'
-                }
-            ]
+                'serviceCatalog': [
+                    {
+                        'endpoints': [
+                            {
+                                'adminURL': neutronurl,
+                                'internalURL': neutronurl,
+                                'publicURL': neutronurl,
+                                'region': region,
+                                'id': neutron_id,
+                            }
+                        ],
+                        'endpoints_links': [],
+                        'type': 'network',
+                        'name': 'neutron',
+                    },
+                    {
+                        'endpoints': [
+                            {
+                                'adminURL': keystoneurl,
+                                'region': region,
+                                'internalURL': keystoneurl,
+                                'id': keystone_id,
+                                'publicURL': keystoneurl,
+                            }
+                        ],
+                        'endpoints_links': [],
+                        'type': 'identity',
+                        'name': 'keystone',
+                    },
+                    {
+                        'endpoints': [
+                            {
+                                'adminURL': novaurl,
+                                'region': region,
+                                'internalURL': novaurl,
+                                'id': keystone_id,
+                                'publicURL': novaurl,
+                            }
+                        ],
+                        'endpoints_links': [],
+                        'type': 'compute',
+                        'name': 'nova',
+                    },
+                ],
+            },
         },
-    }, code=http_code)
+        code=http_code,
+    )
 
 
 def _get_token_expires():
@@ -151,27 +151,35 @@ def _get_token_expires():
 
 @rest(GET, TENANTS, _responses)
 def get_tenants(content, parameters):
-    return Response({
-        'tenants': [{
-            'description': tenant_description(),
-            'name': tenant_name(),
-            'id': tenant_id(),
-            'enabled': True}]
-    })
+    return Response(
+        {
+            'tenants': [
+                {
+                    'description': tenant_description(),
+                    'name': tenant_name(),
+                    'id': tenant_id(),
+                    'enabled': True,
+                }
+            ]
+        }
+    )
 
 
 @rest(GET, '', _responses)
 def get_default(content, parameters):
-    return Response({
-        'versions': [{
-            'status': 'CURRENT',
-            'id': 'v2.0',
-            'links': [{
-                'href': keystone_url_with_version(),
-                'rel': 'self'
-            }]
-        }]
-    })
+    return Response(
+        {
+            'versions': [
+                {
+                    'status': 'CURRENT',
+                    'id': 'v2.0',
+                    'links': [
+                        {'href': keystone_url_with_version(), 'rel': 'self'}
+                    ],
+                }
+            ]
+        }
+    )
 
 
 def responses():

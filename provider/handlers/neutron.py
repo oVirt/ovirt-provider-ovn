@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,10 +27,10 @@ from neutron.neutron_api import NeutronApi
 
 
 class NeutronHandler(SelectingHandler):
-
     def call_response_handler(self, response_handler, content, parameters):
-        if not validate_token(self.headers.get(
-                TOKEN_HTTP_HEADER_FIELD_NAME, '')):
+        if not validate_token(
+            self.headers.get(TOKEN_HTTP_HEADER_FIELD_NAME, '')
+        ):
             raise Forbidden()
         return response_handler(NeutronApi(), content, parameters)
 

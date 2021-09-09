@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -60,60 +60,51 @@ _responses = {}
 
 @rest(GET, NETWORK_ENTITY, _responses)
 def show_network(nb_db, content, parameters):
-    return Response({
-        'network': nb_db.get_network(parameters[NETWORK_ID])
-    })
+    return Response({'network': nb_db.get_network(parameters[NETWORK_ID])})
 
 
 @rest(GET, PORT_ENTITY, _responses)
 def show_port(nb_db, content, parameters):
-    return Response({
-        'port': nb_db.get_port(parameters[PORT_ID])
-    })
+    return Response({'port': nb_db.get_port(parameters[PORT_ID])})
 
 
 @rest(GET, SUBNET_ENTITY, _responses)
 def show_subnet(nb_db, content, parameters):
-    return Response({
-        'subnet': nb_db.get_subnet(parameters[SUBNET_ID])
-    })
+    return Response({'subnet': nb_db.get_subnet(parameters[SUBNET_ID])})
 
 
 @rest(GET, '', _responses)
 def get_default(nb_db, content, parameters):
-    return Response({
-        'versions': [{
-            'status': 'CURRENT',
-            'id': 'v2.0',
-            'links': [{
-                'href': neutron_url_with_version(),
-                'rel': 'self'
-            }]
-        }]
-    })
+    return Response(
+        {
+            'versions': [
+                {
+                    'status': 'CURRENT',
+                    'id': 'v2.0',
+                    'links': [
+                        {'href': neutron_url_with_version(), 'rel': 'self'}
+                    ],
+                }
+            ]
+        }
+    )
 
 
 @rest(GET, NETWORKS, _responses)
 def get_networks(nb_db, content, parameters):
     networks = nb_db.list_networks()
-    return Response({
-        'networks': networks
-    })
+    return Response({'networks': networks})
 
 
 @rest(GET, PORTS, _responses)
 def get_ports(nb_db, content, parameters):
     ports = nb_db.list_ports()
-    return Response({
-        'ports': ports
-    })
+    return Response({'ports': ports})
 
 
 @rest(GET, SUBNETS, _responses)
 def get_subnets(nb_db, content, parameters):
-    return Response({
-        'subnets': nb_db.list_subnets()
-    })
+    return Response({'subnets': nb_db.list_subnets()})
 
 
 @rest(DELETE, NETWORK_ENTITY, _responses)
@@ -182,12 +173,14 @@ def get_debug(nb_db, content, parameters):
     ports = nb_db.list_ports()
     subnets = nb_db.list_subnets()
     routers = nb_db.list_routers()
-    return Response({
-        'networks': networks,
-        'ports': ports,
-        'subnets': subnets,
-        'routers': routers
-    })
+    return Response(
+        {
+            'networks': networks,
+            'ports': ports,
+            'subnets': subnets,
+            'routers': routers,
+        }
+    )
 
 
 @rest(GET, ROUTERS, _responses)
@@ -205,9 +198,7 @@ def post_routers(nb_db, content, parameters):
 
 @rest(GET, ROUTER_ENTITY, _responses)
 def get_router(nb_db, content, parameters):
-    return Response({
-            'router': nb_db.get_router(parameters[ROUTER_ID])
-        })
+    return Response({'router': nb_db.get_router(parameters[ROUTER_ID])})
 
 
 @rest(PUT, ROUTER_ENTITY, _responses)
@@ -252,8 +243,12 @@ def get_security_groups(nb_db, content, parameters):
 
 @rest(GET, SECURITY_GROUP_ENTITY, _responses)
 def show_security_group(nb_db, content, parameters):
-    return Response({'security_group': nb_db.get_security_group(
-        parameters[SECURITY_GROUP_ID])}
+    return Response(
+        {
+            'security_group': nb_db.get_security_group(
+                parameters[SECURITY_GROUP_ID]
+            )
+        }
     )
 
 
@@ -302,8 +297,9 @@ def post_security_group_rule(nb_db, content, parameters):
     received_sec_group_rule = get_entity(content, 'security_group_rule')
     return Response(
         {
-            'security_group_rule':
-                nb_db.add_security_group_rule(received_sec_group_rule)
+            'security_group_rule': nb_db.add_security_group_rule(
+                received_sec_group_rule
+            )
         }
     )
 

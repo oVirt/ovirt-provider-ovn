@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -102,12 +102,14 @@ class BaseHandler(BaseHTTPRequestHandler):
         self._handle_request(GET, code=http_client.OK)
 
     def do_POST(self):
-        self._handle_request(POST, content=self._get_content(),
-                             code=http_client.CREATED)
+        self._handle_request(
+            POST, content=self._get_content(), code=http_client.CREATED
+        )
 
     def do_PUT(self):
-        self._handle_request(PUT, content=self._get_content(),
-                             code=http_client.OK)
+        self._handle_request(
+            PUT, content=self._get_content(), code=http_client.OK
+        )
 
     def do_DELETE(self):
         self._handle_request(DELETE, code=http_client.NO_CONTENT)
@@ -119,29 +121,29 @@ class BaseHandler(BaseHTTPRequestHandler):
         logging.log(
             log_level,
             'From: {address}:{port} Request: {method} {path}'.format(
-              address=self.client_address[0], port=self.client_address[1],
-              method=method, path=path
-            ))
+                address=self.client_address[0],
+                port=self.client_address[1],
+                method=method,
+                path=path,
+            ),
+        )
         if content:
             logging.log(
                 log_level,
                 'Request body:\n{}'.format(
                     self._format_content_for_log(method, path, content)
-                ))
+                ),
+            )
 
     def _handle_request(self, method, code=http_client.OK, content=None):
         self._log_request(method, self.path, content)
         try:
             path_parts, query = self._parse_request_path(self.path)
             self._validate_request(method, id)
-            response = self.handle_request(
-                method, path_parts, content
-            )
+            response = self.handle_request(method, path_parts, content)
             result = (
                 self._filter_results(query, response)
-                if should_be_filtered(
-                    response.body, query, path_parts, method
-                )
+                if should_be_filtered(response.body, query, path_parts, method)
                 else response.body
             )
             body = libjson.dumps(result) if result else None
@@ -149,55 +151,88 @@ class BaseHandler(BaseHTTPRequestHandler):
         except PathNotFoundError as e:
             message = 'Incorrect path: {}'.format(self.path)
             self._handle_response_exception(
-                e, method, self.path, content, message=message,
-                response_code=http_client.NOT_FOUND
+                e,
+                method,
+                self.path,
+                content,
+                message=message,
+                response_code=http_client.NOT_FOUND,
             )
         except ElementNotFoundError as e:
             message = 'The element requested has not been found.'
             self._handle_response_exception(
-                e, method, self.path, content, message=message,
-                response_code=http_client.NOT_FOUND
+                e,
+                method,
+                self.path,
+                content,
+                message=message,
+                response_code=http_client.NOT_FOUND,
             )
         except MethodNotAllowedError as e:
             message = 'Method not allowed: {}'.format(method)
             self._handle_response_exception(
-                e, method, self.path, content, message=message,
-                response_code=http_client.METHOD_NOT_ALLOWED
+                e,
+                method,
+                self.path,
+                content,
+                message=message,
+                response_code=http_client.METHOD_NOT_ALLOWED,
             )
         except BadRequestError as e:
             self._handle_response_exception(
-                e, method, self.path, content,
-                response_code=http_client.BAD_REQUEST
+                e,
+                method,
+                self.path,
+                content,
+                response_code=http_client.BAD_REQUEST,
             )
         except Unauthorized as e:
             self._handle_response_exception(
-                e, method, self.path, content,
-                response_code=http_client.UNAUTHORIZED
+                e,
+                method,
+                self.path,
+                content,
+                response_code=http_client.UNAUTHORIZED,
             )
         except Forbidden as e:
             self._handle_response_exception(
-                e, method, self.path, content,
-                response_code=http_client.FORBIDDEN
+                e,
+                method,
+                self.path,
+                content,
+                response_code=http_client.FORBIDDEN,
             )
         except Timeout as e:
             self._handle_response_exception(
-                e, method, self.path, content,
-                response_code=http_client.GATEWAY_TIMEOUT
+                e,
+                method,
+                self.path,
+                content,
+                response_code=http_client.GATEWAY_TIMEOUT,
             )
         except BadGateway as e:
             self._handle_response_exception(
-                e, method, self.path, content,
-                response_code=http_client.BAD_GATEWAY
+                e,
+                method,
+                self.path,
+                content,
+                response_code=http_client.BAD_GATEWAY,
             )
         except ConflictError as e:
             self._handle_response_exception(
-                e, method, self.path, content,
-                response_code=http_client.CONFLICT
+                e,
+                method,
+                self.path,
+                content,
+                response_code=http_client.CONFLICT,
             )
         except NotImplementedError as e:
             self._handle_response_exception(
-                e, method, self.path, content,
-                response_code=http_client.NOT_IMPLEMENTED
+                e,
+                method,
+                self.path,
+                content,
+                response_code=http_client.NOT_IMPLEMENTED,
             )
         except Exception as e:
             self._handle_response_exception(e, method, self.path, content)
@@ -205,9 +240,7 @@ class BaseHandler(BaseHTTPRequestHandler):
     @staticmethod
     def _filter_results(query, response):
         resource_name, resource_data = list(response.body.items())[0]
-        return {
-            resource_name: filter_query_results(resource_data, query)
-        }
+        return {resource_name: filter_query_results(resource_data, query)}
 
     def _validate_request(self, method, id):
         if method in [DELETE, PUT] and not id:
@@ -234,7 +267,12 @@ class BaseHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def _handle_response_exception(
-        self, e, method, path, content=None, message=None,
+        self,
+        e,
+        method,
+        path,
+        content=None,
+        message=None,
         response_code=http_client.INTERNAL_SERVER_ERROR,
     ):
         self._log_request(method, path, content, log_level=logging.ERROR)
@@ -243,13 +281,20 @@ class BaseHandler(BaseHTTPRequestHandler):
         explain = libjson.dumps(error_message)
         if six.PY2:
             self.send_error(response_code)
-            self.wfile.write((ERROR_MESSAGE % {
-                'code': response_code,
-                'explain': explain,
-                'message': http_client.responses[response_code]
-            }).encode())
+            self.wfile.write(
+                (
+                    ERROR_MESSAGE
+                    % {
+                        'code': response_code,
+                        'explain': explain,
+                        'message': http_client.responses[response_code],
+                    }
+                ).encode()
+            )
         else:
-            self.send_error(response_code, explain=explain)  # noqa: E501 pylint: disable=E1123
+            self.send_error(
+                response_code, explain=explain
+            )  # noqa: E501 pylint: disable=E1123
 
     @staticmethod
     def _parse_request_path(full_path):
@@ -264,7 +309,7 @@ class BaseHandler(BaseHTTPRequestHandler):
     @staticmethod
     def _remove_json_extension(path):
         if path and path.lower().endswith(JSON_SUFFIX):
-            path = path[: - len(JSON_SUFFIX)]
+            path = path[: -len(JSON_SUFFIX)]
         return path
 
     @abc.abstractmethod

@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -110,6 +110,7 @@ def rest(method, path, response_handlers):
         }
     }
     """
+
     def assign_response(funct):
         parameters = []
         current_map = response_handlers
@@ -152,8 +153,8 @@ def _validate_path_parameters(parameter, parameters, current_map):
 
     parameters.append(parameter)
     existing_params = current_map.get(RESPONSE_VALUE_PARAMETER)
-    has_duplicated_params = (
-        existing_params and not existing_params.get(parameter)
+    has_duplicated_params = existing_params and not existing_params.get(
+        parameter
     )
     duplicate_param_in_path_message = (
         'Unable to add more than one unique parameter for path'
@@ -167,7 +168,6 @@ def _get_parameter_name(part):
 
 
 class SelectingHandler(BaseHandler):
-
     def handle_request(self, method, path_parts, content):
         handler, parameters = self.get_response_handler(
             self.get_responses(), method, path_parts

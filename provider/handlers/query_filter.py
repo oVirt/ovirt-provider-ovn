@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,23 +25,24 @@ from ovirt_provider_config_common import url_filter_exception
 def filter_query_results(items, query):
     filter_exceptions = url_filter_exception().split(',')
     valid_filters = [
-        (key, val) for (key, val) in query.items()
+        (key, val)
+        for (key, val) in query.items()
         if key not in filter_exceptions
     ]
     return list(
         filter(
-            lambda item: all(
-                _filter_query_result(item, valid_filters)
-            ),
-            items
+            lambda item: all(_filter_query_result(item, valid_filters)), items
         )
     )
 
 
 def should_be_filtered(response, query, path_parts, method):
     return (
-        query and response and len(list(response.values())) == 1 and
-        len(path_parts) == 1 and isinstance(list(response.values())[0], list)
+        query
+        and response
+        and len(list(response.values())) == 1
+        and len(path_parts) == 1
+        and isinstance(list(response.values())[0], list)
         and method == GET
     )
 
