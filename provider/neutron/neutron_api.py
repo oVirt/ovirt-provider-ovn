@@ -1,4 +1,4 @@
-# Copyright 2017-2020 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,6 +69,7 @@ def assure_security_groups_support(f):
                 'Security Groups are only supported on ovirt <= 4.3'
             )
         return f(wrapped_self, *args, **kwargs)
+
     return inner
 
 
@@ -81,21 +82,23 @@ def wrap_default_group_id(f):
             )
             default_group_id = default_group.uuid
             return f(
-                wrapped_self, default_group_id=default_group_id,
-                *args, **kwargs
+                wrapped_self,
+                default_group_id=default_group_id,
+                *args,
+                **kwargs
             )
         except ElementNotFoundError:
             return f(wrapped_self, *args, **kwargs)
+
     return inner
 
 
 class NeutronApi(object):
-
     def __init__(self, sec_group_support=None):
         self.idl = ovn_connection.connect()
         self.ovn_north = OvnNorth(self.idl)
         self.security_group_support = (
-                sec_group_support or self.are_security_groups_supported()
+            sec_group_support or self.are_security_groups_supported()
         )
         self.tx_manager = ovn_connection.OvnTransactionManager(
             self.idl.ovsdb_connection
@@ -115,29 +118,32 @@ class NeutronApi(object):
         return [self._get_network(ls) for ls in ls_rows]
 
     def _get_network(self, ls):
-        return Network(
-            ls=ls,
-            localnet_lsp=self._get_localnet_lsp(ls)
-        )
+        return Network(ls=ls, localnet_lsp=self._get_localnet_lsp(ls))
 
     @NetworkMapper.map_to_rest
     def get_network(self, network_id):
-        return self._get_network(
-            self.ovn_north.get_ls(ls_id=network_id)
-        )
+        return self._get_network(self.ovn_north.get_ls(ls_id=network_id))
 
     @NetworkMapper.validate_add
     @NetworkMapper.map_from_rest
     @NetworkMapper.map_to_rest
     def add_network(
-            self, name, localnet=None, vlan=None, mtu=None,
-            port_security_enabled=None
+        self,
+        name,
+        localnet=None,
+        vlan=None,
+        mtu=None,
+        port_security_enabled=None,
     ):
         with self.tx_manager.transaction() as tx:
             if localnet:
                 network_id = self._add_localnet_network(
-                    name, localnet, vlan, mtu, port_security_enabled,
-                    transaction=tx
+                    name,
+                    localnet,
+                    vlan,
+                    mtu,
+                    port_security_enabled,
+                    transaction=tx,
                 )
             else:
                 network_id = self._create_network(
@@ -150,15 +156,17 @@ class NeutronApi(object):
         if mtu is not None:
             external_ids_dict[NetworkMapper.OVN_MTU] = str(mtu)
         external_ids_dict[NetworkMapper.OVN_NETWORK_PORT_SECURITY] = str(
-            port_security if port_security is not None
+            port_security
+            if port_security is not None
             else default_port_security_enabled()
         )
         name = u'ovirt-{name}-{gen_id}'.format(name=name, gen_id=uuid.uuid4())
         transaction.add(
             self.ovn_north.add_ls(
-                name=name, external_ids=self._generate_external_ids(
+                name=name,
+                external_ids=self._generate_external_ids(
                     {}, **external_ids_dict
-                )
+                ),
             )
         )
         return name
@@ -168,30 +176,29 @@ class NeutronApi(object):
         return dict(current_external_ids, **kwargs)
 
     def _add_localnet_network(
-            self, name, localnet, vlan, mtu, port_security_enabled, transaction
+        self, name, localnet, vlan, mtu, port_security_enabled, transaction
     ):
         network_uuid = self._create_network(
             name, transaction, mtu, port_security_enabled
         )
         lsp_id = self._create_port(
-            ovnconst.LOCALNET_SWITCH_PORT_NAME, network_uuid,
-            transaction=transaction
+            ovnconst.LOCALNET_SWITCH_PORT_NAME,
+            network_uuid,
+            transaction=transaction,
         )
-        transaction.add(
-            self._set_port_localnet_values(lsp_id, localnet, vlan)
-        )
+        transaction.add(self._set_port_localnet_values(lsp_id, localnet, vlan))
         return network_uuid
 
     @NetworkMapper.validate_update
     @NetworkMapper.map_from_rest
     def update_network(
-            self,
-            network_id,
-            name,
-            localnet=None,
-            vlan=None,
-            mtu=None,
-            port_security_enabled=None
+        self,
+        network_id,
+        name,
+        localnet=None,
+        vlan=None,
+        mtu=None,
+        port_security_enabled=None,
     ):
         with self.tx_manager.transaction() as tx:
             self._update_network_data(
@@ -201,16 +208,15 @@ class NeutronApi(object):
         return self.get_network(network_id)
 
     def _update_network_data(
-            self, network_id, name, mtu, port_security, transaction
+        self, network_id, name, mtu, port_security, transaction
     ):
         current_external_ids = self.ovn_north.get_ls(
             ls_id=network_id
         ).external_ids
 
         relevant_external_ids = {
-            NetworkMapper.OVN_NETWORK_NAME: name or current_external_ids[
-                NetworkMapper.OVN_NETWORK_NAME
-            ]
+            NetworkMapper.OVN_NETWORK_NAME: name
+            or current_external_ids[NetworkMapper.OVN_NETWORK_NAME]
         }
         if mtu is not None:
             relevant_external_ids[NetworkMapper.OVN_MTU] = str(mtu)
@@ -219,30 +225,29 @@ class NeutronApi(object):
                 NetworkMapper.OVN_NETWORK_PORT_SECURITY
             ] = str(port_security)
         new_external_ids = self._generate_external_ids(
-            current_external_ids,
-            **relevant_external_ids
+            current_external_ids, **relevant_external_ids
         )
         transaction.add(
             self.ovn_north.create_ovn_update_command(
                 ovnconst.TABLE_LS, network_id
-            ).add(
-                ovnconst.ROW_LS_EXTERNAL_IDS,
-                new_external_ids
-            ).build_command()
+            )
+            .add(ovnconst.ROW_LS_EXTERNAL_IDS, new_external_ids)
+            .build_command()
         )
         if mtu:
             self._update_networks_mtu(network_id, mtu, transaction)
 
     def _update_localnet_on_network(
-            self, network_id, localnet, vlan, transaction
+        self, network_id, localnet, vlan, transaction
     ):
         network = self.ovn_north.get_ls(ls_id=network_id)
         localnet_port = self._get_localnet_lsp(network)
         if localnet:
             if not localnet_port:
                 lsp_id = self._create_port(
-                    ovnconst.LOCALNET_SWITCH_PORT_NAME, str(network.uuid),
-                    transaction=transaction
+                    ovnconst.LOCALNET_SWITCH_PORT_NAME,
+                    str(network.uuid),
+                    transaction=transaction,
                 )
             else:
                 lsp_id = localnet_port.name
@@ -255,17 +260,21 @@ class NeutronApi(object):
             )
 
     def _set_port_localnet_values(self, port_id, localnet, vlan):
-        return self.ovn_north.create_ovn_update_command(
-            ovnconst.TABLE_LSP, port_id
-        ).add(
-            ovnconst.ROW_LSP_ADDRESSES,
-            [ovnconst.LSP_ADDRESS_TYPE_UNKNOWN]
-        ).add(
-            ovnconst.ROW_LSP_OPTIONS,
-            {ovnconst.LSP_OPTION_NETWORK_NAME: localnet}
-        ).add(
-            ovnconst.ROW_LSP_TYPE, ovnconst.LSP_TYPE_LOCALNET
-        ).add(ovnconst.ROW_LSP_TAG, vlan).build_command()
+        return (
+            self.ovn_north.create_ovn_update_command(
+                ovnconst.TABLE_LSP, port_id
+            )
+            .add(
+                ovnconst.ROW_LSP_ADDRESSES, [ovnconst.LSP_ADDRESS_TYPE_UNKNOWN]
+            )
+            .add(
+                ovnconst.ROW_LSP_OPTIONS,
+                {ovnconst.LSP_OPTION_NETWORK_NAME: localnet},
+            )
+            .add(ovnconst.ROW_LSP_TYPE, ovnconst.LSP_TYPE_LOCALNET)
+            .add(ovnconst.ROW_LSP_TAG, vlan)
+            .build_command()
+        )
 
     def _update_networks_mtu(self, network_id, mtu, transaction=None):
         subnet = self.ovn_north.get_dhcp(ls_id=network_id)
@@ -274,12 +283,14 @@ class NeutronApi(object):
             transaction.add(
                 self.ovn_north.create_ovn_update_command(
                     ovnconst.TABLE_DHCP_Options, subnet.uuid
-                ).add(
+                )
+                .add(
                     ovnconst.ROW_DHCP_OPTIONS
                     if ip_utils.is_subnet_ipv4(subnet)
                     else ovnconst.ROW_DHCP_EXTERNAL_IDS,
-                    {SubnetMapper.OVN_DHCP_MTU: str(mtu)}
-                ).build_command()
+                    {SubnetMapper.OVN_DHCP_MTU: str(mtu)},
+                )
+                .build_command()
             )
             if ip_utils.is_subnet_ipv6(subnet):
                 self._update_ipv6_subnet_lrp_mtu(subnet, str(mtu), transaction)
@@ -287,10 +298,14 @@ class NeutronApi(object):
     @staticmethod
     def _get_subnet_mtu(subnet):
         return (
-            subnet.options.get(NetworkMapper.REST_MTU)
-            if ip_utils.is_subnet_ipv4(subnet)
-            else subnet.external_ids.get(SubnetMapper.OVN_DHCP_MTU)
-        ) if subnet else None
+            (
+                subnet.options.get(NetworkMapper.REST_MTU)
+                if ip_utils.is_subnet_ipv4(subnet)
+                else subnet.external_ids.get(SubnetMapper.OVN_DHCP_MTU)
+            )
+            if subnet
+            else None
+        )
 
     def _update_ipv6_subnet_lrp_mtu(self, subnet, mtu, transaction):
         impacted_lrp = self.ovn_north.get_lrp_by_subnet(subnet)
@@ -300,20 +315,23 @@ class NeutronApi(object):
             )
 
     def _update_ipv6_lrp_mtu(self, router_port, subnet, mtu):
-        return self.ovn_north.create_ovn_update_command(
-            ovnconst.TABLE_LRP, self.ovn_north.get_lrp_id(router_port)
-        ).add(
-            ovnconst.ROW_LRP_IPV6_RA_CONFIGS,
-            self._build_ra_config_dict(subnet, mtu)
-        ).build_command()
+        return (
+            self.ovn_north.create_ovn_update_command(
+                ovnconst.TABLE_LRP, self.ovn_north.get_lrp_id(router_port)
+            )
+            .add(
+                ovnconst.ROW_LRP_IPV6_RA_CONFIGS,
+                self._build_ra_config_dict(subnet, mtu),
+            )
+            .build_command()
+        )
 
     def delete_network(self, network_id):
         network = self.ovn_north.get_ls(ls_id=network_id)
         if not network:
             raise RestDataError('Network %s does not exist' % network_id)
         validate.network_has_no_ports(
-            network_id, network.ports,
-            self._get_localnet_lsp(network)
+            network_id, network.ports, self._get_localnet_lsp(network)
         )
 
         with self.tx_manager.transaction() as tx:
@@ -335,10 +353,12 @@ class NeutronApi(object):
 
     @PortMapper.map_to_rest
     def list_ports(self):
-        return [self._get_network_port(lsp, ls)
-                for ls in self.ovn_north.list_ls()
-                for lsp in ls.ports
-                if self._is_port_ovirt_controlled(lsp)]
+        return [
+            self._get_network_port(lsp, ls)
+            for ls in self.ovn_north.list_ls()
+            for lsp in ls.ports
+            if self._is_port_ovirt_controlled(lsp)
+        ]
 
     @PortMapper.map_to_rest
     def get_port(self, port_id):
@@ -388,21 +408,28 @@ class NeutronApi(object):
         with self.tx_manager.transaction() as tx:
             port_id = self._create_port(name, network_id, transaction=tx)
             self._update_port_values(
-                port_id, name, is_enabled, device_id, device_owner,
-                binding_host, transaction=tx
+                port_id,
+                name,
+                is_enabled,
+                device_id,
+                device_owner,
+                binding_host,
+                transaction=tx,
             )
             mac = mac or ip_utils.random_unique_mac(
-                self.ovn_north.list_lsp(),
-                self.ovn_north.list_lrp()
+                self.ovn_north.list_lsp(), self.ovn_north.list_lrp()
             )
             tx.add(
                 self.get_update_port_addr_command(
-                    port_id, network_id=network_id, mac=mac,
-                    fixed_ips=fixed_ips
+                    port_id,
+                    network_id=network_id,
+                    mac=mac,
+                    fixed_ips=fixed_ips,
                 ).build_command()
             )
             port_security = (
-                port_security if port_security is not None
+                port_security
+                if port_security is not None
                 else self._get_port_security_from_network(network_id)
             )
 
@@ -444,13 +471,21 @@ class NeutronApi(object):
         mac = mac or ip_utils.get_port_mac(port)
         with self.tx_manager.transaction() as tx:
             self._update_port_values(
-                port.uuid, name, is_enabled, device_id, device_owner,
-                binding_host, transaction=tx
+                port.uuid,
+                name,
+                is_enabled,
+                device_id,
+                device_owner,
+                binding_host,
+                transaction=tx,
             )
             tx.add(
                 self.get_update_port_addr_command(
-                    port.name, network_id=network_id, mac=mac,
-                    fixed_ips=fixed_ips, port_type=port.type
+                    port.name,
+                    network_id=network_id,
+                    mac=mac,
+                    fixed_ips=fixed_ips,
+                    port_type=port.type,
                 ).build_command()
             )
             self.update_port_security(
@@ -471,43 +506,51 @@ class NeutronApi(object):
 
         new_lrp_ip = '{ip}/{netmask}'.format(
             ip=fixed_ips[0].get(PortMapper.REST_PORT_IP_ADDRESS),
-            netmask=ip_utils.get_mask_from_subnet(subnet)
+            netmask=ip_utils.get_mask_from_subnet(subnet),
         )
 
         self.ovn_north.db_set(
             ovnconst.TABLE_LRP,
             str(lrp.uuid),
-            (ovnconst.ROW_LRP_NETWORKS, new_lrp_ip)
+            (ovnconst.ROW_LRP_NETWORKS, new_lrp_ip),
         )
 
     @optionally_use_transactions
     def _update_port_values(
-        self, port, name=None, is_enabled=None, device_id=None,
-        device_owner=None, binding_host=None, transaction=None
+        self,
+        port,
+        name=None,
+        is_enabled=None,
+        device_id=None,
+        device_owner=None,
+        binding_host=None,
+        transaction=None,
     ):
-        return self.ovn_north.create_ovn_update_command(
-            ovnconst.TABLE_LSP, port
-        ).add(
-            ovnconst.ROW_LSP_EXTERNAL_IDS,
-            {PortMapper.OVN_DEVICE_ID: device_id},
-            device_id
-        ).add(
-            ovnconst.ROW_LSP_EXTERNAL_IDS,
-            {PortMapper.OVN_NIC_NAME: name},
-            name
-        ).add(
-            ovnconst.ROW_LSP_EXTERNAL_IDS,
-            {PortMapper.OVN_DEVICE_OWNER: device_owner},
-            device_owner
-        ).add(
-            ovnconst.ROW_LSP_ENABLED,
-            is_enabled,
-            is_enabled
-        ).add(
-            ovnconst.ROW_LSP_OPTIONS,
-            {PortMapper.OVN_REQUESTED_CHASSIS: binding_host},
-            ovs_version_29() and binding_host
-        ).build_command()
+        return (
+            self.ovn_north.create_ovn_update_command(ovnconst.TABLE_LSP, port)
+            .add(
+                ovnconst.ROW_LSP_EXTERNAL_IDS,
+                {PortMapper.OVN_DEVICE_ID: device_id},
+                device_id,
+            )
+            .add(
+                ovnconst.ROW_LSP_EXTERNAL_IDS,
+                {PortMapper.OVN_NIC_NAME: name},
+                name,
+            )
+            .add(
+                ovnconst.ROW_LSP_EXTERNAL_IDS,
+                {PortMapper.OVN_DEVICE_OWNER: device_owner},
+                device_owner,
+            )
+            .add(ovnconst.ROW_LSP_ENABLED, is_enabled, is_enabled)
+            .add(
+                ovnconst.ROW_LSP_OPTIONS,
+                {PortMapper.OVN_REQUESTED_CHASSIS: binding_host},
+                ovs_version_29() and binding_host,
+            )
+            .build_command()
+        )
 
     def get_update_port_addr_command(
         self, port_id, network_id, mac=None, fixed_ips=None, port_type=None
@@ -524,13 +567,16 @@ class NeutronApi(object):
         ip_version = int(
             subnet.external_ids.get(
                 SubnetMapper.OVN_IP_VERSION, SubnetMapper.IP_VERSION_4
-            ) if subnet else SubnetMapper.IP_VERSION_4
+            )
+            if subnet
+            else SubnetMapper.IP_VERSION_4
         )
         if mac:
             if subnet:
                 self.update_port_subnet(db_set_command, subnet, ip_version)
                 mac += ' ' + self._get_port_addesses_suffix(
-                    network_id, fixed_ips)
+                    network_id, fixed_ips
+                )
             else:
                 db_set_command.add(ovnconst.ROW_LSP_DHCPV4_OPTIONS, [])
             db_set_command.add(ovnconst.ROW_LSP_ADDRESSES, [mac])
@@ -543,31 +589,24 @@ class NeutronApi(object):
             if ip_version == SubnetMapper.IP_VERSION_4
             else ovnconst.ROW_LSP_DHCPV6_OPTIONS
         )
-        ovsdb_update_command.add(
-            options_type, subnet.uuid
-        )
+        ovsdb_update_command.add(options_type, subnet.uuid)
 
     def update_port_security(
-        self, transaction, port_id, mac, port_security,
-            lsp=None
+        self, transaction, port_id, mac, port_security, lsp=None
     ):
         update_db_command = self.ovn_north.create_ovn_update_command(
             ovnconst.TABLE_LSP, port_id
         )
         if port_security is True:
             self.ovn_north.activate_default_security_group(
-                port_id, transaction,
-                update_port_association=lsp is None
+                port_id, transaction, update_port_association=lsp is None
             )
-            update_db_command.add(
-                ovnconst.ROW_LSP_PORT_SECURITY, [mac]
-            )
+            update_db_command.add(ovnconst.ROW_LSP_PORT_SECURITY, [mac])
         elif port_security is False:
             update_db_command = self.deactivate_port_security(
-                port_id, transaction,
-                old_port_security=PortMapper.is_port_security_enabled(
-                    lsp=lsp
-                )
+                port_id,
+                transaction,
+                old_port_security=PortMapper.is_port_security_enabled(lsp=lsp),
             )
         cmd = update_db_command.build_command()
         if cmd:
@@ -591,12 +630,14 @@ class NeutronApi(object):
         return ip
 
     def _connect_port_to_router(
-        self, port, router_port_name,
+        self,
+        port,
+        router_port_name,
         router_id,
         name=None,
         is_enabled=True,
         is_external_gateway=False,
-     ):
+    ):
         self._update_port_values(
             port=port,
             name=name,
@@ -604,22 +645,19 @@ class NeutronApi(object):
             device_id=router_id,
             device_owner=(
                 PortMapper.DEVICE_OWNER_ROUTER_GATEWAY
-                if is_external_gateway else
-                PortMapper.DEVICE_OWNER_ROUTER
-            )
+                if is_external_gateway
+                else PortMapper.DEVICE_OWNER_ROUTER
+            ),
         )
 
-        self.ovn_north.create_ovn_update_command(
-            ovnconst.TABLE_LSP, port
-        ).add(
+        self.ovn_north.create_ovn_update_command(ovnconst.TABLE_LSP, port).add(
             ovnconst.ROW_LSP_TYPE,
             ovnconst.LSP_TYPE_ROUTER,
         ).add(
             ovnconst.ROW_LSP_OPTIONS,
             {ovnconst.LSP_OPTION_ROUTER_PORT: router_port_name},
         ).add(
-            ovnconst.ROW_LSP_ADDRESSES,
-            [ovnconst.LSP_ADDRESS_TYPE_ROUTER]
+            ovnconst.ROW_LSP_ADDRESSES, [ovnconst.LSP_ADDRESS_TYPE_ROUTER]
         ).execute()
 
         self.ovn_north.clear_row_column(
@@ -684,12 +722,12 @@ class NeutronApi(object):
         transaction.add(
             self.ovn_north.create_ovn_update_command(
                 ovnconst.TABLE_LSP, port_id
-            ).add(
+            )
+            .add(
                 ovnconst.ROW_LSP_EXTERNAL_IDS,
-                {
-                    PortMapper.OVN_SECURITY_GROUPS: ' '.join(security_groups)
-                }
-            ).build_command()
+                {PortMapper.OVN_SECURITY_GROUPS: ' '.join(security_groups)},
+            )
+            .build_command()
         )
 
     def update_port_mac(self, port_id, macaddress):
@@ -730,17 +768,21 @@ class NeutronApi(object):
         gateway,
         ip_version,
         dns=None,
-        ipv6_address_mode=None
+        ipv6_address_mode=None,
     ):
         try:
             network = self.ovn_north.get_ls(ls_id=network_id)
         except ElementNotFoundError:
-            raise SubnetConfigError('Subnet can not be created, network {}'
-                                    ' does not exist'.format(network_id))
+            raise SubnetConfigError(
+                'Subnet can not be created, network {}'
+                ' does not exist'.format(network_id)
+            )
 
         if self.ovn_north.get_dhcp(ls_id=network_id):
-            raise SubnetConfigError('Unable to create more than one subnet'
-                                    ' for network {}'.format(network_id))
+            raise SubnetConfigError(
+                'Unable to create more than one subnet'
+                ' for network {}'.format(network_id)
+            )
 
         network_mtu = network.external_ids.get(SubnetMapper.OVN_DHCP_MTU)
         external_ids = self.get_subnet_external_ids(
@@ -749,7 +791,7 @@ class NeutronApi(object):
             name,
             ipv6_address_mode,
             gateway,
-            network_mtu or (dhcp_mtu() if dhcp_enable_mtu() else None)
+            network_mtu or (dhcp_mtu() if dhcp_enable_mtu() else None),
         )
         options = self.get_subnet_options(
             cidr, gateway, network_mtu, dns, ipv6_address_mode
@@ -784,7 +826,7 @@ class NeutronApi(object):
 
     @staticmethod
     def get_subnet_options(
-            cidr, gateway, network_mtu, dns, ipv6_address_mode=None
+        cidr, gateway, network_mtu, dns, ipv6_address_mode=None
     ):
         network = IPNetwork(cidr)
         if network.version == SubnetMapper.IP_VERSION_4:
@@ -800,9 +842,7 @@ class NeutronApi(object):
             elif dhcp_enable_mtu():
                 options[SubnetMapper.OVN_DHCP_MTU] = dhcp_mtu()
         else:
-            options = {
-                SubnetMapper.OVN_DHCP_SERVER_ID: dhcp_server_mac()
-            }
+            options = {SubnetMapper.OVN_DHCP_SERVER_ID: dhcp_server_mac()}
             if ipv6_address_mode == SubnetMapper.IPV6_ADDRESS_MODE_STATELESS:
                 options[SubnetMapper.OVN_DHCPV6_STATELESS] = "true"
         if dns:
@@ -811,16 +851,11 @@ class NeutronApi(object):
 
     @staticmethod
     def get_subnet_external_ids(
-            network_id,
-            ip_version,
-            name,
-            ipv6_address_mode,
-            gateway,
-            mtu
+        network_id, ip_version, name, ipv6_address_mode, gateway, mtu
     ):
         external_ids = {
             SubnetMapper.OVN_NETWORK_ID: network_id,
-            SubnetMapper.OVN_IP_VERSION: str(ip_version)
+            SubnetMapper.OVN_IP_VERSION: str(ip_version),
         }
         if name:
             external_ids[SubnetMapper.OVN_NAME] = name
@@ -846,26 +881,23 @@ class NeutronApi(object):
         self.ovn_north.create_ovn_update_command(
             ovnconst.TABLE_DHCP_Options, subnet_id
         ).add(
-            ovnconst.ROW_DHCP_EXTERNAL_IDS,
-            {SubnetMapper.OVN_NAME: name},
-            name
+            ovnconst.ROW_DHCP_EXTERNAL_IDS, {SubnetMapper.OVN_NAME: name}, name
         ).add(
             (
-                ovnconst.ROW_DHCP_OPTIONS if ip_utils.is_subnet_ipv4(subnet)
+                ovnconst.ROW_DHCP_OPTIONS
+                if ip_utils.is_subnet_ipv4(subnet)
                 else ovnconst.ROW_DHCP_EXTERNAL_IDS
             ),
             {SubnetMapper.OVN_GATEWAY: gateway},
-            gateway
+            gateway,
+        ).add(
+            ovnconst.ROW_DHCP_OPTIONS, {SubnetMapper.OVN_DNS_SERVER: dns}, dns
         ).add(
             ovnconst.ROW_DHCP_OPTIONS,
-            {SubnetMapper.OVN_DNS_SERVER: dns},
-            dns
+            {SubnetMapper.OVN_DHCP_LEASE_TIME: dhcp_lease_time()},
         ).add(
             ovnconst.ROW_DHCP_OPTIONS,
-            {SubnetMapper.OVN_DHCP_LEASE_TIME: dhcp_lease_time()}
-        ).add(
-            ovnconst.ROW_DHCP_OPTIONS,
-            {SubnetMapper.OVN_DHCP_SERVER_MAC: dhcp_server_mac()}
+            {SubnetMapper.OVN_DHCP_SERVER_MAC: dhcp_server_mac()},
         ).execute()
 
         return self.get_subnet(subnet_id)
@@ -873,12 +905,9 @@ class NeutronApi(object):
     def delete_subnet(self, subnet_id):
         subnet = self.ovn_north.get_dhcp(dhcp_id=subnet_id)
         validate.subnet_not_connected_to_router(
-            self._get_subnet_gateway_router_id(subnet),
-            subnet_id
+            self._get_subnet_gateway_router_id(subnet), subnet_id
         )
-        network_id = subnet.external_ids.get(
-            SubnetMapper.OVN_NETWORK_ID
-        )
+        network_id = subnet.external_ids.get(SubnetMapper.OVN_NETWORK_ID)
         network = self.ovn_north.get_ls(ls_id=network_id)
         self.ovn_north.remove_dhcp_options(subnet_id)
         for port in network.ports:
@@ -896,8 +925,10 @@ class NeutronApi(object):
         gw_port_id = lr.external_ids.get(RouterMapper.OVN_ROUTER_GATEWAY_PORT)
         if not gw_port_id:
             return Router(
-                lr=lr, ext_gw_ls_id=None, ext_gw_dhcp_options_id=None,
-                gw_ip=None
+                lr=lr,
+                ext_gw_ls_id=None,
+                ext_gw_dhcp_options_id=None,
+                gw_ip=None,
             )
         gw_port = self.ovn_north.get_lsp(lsp_id=gw_port_id)
         ls = self._get_port_network(gw_port)
@@ -908,20 +939,26 @@ class NeutronApi(object):
         gw_ip = ip_utils.get_ip_from_cidr(lrp.networks[0])
 
         return Router(
-            lr=lr, ext_gw_ls_id=ls_id,
-            ext_gw_dhcp_options_id=str(dhcp_options.uuid), gw_ip=gw_ip
+            lr=lr,
+            ext_gw_ls_id=ls_id,
+            ext_gw_dhcp_options_id=str(dhcp_options.uuid),
+            gw_ip=gw_ip,
         )
 
     @RouterMapper.map_to_rest
     def list_routers(self):
         return [
-            self._get_router_from_lr(lr)
-            for lr in self.ovn_north.list_lr()
+            self._get_router_from_lr(lr) for lr in self.ovn_north.list_lr()
         ]
 
     def _add_router(
-        self, name, enabled, network_id=None, gateway_subnet_id=None,
-        gateway_ip=None, routes=None
+        self,
+        name,
+        enabled,
+        network_id=None,
+        gateway_subnet_id=None,
+        gateway_ip=None,
+        routes=None,
     ):
         self._validate_external_gateway(
             gateway_ip, gateway_subnet_id, network_id
@@ -938,8 +975,10 @@ class NeutronApi(object):
         self._add_routes_to_router(router_id, routes)
         router = self.ovn_north.get_lr(lr_id=router_id)
         return Router(
-            lr=router, ext_gw_ls_id=network_id,
-            ext_gw_dhcp_options_id=gateway_subnet_id, gw_ip=gateway_ip
+            lr=router,
+            ext_gw_ls_id=network_id,
+            ext_gw_dhcp_options_id=gateway_subnet_id,
+            gw_ip=gateway_ip,
         )
 
     def _add_routes_to_router(self, router_id, routes):
@@ -949,7 +988,7 @@ class NeutronApi(object):
             self.ovn_north.add_route(
                 lrp_id=router_id,
                 prefix=route[RouterMapper.REST_ROUTER_DESTINATION],
-                nexthop=route[RouterMapper.REST_ROUTER_NEXTHOP]
+                nexthop=route[RouterMapper.REST_ROUTER_NEXTHOP],
             )
 
     def _add_external_gateway_to_router(
@@ -963,7 +1002,7 @@ class NeutronApi(object):
             self.ovn_north.add_route(
                 lrp_id=router_id,
                 prefix=ovnconst.DEFAULT_ROUTE,
-                nexthop=subnet.options.get('router')
+                nexthop=subnet.options.get('router'),
             )
 
     def _validate_external_gateway(
@@ -981,8 +1020,13 @@ class NeutronApi(object):
     @RouterMapper.map_from_rest
     @RouterMapper.map_to_rest
     def add_router(
-        self, name, enabled, network_id=None, gateway_subnet=None,
-        gateway_ip=None, routes=None
+        self,
+        name,
+        enabled,
+        network_id=None,
+        gateway_subnet=None,
+        gateway_ip=None,
+        routes=None,
     ):
         return self._add_router(
             name, enabled, network_id, gateway_subnet, gateway_ip, routes
@@ -991,12 +1035,16 @@ class NeutronApi(object):
     @RouterMapper.validate_update
     @RouterMapper.map_from_rest
     def update_router(
-        self, router_id, name, enabled, network_id=None,
-        gateway_subnet=None, gateway_ip=None, routes=None
+        self,
+        router_id,
+        name,
+        enabled,
+        network_id=None,
+        gateway_subnet=None,
+        gateway_ip=None,
+        routes=None,
     ):
-        self._validate_external_gateway(
-            gateway_ip, gateway_subnet, network_id
-        )
+        self._validate_external_gateway(gateway_ip, gateway_subnet, network_id)
         lr = self.ovn_north.get_lr(lr_id=router_id)
 
         if routes is not None:
@@ -1020,11 +1068,14 @@ class NeutronApi(object):
         existing_gw_lsp_id = lr.external_ids.get(
             RouterMapper.OVN_ROUTER_GATEWAY_PORT
         )
-        is_updated_gw_different_than_existing = \
+        is_updated_gw_different_than_existing = (
             self._is_updated_gw_different_than_existing(
-                lr, gateway_subnet, gateway_ip, uuid.UUID(existing_gw_lsp_id)
-                if existing_gw_lsp_id else None
+                lr,
+                gateway_subnet,
+                gateway_ip,
+                uuid.UUID(existing_gw_lsp_id) if existing_gw_lsp_id else None,
             )
+        )
         if is_updated_gw_different_than_existing:
             self._delete_router_interface_by_port(
                 router_id, existing_gw_lsp_id
@@ -1033,13 +1084,13 @@ class NeutronApi(object):
 
         self.ovn_north.create_ovn_update_command(
             ovnconst.TABLE_LR, router_id
-        ).add(
-            ovnconst.ROW_LR_NAME, name, name
-        ).add(ovnconst.ROW_LR_ENABLED, enabled).execute()
+        ).add(ovnconst.ROW_LR_NAME, name, name).add(
+            ovnconst.ROW_LR_ENABLED, enabled
+        ).execute()
 
         should_external_gw_be_added = (
-            is_updated_gw_different_than_existing or
-            (gateway_subnet and not existing_gw_lsp_id)
+            is_updated_gw_different_than_existing
+            or (gateway_subnet and not existing_gw_lsp_id)
         )
 
         if should_external_gw_be_added:
@@ -1059,19 +1110,18 @@ class NeutronApi(object):
         existing_subnet = self.ovn_north.get_dhcp(lsp_id=existing_lr_gw_lsp_id)
         existing_ip = ip_utils.get_port_ip(
             self.ovn_north.get_lsp(lsp_id=existing_lr_gw_lsp_id),
-            self.ovn_north.get_lrp(lsp_id=existing_lr_gw_lsp_id)
+            self.ovn_north.get_lrp(lsp_id=existing_lr_gw_lsp_id),
         )
 
         return (
-            new_gateway_subnet != str(existing_subnet.uuid) or
-            new_gateway_ip != existing_ip
+            new_gateway_subnet != str(existing_subnet.uuid)
+            or new_gateway_ip != existing_ip
         )
 
     def delete_router(self, router_id):
         existing_gw_lsp_id = self.ovn_north.get_lr(
-            lr_id=router_id).external_ids.get(
-                RouterMapper.OVN_ROUTER_GATEWAY_PORT
-            )
+            lr_id=router_id
+        ).external_ids.get(RouterMapper.OVN_ROUTER_GATEWAY_PORT)
         if existing_gw_lsp_id:
             self._delete_router_interface_by_port(
                 router_id, existing_gw_lsp_id
@@ -1104,8 +1154,8 @@ class NeutronApi(object):
             subnet_id,
             (
                 ovnconst.ROW_DHCP_EXTERNAL_IDS,
-                {SubnetMapper.OVN_GATEWAY_ROUTER_ID: router_id}
-            )
+                {SubnetMapper.OVN_GATEWAY_ROUTER_ID: router_id},
+            ),
         )
 
     def _clear_subnet_gateway_router(self, subnet_id):
@@ -1113,7 +1163,7 @@ class NeutronApi(object):
             ovnconst.TABLE_DHCP_Options,
             subnet_id,
             ovnconst.ROW_DHCP_EXTERNAL_IDS,
-            SubnetMapper.OVN_GATEWAY_ROUTER_ID
+            SubnetMapper.OVN_GATEWAY_ROUTER_ID,
         )
 
     def _validate_create_routing_lsp_by_subnet(
@@ -1124,16 +1174,20 @@ class NeutronApi(object):
             existing_subnet_for_network
         )
         validate.create_routing_lsp_by_subnet(
-            network_id, subnet_id, existing_subnet_for_network,
-            existing_router_for_subnet, router_id,
-            is_external_gateway=is_external_gateway
+            network_id,
+            subnet_id,
+            existing_subnet_for_network,
+            existing_router_for_subnet,
+            router_id,
+            is_external_gateway=is_external_gateway,
         )
         if router_id:
             router = self.ovn_north.get_lr(lr_id=router_id)
             self._validate_subnet_is_not_on_router(subnet_id, router_id)
             validate.unique_gateway_per_router(
-                router, existing_subnet_for_network,
-                self._get_router_gateways(router)
+                router,
+                existing_subnet_for_network,
+                self._get_router_gateways(router),
             )
 
     def _get_router_gateways(self, router):
@@ -1148,7 +1202,8 @@ class NeutronApi(object):
         subnet = self.ovn_north.get_dhcp(dhcp_id=subnet_id)
         network_id = subnet.external_ids.get(SubnetMapper.OVN_NETWORK_ID)
         self._validate_create_routing_lsp_by_subnet(
-            network_id, subnet_id, router_id)
+            network_id, subnet_id, router_id
+        )
         lrp_ip = self._get_ip_from_subnet(subnet, network_id, router_id)
         lsp_id = self._create_port(
             ovnconst.ROUTER_SWITCH_PORT_NAME,
@@ -1160,7 +1215,7 @@ class NeutronApi(object):
             lrp_name,
             router_id,
             name=ovnconst.ROUTER_SWITCH_PORT_NAME,
-            is_enabled=True
+            is_enabled=True,
         )
         self._set_subnet_gateway_router(subnet_id, router_id)
         return (
@@ -1169,9 +1224,8 @@ class NeutronApi(object):
             lrp_ip,
             network_id,
             ip_utils.random_unique_mac(
-                self.ovn_north.list_lsp(),
-                self.ovn_north.list_lrp()
-            )
+                self.ovn_north.list_lsp(), self.ovn_north.list_lrp()
+            ),
         )
 
     def _validate_subnet_is_not_on_router(self, subnet_id, router_id):
@@ -1196,14 +1250,14 @@ class NeutronApi(object):
         lrp_name = self._create_router_port_name(port.name)
         mac = ip_utils.get_port_mac(port)
         self._connect_port_to_router(
-            port.uuid,
-            lrp_name,
-            router_id,
-            is_enabled=True
+            port.uuid, lrp_name, router_id, is_enabled=True
         )
         return (
-            port_id, lrp_name, lrp_ipmask,
-            str(self._get_port_network(port).uuid), mac
+            port_id,
+            lrp_name,
+            lrp_ipmask,
+            str(self._get_port_network(port).uuid),
+            mac,
         )
 
     def _get_ip_netmask_for_lrp(self, lsp, lr_id):
@@ -1223,28 +1277,24 @@ class NeutronApi(object):
             return
         exclude_values = self.ovn_north.get_ls(
             ls_id=network_id
-        ).other_config.get(
-            ovnconst.LS_OPTION_EXCLUDE_IPS, {}
-        )
+        ).other_config.get(ovnconst.LS_OPTION_EXCLUDE_IPS, {})
         new_values = (
             (exclude_values + ' ') if exclude_values else str()
-         ) + gateway_ip
+        ) + gateway_ip
 
         self.ovn_north.db_set(
             ovnconst.TABLE_LS,
             network_id,
             (
                 ovnconst.ROW_LS_OTHER_CONFIG,
-                {ovnconst.LS_OPTION_EXCLUDE_IPS: new_values}
-            )
+                {ovnconst.LS_OPTION_EXCLUDE_IPS: new_values},
+            ),
         )
 
     def _release_network_ip(self, network_id, ip):
         exclude_values = self.ovn_north.get_ls(
             ls_id=network_id
-        ).other_config.get(
-            ovnconst.LS_OPTION_EXCLUDE_IPS, ''
-        )
+        ).other_config.get(ovnconst.LS_OPTION_EXCLUDE_IPS, '')
         values = exclude_values.split()
         values.remove(ip)
 
@@ -1254,15 +1304,15 @@ class NeutronApi(object):
                 network_id,
                 (
                     ovnconst.ROW_LS_OTHER_CONFIG,
-                    {ovnconst.LS_OPTION_EXCLUDE_IPS: ' '.join(values)}
-                )
+                    {ovnconst.LS_OPTION_EXCLUDE_IPS: ' '.join(values)},
+                ),
             )
         else:
             self.ovn_north.remove_key_from_column(
                 ovnconst.TABLE_LS,
                 network_id,
                 ovnconst.ROW_LS_OTHER_CONFIG,
-                ovnconst.LS_OPTION_EXCLUDE_IPS
+                ovnconst.LS_OPTION_EXCLUDE_IPS,
             )
 
     def _add_external_gateway_interface(
@@ -1272,7 +1322,7 @@ class NeutronApi(object):
             ip=gateway_ip,
             netmask=ip_utils.get_mask_from_subnet(
                 self.ovn_north.get_dhcp(dhcp_id=gateway_subnet_id)
-            )
+            ),
         )
 
         lsp_id = self._create_port(
@@ -1281,8 +1331,7 @@ class NeutronApi(object):
         )
         lrp_name = self._create_router_port_name(lsp_id)
         mac = ip_utils.random_unique_mac(
-            self.ovn_north.list_lsp(),
-            self.ovn_north.list_lrp()
+            self.ovn_north.list_lsp(), self.ovn_north.list_lrp()
         )
         self.ovn_north.add_lrp(router_id, lrp_name, mac=mac, lrp_ip=port_ip)
         self._connect_port_to_router(
@@ -1300,7 +1349,7 @@ class NeutronApi(object):
             ovnconst.ROW_LR_EXTERNAL_IDS,
             {
                 RouterMapper.OVN_ROUTER_GATEWAY_PORT: str(lsp_id),
-            }
+            },
         ).execute()
 
     @AddRouterInterfaceMapper.validate_update
@@ -1310,16 +1359,20 @@ class NeutronApi(object):
         self._validate_router_exists(router_id)
         port_id, lrp_name, lrp_ip, network_id, mac = (
             self._create_routing_lsp_by_subnet(subnet_id, router_id)
-            if subnet_id else
-            self._update_routing_lsp_by_port(port_id, router_id)
+            if subnet_id
+            else self._update_routing_lsp_by_port(port_id, router_id)
         )
         subnet = (
-            self.ovn_north.get_dhcp(dhcp_id=subnet_id) if subnet_id
+            self.ovn_north.get_dhcp(dhcp_id=subnet_id)
+            if subnet_id
             else self.ovn_north.get_dhcp(ls_id=network_id)
         )
         self.ovn_north.add_lrp(
-            router_id, lrp_name, mac=mac, lrp_ip=lrp_ip,
-            ipv6_ra_configs=self._get_ra_configs(subnet)
+            router_id,
+            lrp_name,
+            mac=mac,
+            lrp_ip=lrp_ip,
+            ipv6_ra_configs=self._get_ra_configs(subnet),
         )
 
         return RouterInterface(
@@ -1332,8 +1385,7 @@ class NeutronApi(object):
     def _get_ra_configs(self, subnet):
         network = self.ovn_north.get_ls(dhcp=subnet)
         return self._build_ra_config_dict(
-            subnet,
-            network.external_ids.get(NetworkMapper.OVN_MTU)
+            subnet, network.external_ids.get(NetworkMapper.OVN_MTU)
         )
 
     @staticmethod
@@ -1344,7 +1396,7 @@ class NeutronApi(object):
             ovnconst.ROW_LRP_IPV6_ADDRESS_MODE: subnet.external_ids.get(
                 SubnetMapper.OVN_IPV6_ADDRESS_MODE
             ),
-            ovnconst.ROW_LRP_IPV6_SEND_PERIODIC: "true"
+            ovnconst.ROW_LRP_IPV6_SEND_PERIODIC: "true",
         }
         if mtu:
             ra_options[ovnconst.ROW_LRP_IPV6_MTU] = mtu
@@ -1355,7 +1407,8 @@ class NeutronApi(object):
             subnet, network_id, router_id
         )
         subnet_gateway = (
-            subnet.options.get('router') if ip_utils.is_subnet_ipv4(subnet)
+            subnet.options.get('router')
+            if ip_utils.is_subnet_ipv4(subnet)
             else subnet.external_ids.get(SubnetMapper.OVN_GATEWAY)
         )
         subnet_netmask = ip_utils.get_mask_from_subnet(subnet)
@@ -1396,9 +1449,9 @@ class NeutronApi(object):
         ls_id = str(self.ovn_north.get_ls(dhcp=subnet).uuid)
 
         is_subnet_gateway = (
-            subnet and
-            self._is_subnet_on_router(router_id, subnet_id) and
-            lrp_ip == ip_utils.get_subnet_gateway(subnet)
+            subnet
+            and self._is_subnet_on_router(router_id, subnet_id)
+            and lrp_ip == ip_utils.get_subnet_gateway(subnet)
         )
         self._delete_router_interface(router_id, port_id, lrp, lr)
         if is_subnet_gateway:
@@ -1406,9 +1459,7 @@ class NeutronApi(object):
 
         lr_gw_port = lr.external_ids.get(RouterMapper.OVN_ROUTER_GATEWAY_PORT)
         if port_id == lr_gw_port:
-            self._remove_lr_gw_port(
-                lr, ls_id, lrp_ip
-            )
+            self._remove_lr_gw_port(lr, ls_id, lrp_ip)
         return RouterInterface(
             id=router_id,
             ls_id=ls_id,
@@ -1421,7 +1472,7 @@ class NeutronApi(object):
             ovnconst.TABLE_LR,
             str(lr.uuid),
             ovnconst.ROW_LR_EXTERNAL_IDS,
-            RouterMapper.OVN_ROUTER_GATEWAY_PORT
+            RouterMapper.OVN_ROUTER_GATEWAY_PORT,
         )
         self.ovn_north.remove_static_route(lr, ovnconst.DEFAULT_ROUTE)
         self._release_network_ip(ls_id, lrp_ip)
@@ -1438,8 +1489,9 @@ class NeutronApi(object):
     def _delete_router_interface(self, router_id, port_id, lrp, lr):
         if lrp not in lr.ports:
             raise BadRequestError(
-                'Port {port} is not connected to router {router}'
-                .format(port=port_id, router=router_id)
+                'Port {port} is not connected to router {router}'.format(
+                    port=port_id, router=router_id
+                )
             )
         self.ovn_north.remove_lrp(lrp.uuid)
         self.ovn_north.remove_lsp(port_id)
@@ -1471,8 +1523,9 @@ class NeutronApi(object):
                 )
                 if lsp_id == lr_gw_port:
                     self._remove_lr_gw_port(
-                        lr, network_id,
-                        ip_utils.get_ip_from_cidr(lrp.networks[0])
+                        lr,
+                        network_id,
+                        ip_utils.get_ip_from_cidr(lrp.networks[0]),
                     )
         subnet_gw_router_id = self._get_subnet_gateway_router_id(subnet)
         if subnet_gw_router_id == router_id:
@@ -1480,8 +1533,9 @@ class NeutronApi(object):
 
         if not deleted_lsp_id:
             raise BadRequestError(
-                'Subnet {subnet_id} is not connected to router {router_id}'
-                .format(subnet_id=subnet_id, router_id=router_id)
+                'Subnet {subnet_id} is not connected to router {router_id}'.format(  # noqa: E501
+                    subnet_id=subnet_id, router_id=router_id
+                )
             )
         return RouterInterface(
             id=router_id,
@@ -1492,19 +1546,19 @@ class NeutronApi(object):
 
     def _is_port_address_value_static(self, type):
         return (
-            type == ovnconst.LSP_TYPE_ROUTER or
-            type == ovnconst.LSP_TYPE_LOCALNET
+            type == ovnconst.LSP_TYPE_ROUTER
+            or type == ovnconst.LSP_TYPE_LOCALNET
         )
 
     def _get_port_security_from_network(self, network_id):
-        network = self.ovn_north.get_ls(
-            ls_id=network_id
-        )
+        network = self.ovn_north.get_ls(ls_id=network_id)
         return NetworkMapper._str2bool(
-            str(network.external_ids.get(
-                NetworkMapper.OVN_NETWORK_PORT_SECURITY,
-                default_port_security_enabled()
-            ))
+            str(
+                network.external_ids.get(
+                    NetworkMapper.OVN_NETWORK_PORT_SECURITY,
+                    default_port_security_enabled(),
+                )
+            )
         )
 
     @SecurityGroupMapper.map_to_rest
@@ -1520,7 +1574,7 @@ class NeutronApi(object):
             security_group_rules = self._process_acls(
                 default_group_id,
                 group_data,
-                self.ovn_north.list_security_group_rules(group_data)
+                self.ovn_north.list_security_group_rules(group_data),
             )
             security_groups.append(
                 SecurityGroup(group_data, security_group_rules)
@@ -1532,43 +1586,45 @@ class NeutronApi(object):
     @assure_security_groups_support
     def get_security_group(self, sec_group_id, default_group_id=None):
         security_group = self.ovn_north.get_security_group(sec_group_id)
-        all_rules = self.ovn_north.list_security_group_rules(
-            security_group
-        )
+        all_rules = self.ovn_north.list_security_group_rules(security_group)
         security_group_rules = self._process_acls(
             default_group_id, security_group, all_rules
         )
         return SecurityGroup(
-            sec_group=security_group,
-            sec_group_rules=security_group_rules
+            sec_group=security_group, sec_group_rules=security_group_rules
         )
 
     def _process_acls(self, default_group_id, security_group, acls):
         return [
             self._build_security_group_rule_wrapper(
                 default_group_id, acl, security_group
-            ) for acl in acls
+            )
+            for acl in acls
         ]
 
     def _build_security_group_rule_wrapper(
-            self, default_group_id, acl, security_group
+        self, default_group_id, acl, security_group
     ):
         remote_group_id = acl.external_ids.get(
             SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_REMOTE_GROUP_ID
         )
-        remote_group = self.ovn_north.get_security_group(
-            remote_group_id
-        ) if remote_group_id else None
+        remote_group = (
+            self.ovn_north.get_security_group(remote_group_id)
+            if remote_group_id
+            else None
+        )
         return SecurityGroupRule(
-            acl, security_group, remote_group=remote_group,
-            default_security_group=default_group_id
+            acl,
+            security_group,
+            remote_group=remote_group,
+            default_security_group=default_group_id,
         )
 
     @SecurityGroupMapper.validate_add
     @SecurityGroupMapper.map_from_rest
     @assure_security_groups_support
     def add_security_group(
-            self, name, project_id=None, tenant_id=None, description=None
+        self, name, project_id=None, tenant_id=None, description=None
     ):
         with self.tx_manager.transaction() as tx:
             group_data, egress_rules = self.ovn_north.add_security_group(
@@ -1604,7 +1660,7 @@ class NeutronApi(object):
                     [
                         rule_wrapper.rule
                         for rule_wrapper in sec_group.sec_group_rules
-                    ]
+                    ],
                 )
             )
         return security_group_rules
@@ -1613,7 +1669,7 @@ class NeutronApi(object):
     @wrap_default_group_id
     @assure_security_groups_support
     def get_security_group_rule(
-            self, security_group_rule_id, default_group_id=None
+        self, security_group_rule_id, default_group_id=None
     ):
         rule = self.ovn_north.get_security_group_rule(security_group_rule_id)
         sec_group_id = rule.external_ids[
@@ -1628,8 +1684,10 @@ class NeutronApi(object):
             remote_group = self.ovn_north.get_security_group(remote_group_id)
 
         return SecurityGroupRule(
-            rule, sec_group, remote_group=remote_group,
-            default_security_group=default_group_id
+            rule,
+            sec_group,
+            remote_group=remote_group,
+            default_security_group=default_group_id,
         )
 
     @SecurityGroupRuleMapper.validate_add
@@ -1637,18 +1695,31 @@ class NeutronApi(object):
     @SecurityGroupRuleMapper.map_to_rest
     @assure_security_groups_support
     def add_security_group_rule(
-            self, security_group_id, direction, description=None,
-            ether_type=None, port_min=None, port_max=None,
-            remote_ip_prefix=None, protocol=None, remote_group_id=None
+        self,
+        security_group_id,
+        direction,
+        description=None,
+        ether_type=None,
+        port_min=None,
+        port_max=None,
+        remote_ip_prefix=None,
+        protocol=None,
+        remote_group_id=None,
     ):
         sec_group = self.ovn_north.get_security_group(security_group_id)
-        sec_group_rule, remote_group = (
-            self.ovn_north.create_security_group_rule(
-                sec_group, direction, description=description,
-                ether_type=ether_type, remote_ip_prefix=remote_ip_prefix,
-                port_min=port_min, port_max=port_max, protocol=protocol,
-                remote_group_id=remote_group_id
-            )
+        (
+            sec_group_rule,
+            remote_group,
+        ) = self.ovn_north.create_security_group_rule(
+            sec_group,
+            direction,
+            description=description,
+            ether_type=ether_type,
+            remote_ip_prefix=remote_ip_prefix,
+            port_min=port_min,
+            port_max=port_max,
+            protocol=protocol,
+            remote_group_id=remote_group_id,
         )
         default_group_id = (
             sec_group.uuid
@@ -1656,8 +1727,10 @@ class NeutronApi(object):
             else None
         )
         return SecurityGroupRule(
-            sec_group_rule, sec_group, remote_group=remote_group,
-            default_security_group=default_group_id
+            sec_group_rule,
+            sec_group,
+            remote_group=remote_group,
+            default_security_group=default_group_id,
         )
 
     @assure_security_groups_support

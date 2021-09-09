@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,8 +58,11 @@ class SecurityGroupRule(object):
     default_group_id = None
 
     def __init__(
-            self, rule, security_group, remote_group=None,
-            default_security_group=None
+        self,
+        rule,
+        security_group,
+        remote_group=None,
+        default_security_group=None,
     ):
         self.__rule = rule
         self.__sec_group = security_group
@@ -81,10 +84,7 @@ class SecurityGroupRule(object):
     @staticmethod
     def _set_default_sec_group_id(default_security_group):
         # default security group remains unchanged once created
-        if (
-            default_security_group and not
-            SecurityGroupRule.default_group_id
-        ):
+        if default_security_group and not SecurityGroupRule.default_group_id:
             SecurityGroupRule.default_group_id = default_security_group
 
     @staticmethod
@@ -103,6 +103,7 @@ class Mapper(object):
         @wraps(f)
         def wrapper(wrapped_self, rest_data, entity_id=None):
             return cls.rest2row(wrapped_self, f, rest_data, entity_id)
+
         return wrapper
 
     @classmethod
@@ -118,8 +119,12 @@ class Mapper(object):
         @wraps(f)
         def wrapper(wrapped_self, rest_data, entity_id=None):
             validate_rest_input(rest_data)
-            return (f(wrapped_self, rest_data, entity_id) if entity_id
-                    else f(wrapped_self, rest_data))
+            return (
+                f(wrapped_self, rest_data, entity_id)
+                if entity_id
+                else f(wrapped_self, rest_data)
+            )
+
         return wrapper
 
     @classmethod
@@ -131,6 +136,7 @@ class Mapper(object):
                 return [cls.row2rest(row) for row in data]
             else:
                 return cls.row2rest(data)
+
         return wrapper
 
     @staticmethod
@@ -162,9 +168,9 @@ class Mapper(object):
     @staticmethod
     def _boolean_or_exception(attribute_name, boolean_value):
         if not isinstance(boolean_value, bool):
-            raise RestDataError('{attr} must be of type bool'.format(
-                attr=attribute_name
-            ))
+            raise RestDataError(
+                '{attr} must be of type bool'.format(attr=attribute_name)
+            )
 
     @staticmethod
     def _str2bool(boolean_string):
@@ -204,9 +210,11 @@ class NetworkMapper(Mapper):
     def rest2row(wrapped_self, func, rest_network_data, network_id):
         network_name = rest_network_data.get(NetworkMapper.REST_NETWORK_NAME)
         provider_physical_network = rest_network_data.get(
-            NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK)
+            NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK
+        )
         provider_segmentation_id = rest_network_data.get(
-            NetworkMapper.REST_PROVIDER_SEGMENTATION_ID)
+            NetworkMapper.REST_PROVIDER_SEGMENTATION_ID
+        )
         mtu = rest_network_data.get(NetworkMapper.REST_MTU)
         port_security = rest_network_data.get(
             NetworkMapper.REST_PORT_SECURITY_ENABLED
@@ -219,7 +227,7 @@ class NetworkMapper(Mapper):
                 localnet=provider_physical_network,
                 vlan=provider_segmentation_id,
                 mtu=mtu,
-                port_security_enabled=port_security
+                port_security_enabled=port_security,
             )
         return func(
             wrapped_self,
@@ -227,7 +235,7 @@ class NetworkMapper(Mapper):
             localnet=provider_physical_network,
             vlan=provider_segmentation_id,
             mtu=mtu,
-            port_security_enabled=port_security
+            port_security_enabled=port_security,
         )
 
     @staticmethod
@@ -235,19 +243,19 @@ class NetworkMapper(Mapper):
         if not network:
             return {}
         ls, localnet_lsp = network.ls, network.localnet_lsp
-        network_name = ls.external_ids.get(
-            NetworkMapper.OVN_NETWORK_NAME
-        )
+        network_name = ls.external_ids.get(NetworkMapper.OVN_NETWORK_NAME)
         result = {
             NetworkMapper.REST_NETWORK_ID: str(ls.uuid),
             NetworkMapper.REST_NETWORK_NAME: network_name or ls.name,
             NetworkMapper.REST_TENANT_ID: tenant_id(),
             NetworkMapper.REST_STATUS: NetworkMapper.NETWORK_STATUS_ACTIVE,
             NetworkMapper.REST_PORT_SECURITY_ENABLED: Mapper._str2bool(
-                str(ls.external_ids.get(
-                    NetworkMapper.OVN_NETWORK_PORT_SECURITY, False
-                ))
-            )
+                str(
+                    ls.external_ids.get(
+                        NetworkMapper.OVN_NETWORK_PORT_SECURITY, False
+                    )
+                )
+            ),
         }
         result[NetworkMapper.REST_MTU] = int(
             ls.external_ids.get(NetworkMapper.OVN_MTU, dhcp_mtu())
@@ -260,8 +268,9 @@ class NetworkMapper(Mapper):
         if not localnet_lsp:
             return {}
         result = {
-            NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK:
-                localnet_lsp.options.get(ovnconst.LSP_OPTION_NETWORK_NAME)
+            NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK: localnet_lsp.options.get(  # noqa: E501
+                ovnconst.LSP_OPTION_NETWORK_NAME
+            )
         }
         ovn_vlan = localnet_lsp.tag
         if ovn_vlan:
@@ -291,7 +300,7 @@ class NetworkMapper(Mapper):
             raise NetworkNameRequiredDataError()
         Mapper._boolean_or_exception(
             NetworkMapper.REST_PORT_SECURITY_ENABLED,
-            rest_data.get(NetworkMapper.REST_PORT_SECURITY_ENABLED, False)
+            rest_data.get(NetworkMapper.REST_PORT_SECURITY_ENABLED, False),
         )
         NetworkMapper._validate_rest_input_provider_network(rest_data)
         NetworkMapper._validate_rest_input_max_mtu(
@@ -305,33 +314,41 @@ class NetworkMapper(Mapper):
             if NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK in rest_data:
                 raise PhysicalNetworkProviderDataError(
                     'provider:physical_network cannot be used without a '
-                    'specified provider:network_type')
+                    'specified provider:network_type'
+                )
             elif NetworkMapper.REST_PROVIDER_SEGMENTATION_ID in rest_data:
                 raise PhysicalNetworkProviderDataError(
                     'provider:segmentation_id cannot be used without a '
-                    'specified provider:network_type')
+                    'specified provider:network_type'
+                )
         elif network_type == NetworkMapper.NETWORK_TYPE_FLAT:
             if NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK not in rest_data:
                 raise PhysicalNetworkProviderDataError(
                     'provider:physical_network is mandatory for network type '
-                    'flat')
+                    'flat'
+                )
             elif NetworkMapper.REST_PROVIDER_SEGMENTATION_ID in rest_data:
                 raise PhysicalNetworkProviderDataError(
                     'provider:segmentation_id can only be used with network '
-                    'type vlan')
+                    'type vlan'
+                )
         elif network_type == NetworkMapper.NETWORK_TYPE_VLAN:
             if NetworkMapper.REST_PROVIDER_SEGMENTATION_ID not in rest_data:
                 raise PhysicalNetworkProviderDataError(
                     'provider:segmentation_id is mandatory for network type '
-                    'vlan')
+                    'vlan'
+                )
             elif NetworkMapper.REST_PROVIDER_PHYSICAL_NETWORK not in rest_data:
                 raise PhysicalNetworkProviderDataError(
                     'provider:physical_network is mandatory for network type '
-                    'vlan')
+                    'vlan'
+                )
         else:
             raise PhysicalNetworkProviderDataError(
                 'provider:network_type [{}] is not supported'.format(
-                    network_type))
+                    network_type
+                )
+            )
 
     @staticmethod
     def _validate_rest_input_max_mtu(mtu):
@@ -394,7 +411,7 @@ class PortMapper(Mapper):
                 fixed_ips=fixed_ips,
                 binding_host=binding_host,
                 port_security=port_security,
-                security_groups=security_groups
+                security_groups=security_groups,
             )
         else:
             return func(
@@ -408,53 +425,53 @@ class PortMapper(Mapper):
                 fixed_ips=fixed_ips,
                 binding_host=binding_host,
                 port_security=port_security,
-                security_groups=security_groups
+                security_groups=security_groups,
             )
 
     @staticmethod
     def row2rest(row):
         """
-            Maps the db rows (lsp, ls) to a Json representation of a port.
-            The 'admin_state_up' property of the lsp is the product of
-            two values:
-            - lsp.up - managed internally by OVN, True only if
-            set explicitly to [True]
-            - lsp.enabled - set by the user, True if empty (None) or
-            set to [True]
+        Maps the db rows (lsp, ls) to a Json representation of a port.
+        The 'admin_state_up' property of the lsp is the product of
+        two values:
+        - lsp.up - managed internally by OVN, True only if
+        set explicitly to [True]
+        - lsp.enabled - set by the user, True if empty (None) or
+        set to [True]
         """
         if not row:
             return {}
         lsp, ls, dhcp_options, lrp = row
         rest_data = {
             PortMapper.REST_PORT_ID: lsp.name,
-            PortMapper.REST_PORT_NAME:
-                lsp.external_ids[PortMapper.OVN_NIC_NAME],
+            PortMapper.REST_PORT_NAME: lsp.external_ids[
+                PortMapper.OVN_NIC_NAME
+            ],
             PortMapper.REST_PORT_NETWORK_ID: str(ls.uuid),
-            PortMapper.REST_PORT_SECURITY_GROUPS:
-                PortMapper._map_sec_group_names(
-                    lsp.external_ids.get(
-                        PortMapper.OVN_SECURITY_GROUPS, ''
-                    ).split()
-                ),
-            PortMapper.REST_PORT_SECURITY_ENABLED:
-                PortMapper.is_port_security_enabled(lsp),
+            PortMapper.REST_PORT_SECURITY_GROUPS: PortMapper._map_sec_group_names(  # noqa: E501
+                lsp.external_ids.get(
+                    PortMapper.OVN_SECURITY_GROUPS, ''
+                ).split()
+            ),
+            PortMapper.REST_PORT_SECURITY_ENABLED: PortMapper.is_port_security_enabled(  # noqa: E501
+                lsp
+            ),
             PortMapper.REST_TENANT_ID: tenant_id(),
-            PortMapper.REST_PORT_FIXED_IPS:
-                PortMapper.get_fixed_ips(lsp, dhcp_options, lrp),
-            PortMapper.REST_PORT_ADMIN_STATE_UP:
-                bool(
-                    (lsp.up and lsp.up[0]) and
-                    (not lsp.enabled or lsp.enabled[0])
-                )
+            PortMapper.REST_PORT_FIXED_IPS: PortMapper.get_fixed_ips(
+                lsp, dhcp_options, lrp
+            ),
+            PortMapper.REST_PORT_ADMIN_STATE_UP: bool(
+                (lsp.up and lsp.up[0]) and (not lsp.enabled or lsp.enabled[0])
+            ),
         }
         if PortMapper.OVN_DEVICE_ID in lsp.external_ids:
-            rest_data[
-                PortMapper.REST_PORT_DEVICE_ID
-            ] = str(lsp.external_ids[PortMapper.OVN_DEVICE_ID])
+            rest_data[PortMapper.REST_PORT_DEVICE_ID] = str(
+                lsp.external_ids[PortMapper.OVN_DEVICE_ID]
+            )
         if PortMapper.OVN_DEVICE_OWNER in lsp.external_ids:
-            rest_data[
-                PortMapper.REST_PORT_DEVICE_OWNER
-            ] = lsp.external_ids[PortMapper.OVN_DEVICE_OWNER]
+            rest_data[PortMapper.REST_PORT_DEVICE_OWNER] = lsp.external_ids[
+                PortMapper.OVN_DEVICE_OWNER
+            ]
         if lsp.addresses:
             mac = lsp.addresses[0].split(' ')[0]
             rest_data[PortMapper.REST_PORT_MAC_ADDRESS] = mac
@@ -471,11 +488,14 @@ class PortMapper(Mapper):
     def get_fixed_ips(lsp, dhcp_options, lrp):
         ip_address = ip_utils.get_port_ip(lsp, lrp)
         if ip_address:
-            return [{
-                PortMapper.REST_PORT_IP_ADDRESS: ip_address,
-                PortMapper.REST_PORT_SUBNET_ID:
-                    str(dhcp_options.uuid) if dhcp_options else None,
-            }]
+            return [
+                {
+                    PortMapper.REST_PORT_IP_ADDRESS: ip_address,
+                    PortMapper.REST_PORT_SUBNET_ID: str(dhcp_options.uuid)
+                    if dhcp_options
+                    else None,
+                }
+            ]
 
         return []
 
@@ -492,20 +512,19 @@ class PortMapper(Mapper):
     @staticmethod
     def _map_sec_group_names(group_names):
         return [
-            SecurityGroupMapper._extract_security_group_id(
-                group_name
-            ) for group_name in group_names
+            SecurityGroupMapper._extract_security_group_id(group_name)
+            for group_name in group_names
         ]
 
     @staticmethod
     def _validate_common(rest_data):
         Mapper._boolean_or_exception(
             PortMapper.REST_PORT_ADMIN_STATE_UP,
-            rest_data.get(PortMapper.REST_PORT_ADMIN_STATE_UP, False)
+            rest_data.get(PortMapper.REST_PORT_ADMIN_STATE_UP, False),
         )
         Mapper._boolean_or_exception(
             PortMapper.REST_PORT_SECURITY_ENABLED,
-            rest_data.get(PortMapper.REST_PORT_SECURITY_ENABLED, False)
+            rest_data.get(PortMapper.REST_PORT_SECURITY_ENABLED, False),
         )
         rest_mac = rest_data.get(PortMapper.REST_PORT_MAC_ADDRESS)
         if rest_mac:
@@ -526,10 +545,11 @@ class PortMapper(Mapper):
                 )
             if len(fixed_ips) > 1:
                 raise RestDataError(
-                    'Specifying more then one {type} value is not allowed'
-                    .format(type=PortMapper.REST_PORT_FIXED_IPS)
+                    'Specifying more then one {type} value is not allowed'.format(  # noqa: E501
+                        type=PortMapper.REST_PORT_FIXED_IPS
+                    )
                 )
-            if (type(fixed_ips[0]) is not dict):
+            if type(fixed_ips[0]) is not dict:
                 raise RestDataError(
                     '{type} must be a dictionary containing {ip_addr} and '
                     '{subnet_id}'.format(
@@ -539,26 +559,23 @@ class PortMapper(Mapper):
                     )
                 )
             if (
-                PortMapper.REST_PORT_IP_ADDRESS not in fixed_ips[0] and
-                PortMapper.REST_PORT_SUBNET_ID not in fixed_ips[0]
-
+                PortMapper.REST_PORT_IP_ADDRESS not in fixed_ips[0]
+                and PortMapper.REST_PORT_SUBNET_ID not in fixed_ips[0]
             ):
                 raise RestDataError(
                     '{type} must contain at least the {ip_addr} or the '
                     '{subnet_id} element'.format(
                         type=PortMapper.REST_PORT_FIXED_IPS,
                         ip_addr=PortMapper.REST_PORT_IP_ADDRESS,
-                        subnet_id=PortMapper.REST_PORT_SUBNET_ID
+                        subnet_id=PortMapper.REST_PORT_SUBNET_ID,
                     )
                 )
             ip_addr = fixed_ips[0].get(PortMapper.REST_PORT_IP_ADDRESS)
             if (
-                    ip_addr is not None and
-                    ip_utils.get_ip_version(ip_addr) is None
+                ip_addr is not None
+                and ip_utils.get_ip_version(ip_addr) is None
             ):
-                raise RestDataError(
-                    'Invalid IP address: {}'.format(ip_addr)
-                )
+                raise RestDataError('Invalid IP address: {}'.format(ip_addr))
 
 
 class SubnetMapper(Mapper):
@@ -598,7 +615,7 @@ class SubnetMapper(Mapper):
 
     rest_ipv6_address_mode = {
         OVN_DHCPV6_STATEFUL: IPV6_ADDRESS_MODE_STATEFUL,
-        OVN_DHCPV6_STATELESS: IPV6_ADDRESS_MODE_STATELESS
+        OVN_DHCPV6_STATELESS: IPV6_ADDRESS_MODE_STATELESS,
     }
 
     ovn_ipv6_address_mode = {
@@ -609,15 +626,18 @@ class SubnetMapper(Mapper):
     ovn_ipv6_address_mode.update(
         {
             OVN_DHCPV6_STATEFUL: OVN_DHCPV6_STATEFUL,
-            OVN_DHCPV6_STATELESS: OVN_DHCPV6_STATELESS
+            OVN_DHCPV6_STATELESS: OVN_DHCPV6_STATELESS,
         }
     )
 
     ALLOWED_IPV6_ADDRESS_MODES = sorted(list(ovn_ipv6_address_mode.keys()))
 
     _optional_update_data = {
-        REST_SUBNET_NAME, REST_SUBNET_ENABLE_DHCP, REST_SUBNET_DNS_NAMESERVERS,
-        REST_SUBNET_ALLOCATION_POOLS, REST_SUBNET_GATEWAY_IP
+        REST_SUBNET_NAME,
+        REST_SUBNET_ENABLE_DHCP,
+        REST_SUBNET_DNS_NAMESERVERS,
+        REST_SUBNET_ALLOCATION_POOLS,
+        REST_SUBNET_GATEWAY_IP,
     }
 
     @staticmethod
@@ -632,7 +652,7 @@ class SubnetMapper(Mapper):
         ipv6_address_mode = SubnetMapper.ovn_ipv6_address_mode.get(
             rest_data.get(
                 SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE,
-                dhcp_ipv6_address_mode() if ip_version == 6 else None
+                dhcp_ipv6_address_mode() if ip_version == 6 else None,
             )
         )
 
@@ -653,7 +673,7 @@ class SubnetMapper(Mapper):
                 gateway=gateway,
                 dns=dns,
                 ip_version=ip_version,
-                ipv6_address_mode=ipv6_address_mode
+                ipv6_address_mode=ipv6_address_mode,
             )
 
     @staticmethod
@@ -666,10 +686,12 @@ class SubnetMapper(Mapper):
         result = {
             SubnetMapper.REST_SUBNET_ID: str(row.uuid),
             SubnetMapper.REST_SUBNET_CIDR: row.cidr,
-            SubnetMapper.REST_SUBNET_NETWORK_ID:
-                external_ids[SubnetMapper.OVN_NETWORK_ID],
-            SubnetMapper.REST_SUBNET_IP_VERSION:
-                ip_utils.get_subnet_ip_version(row),
+            SubnetMapper.REST_SUBNET_NETWORK_ID: external_ids[
+                SubnetMapper.OVN_NETWORK_ID
+            ],
+            SubnetMapper.REST_SUBNET_IP_VERSION: ip_utils.get_subnet_ip_version(  # noqa: E501
+                row
+            ),
             SubnetMapper.REST_TENANT_ID: tenant_id(),
             SubnetMapper.REST_SUBNET_ENABLE_DHCP: True,
             SubnetMapper.REST_SUBNET_ALLOCATION_POOLS: [
@@ -677,28 +699,28 @@ class SubnetMapper(Mapper):
             ],
             SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: [
                 options[SubnetMapper.OVN_DNS_SERVER]
-            ] if SubnetMapper.OVN_DNS_SERVER in options else []
+            ]
+            if SubnetMapper.OVN_DNS_SERVER in options
+            else [],
         }
         if SubnetMapper.OVN_NAME in external_ids:
-            result[SubnetMapper.REST_SUBNET_NAME] = (
-                external_ids[SubnetMapper.OVN_NAME]
-            )
+            result[SubnetMapper.REST_SUBNET_NAME] = external_ids[
+                SubnetMapper.OVN_NAME
+            ]
         if ipv4 and SubnetMapper.OVN_GATEWAY in options:
-            result[SubnetMapper.REST_SUBNET_GATEWAY_IP] = (
-                options[SubnetMapper.OVN_GATEWAY]
-            )
+            result[SubnetMapper.REST_SUBNET_GATEWAY_IP] = options[
+                SubnetMapper.OVN_GATEWAY
+            ]
         elif not ipv4 and SubnetMapper.OVN_GATEWAY in external_ids:
-            result[SubnetMapper.REST_SUBNET_GATEWAY_IP] = (
-                external_ids[SubnetMapper.OVN_GATEWAY]
-            )
+            result[SubnetMapper.REST_SUBNET_GATEWAY_IP] = external_ids[
+                SubnetMapper.OVN_GATEWAY
+            ]
         if SubnetMapper.OVN_IPV6_ADDRESS_MODE in external_ids:
-            result[SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE] = (
-                SubnetMapper.rest_ipv6_address_mode[
-                    external_ids[
-                        SubnetMapper.OVN_IPV6_ADDRESS_MODE
-                    ]
-                ]
-            )
+            result[
+                SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE
+            ] = SubnetMapper.rest_ipv6_address_mode[
+                external_ids[SubnetMapper.OVN_IPV6_ADDRESS_MODE]
+            ]
 
         return result
 
@@ -707,10 +729,12 @@ class SubnetMapper(Mapper):
         ip_network = IPNetwork(cidr)
         if ip_network.size > 2:
             return {
-                SubnetMapper.REST_SUBNET_ALLOCATION_POOLS_START:
-                    str(ip_network[2]),
-                SubnetMapper.REST_SUBNET_ALLOCATION_POOLS_STOP:
-                    str(ip_network[-1])
+                SubnetMapper.REST_SUBNET_ALLOCATION_POOLS_START: str(
+                    ip_network[2]
+                ),
+                SubnetMapper.REST_SUBNET_ALLOCATION_POOLS_STOP: str(
+                    ip_network[-1]
+                ),
             }
 
     @staticmethod
@@ -720,8 +744,8 @@ class SubnetMapper(Mapper):
             raise BadRequestError('Missing \'ip_version\' attribute')
         ip_version = rest_data[SubnetMapper.REST_SUBNET_IP_VERSION]
         if (
-                ip_version != SubnetMapper.IP_VERSION_6 and
-                SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE in rest_data
+            ip_version != SubnetMapper.IP_VERSION_6
+            and SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE in rest_data
         ):
             raise BadRequestError(
                 'The \'{}\' parameter can only be used when \'ip_version\' '
@@ -729,13 +753,18 @@ class SubnetMapper(Mapper):
             )
         cidr = rest_data.get(SubnetMapper.REST_SUBNET_CIDR)
         SubnetMapper._validate_ip_version_consistency(
-            ip_version, cidr=cidr,
-            gateway=rest_data.get(SubnetMapper.REST_SUBNET_GATEWAY_IP)
+            ip_version,
+            cidr=cidr,
+            gateway=rest_data.get(SubnetMapper.REST_SUBNET_GATEWAY_IP),
         )
-        if ip_version == SubnetMapper.IP_VERSION_6 and rest_data.get(
+        if (
+            ip_version == SubnetMapper.IP_VERSION_6
+            and rest_data.get(
                 SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE,
-                dhcp_ipv6_address_mode()
-        ) != SubnetMapper.IPV6_ADDRESS_MODE_STATEFUL:
+                dhcp_ipv6_address_mode(),
+            )
+            != SubnetMapper.IPV6_ADDRESS_MODE_STATEFUL
+        ):
             SubnetMapper._validate_stateless_address_mode(cidr)
 
     @classmethod
@@ -751,12 +780,12 @@ class SubnetMapper(Mapper):
             raise BadRequestError('\'ip_version\' must be either 4 or 6')
         cidr_ip_version = IPNetwork(cidr).version
         gateway_ip_version = IPNetwork(gateway).version if gateway else None
-        if len(
-                {
-                    ip_version, cidr_ip_version,
-                    gateway_ip_version or ip_version
-                }
-        ) is not 1:
+        if (
+            len(
+                {ip_version, cidr_ip_version, gateway_ip_version or ip_version}
+            )
+            is not 1
+        ):
             raise BadRequestError(
                 'The provided ip_version [{ip}] does not match the supplied '
                 'cidr={cidr} or gateway={gateway}'.format(
@@ -775,19 +804,22 @@ class SubnetMapper(Mapper):
 
     @staticmethod
     def _validate_common(rest_data):
-        if (SubnetMapper.REST_SUBNET_ENABLE_DHCP in rest_data and
-           not rest_data[SubnetMapper.REST_SUBNET_ENABLE_DHCP]):
+        if (
+            SubnetMapper.REST_SUBNET_ENABLE_DHCP in rest_data
+            and not rest_data[SubnetMapper.REST_SUBNET_ENABLE_DHCP]
+        ):
             raise UnsupportedDataValueError(
-                SubnetMapper.REST_SUBNET_ENABLE_DHCP,
-                False
+                SubnetMapper.REST_SUBNET_ENABLE_DHCP, False
             )
-        if (SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE in rest_data and
-                rest_data.get(SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE)
-                not in SubnetMapper.ALLOWED_IPV6_ADDRESS_MODES):
+        if (
+            SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE in rest_data
+            and rest_data.get(SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE)
+            not in SubnetMapper.ALLOWED_IPV6_ADDRESS_MODES
+        ):
             raise UnsupportedDataValueError(
                 SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE,
                 rest_data.get(SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE),
-                SubnetMapper.ALLOWED_IPV6_ADDRESS_MODES
+                SubnetMapper.ALLOWED_IPV6_ADDRESS_MODES,
             )
 
 
@@ -827,27 +859,35 @@ class RouterMapper(Mapper):
 
         if router_id:
             return func(
-                wrapped_self, router_id=router_id, name=name, enabled=enabled,
-                network_id=network, gateway_subnet=subnet,
-                gateway_ip=ip, routes=routes
+                wrapped_self,
+                router_id=router_id,
+                name=name,
+                enabled=enabled,
+                network_id=network,
+                gateway_subnet=subnet,
+                gateway_ip=ip,
+                routes=routes,
             )
         else:
             return func(
-                wrapped_self, name=name, enabled=enabled,
-                network_id=network, gateway_subnet=subnet,
-                gateway_ip=ip, routes=routes
+                wrapped_self,
+                name=name,
+                enabled=enabled,
+                network_id=network,
+                gateway_subnet=subnet,
+                gateway_ip=ip,
+                routes=routes,
             )
 
     @staticmethod
     def _get_external_gateway_from_rest(rest_data):
         gateway_info = rest_data.get(
-            RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO, {})
+            RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO, {}
+        )
         if not gateway_info:
             return None, None, None
         network_id = gateway_info.get(RouterMapper.REST_ROUTER_NETWORK_ID)
-        fixed_ips = gateway_info.get(
-            RouterMapper.REST_ROUTER_FIXED_IPS
-        )
+        fixed_ips = gateway_info.get(RouterMapper.REST_ROUTER_FIXED_IPS)
         fixed_ip = fixed_ips[0]
         gateway_subnet = fixed_ip.get(RouterMapper.REST_ROUTER_SUBNET_ID)
         gateway_ip = fixed_ip.get(RouterMapper.REST_ROUTER_IP_ADDRESS)
@@ -861,16 +901,19 @@ class RouterMapper(Mapper):
         result = {
             RouterMapper.REST_ROUTER_ID: str(row.uuid),
             RouterMapper.REST_ROUTER_NAME: row.name,
-            RouterMapper.REST_ROUTER_ADMIN_STATE_UP:
-                row.enabled[0] if row.enabled else True,
-            RouterMapper.REST_ROUTER_STATUS:
-                RouterMapper.ROUTER_STATUS_ACTIVE
-                if row.enabled else RouterMapper.ROUTER_STATUS_INACTIVE,
+            RouterMapper.REST_ROUTER_ADMIN_STATE_UP: row.enabled[0]
+            if row.enabled
+            else True,
+            RouterMapper.REST_ROUTER_STATUS: RouterMapper.ROUTER_STATUS_ACTIVE
+            if row.enabled
+            else RouterMapper.ROUTER_STATUS_INACTIVE,
             RouterMapper.REST_TENANT_ID: tenant_id(),
-            RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO:
-                RouterMapper._get_external_gateway_from_row(router),
-            RouterMapper.REST_ROUTER_ROUTES:
-                RouterMapper._get_routes_from_row(row.static_routes),
+            RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO: RouterMapper._get_external_gateway_from_row(  # noqa: E501
+                router
+            ),
+            RouterMapper.REST_ROUTER_ROUTES: RouterMapper._get_routes_from_row(
+                row.static_routes
+            ),
         }
 
         return result
@@ -879,10 +922,8 @@ class RouterMapper(Mapper):
     def _get_routes_from_row(routes):
         return [
             {
-                RouterMapper.REST_ROUTER_DESTINATION:
-                    route.ip_prefix,
-                RouterMapper.REST_ROUTER_NEXTHOP:
-                    route.nexthop
+                RouterMapper.REST_ROUTER_DESTINATION: route.ip_prefix,
+                RouterMapper.REST_ROUTER_NEXTHOP: route.nexthop,
             }
             for route in routes
         ]
@@ -896,11 +937,10 @@ class RouterMapper(Mapper):
             RouterMapper.REST_ROUTER_ENABLE_SNAT: False,
             RouterMapper.REST_ROUTER_FIXED_IPS: [
                 {
-                    RouterMapper.REST_ROUTER_SUBNET_ID:
-                        router.ext_gw_dhcp_options_id,
-                    RouterMapper.REST_ROUTER_IP_ADDRESS: router.gw_ip
+                    RouterMapper.REST_ROUTER_SUBNET_ID: router.ext_gw_dhcp_options_id,  # noqa: E501
+                    RouterMapper.REST_ROUTER_IP_ADDRESS: router.gw_ip,
                 }
-            ]
+            ],
         }
 
     @staticmethod
@@ -914,7 +954,8 @@ class RouterMapper(Mapper):
     @staticmethod
     def _validate_external_gateway_info(rest_data):
         gateway_info = rest_data.get(
-            RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO, {})
+            RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO, {}
+        )
         if gateway_info:
             message = '{key} missing in the external gateway information.'
             if RouterMapper.REST_ROUTER_NETWORK_ID not in gateway_info:
@@ -925,13 +966,11 @@ class RouterMapper(Mapper):
                 raise RestDataError(
                     message.format(key=RouterMapper.REST_ROUTER_FIXED_IPS)
                 )
-            fixed_ips = gateway_info.get(
-                RouterMapper.REST_ROUTER_FIXED_IPS
-            )
+            fixed_ips = gateway_info.get(RouterMapper.REST_ROUTER_FIXED_IPS)
             if not fixed_ips or len(fixed_ips) > 1:
                 raise RestDataError(
-                   '{key} must have exactly one element'.format(
-                       key=RouterMapper.REST_ROUTER_FIXED_IPS
+                    '{key} must have exactly one element'.format(
+                        key=RouterMapper.REST_ROUTER_FIXED_IPS
                     )
                 )
             if RouterMapper.REST_ROUTER_SUBNET_ID not in fixed_ips[0]:
@@ -943,8 +982,7 @@ class RouterMapper(Mapper):
                     message.format(key=RouterMapper.REST_ROUTER_IP_ADDRESS)
                 )
             enable_snat = gateway_info.get(
-                RouterMapper.REST_ROUTER_ENABLE_SNAT,
-                True
+                RouterMapper.REST_ROUTER_ENABLE_SNAT, True
             )
             if enable_snat:
                 raise NotImplementedError(
@@ -956,16 +994,17 @@ class RouterMapper(Mapper):
         if routes:
             for route in routes:
                 has_required_fields = (
-                    type(route) is dict and
-                    route.get(RouterMapper.REST_ROUTER_NEXTHOP) is not None and
-                    route.get(RouterMapper.REST_ROUTER_DESTINATION) is not None
+                    type(route) is dict
+                    and route.get(RouterMapper.REST_ROUTER_NEXTHOP) is not None
+                    and route.get(RouterMapper.REST_ROUTER_DESTINATION)
+                    is not None
                 )
                 if not has_required_fields:
                     raise RestDataError(
                         'Static route must have {destination} and {nexthop} '
                         'specified.'.format(
                             destination=RouterMapper.REST_ROUTER_DESTINATION,
-                            nexthop=RouterMapper.REST_ROUTER_NEXTHOP
+                            nexthop=RouterMapper.REST_ROUTER_NEXTHOP,
                         )
                     )
 
@@ -996,11 +1035,9 @@ class BaseRouterInterfaceMapper(Mapper):
 
         return {
             AddRouterInterfaceMapper.REST_ROUTERINTERFACE_ID: row.id,
-            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_NETWORK_ID:
-                row.ls_id,
+            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_NETWORK_ID: row.ls_id,  # noqa: E501
             AddRouterInterfaceMapper.REST_ROUTERINTERFACE_PORT_ID: row.lsp_id,
-            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_ID:
-                row.dhcp_options_id,
+            AddRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_ID: row.dhcp_options_id,  # noqa: E501
             AddRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_IDS: [
                 row.dhcp_options_id
             ],
@@ -1023,10 +1060,9 @@ class BaseRouterInterfaceMapper(Mapper):
         )
         if not subnet and not port:
             raise RestDataError(
-                'Either {} or {} must be specified.'
-                .format(
+                'Either {} or {} must be specified.'.format(
                     BaseRouterInterfaceMapper.REST_ROUTERINTERFACE_SUBNET_ID,
-                    BaseRouterInterfaceMapper.REST_ROUTERINTERFACE_PORT_ID
+                    BaseRouterInterfaceMapper.REST_ROUTERINTERFACE_PORT_ID,
                 )
             )
         return subnet, port
@@ -1060,8 +1096,8 @@ class MandatoryDataMissing(RestDataError):
 
     def __str__(self):
         return self.message.format(
-                attributes=', '.join(self._missing_elements)
-            )
+            attributes=', '.join(self._missing_elements)
+        )
 
 
 class InvalidRestData(RestDataError):
@@ -1072,8 +1108,8 @@ class InvalidRestData(RestDataError):
 
     def __str__(self):
         return self.message.format(
-                attributes=', '.join(self._invalid_elements)
-            )
+            attributes=', '.join(self._invalid_elements)
+        )
 
 
 class NetworkNameRequiredDataError(RestDataError):
@@ -1127,9 +1163,10 @@ class UnsupportedDataValueError(RestDataError):
 
     def __str__(self):
         return (
-            self.message.format(key=self._key, value=self._value) +
-            self.extra_msg.format(allowed_values=self._supported_values)
-            if self._supported_values else ""
+            self.message.format(key=self._key, value=self._value)
+            + self.extra_msg.format(allowed_values=self._supported_values)
+            if self._supported_values
+            else ""
         )
 
 
@@ -1173,7 +1210,9 @@ class SecurityGroupMapper(Mapper):
 
     _mandatory_add_data = {REST_SEC_GROUP_NAME}
     _optional_add_data = {
-        REST_SEC_GROUP_DESC, Mapper.REST_TENANT_ID, Mapper.REST_PROJECT_ID
+        REST_SEC_GROUP_DESC,
+        Mapper.REST_TENANT_ID,
+        Mapper.REST_PROJECT_ID,
     }
     _mandatory_update_data = set()
     _optional_update_data = {REST_SEC_GROUP_NAME, REST_SEC_GROUP_DESC}
@@ -1182,14 +1221,12 @@ class SecurityGroupMapper(Mapper):
         REST_SEC_GROUP_UPDATED_AT: OVN_SECURITY_GROUP_UPDATE_TS,
         Mapper.REST_PROJECT_ID: OVN_SECURITY_GROUP_PROJECT,
         Mapper.REST_TENANT_ID: OVN_SECURITY_GROUP_TENANT,
-        REST_SEC_GROUP_DESC: OVN_SECURITY_GROUP_DESCRIPTION
+        REST_SEC_GROUP_DESC: OVN_SECURITY_GROUP_DESCRIPTION,
     }
 
     DEFAULT_PG_NAME = 'Default'
     DROP_ALL_IP_PG_NAME = 'DropAll'
-    WHITE_LIST_GROUP_NAMES = [
-        DEFAULT_PG_NAME, DROP_ALL_IP_PG_NAME
-    ]
+    WHITE_LIST_GROUP_NAMES = [DEFAULT_PG_NAME, DROP_ALL_IP_PG_NAME]
 
     @staticmethod
     def row2rest(security_group):
@@ -1198,30 +1235,27 @@ class SecurityGroupMapper(Mapper):
 
         group_data = security_group.sec_group
         result = {
-            SecurityGroupMapper.REST_SEC_GROUP_ID:
-                str(group_data.uuid),
-            SecurityGroupMapper.REST_SEC_GROUP_RULES:
-                [
-                    SecurityGroupRuleMapper.row2rest(rule)
-                    for rule in security_group.sec_group_rules
-                ],
+            SecurityGroupMapper.REST_SEC_GROUP_ID: str(group_data.uuid),
+            SecurityGroupMapper.REST_SEC_GROUP_RULES: [
+                SecurityGroupRuleMapper.row2rest(rule)
+                for rule in security_group.sec_group_rules
+            ],
             SecurityGroupMapper.REST_SEC_GROUP_TAGS: [],
-            SecurityGroupMapper.REST_SEC_GROUP_REVISION_NR:
-                int(
-                    group_data.external_ids[
-                        SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER
-                    ]
-                )
+            SecurityGroupMapper.REST_SEC_GROUP_REVISION_NR: int(
+                group_data.external_ids[
+                    SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER
+                ]
+            ),
         }
         rest_optional_values = SecurityGroupMapper.set_from_external_ids(
             group_data.external_ids,
-            SecurityGroupMapper.optional_attr_ext_id_mapper
+            SecurityGroupMapper.optional_attr_ext_id_mapper,
         )
         result.update(rest_optional_values)
-        result[SecurityGroupMapper.REST_SEC_GROUP_NAME] = (
-            group_data.external_ids.get(
-                SecurityGroupMapper.OVN_SECURITY_GROUP_NAME
-            )
+        result[
+            SecurityGroupMapper.REST_SEC_GROUP_NAME
+        ] = group_data.external_ids.get(
+            SecurityGroupMapper.OVN_SECURITY_GROUP_NAME
         )
 
         return result
@@ -1243,21 +1277,17 @@ class SecurityGroupMapper(Mapper):
                 rest_sec_group_data[SecurityGroupMapper.REST_SEC_GROUP_NAME],
                 rest_sec_group_data.get(
                     SecurityGroupMapper.REST_SEC_GROUP_DESC
-                )
+                ),
             )
         else:
             return func(
                 wrapped_self,
                 rest_sec_group_data[SecurityGroupMapper.REST_SEC_GROUP_NAME],
-                rest_sec_group_data.get(
-                    SecurityGroupMapper.REST_PROJECT_ID
-                ),
-                rest_sec_group_data.get(
-                    SecurityGroupMapper.REST_TENANT_ID
-                ),
+                rest_sec_group_data.get(SecurityGroupMapper.REST_PROJECT_ID),
+                rest_sec_group_data.get(SecurityGroupMapper.REST_TENANT_ID),
                 rest_sec_group_data.get(
                     SecurityGroupMapper.REST_SEC_GROUP_DESC
-                )
+                ),
             )
 
     @classmethod
@@ -1265,7 +1295,7 @@ class SecurityGroupMapper(Mapper):
         cls.validate_keys(
             set(rest_data.keys()),
             cls._mandatory_add_data,
-            cls._optional_add_data
+            cls._optional_add_data,
         )
 
     @classmethod
@@ -1273,7 +1303,7 @@ class SecurityGroupMapper(Mapper):
         cls.validate_keys(
             set(rest_data.keys()),
             cls._mandatory_update_data,
-            cls._optional_update_data
+            cls._optional_update_data,
         )
 
 
@@ -1299,13 +1329,17 @@ class SecurityGroupRuleMapper(Mapper):
     OVN_SEC_GROUP_RULE_REMOTE_GROUP_ID = 'ovirt_remote_group_id'
 
     _mandatory_add_data = {
-        REST_SEC_GROUP_RULE_DIRECTION, REST_SEC_GROUP_RULE_SEC_GROUP_ID
+        REST_SEC_GROUP_RULE_DIRECTION,
+        REST_SEC_GROUP_RULE_SEC_GROUP_ID,
     }
     _optional_add_data = {
-        REST_SEC_GROUP_RULE_PROTOCOL, REST_SEC_GROUP_RULE_ETHERTYPE,
-        REST_SEC_GROUP_RULE_PORT_RANGE_MAX, REST_SEC_GROUP_RULE_PORT_RANGE_MIN,
-        REST_SEC_GROUP_RULE_IP_PREFIX, REST_SEC_GROUP_RULE_DESCRIPTION,
-        REST_SEC_GROUP_RULE_REMOTE_GROUP
+        REST_SEC_GROUP_RULE_PROTOCOL,
+        REST_SEC_GROUP_RULE_ETHERTYPE,
+        REST_SEC_GROUP_RULE_PORT_RANGE_MAX,
+        REST_SEC_GROUP_RULE_PORT_RANGE_MIN,
+        REST_SEC_GROUP_RULE_IP_PREFIX,
+        REST_SEC_GROUP_RULE_DESCRIPTION,
+        REST_SEC_GROUP_RULE_REMOTE_GROUP,
     }
     optional_attr_ext_id_mapper = {
         REST_SEC_GROUP_RULE_DESCRIPTION: OVN_SEC_GROUP_RULE_DESCRIPTION,
@@ -1314,7 +1348,7 @@ class SecurityGroupRuleMapper(Mapper):
         REST_SEC_GROUP_RULE_PORT_RANGE_MAX: OVN_SEC_GROUP_RULE_MAX_PORT,
         REST_SEC_GROUP_RULE_PORT_RANGE_MIN: OVN_SEC_GROUP_RULE_MIN_PORT,
         REST_SEC_GROUP_RULE_PROTOCOL: OVN_SEC_GROUP_RULE_PROTOCOL,
-        REST_SEC_GROUP_RULE_REMOTE_GROUP: OVN_SEC_GROUP_RULE_REMOTE_GROUP_ID
+        REST_SEC_GROUP_RULE_REMOTE_GROUP: OVN_SEC_GROUP_RULE_REMOTE_GROUP_ID,
     }
 
     @staticmethod
@@ -1332,18 +1366,17 @@ class SecurityGroupRuleMapper(Mapper):
         )
         sec_group_id = str(security_group.uuid)
         result = {
-            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ID:
-                str(rule.uuid),
-            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_DIRECTION:
-                neutron_constants.OVN_TO_API_DIRECTION_MAPPER[rule.direction],
-            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_SEC_GROUP_ID:
-                sec_group_id
-                if sec_group_id != SecurityGroupMapper.DEFAULT_PG_NAME
-                else default_group_id
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ID: str(rule.uuid),
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_DIRECTION: neutron_constants.OVN_TO_API_DIRECTION_MAPPER[  # noqa: E501
+                rule.direction
+            ],
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_SEC_GROUP_ID: sec_group_id  # noqa: E501
+            if sec_group_id != SecurityGroupMapper.DEFAULT_PG_NAME
+            else default_group_id,
         }
         optional_rest_values = SecurityGroupRuleMapper.set_from_external_ids(
             rule.external_ids,
-            SecurityGroupRuleMapper.optional_attr_ext_id_mapper
+            SecurityGroupRuleMapper.optional_attr_ext_id_mapper,
         )
         if remote_group:
             optional_rest_values[
@@ -1358,15 +1391,12 @@ class SecurityGroupRuleMapper(Mapper):
         cls.validate_keys(
             set(rest_data.keys()),
             cls._mandatory_add_data,
-            cls._optional_add_data
+            cls._optional_add_data,
         )
-        if (
-                rest_data.get(
-                    SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_IP_PREFIX
-                ) and
-                rest_data.get(
-                    SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_REMOTE_GROUP
-                )
+        if rest_data.get(
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_IP_PREFIX
+        ) and rest_data.get(
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_REMOTE_GROUP
         ):
             raise BadRequestError(
                 'Only remote_ip_prefix or remote_group_id may be provided.'
@@ -1381,11 +1411,11 @@ class SecurityGroupRuleMapper(Mapper):
                 raise BadRequestError(afe)
 
             ether_type = rest_data.get(
-                    SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ETHERTYPE
+                SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ETHERTYPE
             )
 
             if ether_type != 'IPv{version}'.format(
-                    version=addr_or_prefix.version
+                version=addr_or_prefix.version
             ):
                 raise BadRequestError(
                     'Conflicting value ethertype '
@@ -1407,7 +1437,7 @@ class SecurityGroupRuleMapper(Mapper):
         )
         ether_type = rest_data.get(
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_ETHERTYPE,
-            neutron_constants.IPV4_ETHERTYPE
+            neutron_constants.IPV4_ETHERTYPE,
         )
         rest_port_max = rest_data.get(
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_PORT_RANGE_MAX
@@ -1427,7 +1457,14 @@ class SecurityGroupRuleMapper(Mapper):
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_REMOTE_GROUP
         )
         return func(
-            wrapped_self, security_group_id, direction, description,
-            ether_type, port_min, port_max, ip_prefix, protocol,
-            remote_group_name
+            wrapped_self,
+            security_group_id,
+            direction,
+            description,
+            ether_type,
+            port_min,
+            port_max,
+            ip_prefix,
+            protocol,
+            remote_group_name,
         )

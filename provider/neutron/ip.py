@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@ def _get_all_macs(ports, get_macs):
 def random_unique_mac(ls_ports, router_ports):
     all_macs = set().union(
         _get_all_macs(ls_ports, lambda p: get_port_mac(p)),
-        _get_all_macs(router_ports, lambda p: p['mac'])
+        _get_all_macs(router_ports, lambda p: p['mac']),
     )
 
     for _ in range(99):
@@ -71,14 +71,12 @@ def random_unique_mac(ls_ports, router_ports):
         if mac not in all_macs:
             return mac
 
-    raise Exception(
-        'Unable to allocate an unused mac after 100 retries'
-    )
+    raise Exception('Unable to allocate an unused mac after 100 retries')
 
 
 def _random_mac():
     macparts = [2]
-    macparts.extend([random.randint(0x00, 0xff) for i in range(5)])
+    macparts.extend([random.randint(0x00, 0xFF) for i in range(5)])
     return ':'.join(map(lambda x: "%02x" % x, macparts))
 
 
@@ -132,10 +130,7 @@ def get_network_exclude_ips(network):
 
 
 def is_ip_available_in_network(network, ip):
-    if any(
-        ip == get_port_ip(port)
-        for port in network.ports
-    ):
+    if any(ip == get_port_ip(port) for port in network.ports):
         return False
     exclude_ips = get_network_exclude_ips(network)
     return ip not in exclude_ips
@@ -146,9 +141,9 @@ def diff_routes(new_rest_routes, db_routes):
         new_rest_routes = []
     if db_routes is None:
         db_routes = []
-    new_set = set([
-        ':'.join((d['destination'], d['nexthop'])) for d in new_rest_routes
-    ])
+    new_set = set(
+        [':'.join((d['destination'], d['nexthop'])) for d in new_rest_routes]
+    )
     old_set = set([':'.join((d.ip_prefix, d.nexthop)) for d in db_routes])
     added = new_set - old_set
     removed = old_set - new_set
@@ -181,12 +176,7 @@ def get_ip_version(ip_address):
 
 
 def get_subnet_ip_version(subnet):
-    return int(
-        subnet.external_ids.get(
-            'ip_version',
-            4
-        )
-    )
+    return int(subnet.external_ids.get('ip_version', 4))
 
 
 def is_subnet_ipv4(subnet):
@@ -199,6 +189,7 @@ def is_subnet_ipv6(subnet):
 
 def get_subnet_gateway(subnet):
     return (
-        subnet.options.get('router') if is_subnet_ipv4(subnet)
+        subnet.options.get('router')
+        if is_subnet_ipv4(subnet)
         else subnet.external_ids.get('router')
     )
