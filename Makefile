@@ -127,7 +127,11 @@ rpm: dist
 	cp $(DIST_FILE) $(RPM_SOURCE_DIR)
 	rpmbuild -ta $(DIST_FILE)
 
-check: flake8
+check: flake8 black
+
+black:
+	tox -e black
+	@echo 'Black test passed.'
 
 flake8:
 	tox -e flake8
