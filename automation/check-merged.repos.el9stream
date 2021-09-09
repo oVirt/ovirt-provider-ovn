@@ -1,0 +1,8 @@
+# Provides python3-requests-mock
+el9collection,https://copr-be.cloud.fedoraproject.org/results/sbonazzo/EL9Collection/centos-stream-9-$basearch/
+# Provides python3-ovsdbapp
+ovirt-master-centos-ovirt45-el9s,https://buildlogs.centos.org/centos/9-stream/virt/$basearch/ovirt-45/
+# Provides vdsm
+ovirt-master-tested,https://resources.ovirt.org/repos/ovirt/tested/master/rpm/el9
+# Provides openvswitch
+nfv-master-centos-el9s,https://buildlogs.centos.org/centos/9-stream/nfv/$basearch/openvswitch-2/
