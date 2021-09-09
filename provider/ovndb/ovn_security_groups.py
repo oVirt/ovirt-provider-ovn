@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ def build_add_acl_command(f):
             wrapped_self.create_add_acl_command(port_group.name, acl_data)
             for acl_data in f(wrapped_self, port_group)
         ]
+
     return build_command_from_dict
 
 
@@ -51,19 +52,19 @@ class SecurityGroupException(AttributeError):
 
 
 class OvnSecurityGroupApi(object):
-
     def __init__(self, idl):
         self._idl = idl
 
     def create_security_group(
-            self, name, project_id=None, tenant_id=None, description=None):
+        self, name, project_id=None, tenant_id=None, description=None
+    ):
         now = datetime.utcnow().isoformat()
         pg_name = self._generate_name_when_required(name)
         external_ids = {
             SecurityGroupMapper.OVN_SECURITY_GROUP_CREATE_TS: now,
             SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS: now,
             SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: '1',
-            SecurityGroupMapper.OVN_SECURITY_GROUP_NAME: name
+            SecurityGroupMapper.OVN_SECURITY_GROUP_NAME: name,
         }
         if description:
             external_ids[
@@ -99,27 +100,30 @@ class OvnSecurityGroupApi(object):
         external_ids = sec_group.external_ids
 
         external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS] = now
-        external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER] = (
-            self.get_bumped_revision_number(sec_group)
-        )
+        external_ids[
+            SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER
+        ] = self.get_bumped_revision_number(sec_group)
         external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_NAME] = name
         if description:
             external_ids[
                 SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION
             ] = description
 
-        return DbSetCommand(
-            self._idl, ovnconst.TABLE_PORT_GROUP, sec_group_id
-        ).add(
-            ovnconst.ROW_PG_EXTERNAL_IDS,
-            external_ids
-        ).build_command()
+        return (
+            DbSetCommand(self._idl, ovnconst.TABLE_PORT_GROUP, sec_group_id)
+            .add(ovnconst.ROW_PG_EXTERNAL_IDS, external_ids)
+            .build_command()
+        )
 
     @staticmethod
     def _generate_name_when_required(name):
-        return u'ovirt_{gen_id}'.format(
-            gen_id=str(uuid.uuid4()).replace('-', '_')
-        ) if name not in SecurityGroupMapper.WHITE_LIST_GROUP_NAMES else name
+        return (
+            u'ovirt_{gen_id}'.format(
+                gen_id=str(uuid.uuid4()).replace('-', '_')
+            )
+            if name not in SecurityGroupMapper.WHITE_LIST_GROUP_NAMES
+            else name
+        )
 
     @staticmethod
     def get_bumped_revision_number(security_group):
@@ -131,28 +135,45 @@ class OvnSecurityGroupApi(object):
         return str(current_revision + 1)
 
     def create_security_group_rule(
-            self, security_group, direction, description=None,
-            ether_type=None, ip_prefix=None, port_min=None, port_max=None,
-            protocol=None, remote_group=None
+        self,
+        security_group,
+        direction,
+        description=None,
+        ether_type=None,
+        ip_prefix=None,
+        port_min=None,
+        port_max=None,
+        protocol=None,
+        remote_group=None,
     ):
         acl = acl_lib.create_acl(
-            security_group, direction=direction, ether_type=ether_type,
-            ip_prefix=ip_prefix, port_min=port_min, port_max=port_max,
-            protocol=protocol,  description=description,
-            remote_group=remote_group
+            security_group,
+            direction=direction,
+            ether_type=ether_type,
+            ip_prefix=ip_prefix,
+            port_min=port_min,
+            port_max=port_max,
+            protocol=protocol,
+            description=description,
+            remote_group=remote_group,
         )
 
         return self.create_add_acl_command(security_group.uuid, acl)
 
     def delete_security_group_rule(
-            self, port_group, direction, priority, match
+        self, port_group, direction, priority, match
     ):
         return self._idl.pg_acl_del(port_group, direction, priority, match)
 
     def create_add_acl_command(self, pg_uuid, acl):
         return self._idl.pg_acl_add(
-            pg_uuid, acl['direction'], acl['priority'],
-            acl['match'], acl['action'], severity='alert', name=acl['name'],
+            pg_uuid,
+            acl['direction'],
+            acl['priority'],
+            acl['match'],
+            acl['action'],
+            severity='alert',
+            name=acl['name'],
             **acl.get('external_ids', {})
         )
 
@@ -166,8 +187,10 @@ class OvnSecurityGroupApi(object):
         for ip_version in neutron_constants.ETHER_TYPE_MAPPING.keys():
             acls.append(
                 acl_lib.create_acl(
-                    port_group, neutron_constants.INGRESS_DIRECTION,
-                    ether_type=ip_version, remote_group=port_group
+                    port_group,
+                    neutron_constants.INGRESS_DIRECTION,
+                    ether_type=ip_version,
+                    remote_group=port_group,
                 )
             )
         return acls
@@ -196,7 +219,8 @@ def only_rules_with_allowed_actions(f):
         return list(
             filter(
                 lambda rule: rule.action != neutron_constants.ACL_ACTION_DROP,
-                f(*args)
+                f(*args),
             )
         )
+
     return filter_rules

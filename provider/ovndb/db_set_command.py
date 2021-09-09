@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 
 
 class DbSetCommand(object):
-
     def __init__(self, idl, table, entity_id):
         self.idl = idl
         self.table = table
@@ -33,11 +32,7 @@ class DbSetCommand(object):
     def build_command(self):
         if not self.values:
             return
-        return self.idl.db_set(
-            self.table,
-            self.entity_id,
-            *self.values
-        )
+        return self.idl.db_set(self.table, self.entity_id, *self.values)
 
     def add(self, column, value, add_condition=True):
         if add_condition:

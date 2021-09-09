@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,17 +35,20 @@ class ProtocolNotSupported(RestDataError):
     )
 
     def __init__(self, protocol):
-        super(ProtocolNotSupported, self).__init__(self.message.format(
-            protocol=protocol, valid_protocols=', '.join(
-                neutron_constants.PROTOCOL_NAME_TO_NUM_MAP.keys()
+        super(ProtocolNotSupported, self).__init__(
+            self.message.format(
+                protocol=protocol,
+                valid_protocols=', '.join(
+                    neutron_constants.PROTOCOL_NAME_TO_NUM_MAP.keys()
+                ),
             )
-        ))
+        )
 
 
 def acl_direction(api_direction, port_group_name):
     return u'{direction} == @{port_group}'.format(
         direction=neutron_constants.OVN_DIRECTION_MATCH_MAPPER[api_direction],
-        port_group=port_group_name
+        port_group=port_group_name,
     )
 
 
@@ -67,7 +70,7 @@ def acl_remote_ip_prefix(ip_prefix, direction, ip_version):
     return '{ip_version}.{direction} == {prefix}'.format(
         ip_version=ip_version,
         direction=neutron_constants.OVN_ACL_IP_DIRECTION_MAPPER[direction],
-        prefix=ip_prefix
+        prefix=ip_prefix,
     )
 
 
@@ -104,9 +107,7 @@ def handle_ports(protocol, min_port, max_port):
     match = [protocol]
     if min_port is not None and min_port == max_port:
         match.append(
-            '{proto}.dst == {port}'.format(
-                proto=protocol, port=min_port
-            )
+            '{proto}.dst == {port}'.format(proto=protocol, port=min_port)
         )
     else:
         ports_acl_part = [
@@ -143,33 +144,55 @@ def _get_icmp_protocol_data(min_port, max_port):
 
 
 def create_acl(
-        security_group, direction, description=None, ether_type=None,
-        ip_prefix=None, port_min=None, port_max=None, protocol=None,
-        remote_group=None
+    security_group,
+    direction,
+    description=None,
+    ether_type=None,
+    ip_prefix=None,
+    port_min=None,
+    port_max=None,
+    protocol=None,
+    remote_group=None,
 ):
     match = create_acl_match(
-        direction, ether_type, ip_prefix, port_min,
-        port_max, protocol, security_group.name,
-        remote_group_name=remote_group.name if remote_group else None
+        direction,
+        ether_type,
+        ip_prefix,
+        port_min,
+        port_max,
+        protocol,
+        security_group.name,
+        remote_group_name=remote_group.name if remote_group else None,
     )
     acl = build_acl_parameters(
-        port_group=security_group, direction=direction,
+        port_group=security_group,
+        direction=direction,
         match=create_acl_match_string(match),
         action=neutron_constants.ACL_ACTION_ALLOW_RELATED,
-        priority=neutron_constants.ACL_ALLOW_PRIORITY
+        priority=neutron_constants.ACL_ALLOW_PRIORITY,
     )
     external_ids = get_acl_external_ids(
-        description=description, ether_type=ether_type, ip_prefix=ip_prefix,
-        max_port=port_max, min_port=port_min, protocol=protocol,
+        description=description,
+        ether_type=ether_type,
+        ip_prefix=ip_prefix,
+        max_port=port_max,
+        min_port=port_min,
+        protocol=protocol,
         port_group_id=security_group.name,
-        remote_group_id=remote_group.name if remote_group else None
+        remote_group_id=remote_group.name if remote_group else None,
     )
     return dict(acl, external_ids=external_ids)
 
 
 def create_acl_match(
-        direction, ether_type, ip_prefix, min_port, max_port, protocol,
-        port_group_id, remote_group_name=None
+    direction,
+    ether_type,
+    ip_prefix,
+    min_port,
+    max_port,
+    protocol,
+    port_group_id,
+    remote_group_name=None,
 ):
     match = [acl_direction(direction, port_group_id)]
     ip_version, icmp = get_acl_protocol_info(ether_type)
@@ -199,13 +222,19 @@ def build_acl_parameters(port_group, direction, match, action, priority):
         'name': str(acl_id),
         'severity': [],
         'direction': neutron_constants.API_TO_OVN_DIRECTION_MAPPER[direction],
-        'match': match
+        'match': match,
     }
 
 
 def get_acl_external_ids(
-        description, ether_type, ip_prefix, max_port, min_port,
-        protocol, port_group_id, remote_group_id
+    description,
+    ether_type,
+    ip_prefix,
+    max_port,
+    min_port,
+    protocol,
+    port_group_id,
+    remote_group_id,
 ):
     rule_external_id_data = {
         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID: port_group_id
@@ -243,30 +272,35 @@ def get_acl_external_ids(
 
 def create_drop_all_traffic_acls(port_group):
     acl_list = []
-    for _, openstack_direction in (
-            neutron_constants.OVN_TO_API_DIRECTION_MAPPER.items()
-    ):
+    for (
+        _,
+        openstack_direction,
+    ) in neutron_constants.OVN_TO_API_DIRECTION_MAPPER.items():
         acl_list.append(
             dict(
                 build_acl_parameters(
-                    port_group.name, openstack_direction,
+                    port_group.name,
+                    openstack_direction,
                     acl_direction(
                         openstack_direction,
-                        SecurityGroupMapper.DROP_ALL_IP_PG_NAME
+                        SecurityGroupMapper.DROP_ALL_IP_PG_NAME,
                     )
                     + ' && ip',
                     neutron_constants.ACL_ACTION_DROP,
-                    neutron_constants.ACL_DROP_PRIORITY
+                    neutron_constants.ACL_DROP_PRIORITY,
                 ),
                 external_ids=get_acl_external_ids(
                     description='drop all {} ip traffic'.format(
                         openstack_direction
                     ),
-                    ether_type=None, ip_prefix=None, max_port=None,
-                    min_port=None, protocol=None,
+                    ether_type=None,
+                    ip_prefix=None,
+                    max_port=None,
+                    min_port=None,
+                    protocol=None,
                     port_group_id=str(port_group.name),
-                    remote_group_id=None
-                )
+                    remote_group_id=None,
+                ),
             )
         )
 
@@ -276,9 +310,10 @@ def create_drop_all_traffic_acls(port_group):
 def create_default_allow_egress_acls(port_group):
     return [
         create_acl(
-            port_group, neutron_constants.EGRESS_DIRECTION,
+            port_group,
+            neutron_constants.EGRESS_DIRECTION,
             ether_type=ip_version,
-            description='automatically added allow all egress ip traffic'
+            description='automatically added allow all egress ip traffic',
         )
         for ip_version in neutron_constants.ETHER_TYPE_MAPPING.keys()
     ]
@@ -300,11 +335,9 @@ def build_remote_group_id_match(remote_group_name, ip_version, direction):
     return '{ip_version}.{direction} == ${address_set_name}'.format(
         ip_version=ip_version,
         direction=neutron_constants.OVN_ACL_IP_DIRECTION_MAPPER[direction],
-        address_set_name=remote_group_name
+        address_set_name=remote_group_name,
     )
 
 
 def get_assoc_addr_set_name(sec_group_name, ip_version):
-    return u'{pg_name}_{ip_v}'.format(
-        pg_name=sec_group_name, ip_v=ip_version
-    )
+    return u'{pg_name}_{ip_v}'.format(pg_name=sec_group_name, ip_v=ip_version)

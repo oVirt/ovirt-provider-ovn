@@ -1,4 +1,4 @@
-# Copyright 2018 Red Hat, Inc.
+# Copyright 2018-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,10 +42,11 @@ from ovndb.ovn_security_groups import only_rules_with_allowed_actions
 
 def accepts_single_arg(f):
     def inner(self, **kwargs):
-        assert len(
-            list(filter(lambda v: v is not None, kwargs.values()))
-        ) == 1, 'Exactly one parameter must be specified'
+        assert (
+            len(list(filter(lambda v: v is not None, kwargs.values()))) == 1
+        ), 'Exactly one parameter must be specified'
         return f(self, **kwargs)
+
     return inner
 
 
@@ -57,6 +58,7 @@ def optionally_use_transactions(f):
             return transaction.add(command)
         if command:
             return ovn_connection.execute(command)
+
     return inner
 
 
@@ -70,9 +72,7 @@ class OvnNorth(object):
 
     def add_ls(self, name, external_ids):
         return self.idl.ls_add(
-            switch=name,
-            may_exist=False,
-            external_ids=external_ids
+            switch=name, may_exist=False, external_ids=external_ids
         )
 
     @optionally_use_transactions
@@ -85,17 +85,20 @@ class OvnNorth(object):
         )
 
     def add_lr(self, name, enabled):
-        return ovn_connection.execute(self.idl.lr_add(
-            router=name, may_exist=False, enabled=enabled
-        ))
+        return ovn_connection.execute(
+            self.idl.lr_add(router=name, may_exist=False, enabled=enabled)
+        )
 
     def add_lrp(self, lr_id, lrp_name, mac, lrp_ip, ipv6_ra_configs=None):
-        ovn_connection.execute(self.idl.lrp_add(
-            router=lr_id, port=lrp_name,
-            mac=mac,
-            networks=[lrp_ip],
-            ipv6_ra_configs=ipv6_ra_configs or {}
-        ))
+        ovn_connection.execute(
+            self.idl.lrp_add(
+                router=lr_id,
+                port=lrp_name,
+                mac=mac,
+                networks=[lrp_ip],
+                ipv6_ra_configs=ipv6_ra_configs or {},
+            )
+        )
 
     def add_route(self, lrp_id, prefix, nexthop):
         ovn_connection.execute(self.idl.lr_route_add(lrp_id, prefix, nexthop))
@@ -120,12 +123,14 @@ class OvnNorth(object):
     @accepts_single_arg
     def get_dhcp(self, ls_id=None, dhcp_id=None, lsp_id=None):
         if ls_id:
-            return next((
-                subnet for subnet in self.list_dhcp()
-                if subnet.external_ids[SubnetMapper.OVN_NETWORK_ID] == (
-                    str(ls_id)
-                )),
-                None
+            return next(
+                (
+                    subnet
+                    for subnet in self.list_dhcp()
+                    if subnet.external_ids[SubnetMapper.OVN_NETWORK_ID]
+                    == (str(ls_id))
+                ),
+                None,
             )
         if dhcp_id:
             dhcp = ovn_connection.execute(self.idl.dhcp_options_get(dhcp_id))
@@ -162,7 +167,7 @@ class OvnNorth(object):
                 raise ValueError('Not an ovirt controller port')
             return lsp
         if lrp:
-            lsp_id = lrp.name[len(ovnconst.ROUTER_PORT_NAME_PREFIX):]
+            lsp_id = lrp.name[len(ovnconst.ROUTER_PORT_NAME_PREFIX) :]
             return ovn_connection.execute(self.idl.lsp_get(lsp_id))
 
     @accepts_single_arg
@@ -172,9 +177,7 @@ class OvnNorth(object):
         if lsp_id:
             lsp = self.get_lsp(lsp_id=lsp_id)
             lrp_name = lsp.options.get(ovnconst.LSP_OPTION_ROUTER_PORT)
-            return self.get_lrp(
-                lrp_name=lrp_name
-            ) if lrp_name else None
+            return self.get_lrp(lrp_name=lrp_name) if lrp_name else None
 
     @accepts_single_arg
     def get_lr(self, lr_id=None):
@@ -199,9 +202,7 @@ class OvnNorth(object):
             logical_router_ports = self.get_lr(lr_id=router_id).ports
             lrp_ids = [lrp.uuid for lrp in logical_router_ports]
             return list(
-                filter(
-                    lambda lrp: self.get_lrp_id(lrp) in lrp_ids, all_lrps
-                )
+                filter(lambda lrp: self.get_lrp_id(lrp) in lrp_ids, all_lrps)
             )
         else:
             return all_lrps
@@ -213,7 +214,8 @@ class OvnNorth(object):
     def list_dhcp(self):
         dhcps = ovn_connection.execute(self.idl.dhcp_options_list())
         return [
-            dhcp for dhcp in dhcps
+            dhcp
+            for dhcp in dhcps
             if SubnetMapper.OVN_NETWORK_ID in dhcp.external_ids
         ]
 
@@ -229,12 +231,14 @@ class OvnNorth(object):
     def remove_static_route(self, lr, ip_prefix):
         for route in lr.static_routes:
             if route.ip_prefix == ip_prefix:
-                ovn_connection.execute(self.idl.db_remove(
-                    ovnconst.TABLE_LR,
-                    str(lr.uuid),
-                    ovnconst.ROW_LR_STATIC_ROUTES,
-                    route
-                ))
+                ovn_connection.execute(
+                    self.idl.db_remove(
+                        ovnconst.TABLE_LR,
+                        str(lr.uuid),
+                        ovnconst.ROW_LR_STATIC_ROUTES,
+                        route,
+                    )
+                )
 
     @optionally_use_transactions
     def remove_dhcp_options(self, id, transacion=None):
@@ -275,7 +279,7 @@ class OvnNorth(object):
                 lambda pg: pg.name != SecurityGroupMapper.DROP_ALL_IP_PG_NAME,
                 ovn_connection.execute(
                     self.idl.db_list_rows(ovnconst.TABLE_PORT_GROUP)
-                )
+                ),
             )
         )
 
@@ -306,7 +310,7 @@ class OvnNorth(object):
         security_group = self.get_security_group(security_group_id)
         validate.cannot_delete_default_security_group(
             security_group,
-            self._ovn_sec_group_api.get_default_sec_group_name()
+            self._ovn_sec_group_api.get_default_sec_group_name(),
         )
         validate.cannot_delete_sec_group_in_use(security_group)
         ovn_connection.execute(
@@ -314,7 +318,7 @@ class OvnNorth(object):
         )
 
     def update_security_group(
-            self, sec_group_id, name, description, transaction
+        self, sec_group_id, name, description, transaction
     ):
         try:
             transaction.add(
@@ -332,12 +336,15 @@ class OvnNorth(object):
         )
 
         return (
-            all_rules if sec_group is None
+            all_rules
+            if sec_group is None
             else list(
                 filter(
                     lambda sec_group_rule: sec_group_rule.external_ids.get(
                         SecurityGroupRuleMapper.OVN_SEC_GROUP_RULE_SEC_GROUP_ID
-                    ) in (str(sec_group.name), str(sec_group.uuid)), all_rules
+                    )
+                    in (str(sec_group.name), str(sec_group.uuid)),
+                    all_rules,
                 )
             )
         )
@@ -353,23 +360,36 @@ class OvnNorth(object):
             )
 
     def create_security_group_rule(
-            self, security_group, direction, description=None,
-            ether_type=None, remote_ip_prefix=None, port_min=None,
-            port_max=None, protocol=None, remote_group_id=None
+        self,
+        security_group,
+        direction,
+        description=None,
+        ether_type=None,
+        remote_ip_prefix=None,
+        port_min=None,
+        port_max=None,
+        protocol=None,
+        remote_group_id=None,
     ):
         new_rev_number = self._ovn_sec_group_api.get_bumped_revision_number(
             security_group
         )
         remote_group = (
             self.get_security_group(remote_group_id)
-            if remote_group_id else None
+            if remote_group_id
+            else None
         )
         sec_group_rule_command = (
             self._ovn_sec_group_api.create_security_group_rule(
-                security_group, direction, description=description,
-                ether_type=ether_type, ip_prefix=remote_ip_prefix,
-                port_min=port_min, port_max=port_max, protocol=protocol,
-                remote_group=remote_group
+                security_group,
+                direction,
+                description=description,
+                ether_type=ether_type,
+                ip_prefix=remote_ip_prefix,
+                port_min=port_min,
+                port_max=port_max,
+                protocol=protocol,
+                remote_group=remote_group,
             )
         )
         try:
@@ -385,20 +405,22 @@ class OvnNorth(object):
 
         sec_group_update_command.add(
             ovnconst.ROW_PG_EXTERNAL_IDS,
-            {SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: new_rev_number}
+            {
+                SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: new_rev_number  # noqa: E501
+            },
         ).execute()
 
         return add_sec_group_rule_result, remote_group
 
     def remove_security_group_rule(self, security_group_rule_id):
         sec_group_rule = self.get_security_group_rule(security_group_rule_id)
-        security_group_id = self.get_security_group_id(
-            sec_group_rule
-        )
+        security_group_id = self.get_security_group_id(sec_group_rule)
         ovn_connection.execute(
             self._ovn_sec_group_api.delete_security_group_rule(
-                security_group_id, sec_group_rule.direction,
-                sec_group_rule.priority, sec_group_rule.match
+                security_group_id,
+                sec_group_rule.direction,
+                sec_group_rule.priority,
+                sec_group_rule.match,
             )
         )
         sec_group = self.get_security_group(security_group_id)
@@ -409,7 +431,9 @@ class OvnNorth(object):
             ovnconst.TABLE_PORT_GROUP, security_group_id
         ).add(
             ovnconst.ROW_PG_EXTERNAL_IDS,
-            {SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: new_rev_number}
+            {
+                SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER: new_rev_number  # noqa: E501
+            },
         ).execute()
 
     @staticmethod
@@ -419,12 +443,13 @@ class OvnNorth(object):
         ]
 
     def activate_default_security_group(
-            self, port_id, transaction, update_port_association
+        self, port_id, transaction, update_port_association
     ):
         self.activate_drop_all_security_group(port_id, transaction)
         default_sec_group = self.assure_group_exists(
-            SecurityGroupMapper.DEFAULT_PG_NAME, transaction,
-            self._ovn_sec_group_api.create_default_sec_group_acls
+            SecurityGroupMapper.DEFAULT_PG_NAME,
+            transaction,
+            self._ovn_sec_group_api.create_default_sec_group_acls,
         )
         if update_port_association:
             transaction.add(
@@ -434,7 +459,10 @@ class OvnNorth(object):
             )
 
     def assure_group_exists(
-        self, sec_group_name, transaction, provision_acl_function=None,
+        self,
+        sec_group_name,
+        transaction,
+        provision_acl_function=None,
     ):
         try:
             sec_group = self.get_security_group(sec_group_name)
@@ -447,8 +475,9 @@ class OvnNorth(object):
 
     def activate_drop_all_security_group(self, port_id, transaction):
         drop_all_port_group = self.assure_group_exists(
-            SecurityGroupMapper.DROP_ALL_IP_PG_NAME, transaction,
-            self._ovn_sec_group_api.create_drop_all_traffic_acls
+            SecurityGroupMapper.DROP_ALL_IP_PG_NAME,
+            transaction,
+            self._ovn_sec_group_api.create_drop_all_traffic_acls,
         )
         transaction.add(
             self._ovn_sec_group_api.add_security_group_ports(
@@ -472,8 +501,7 @@ class OvnNorth(object):
     def list_port_security_groups(self, port_uuid):
         return list(
             filter(
-                lambda pg: port_uuid in pg.ports,
-                self.list_security_groups()
+                lambda pg: port_uuid in pg.ports, self.list_security_groups()
             )
         )
 
@@ -519,8 +547,9 @@ class OvnNorth(object):
         )
         return next(
             (
-                lrp for lrp in self.list_lrp(router_id=router_id)
+                lrp
+                for lrp in self.list_lrp(router_id=router_id)
                 if cidr in lrp[ovnconst.ROW_LRP_NETWORKS]
             ),
-            None
+            None,
         )
