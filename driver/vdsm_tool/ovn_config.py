@@ -53,9 +53,11 @@ def ovn_config(*args):
     IP-central - the IP of the engine (the host where OVN central is located)
     tunneling-IP - the local IP which is to be used for OVN tunneling
     tunneling-network - the vdsm network meant to be used for OVN tunneling
-    host-fqdn - FQDN that will be set as system-id for OvS
+    host-fqdn - FQDN that will be set as system-id for OvS (optional)
     """
-    if len(args) != 4:
+
+    args_len = len(args)
+    if args_len < 3 or args_len > 4:
         raise ExtraArgsError(n=3)
 
     if is_ipaddress(args[2]):
@@ -68,10 +70,12 @@ def ovn_config(*args):
 
     cmd = [
         OVN_CONFIG_SCRIPT,
-        args[3],
-        format_literal_ipaddress(args[1]),
-        ip_address,
+        f'--central-ip={format_literal_ipaddress(args[1])}',
+        f'--tunnel-ip={ip_address}',
     ]
+    if args_len == 4:
+        cmd.append(f'--host-fqdn={args[3]}')
+
     exec_command(cmd, 'Failed to configure OVN controller.')
 
 
