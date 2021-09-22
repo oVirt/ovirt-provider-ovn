@@ -19,7 +19,7 @@
 CONTAINER_CMD = podman
 
 prefix := ovirt
-targets := centos-8
+targets := centos-8 centos-9
 
 .PHONY: $(targets)
 

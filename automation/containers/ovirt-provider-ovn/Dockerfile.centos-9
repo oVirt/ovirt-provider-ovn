@@ -1,0 +1,36 @@
+FROM centos/centos:stream9-development
+LABEL maintainer="amusil@redhat.com" purpose="ovirt_provider_ovn_integ_tests"
+
+RUN dnf install -y \
+        https://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm \
+    && \
+    dnf update -y \
+    && \
+    # Without it the ovirt-openvswitch fails to install
+    # It seems that the el8s container has systemd installed by default
+    dnf install -y systemd \
+    && \
+    dnf install -y \
+        git \
+        kernel \
+        make \
+        python3-devel  \
+        rpm-build \
+        # Install ovirt-provider-ovn for its dependencies
+        ovirt-provider-ovn \
+    && \
+    dnf remove -y --noautoremove ovirt-provider-ovn \
+    && \
+    dnf clean all \
+    && \
+    mkdir -p /etc/ovirt-provider-ovn/conf.d/
+
+COPY 10-integrationtest.conf /etc/ovirt-provider-ovn/conf.d/
+
+COPY ovn-northd.conf /etc/sysconfig/ovn-northd
+
+COPY boot-northd.sh /boot-northd.sh
+
+VOLUME ["/ovirt-provider-ovn-rpms"]
+
+CMD ["/usr/sbin/init"]
