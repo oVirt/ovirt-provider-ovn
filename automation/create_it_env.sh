@@ -6,6 +6,7 @@ EXEC_PATH=$(dirname "$(realpath "$0")")
 PROJECT_ROOT=$(git rev-parse --show-toplevel)
 EXPORTED_ARTIFACTS_DIR="$PROJECT_ROOT/exported-artifacts/"
 
+IMAGE_TAG="${IMAGE_TAG:=centos-8}"
 OVN_CONTROLLER_IMG="${CONTROLLER_IMG:=ovirt/ovn-controller}"
 OVIRT_PROVIDER_OVN_IMG="${PROVIDER_IMG:=ovirt/ovirt-provider-ovn}"
 
@@ -50,7 +51,7 @@ function start_provider_container {
 	  -v $PROJECT_ROOT/:$CONTAINER_SRC_CODE_PATH \
 	  -v /lib/modules/$kernel_version:/lib/modules/$kernel_version:ro \
 	  -p 9696:9696 -p 35357:35357 \
-    $OVIRT_PROVIDER_OVN_IMG
+    $OVIRT_PROVIDER_OVN_IMG:$IMAGE_TAG
   )"
   PROVIDER_IP="$(container_ip $PROVIDER_ID)"
   create_rpms
@@ -60,7 +61,7 @@ function start_provider_container {
 }
 
 function start_controller_container {
-  OVN_CONTROLLER_ID="$(${CONTAINER_CMD} run --privileged -d $OVN_CONTROLLER_IMG)"
+  OVN_CONTROLLER_ID="$(${CONTAINER_CMD} run --privileged -d $OVN_CONTROLLER_IMG:$IMAGE_TAG)"
   OVN_CONTROLLER_IP="$(container_ip $OVN_CONTROLLER_ID)"
   container_exec "$OVN_CONTROLLER_ID" "OVN_SB_IP=$PROVIDER_IP ./boot-controller.sh"
 }
