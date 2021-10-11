@@ -17,8 +17,9 @@
       state: present
       network_name: "{{ net10.id }}"
       name: net10_subnet1
-      cidr: 10.10.0.0/24
-      gateway_ip: 10.10.0.1
+      cidr: "{{ '10.10.0.0/24' if ip_version == 4 else 'fd:10::/64' }}"
+      gateway_ip: "{{ '10.10.0.1' if ip_version == 4 else 'fd:10::1' }}"
+      ip_version: "{{ ip_version }}"
       enable_dhcp: yes
     register: net10_subnet1
 
@@ -35,8 +36,9 @@
       state: present
       network_name: "{{ net11.id }}"
       name: net11_subnet1
-      cidr: 10.11.0.0/24
-      gateway_ip: 10.11.0.1
+      cidr: "{{ '10.11.0.0/24' if ip_version == 4 else 'fd:11::/64' }}"
+      gateway_ip: "{{ '10.11.0.1' if ip_version == 4 else 'fd:11::1' }}"
+      ip_version: "{{ ip_version }}"
       enable_dhcp: yes
     register: net11_subnet1
 
@@ -53,8 +55,9 @@
       state: present
       network_name: "{{ net12.id }}"
       name: net12_subnet1
-      cidr: 10.12.0.0/24
-      gateway_ip: 10.12.0.1
+      cidr: "{{ '10.12.0.0/24' if ip_version == 4 else 'fd:12::/64' }}"
+      gateway_ip: "{{ '10.12.0.1' if ip_version == 4 else 'fd:12::1' }}"
+      ip_version: "{{ ip_version }}"
       enable_dhcp: yes
     register: net12_subnet1
 
@@ -67,9 +70,9 @@
       enable_snat: no
       external_fixed_ips:
         - subnet: "{{net12_subnet1.id}}"
-          ip: 10.12.0.100
+          ip: "{{ '10.12.0.100' if ip_version == 4 else 'fd:12::100' }}"
       interfaces:
           - net10_subnet1
           - net: net11
             subnet: net11_subnet1
-            portip: 10.11.0.1
+            portip: "{{ '10.11.0.1' if ip_version == 4 else 'fd:11::1' }}"

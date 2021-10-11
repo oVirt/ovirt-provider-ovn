@@ -17,6 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import pytest
+
 from lib.ansiblelib import get_playbook
 
 
@@ -25,6 +27,10 @@ PLAYBOOK_CONFIG = {
 }
 
 
-def test_router_api():
-    get_playbook('create_routers_api.yml', PLAYBOOK_CONFIG).run()
-    get_playbook('cleanup_routers_api.yml', PLAYBOOK_CONFIG).run()
+@pytest.mark.parametrize('family', [4, 6], ids=['IPv4', 'IPv6'])
+def test_router_api(family):
+    config = {'ip_version': family}
+    config.update(PLAYBOOK_CONFIG)
+
+    get_playbook('create_routers_api.yml', config).run()
+    get_playbook('cleanup_routers_api.yml', config).run()
