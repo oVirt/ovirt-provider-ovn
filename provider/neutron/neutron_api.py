@@ -1242,11 +1242,10 @@ class NeutronApi(object):
                 'Can not add {port} to router. Port is already connected to a'
                 ' router'.format(port=port_id)
             )
-        subnet = self.ovn_north.get_dhcp(lsp_id=port_id)
-        if subnet:
-            self._validate_subnet_is_not_on_router(subnet.uuid, router_id)
+        subnet = self.ovn_north.get_dhcp(lsp_id=port.uuid)
+        self._validate_subnet_is_not_on_router(subnet.uuid, router_id)
 
-        lrp_ipmask = self._get_ip_netmask_for_lrp(port, router_id)
+        lrp_ipmask = self._get_ip_netmask_for_lrp(port, router_id, subnet.cidr)
         lrp_name = self._create_router_port_name(port.name)
         mac = ip_utils.get_port_mac(port)
         self._connect_port_to_router(
@@ -1260,13 +1259,9 @@ class NeutronApi(object):
             mac,
         )
 
-    def _get_ip_netmask_for_lrp(self, lsp, lr_id):
+    def _get_ip_netmask_for_lrp(self, lsp, lr_id, ls_cidr):
         lsp_ip = ip_utils.get_port_ip(lsp)
         validate.port_ip_for_router(lsp_ip, lsp, lr_id)
-
-        ls_cidr = self._get_port_network(lsp).other_config.get(
-            NetworkMapper.OVN_SUBNET
-        )
         validate.port_added_to_lr_must_have_subnet(
             ls_cidr, str(lsp.uuid), lr_id
         )
