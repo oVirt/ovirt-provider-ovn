@@ -85,7 +85,7 @@ def wrap_default_group_id(f):
                 wrapped_self,
                 default_group_id=default_group_id,
                 *args,
-                **kwargs
+                **kwargs,
             )
         except ElementNotFoundError:
             return f(wrapped_self, *args, **kwargs)
@@ -1002,7 +1002,7 @@ class NeutronApi(object):
             self.ovn_north.add_route(
                 lrp_id=router_id,
                 prefix=ovnconst.DEFAULT_ROUTE,
-                nexthop=subnet.options.get('router'),
+                nexthop=ip_utils.get_subnet_gateway(subnet),
             )
 
     def _validate_external_gateway(
@@ -1406,15 +1406,9 @@ class NeutronApi(object):
         validate.attach_network_to_router_by_subnet(
             subnet, network_id, router_id
         )
-        subnet_gateway = (
-            subnet.options.get('router')
-            if ip_utils.is_subnet_ipv4(subnet)
-            else subnet.external_ids.get(SubnetMapper.OVN_GATEWAY)
-        )
+        subnet_gateway = ip_utils.get_subnet_gateway(subnet)
         subnet_netmask = ip_utils.get_mask_from_subnet(subnet)
-        return '{ip}/{netmask}'.format(
-            ip=subnet_gateway, netmask=subnet_netmask
-        )
+        return f'{subnet_gateway}/{subnet_netmask}'
 
     def _get_ip_from_addresses(self, addresses):
         if not addresses:
