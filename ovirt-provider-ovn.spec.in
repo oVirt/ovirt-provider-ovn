@@ -118,8 +118,6 @@ to OVN.
 %{_libexecdir}/vdsm/hooks/before_nic_hotplug/
 %{_libexecdir}/vdsm/hooks/before_device_create/
 %{_libexecdir}/vdsm/hooks/after_get_caps/
-%{_libexecdir}/vdsm/hooks/after_vm_destroy/
-%{_libexecdir}/vdsm/vhostuser_permissions_setter
 %{_libexecdir}/ovirt-provider-ovn
 %{python3_sitelib}/vdsm/tool/
 %attr(440, root, root) %{_sysconfdir}/sudoers.d/50_vdsm_hook_ovirt_provider_ovn_hook

@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,10 +71,6 @@ install: replace_driver_shebangs install_provider_python_files install_driver_co
 	# install driver hooks
 	install -m 555 -D driver/vdsm_hooks/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_device_create/10_ovirt_provider_ovn_hook
 	install -m 555 -D driver/vdsm_hooks/ovirt_provider_ovn_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_nic_hotplug/10_ovirt_provider_ovn_hook
-	install -m 555 -D driver/vdsm_hooks/ovirt_provider_ovn_vhostuser_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_nic_hotplug/20_ovirt_provider_ovn_vhostuser_hook
-	install -m 555 -D driver/vdsm_hooks/ovirt_provider_ovn_vhostuser_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/before_device_create/20_ovirt_provider_ovn_vhostuser_hook
-	install -m 555 -D driver/vdsm_hooks/delete_vhostuserclient_hook.py $(DESTDIR)/usr/libexec/vdsm/hooks/after_vm_destroy/delete_vhostuserclient_hook
-	install -m 555 -D driver/vdsm_hooks/vhostuser_permissions_setter.py $(DESTDIR)/usr/libexec/vdsm/vhostuser_permissions_setter
 	install -m 555 -D driver/vdsm_hooks/after_get_caps.py $(DESTDIR)/usr/libexec/vdsm/hooks/after_get_caps/ovirt_provider_ovn_hook
 	install -m 644 -D driver/vdsm_hooks/sudoers $(DESTDIR)/etc/sudoers.d/50_vdsm_hook_ovirt_provider_ovn_hook
 
