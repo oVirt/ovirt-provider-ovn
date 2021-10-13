@@ -1,5 +1,5 @@
-#!/usr/bin/python2
-# Copyright 2016 Red Hat, Inc.
+#!/usr/bin/python3
+# Copyright 2016-2021 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
