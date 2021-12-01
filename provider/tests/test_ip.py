@@ -116,3 +116,19 @@ def test_diff_routes_only_db():
     assert ({}, {route.ip_prefix: route.nexthop}) == ip_utils.diff_routes(
         None, [route]
     )
+
+
+def test_diff_routes_ipv6():
+    rest_routes = [
+        {'destination': 'fd:10::/64', 'nexthop': 'fd:10::1'},
+    ]
+
+    db_routes = [
+        Route('fd:20::/64', 'fd:20::1'),
+    ]
+
+    added, deleted = ip_utils.diff_routes(rest_routes, db_routes)
+    assert len(added) == 1
+    assert len(deleted) == 1
+    assert rest_routes[0]['destination'] in added
+    assert db_routes[0].ip_prefix in deleted
