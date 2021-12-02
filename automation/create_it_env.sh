@@ -29,6 +29,10 @@ function load_kernel_modules {
   modprobe openvswitch
 }
 
+function enable_ipv6 {
+    container_exec "$1" "echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6"
+}
+
 function destroy_env {
   mkdir -p "$EXPORTED_ARTIFACTS_DIR"
   collect_sys_info
@@ -53,6 +57,7 @@ function start_provider_container {
 	  -p 9696:9696 -p 35357:35357 \
     $OVIRT_PROVIDER_OVN_IMG:$IMAGE_TAG
   )"
+  enable_ipv6 "$PROVIDER_ID"
   PROVIDER_IP="$(container_ip $PROVIDER_ID)"
   create_rpms
   install_provider_on_container
@@ -62,6 +67,7 @@ function start_provider_container {
 
 function start_controller_container {
   OVN_CONTROLLER_ID="$(${CONTAINER_CMD} run --privileged -d $OVN_CONTROLLER_IMG:$IMAGE_TAG)"
+  enable_ipv6 "$OVN_CONTROLLER_ID"
   OVN_CONTROLLER_IP="$(container_ip $OVN_CONTROLLER_ID)"
   container_exec "$OVN_CONTROLLER_ID" "OVN_SB_IP=$PROVIDER_IP ./boot-controller.sh"
 }
@@ -110,7 +116,7 @@ function collect_provider_logs {
 }
 
 function collect_sys_info {
-    cp /etc/redhat-release $EXPORTED_ARTIFACTS_DIR
+    cp /etc/os-release $EXPORTED_ARTIFACTS_DIR
     uname -a > $EXPORTED_ARTIFACTS_DIR/kernel_info.txt
 }
 
