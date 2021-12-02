@@ -1,0 +1,51 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+      - ovirt-4.4
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    container: quay.io/ovirt/ovirt-provider-ovn-tests:${{ matrix.tag }}
+    strategy:
+      matrix:
+        tag: [ centos-8, centos-9 ]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run check
+      run: make check
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    container: quay.io/ovirt/ovirt-provider-ovn-tests:${{ matrix.tag }}
+    strategy:
+      matrix:
+        tag: [ centos-8, centos-9 ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run unit tests
+        run: make unittest
+
+  lint:
+    runs-on: ubuntu-latest
+    container: quay.io/ovirt/ovirt-provider-ovn-tests:${{ matrix.tag }}
+    strategy:
+      matrix:
+        tag: [ centos-8, centos-9 ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run lint
+        run: make lint
+
+  coverage:
+    runs-on: ubuntu-latest
+    container: quay.io/ovirt/ovirt-provider-ovn-tests:${{ matrix.tag }}
+    strategy:
+      matrix:
+        tag: [ centos-8, centos-9 ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run coverage
+        run: make coverage
