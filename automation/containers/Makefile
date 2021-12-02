@@ -20,14 +20,22 @@ CONTAINER_CMD = podman
 
 prefix := ovirt
 targets := centos-8 centos-9
+types := ovn-controller ovirt-provider-ovn ovirt-provider-ovn-tests
 
-.PHONY: $(targets)
+.PHONY: $(targets) $(types)
 
 all: $(targets)
 
 $(targets):
-	for name in ovn-controller ovirt-provider-ovn; do \
+	for name in $(types); do \
 		cd $$name; \
 		$(CONTAINER_CMD) build --no-cache --rm -t $(prefix)/$$name:$@ -f Dockerfile.$@ .; \
+		cd -; \
+	done
+
+$(types):
+	for target in $(targets); do \
+		cd $@; \
+		$(CONTAINER_CMD) build --no-cache --rm -t $(prefix)/$@:$$target -f Dockerfile.$$target .; \
 		cd -; \
 	done
