@@ -11,6 +11,7 @@ RUN rpm --import \
     dnf update -y \
     && \
     dnf install -y \
+        createrepo_c \
         git \
         make \
         ovirt-python-openvswitch \

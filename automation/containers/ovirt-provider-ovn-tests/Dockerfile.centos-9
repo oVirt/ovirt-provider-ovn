@@ -11,6 +11,7 @@ RUN dnf -y install yum-plugin-copr \
     dnf update -y \
     && \
     dnf install -y \
+        createrepo_c \
         git \
         make \
         ovirt-python-openvswitch \
