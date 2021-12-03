@@ -1,0 +1,35 @@
+name: Containers
+on:
+  # Be able to run the job manually when needed
+  workflow_dispatch:
+  # Build every week on Monday 00:00
+  schedule:
+    - cron:  '0 0 * * 1'
+env:
+  IMAGE_REGISTRY: quay.io
+jobs:
+  container:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        container: [ ovirt-provider-ovn, ovn-controller, ovirt-provider-ovn-tests ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install podman
+      - name: Build container images
+        working-directory: automation/containers
+        run: make ${{ matrix.container }}
+      - name: Push to Quay.io
+        id: push-to-quay
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ovirt/${{ matrix.container }}
+          tags: centos-8 centos-9
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ secrets.QUAY_USERNAME  }}
+          password: ${{ secrets.QUAY_TOKEN }}
+      - name: Print image url
+        run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
