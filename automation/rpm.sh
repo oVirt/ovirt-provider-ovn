@@ -1,12 +1,14 @@
 #!/bin/bash -xe
 
-mkdir -p exported-artifacts
+EXPORT_DIR="${EXPORT_DIR:=exported-artifacts}"
+
+mkdir -p $EXPORT_DIR
 
 mkdir -p "`rpm --eval %_topdir`" "`rpm --eval %_sourcedir`"
 make rpm
 
-cp ovirt-provider-ovn-*.tar.gz exported-artifacts/
-cp ~/rpmbuild/RPMS/noarch/ovirt-provider-ovn-*.noarch.rpm exported-artifacts/
-cp ~/rpmbuild/SRPMS/ovirt-provider-ovn-*.src.rpm exported-artifacts/
+cp ovirt-provider-ovn-*.tar.gz $EXPORT_DIR/
+cp ~/rpmbuild/RPMS/noarch/ovirt-provider-ovn-*.noarch.rpm $EXPORT_DIR/
+cp ~/rpmbuild/SRPMS/ovirt-provider-ovn-*.src.rpm $EXPORT_DIR/
 
-dnf -y install exported-artifacts/ovirt-provider-ovn-*.noarch.rpm
+createrepo_c "$EXPORT_DIR"

@@ -76,3 +76,20 @@ jobs:
           name: ovirt-provider-ovn-integ-tests-${{ matrix.tag }}
           path: ${{ env.EXPORT_DIR }}
           retention-days: 5
+
+  rpm:
+    runs-on: ubuntu-latest
+    container: quay.io/ovirt/ovirt-provider-ovn-tests:${{ matrix.tag }}
+    strategy:
+      matrix:
+        tag: [ centos-8, centos-9 ]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build RPMs
+      run: ./automation/rpm.sh
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: artifacts-${{ matrix.tag }}
+        path: ${{ env.EXPORT_DIR }}
+        retention-days: 7
