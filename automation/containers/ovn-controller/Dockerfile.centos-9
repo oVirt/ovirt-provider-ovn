@@ -1,8 +1,12 @@
 FROM centos/centos:stream9-development
 LABEL maintainer="amusil@redhat.com" purpose="ovirt_provider_ovn_integ_tests"
 
-RUN dnf install -y \
-        https://resources.ovirt.org/pub/yum-repo/ovirt-release-master.rpm \
+# The copr plugin is installed by default on el8stream
+RUN dnf -y install yum-plugin-copr \
+    && \
+    dnf copr enable -y ovirt/ovirt-master-snapshot \
+    && \
+    dnf install -y ovirt-release-master \
     && \
     dnf update -y \
     && \

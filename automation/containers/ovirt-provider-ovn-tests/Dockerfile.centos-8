@@ -1,7 +1,7 @@
 FROM centos/centos:stream8
 LABEL maintainer="amusil@redhat.com" purpose="ovirt_provider_ovn_tests"
 
-# Workround for https://bugzilla.redhat.com/2024629
+# Workaround for https://bugzilla.redhat.com/2024629
 RUN rpm --import \
         https://download.copr.fedorainfracloud.org/results/ovirt/ovirt-master-snapshot/pubkey.gpg \
     && \
