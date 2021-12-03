@@ -4,7 +4,7 @@ CONTAINER_CMD=${CONTAINER_CMD:=podman}
 
 EXEC_PATH=$(dirname "$(realpath "$0")")
 PROJECT_ROOT=$(git rev-parse --show-toplevel)
-EXPORTED_ARTIFACTS_DIR="$PROJECT_ROOT/exported-artifacts/"
+EXPORTED_ARTIFACTS_DIR="${EXPORT_DIR:=exported-artifacts}"
 
 IMAGE_TAG="${IMAGE_TAG:=centos-8}"
 OVN_CONTROLLER_IMG="${CONTROLLER_IMG:=ovirt/ovn-controller}"

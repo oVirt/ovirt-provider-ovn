@@ -5,6 +5,8 @@ on:
       - master
       - ovirt-4.4
   pull_request:
+env:
+  EXPORT_DIR: exported-artifacts
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -72,5 +74,5 @@ jobs:
         if: ${{ failure() }}
         with:
           name: ovirt-provider-ovn-integ-tests-${{ matrix.tag }}
-          path: exported-artifacts/
+          path: ${{ env.EXPORT_DIR }}
           retention-days: 5
