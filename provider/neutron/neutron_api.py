@@ -1001,7 +1001,7 @@ class NeutronApi(object):
             subnet = self.ovn_north.get_dhcp(dhcp_id=gateway_subnet_id)
             self.ovn_north.add_route(
                 lrp_id=router_id,
-                prefix=ovnconst.DEFAULT_ROUTE,
+                prefix=ip_utils.get_default_route(subnet),
                 nexthop=ip_utils.get_subnet_gateway(subnet),
             )
 
@@ -1463,7 +1463,8 @@ class NeutronApi(object):
             ovnconst.ROW_LR_EXTERNAL_IDS,
             RouterMapper.OVN_ROUTER_GATEWAY_PORT,
         )
-        self.ovn_north.remove_static_route(lr, ovnconst.DEFAULT_ROUTE)
+        self.ovn_north.remove_static_route(lr, ovnconst.DEFAULT_ROUTE4)
+        self.ovn_north.remove_static_route(lr, ovnconst.DEFAULT_ROUTE6)
         self._release_network_ip(ls_id, lrp_ip)
 
     def _is_subnet_on_router(self, router_id, subnet_id):

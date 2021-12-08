@@ -249,11 +249,12 @@ def subnet_is_ovirt_managed(subnet):
 
 
 def no_default_gateway_in_routes(default_gateway_exists, routes):
+    destination = RouterMapper.REST_ROUTER_DESTINATION
     if default_gateway_exists and routes:
         if list(
             filter(
-                lambda r: r[RouterMapper.REST_ROUTER_DESTINATION]
-                == ovnconst.DEFAULT_ROUTE,
+                lambda r: r[destination] == ovnconst.DEFAULT_ROUTE4
+                or r[destination] == ovnconst.DEFAULT_ROUTE6,
                 routes,
             )
         ):
