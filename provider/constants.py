@@ -72,7 +72,8 @@ TABLE_ROUTES = 'Logical_Router_Static_Route'
 ROW_ROUTES_IP_PREFIX = 'ip_prefix'
 ROW_ROUTES_NEXTHOP = 'nexthop'
 
-DEFAULT_ROUTE = '0.0.0.0/0'
+DEFAULT_ROUTE4 = '0.0.0.0/0'
+DEFAULT_ROUTE6 = '::/0'
 
 TABLE_PORT_GROUP = 'Port_Group'
 ROW_PG_NAME = 'name'

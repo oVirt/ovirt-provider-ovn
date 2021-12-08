@@ -190,3 +190,11 @@ def get_subnet_gateway(subnet):
         if is_subnet_ipv4(subnet)
         else subnet.external_ids.get('router')
     )
+
+
+def get_default_route(subnet):
+    return (
+        ovnconst.DEFAULT_ROUTE4
+        if is_subnet_ipv4(subnet)
+        else ovnconst.DEFAULT_ROUTE6
+    )
