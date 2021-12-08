@@ -1,4 +1,4 @@
-FROM centos/centos:stream9-development
+FROM centos/centos:stream9
 LABEL maintainer="amusil@redhat.com" purpose="ovirt_provider_ovn_tests"
 
 # The copr plugin is installed by default on el8stream
