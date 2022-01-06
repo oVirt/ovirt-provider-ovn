@@ -141,12 +141,15 @@ def diff_routes(new_rest_routes, db_routes):
         new_rest_routes = []
     if db_routes is None:
         db_routes = []
-    new_set = set([(d['destination'], d['nexthop']) for d in new_rest_routes])
-    old_set = set([(d.ip_prefix, d.nexthop) for d in db_routes])
-
+    new_set = set(
+        [':'.join((d['destination'], d['nexthop'])) for d in new_rest_routes]
+    )
+    old_set = set([':'.join((d.ip_prefix, d.nexthop)) for d in db_routes])
+    added = new_set - old_set
+    removed = old_set - new_set
     return (
-        dict(new_set - old_set),
-        dict(old_set - new_set),
+        dict([(s.split(':')[0], s.split(':')[1]) for s in added]),
+        dict([(s.split(':')[0], s.split(':')[1]) for s in removed]),
     )
 
 
