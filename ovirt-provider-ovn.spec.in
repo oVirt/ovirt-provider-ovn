@@ -125,6 +125,12 @@ to OVN.
 
 
 %changelog
+* Mon Jan 17 2022 Ales Musil <amusil@redhat.com> - 1.2.35
+- Use SSL keys that are made specifically for OVN
+- Require ovirt-openvswitch wrapper instead of plain openvswitch
+- Configure IPsec with driver
+- Fix some IPv6 router related issues
+
 * Fri Jul 30 2021 Ales Musil <amusil@redhat.com> - 1.2.34
 - Bump required ovsdbapp version to 0.17.5 or higher
 - Use global connection for ovn north db
