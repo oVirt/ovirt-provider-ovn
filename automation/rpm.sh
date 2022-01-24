@@ -10,5 +10,3 @@ make rpm
 cp ovirt-provider-ovn-*.tar.gz $EXPORT_DIR/
 cp ~/rpmbuild/RPMS/noarch/ovirt-provider-ovn-*.noarch.rpm $EXPORT_DIR/
 cp ~/rpmbuild/SRPMS/ovirt-provider-ovn-*.src.rpm $EXPORT_DIR/
-
-createrepo_c "$EXPORT_DIR"
