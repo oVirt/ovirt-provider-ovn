@@ -79,17 +79,20 @@ jobs:
 
   rpm:
     runs-on: ubuntu-latest
+    name: rpm-${{ matrix.distro }}
     container: quay.io/ovirt/ovirt-provider-ovn-tests:${{ matrix.tag }}
     strategy:
       matrix:
-        tag: [ centos-8, centos-9 ]
+        include:
+          - distro: el8stream
+            tag: centos-8
+          - distro: el9stream
+            tag: centos-9
     steps:
     - uses: actions/checkout@v2
     - name: Build RPMs
       run: ./automation/rpm.sh
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+    - uses: ovirt/upload-rpms-action@v1
       with:
-        name: artifacts-${{ matrix.tag }}
-        path: ${{ env.EXPORT_DIR }}
-        retention-days: 7
+        directory: ${{ env.EXPORT_DIR }}
+        distro: ${{ matrix.distro }}
