@@ -92,7 +92,6 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build RPMs
       run: ./automation/rpm.sh
-    - uses: ovirt/upload-rpms-action@v1
+    - uses: ovirt/upload-rpms-action@v2
       with:
         directory: ${{ env.EXPORT_DIR }}
-        distro: ${{ matrix.distro }}
