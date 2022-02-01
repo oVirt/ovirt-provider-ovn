@@ -17,12 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from __future__ import absolute_import
+import ipaddress
 import subprocess
-
-from netaddr import IPAddress
-from netaddr.core import AddrConversionError
-from netaddr.core import AddrFormatError
 
 from vdsm.network.api import network_caps
 from vdsm.tool import expose, ExtraArgsError
@@ -96,8 +92,8 @@ def ovn_unconfigure(*args):
 
 def is_ipaddress(candidate):
     try:
-        IPAddress(candidate)
-    except AddrFormatError:
+        ipaddress.ip_address(candidate)
+    except ValueError:
         return False
     return True
 
@@ -112,11 +108,9 @@ def format_literal_ipaddress(ip_address):
 
 
 def is_ipv6(candidate):
-    try:
-        IPAddress(candidate).ipv4()
-        return False
-    except AddrConversionError:
+    if ipaddress.ip_address(candidate).version == 6:
         return True
+    return False
 
 
 def get_network(net_caps, net_name):
