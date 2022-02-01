@@ -108,9 +108,7 @@ def format_literal_ipaddress(ip_address):
 
 
 def is_ipv6(candidate):
-    if ipaddress.ip_address(candidate).version == 6:
-        return True
-    return False
+    return ipaddress.ip_address(candidate).version == 6
 
 
 def get_network(net_caps, net_name):
