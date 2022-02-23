@@ -82,3 +82,7 @@ ROW_PG_EXTERNAL_IDS = 'external_ids'
 TABLE_ACL = 'ACL'
 
 TABLE_ADDRESS_SET = 'Address_Set'
+
+# Extensions
+EXTENSION_UPDATED = '2022-02-28T00:00:00-00:00'
+SUPPORTED_EXTENSIONS = [('Neutron Extra Route', 'extraroute')]

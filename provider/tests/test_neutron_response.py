@@ -25,12 +25,14 @@ import mock
 import pytest
 
 from handlers.base_handler import BadRequestError
+from handlers.base_handler import ElementNotFoundError
 from handlers.neutron_responses import responses
 from handlers.neutron_responses import GET
 from handlers.neutron_responses import DELETE
 from handlers.neutron_responses import POST
 from handlers.neutron_responses import PUT
 
+from handlers.neutron_responses import ALIAS
 from handlers.neutron_responses import NETWORK_ID
 from handlers.neutron_responses import PORT_ID
 
@@ -46,6 +48,8 @@ from handlers.neutron_responses import ROUTERS
 from handlers.neutron_responses import SECURITY_GROUPS
 from handlers.neutron_responses import SUBNET_ENTITY
 from handlers.neutron_responses import SUBNETS
+from handlers.neutron_responses import EXTENSIONS
+from handlers.neutron_responses import EXTENSION_ENTITY
 
 from handlers.selecting_handler import SelectingHandler
 
@@ -63,6 +67,7 @@ NOT_RELEVANT = None
 NETWORK_ID01 = UUID(int=1)
 NETWORK_NAME1 = 'network_name_1'
 PORT_ID07 = UUID(int=7)
+EXT_ROUTES_ALIAS = 'extraroute'
 
 
 class NetworkRow(object):
@@ -115,11 +120,20 @@ class TestNeutronResponse(object):
             assert params is not None
             assert params['router_id'] == '7'
 
-        for path in [FLOATINGIPS, SECURITY_GROUPS]:
+        for path in [FLOATINGIPS, SECURITY_GROUPS, EXTENSIONS]:
             handler, params = SelectingHandler.get_response_handler(
                 responses(), GET, path.split('/')
             )
             assert handler is not None
+
+        handler, params = SelectingHandler.get_response_handler(
+            responses(),
+            GET,
+            EXTENSION_ENTITY.format(alias=EXT_ROUTES_ALIAS).split('/'),
+        )
+        assert handler is not None
+        assert params is not None
+        assert params[ALIAS] == EXT_ROUTES_ALIAS
 
         # This is a test call engine makes to check if provider is alive
         handler, params = SelectingHandler.get_response_handler(
@@ -372,3 +386,48 @@ class TestNeutronResponse(object):
             '172.24.4.6',
             None,
         )
+
+    def test_get_extensions(self):
+        nb_db = NeutronApi()
+        handler, params = SelectingHandler.get_response_handler(
+            responses(), GET, EXTENSIONS.split('/')
+        )
+        response = handler(nb_db, NOT_RELEVANT, NOT_RELEVANT)
+
+        response_json = response.body
+        assert response_json['extensions'][0]['alias'] == EXT_ROUTES_ALIAS
+        assert (
+            response_json['extensions'][0]['updated']
+            == '2022-02-28T00:00:00-00:00'
+        )
+        assert (
+            response_json['extensions'][0]['name']
+            == response_json['extensions'][0]['description']
+        )
+        assert response_json['extensions'][0]['links'] == []
+
+    @mock.patch('ovsdbapp.backend.ovs_idl.connection', autospec=False)
+    def test_get_valid_extension(self, mock_connection):
+        nb_db = NeutronApi()
+        nb_db.ovn_north.idl = Mock()
+
+        handler, params = SelectingHandler.get_response_handler(
+            responses(),
+            GET,
+            EXTENSION_ENTITY.format(alias=EXT_ROUTES_ALIAS).split('/'),
+        )
+        response = handler(nb_db, NOT_RELEVANT, {ALIAS: EXT_ROUTES_ALIAS})
+        assert response
+
+    @mock.patch('ovsdbapp.backend.ovs_idl.connection', autospec=False)
+    def test_get_invalid_extension(self, mock_connection):
+        nb_db = NeutronApi()
+        nb_db.ovn_north.idl = Mock()
+
+        handler, params = SelectingHandler.get_response_handler(
+            responses(),
+            GET,
+            EXTENSION_ENTITY.format(alias='invalid').split('/'),
+        )
+        with pytest.raises(ElementNotFoundError):
+            handler(nb_db, NOT_RELEVANT, {ALIAS: 'invalid'})

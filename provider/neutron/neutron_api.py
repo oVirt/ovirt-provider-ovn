@@ -1729,3 +1729,27 @@ class NeutronApi(object):
 
     def are_security_groups_supported(self):
         return ovnconst.TABLE_PORT_GROUP in self.idl.tables
+
+    @staticmethod
+    def list_extensions():
+        extensions = []
+        for name, alias in ovnconst.SUPPORTED_EXTENSIONS:
+            extensions.append(
+                {
+                    'updated': ovnconst.EXTENSION_UPDATED,
+                    'name': name,
+                    'alias': alias,
+                    'description': name,
+                    'links': [],
+                }
+            )
+        return extensions
+
+    @staticmethod
+    def get_extension(ext_alias):
+        for _, alias in ovnconst.SUPPORTED_EXTENSIONS:
+            if ext_alias == alias:
+                return
+        raise ElementNotFoundError(
+            f'Cannot find extension with alias "{ext_alias}"'
+        )
