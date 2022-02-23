@@ -36,6 +36,7 @@ SUBNET_ID = 'subnet_id'
 ROUTER_ID = 'router_id'
 SECURITY_GROUP_ID = 'security_group_id'
 SECURITY_GROUP_RULE_ID = 'security_group_rule_id'
+ALIAS = 'alias'
 
 NETWORKS = 'networks'
 NETWORK_ENTITY = 'networks/{network_id}'
@@ -51,6 +52,8 @@ ADD_ROUTER_INTERFACE = 'routers/{router_id}/add_router_interface'
 DELETE_ROUTER_INTERFACE = 'routers/{router_id}/remove_router_interface'
 SECURITY_GROUP_RULES = 'security-group-rules'
 SECURITY_GROUP_RULE_ENTITY = 'security-group-rules/{security_group_rule_id}'
+EXTENSIONS = 'extensions'
+EXTENSION_ENTITY = 'extensions/{alias}'
 
 FLOATINGIPS = 'floatingips'
 
@@ -88,6 +91,17 @@ def get_default(nb_db, content, parameters):
             ]
         }
     )
+
+
+@rest(GET, EXTENSIONS, _responses)
+def get_extensions(nb_db, content, parameters):
+    return Response({'extensions': nb_db.list_extensions()})
+
+
+@rest(GET, EXTENSION_ENTITY, _responses)
+def show_extension(nb_db, content, parameters):
+    nb_db.get_extension(parameters[ALIAS])
+    return Response()
 
 
 @rest(GET, NETWORKS, _responses)
