@@ -125,6 +125,10 @@ to OVN.
 
 
 %changelog
+* Mon Mar 14 2022 Eitan Raviv <eraviv@redhat.com> - 1.2.36
+- Replace netaddr with std ipaddress
+- Add support for "extensions" REST API endpoint
+
 * Mon Jan 17 2022 Ales Musil <amusil@redhat.com> - 1.2.35
 - Use SSL keys that are made specifically for OVN
 - Require ovirt-openvswitch wrapper instead of plain openvswitch
