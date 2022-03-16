@@ -1,6 +1,12 @@
 FROM centos/centos:stream9
 LABEL maintainer="amusil@redhat.com" purpose="ovirt_provider_ovn_tests"
 
+# Use legacy cryptopolicy as workaround for https://bugzilla.redhat.com/show_bug.cgi?id=2059101
+# until https://pagure.io/copr/copr/issue/2106 is fixed
+RUN dnf install -y crypto-policies-scripts crypto-policies \
+    && \
+    update-crypto-policies --set LEGACY
+
 # The copr plugin is installed by default on el8stream
 RUN dnf -y install yum-plugin-copr \
     && \
