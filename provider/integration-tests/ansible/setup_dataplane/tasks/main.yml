@@ -52,20 +52,24 @@
   with_items:
     - "{{ network_points }}"
 
-- name: namespace dynamic ipv4 configuration
+- name: namespace dynamic ipv4 configuration (nmcli)
   delegate_to: "{{ controller_container_id }}"
-  command:
-    "timeout 1m ip netns exec {{ item.ns }} dhclient -4 -lf /var/lib/dhclient/{{ item.ns }}.lease --no-pid {{ item.name }}"
+  shell: |
+    ip netns exec {{ item.ns }} nmcli device set {{ item.name }} managed yes
+    ip netns exec {{ item.ns }} nmcli connection add type ethernet ifname {{ item.name }} con-name {{ item.ns }}-ipv4 ipv4.method auto autoconnect yes
+    ip netns exec {{ item.ns }} nmcli connection up {{ item.ns }}-ipv4
   with_items:
     - "{{ network_points }}"
   when:
     - "'ip' not in item"
     - item.cidr | ipv4
 
-- name: namespace dynamic ipv6 configuration through dhcpv6
+- name: namespace dynamic ipv6 configuration through dhcpv6 (nmcli)
   delegate_to: "{{ controller_container_id }}"
-  command:
-    "timeout 1m ip netns exec {{ item.ns }} dhclient -6 -lf /var/lib/dhclient/{{ item.ns }}.lease --no-pid {{ item.name }}"
+  shell: |
+    ip netns exec {{ item.ns }} nmcli device set {{ item.name }} managed yes
+    ip netns exec {{ item.ns }} nmcli connection add type ethernet ifname {{ item.name }} con-name {{ item.ns }}-ipv6 ipv6.method dhcp autoconnect yes
+    ip netns exec {{ item.ns }} nmcli connection up {{ item.ns }}-ipv6
   when:
     - "'ip' not in item"
     - item.cidr | ipv6

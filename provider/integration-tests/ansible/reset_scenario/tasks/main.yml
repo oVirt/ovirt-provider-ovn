@@ -65,11 +65,19 @@
     msg: 'Networks were not deleted'
   when: result.openstack_networks | length > 0
 
-- name: delete the dhcp leases
+- name: delete the network manager ipv4 connections (nmcli)
   delegate_to: "{{ controller_container_id }}"
-  file:
-    path: "/var/lib/dhclient/{{ item.ns }}.lease"
-    state: absent
+  command:
+    "ip netns exec {{ item.ns }} nmcli connection delete {{ item.ns }}-ipv4 || true"
+  ignore_errors: true
+  with_items:
+    - "{{ network_points }}"
+
+- name: delete the network manager ipv6 connections (nmcli)
+  delegate_to: "{{ controller_container_id }}"
+  command:
+    "ip netns exec {{ item.ns }} nmcli connection delete {{ item.ns }}-ipv6 || true"
+  ignore_errors: true
   with_items:
     - "{{ network_points }}"
 
