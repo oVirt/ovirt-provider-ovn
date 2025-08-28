@@ -25,6 +25,7 @@ from functools import wraps
 from netaddr import AddrFormatError
 from netaddr import EUI
 from netaddr import IPNetwork
+from netaddr import __version__ as netaddr_version
 
 import constants as ovnconst
 import neutron.constants as neutron_constants
@@ -51,6 +52,8 @@ SecurityGroup = namedtuple('SecurityGroup', ['sec_group', 'sec_group_rules'])
 OVN_PREFIX = 'ovirt_'
 OVN_PREFIX_LENGTH = len(OVN_PREFIX)
 UUID_LENGTH = 36
+
+netaddr_major_version = int(netaddr_version.split('.')[0])
 
 
 class SecurityGroupRule(object):
@@ -1406,7 +1409,12 @@ class SecurityGroupRuleMapper(Mapper):
         )
         if prefix:
             try:
-                addr_or_prefix = IPNetwork(prefix, implicit_prefix=True)
+                # pylint: disable=E1123
+                if netaddr_major_version < 1:
+                    addr_or_prefix = IPNetwork(prefix, implicit_prefix=True)
+                else:
+                    addr_or_prefix = IPNetwork(prefix, expand_partial=True)
+                # pylint: enable=E1123
             except AddrFormatError as afe:
                 raise BadRequestError(afe)
 
