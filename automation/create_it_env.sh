@@ -6,7 +6,7 @@ EXEC_PATH=$(dirname "$(realpath "$0")")
 PROJECT_ROOT=$(git rev-parse --show-toplevel)
 EXPORTED_ARTIFACTS_DIR="${EXPORT_DIR:=exported-artifacts}"
 
-IMAGE_TAG="${IMAGE_TAG:=centos-8}"
+IMAGE_TAG="${IMAGE_TAG:=centos-9}"
 OVN_CONTROLLER_IMG="${CONTROLLER_IMG:=ovirt/ovn-controller}"
 OVIRT_PROVIDER_OVN_IMG="${PROVIDER_IMG:=ovirt/ovirt-provider-ovn}"
 
@@ -18,11 +18,11 @@ AUTOMATED_TEST_TARGET="${TEST_TARGET:-integration-tests}"
 test -t 1 && USE_TTY="t"
 
 function container_ip {
-    ${CONTAINER_CMD} inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $1
+  ${CONTAINER_CMD} inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $1
 }
 
 function container_exec {
-    ${CONTAINER_CMD} exec "-i$USE_TTY" "$1" /bin/bash -c "$2"
+  ${CONTAINER_CMD} exec "-i$USE_TTY" "$1" /bin/bash -c "$2"
 }
 
 function load_kernel_modules {
@@ -30,7 +30,7 @@ function load_kernel_modules {
 }
 
 function enable_ipv6 {
-    container_exec "$1" "echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6"
+  container_exec "$1" "echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6"
 }
 
 function destroy_env {
@@ -75,6 +75,8 @@ function start_controller_container {
 function create_rpms {
   cleanup_past_builds
   container_exec "$PROVIDER_ID" "touch /var/log/ovirt-provider-ovn.log"
+  # Fix git ownership issue in container
+  container_exec "$PROVIDER_ID" "git config --global --add safe.directory $CONTAINER_SRC_CODE_PATH"
   container_exec "$PROVIDER_ID" "
     cd $CONTAINER_SRC_CODE_PATH && \
     make rpm

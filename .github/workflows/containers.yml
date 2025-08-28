@@ -27,7 +27,7 @@ jobs:
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ovirt/${{ matrix.container }}
-          tags: centos-8 centos-9
+          tags: centos-9 centos-10
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ secrets.QUAY_USERNAME  }}
           password: ${{ secrets.QUAY_TOKEN }}
