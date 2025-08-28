@@ -17,11 +17,11 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
-from mock import MagicMock
+from unittest.mock import MagicMock
 import json
-import mock
+import unittest.mock as mock
 
-from six.moves import http_client
+import http.client as http_client
 from handlers.base_handler import Response
 from handlers.neutron import NeutronHandler
 

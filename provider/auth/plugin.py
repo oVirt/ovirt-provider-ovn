@@ -20,11 +20,8 @@ from __future__ import absolute_import
 
 import abc
 
-import six
 
-
-@six.add_metaclass(abc.ABCMeta)
-class Plugin(object):
+class Plugin(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def create_token(self, user_at_domain, user_password):
         """Create a new token and return it."""

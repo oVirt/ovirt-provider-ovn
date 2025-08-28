@@ -22,8 +22,8 @@ from xml.dom import minidom
 import os
 import sys
 
-from mock import Mock
-import mock
+from unittest.mock import Mock
+import unittest.mock as mock
 
 from ovirt_provider_ovn_hook import VNIC_ID_KEY
 import ovirt_provider_ovn_hook

@@ -27,7 +27,7 @@ import socket
 import ssl
 import sys
 import threading
-from six.moves.BaseHTTPServer import HTTPServer
+from http.server import HTTPServer
 
 from ovsdbapp.backend.ovs_idl import vlog
 

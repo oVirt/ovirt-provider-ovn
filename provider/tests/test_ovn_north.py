@@ -19,7 +19,7 @@
 from __future__ import absolute_import
 
 from uuid import UUID
-import mock
+import unittest.mock as mock
 import pytest
 
 from ovsdbapp.backend.ovs_idl.idlutils import RowNotFound
@@ -1661,9 +1661,11 @@ class TestOvnNorth(object):
 
     @mock.patch(
         'ovsdbapp.schema.ovn_northbound.impl_idl.OvnNbApiIdlImpl.lookup',
-        lambda idl, table, uuid: TestOvnNorth.SECURITY_GROUP
-        if table == 'Port_Group'
-        else TestOvnNorth.SECURITY_GROUP_RULE_01,
+        lambda idl, table, uuid: (
+            TestOvnNorth.SECURITY_GROUP
+            if table == 'Port_Group'
+            else TestOvnNorth.SECURITY_GROUP_RULE_01
+        ),
     )
     def test_get_security_group_rule(self, mock_connection):
         ovn_north = NeutronApi(sec_group_support=True)

@@ -57,6 +57,5 @@ def _load_plugin(plugin_name):
 
 
 def plugin_loaded():
-    global plugin
     if not plugin:
         raise AttributeError('No auth plugin loaded')

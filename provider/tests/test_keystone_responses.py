@@ -18,7 +18,7 @@
 from __future__ import absolute_import
 
 import json
-import mock
+import unittest.mock as mock
 import pytest
 
 from handlers.base_handler import BadRequestError
