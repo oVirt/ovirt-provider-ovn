@@ -21,11 +21,10 @@ from __future__ import absolute_import
 import abc
 import json as libjson
 import logging
-import six
 
-from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
-from six.moves import http_client
-from six.moves import urllib_parse
+from http.server import BaseHTTPRequestHandler
+import http.client as http_client
+import urllib.parse as urllib_parse
 
 from auth import BadGateway
 from auth import Forbidden
@@ -84,10 +83,7 @@ class BaseHandler(BaseHTTPRequestHandler):
 
     # Suppress static error message of BaseHTTPRequestHandler, because a
     # the individual error message ERROR_MESSAGE is sent.
-    if six.PY2:
-        error_message_format = ''
-    else:
-        error_message_format = ERROR_MESSAGE
+    error_message_format = ERROR_MESSAGE
     error_content_type = ERROR_CONTENT_TYPE
 
     # TODO: this is made configurable in a later patch
@@ -279,22 +275,9 @@ class BaseHandler(BaseHTTPRequestHandler):
         error_message = str(e) or message or ''
         logging.exception(error_message)
         explain = libjson.dumps(error_message)
-        if six.PY2:
-            self.send_error(response_code)
-            self.wfile.write(
-                (
-                    ERROR_MESSAGE
-                    % {
-                        'code': response_code,
-                        'explain': explain,
-                        'message': http_client.responses[response_code],
-                    }
-                ).encode()
-            )
-        else:
-            self.send_error(
-                response_code, explain=explain
-            )  # pylint: disable=E1123
+        self.send_error(
+            response_code, explain=explain
+        )  # pylint: disable=E1123
 
     @staticmethod
     def _parse_request_path(full_path):

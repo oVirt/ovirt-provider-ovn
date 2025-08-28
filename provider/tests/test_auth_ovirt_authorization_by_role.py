@@ -17,8 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
-import mock
-from mock import ANY
+import unittest.mock as mock
+from unittest.mock import ANY
 
 from auth.plugins.ovirt import AuthorizationByRole
 

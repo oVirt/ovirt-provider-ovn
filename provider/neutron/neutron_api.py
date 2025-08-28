@@ -221,9 +221,9 @@ class NeutronApi(object):
         if mtu is not None:
             relevant_external_ids[NetworkMapper.OVN_MTU] = str(mtu)
         if port_security is not None:
-            relevant_external_ids[
-                NetworkMapper.OVN_NETWORK_PORT_SECURITY
-            ] = str(port_security)
+            relevant_external_ids[NetworkMapper.OVN_NETWORK_PORT_SECURITY] = (
+                str(port_security)
+            )
         new_external_ids = self._generate_external_ids(
             current_external_ids, **relevant_external_ids
         )
@@ -285,9 +285,11 @@ class NeutronApi(object):
                     ovnconst.TABLE_DHCP_Options, subnet.uuid
                 )
                 .add(
-                    ovnconst.ROW_DHCP_OPTIONS
-                    if ip_utils.is_subnet_ipv4(subnet)
-                    else ovnconst.ROW_DHCP_EXTERNAL_IDS,
+                    (
+                        ovnconst.ROW_DHCP_OPTIONS
+                        if ip_utils.is_subnet_ipv4(subnet)
+                        else ovnconst.ROW_DHCP_EXTERNAL_IDS
+                    ),
                     {SubnetMapper.OVN_DHCP_MTU: str(mtu)},
                 )
                 .build_command()
@@ -860,9 +862,9 @@ class NeutronApi(object):
         if name:
             external_ids[SubnetMapper.OVN_NAME] = name
         if ipv6_address_mode:
-            external_ids[
-                SubnetMapper.OVN_IPV6_ADDRESS_MODE
-            ] = ipv6_address_mode
+            external_ids[SubnetMapper.OVN_IPV6_ADDRESS_MODE] = (
+                ipv6_address_mode
+            )
             external_ids[SubnetMapper.OVN_DHCP_MTU] = mtu
         if ip_version == SubnetMapper.IP_VERSION_6 and gateway:
             external_ids[SubnetMapper.OVN_GATEWAY] = gateway

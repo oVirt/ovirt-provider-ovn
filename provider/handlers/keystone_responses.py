@@ -18,7 +18,7 @@
 from __future__ import absolute_import
 
 from datetime import datetime, timedelta
-from six.moves import http_client
+import http.client as http_client
 
 from ovirt_provider_config_common import auth_token_timeout
 from ovirt_provider_config_common import openstack_region

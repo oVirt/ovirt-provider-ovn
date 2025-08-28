@@ -18,9 +18,8 @@
 from __future__ import absolute_import
 
 import json
-from mock import MagicMock, ANY
-import mock
-import six
+from unittest.mock import MagicMock, ANY
+import unittest.mock as mock
 
 from handlers.base_handler import BadRequestError
 from handlers.base_handler import Response
@@ -190,7 +189,4 @@ class TestKeystoneHandler(object):
 
     @staticmethod
     def _assert_send_error_correctly_called(mock_object, resp_code):
-        if six.PY2:
-            mock_object.assert_called_once_with(ANY, resp_code)
-        else:
-            mock_object.assert_called_once_with(ANY, resp_code, explain=ANY)
+        mock_object.assert_called_once_with(ANY, resp_code, explain=ANY)

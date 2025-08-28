@@ -20,7 +20,7 @@ from __future__ import absolute_import
 
 import glob
 import os
-from six.moves import configparser
+import configparser
 
 
 CONFIG_FILE = '/etc/ovirt-provider-ovn/ovirt-provider-ovn.conf'
@@ -148,7 +148,6 @@ def load():
 
 
 def get(section, key, default=None):
-    global _config
     try:
         return _config.get(section, key) if _config else default
     except (configparser.NoOptionError, configparser.NoSectionError):
@@ -156,7 +155,6 @@ def get(section, key, default=None):
 
 
 def getboolean(section, key, default=None):
-    global _config
     try:
         return _config.getboolean(section, key) if _config else default
     except (configparser.NoOptionError, configparser.NoSectionError):
@@ -164,7 +162,6 @@ def getboolean(section, key, default=None):
 
 
 def getfloat(section, key, default=None):
-    global _config
     try:
         return _config.getfloat(section, key) if _config else default
     except (configparser.NoOptionError, configparser.NoSectionError):
@@ -172,7 +169,6 @@ def getfloat(section, key, default=None):
 
 
 def getint(section, key, default=None):
-    global _config
     try:
         return _config.getint(section, key) if _config else default
     except (configparser.NoOptionError, configparser.NoSectionError):

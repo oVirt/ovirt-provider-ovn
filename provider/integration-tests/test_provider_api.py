@@ -21,7 +21,7 @@ import contextlib
 import json
 
 import pytest
-import six.moves.http_client as http_client
+import http.client as http_client
 import requests
 
 from lib.api_lib import update_and_assert

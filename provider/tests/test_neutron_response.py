@@ -18,10 +18,10 @@
 from __future__ import absolute_import
 
 
-from mock import Mock
+from unittest.mock import Mock
 from uuid import UUID
 import json
-import mock
+import unittest.mock as mock
 import pytest
 
 from handlers.base_handler import BadRequestError

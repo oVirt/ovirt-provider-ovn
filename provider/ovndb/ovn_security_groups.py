@@ -71,13 +71,13 @@ class OvnSecurityGroupApi(object):
                 SecurityGroupMapper.OVN_SECURITY_GROUP_DESCRIPTION
             ] = description
         if tenant_id:
-            external_ids[
-                SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT
-            ] = tenant_id
+            external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_TENANT] = (
+                tenant_id
+            )
         if project_id:
-            external_ids[
-                SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT
-            ] = project_id
+            external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_PROJECT] = (
+                project_id
+            )
         return self._idl.pg_add(
             pg_name, may_exist=False, acls=[], external_ids=external_ids
         )
@@ -100,9 +100,9 @@ class OvnSecurityGroupApi(object):
         external_ids = sec_group.external_ids
 
         external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_UPDATE_TS] = now
-        external_ids[
-            SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER
-        ] = self.get_bumped_revision_number(sec_group)
+        external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_REV_NUMBER] = (
+            self.get_bumped_revision_number(sec_group)
+        )
         external_ids[SecurityGroupMapper.OVN_SECURITY_GROUP_NAME] = name
         if description:
             external_ids[

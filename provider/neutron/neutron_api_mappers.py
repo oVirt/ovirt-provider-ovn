@@ -25,7 +25,6 @@ from functools import wraps
 from netaddr import AddrFormatError
 from netaddr import EUI
 from netaddr import IPNetwork
-import six
 
 import constants as ovnconst
 import neutron.constants as neutron_constants
@@ -92,8 +91,7 @@ class SecurityGroupRule(object):
         return SecurityGroupRule.default_group_id
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Mapper(object):
+class Mapper(object, metaclass=abc.ABCMeta):
 
     REST_TENANT_ID = 'tenant_id'
     REST_PROJECT_ID = 'project_id'
@@ -277,13 +275,13 @@ class NetworkMapper(Mapper):
             result[NetworkMapper.REST_PROVIDER_SEGMENTATION_ID] = int(
                 ovn_vlan[0]
             )
-            result[
-                NetworkMapper.REST_PROVIDER_NETWORK_TYPE
-            ] = NetworkMapper.NETWORK_TYPE_VLAN
+            result[NetworkMapper.REST_PROVIDER_NETWORK_TYPE] = (
+                NetworkMapper.NETWORK_TYPE_VLAN
+            )
         else:
-            result[
-                NetworkMapper.REST_PROVIDER_NETWORK_TYPE
-            ] = NetworkMapper.NETWORK_TYPE_FLAT
+            result[NetworkMapper.REST_PROVIDER_NETWORK_TYPE] = (
+                NetworkMapper.NETWORK_TYPE_FLAT
+            )
         return result
 
     @staticmethod
@@ -491,9 +489,9 @@ class PortMapper(Mapper):
             return [
                 {
                     PortMapper.REST_PORT_IP_ADDRESS: ip_address,
-                    PortMapper.REST_PORT_SUBNET_ID: str(dhcp_options.uuid)
-                    if dhcp_options
-                    else None,
+                    PortMapper.REST_PORT_SUBNET_ID: (
+                        str(dhcp_options.uuid) if dhcp_options else None
+                    ),
                 }
             ]
 
@@ -618,9 +616,7 @@ class SubnetMapper(Mapper):
         OVN_DHCPV6_STATELESS: IPV6_ADDRESS_MODE_STATELESS,
     }
 
-    ovn_ipv6_address_mode = {
-        v: k for k, v in six.iteritems(rest_ipv6_address_mode)
-    }
+    ovn_ipv6_address_mode = {v: k for k, v in rest_ipv6_address_mode.items()}
 
     # allow raw OVN values on OpenStack API for backward compatibility
     ovn_ipv6_address_mode.update(
@@ -697,11 +693,11 @@ class SubnetMapper(Mapper):
             SubnetMapper.REST_SUBNET_ALLOCATION_POOLS: [
                 SubnetMapper.get_allocation_pool(row.cidr),
             ],
-            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: [
-                options[SubnetMapper.OVN_DNS_SERVER]
-            ]
-            if SubnetMapper.OVN_DNS_SERVER in options
-            else [],
+            SubnetMapper.REST_SUBNET_DNS_NAMESERVERS: (
+                [options[SubnetMapper.OVN_DNS_SERVER]]
+                if SubnetMapper.OVN_DNS_SERVER in options
+                else []
+            ),
         }
         if SubnetMapper.OVN_NAME in external_ids:
             result[SubnetMapper.REST_SUBNET_NAME] = external_ids[
@@ -716,11 +712,11 @@ class SubnetMapper(Mapper):
                 SubnetMapper.OVN_GATEWAY
             ]
         if SubnetMapper.OVN_IPV6_ADDRESS_MODE in external_ids:
-            result[
-                SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE
-            ] = SubnetMapper.rest_ipv6_address_mode[
-                external_ids[SubnetMapper.OVN_IPV6_ADDRESS_MODE]
-            ]
+            result[SubnetMapper.REST_SUBNET_IPV6_ADDRESS_MODE] = (
+                SubnetMapper.rest_ipv6_address_mode[
+                    external_ids[SubnetMapper.OVN_IPV6_ADDRESS_MODE]
+                ]
+            )
 
         return result
 
@@ -901,12 +897,14 @@ class RouterMapper(Mapper):
         result = {
             RouterMapper.REST_ROUTER_ID: str(row.uuid),
             RouterMapper.REST_ROUTER_NAME: row.name,
-            RouterMapper.REST_ROUTER_ADMIN_STATE_UP: row.enabled[0]
-            if row.enabled
-            else True,
-            RouterMapper.REST_ROUTER_STATUS: RouterMapper.ROUTER_STATUS_ACTIVE
-            if row.enabled
-            else RouterMapper.ROUTER_STATUS_INACTIVE,
+            RouterMapper.REST_ROUTER_ADMIN_STATE_UP: (
+                row.enabled[0] if row.enabled else True
+            ),
+            RouterMapper.REST_ROUTER_STATUS: (
+                RouterMapper.ROUTER_STATUS_ACTIVE
+                if row.enabled
+                else RouterMapper.ROUTER_STATUS_INACTIVE
+            ),
             RouterMapper.REST_TENANT_ID: tenant_id(),
             RouterMapper.REST_ROUTER_EXTERNAL_GATEWAY_INFO: RouterMapper._get_external_gateway_from_row(  # noqa: E501
                 router
@@ -1252,10 +1250,10 @@ class SecurityGroupMapper(Mapper):
             SecurityGroupMapper.optional_attr_ext_id_mapper,
         )
         result.update(rest_optional_values)
-        result[
-            SecurityGroupMapper.REST_SEC_GROUP_NAME
-        ] = group_data.external_ids.get(
-            SecurityGroupMapper.OVN_SECURITY_GROUP_NAME
+        result[SecurityGroupMapper.REST_SEC_GROUP_NAME] = (
+            group_data.external_ids.get(
+                SecurityGroupMapper.OVN_SECURITY_GROUP_NAME
+            )
         )
 
         return result
@@ -1370,9 +1368,11 @@ class SecurityGroupRuleMapper(Mapper):
             SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_DIRECTION: neutron_constants.OVN_TO_API_DIRECTION_MAPPER[  # noqa: E501
                 rule.direction
             ],
-            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_SEC_GROUP_ID: sec_group_id  # noqa: E501
-            if sec_group_id != SecurityGroupMapper.DEFAULT_PG_NAME
-            else default_group_id,
+            SecurityGroupRuleMapper.REST_SEC_GROUP_RULE_SEC_GROUP_ID: (
+                sec_group_id  # noqa: E501
+                if sec_group_id != SecurityGroupMapper.DEFAULT_PG_NAME
+                else default_group_id
+            ),
         }
         optional_rest_values = SecurityGroupRuleMapper.set_from_external_ids(
             rule.external_ids,
