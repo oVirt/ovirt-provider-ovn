@@ -17,3 +17,5 @@ provider/tests/.cache
 exported-artifacts/
 provider/scripts/ovirt-provider-ovn.service
 provider/.coverage
+.cache
+.local
