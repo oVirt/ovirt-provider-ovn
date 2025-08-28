@@ -13,9 +13,9 @@ jobs:
     container: quay.io/ovirt/ovirt-provider-ovn-tests:${{ matrix.tag }}
     strategy:
       matrix:
-        tag: [ centos-8, centos-9 ]
+        tag: [ centos-9, centos-10 ]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Run check
       run: make check
 
@@ -24,9 +24,9 @@ jobs:
     container: quay.io/ovirt/ovirt-provider-ovn-tests:${{ matrix.tag }}
     strategy:
       matrix:
-        tag: [ centos-8, centos-9 ]
+        tag: [ centos-9, centos-10 ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Run unit tests
         run: make unittest
 
@@ -35,9 +35,9 @@ jobs:
     container: quay.io/ovirt/ovirt-provider-ovn-tests:${{ matrix.tag }}
     strategy:
       matrix:
-        tag: [ centos-8, centos-9 ]
+        tag: [ centos-9, centos-10 ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Run lint
         run: make lint
 
@@ -46,9 +46,9 @@ jobs:
     container: quay.io/ovirt/ovirt-provider-ovn-tests:${{ matrix.tag }}
     strategy:
       matrix:
-        tag: [ centos-8, centos-9 ]
+        tag: [ centos-9, centos-10 ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Run coverage
         run: make coverage
 
@@ -59,9 +59,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        tag: [ centos-8, centos-9 ]
+        tag: [ centos-9, centos-10 ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install dependencies
         run: |
           sudo apt update
@@ -70,7 +70,7 @@ jobs:
           sudo python3 -m pip install tox
       - name: Run itegration tests
         run: sudo -E ./automation/create_it_env.sh
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@main
         if: ${{ failure() }}
         with:
           name: ovirt-provider-ovn-integ-tests-${{ matrix.tag }}
@@ -84,14 +84,14 @@ jobs:
     strategy:
       matrix:
         include:
-          - distro: el8stream
-            tag: centos-8
           - distro: el9stream
             tag: centos-9
+          - distro: el10stream
+            tag: centos-10
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Build RPMs
       run: ./automation/rpm.sh
-    - uses: ovirt/upload-rpms-action@v2
+    - uses: ovirt/upload-rpms-action@main
       with:
         directory: ${{ env.EXPORT_DIR }}

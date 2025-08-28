@@ -1,27 +1,21 @@
-FROM centos/centos:stream9
-LABEL maintainer="amusil@redhat.com" purpose="ovirt_provider_ovn_integ_tests"
+ARG CENTOS_VERSION=9
+FROM centos/centos:stream${CENTOS_VERSION}
+LABEL maintainer="devel@ovirt.org" purpose="ovirt_provider_ovn_integ_tests"
 
-# Use legacy cryptopolicy as workaround for https://bugzilla.redhat.com/show_bug.cgi?id=2059101
-# until https://pagure.io/copr/copr/issue/2106 is fixed
-RUN dnf install -y crypto-policies-scripts crypto-policies \
-    && \
-    update-crypto-policies --set LEGACY
+ARG CENTOS_VERSION
 
-# The copr plugin is installed by default on el8stream
 RUN dnf -y install yum-plugin-copr \
     && \
-    dnf copr enable -y ovirt/ovirt-master-snapshot \
+    dnf copr enable -y ovirt/ovirt-master-snapshot centos-stream-${CENTOS_VERSION}-x86_64 \
     && \
     dnf install -y ovirt-release-master \
     && \
     dnf update -y \
     && \
     # Without it the ovirt-openvswitch fails to install
-    # It seems that the el8s container has systemd installed by default
     dnf install -y systemd \
     && \
     dnf install -y \
-        dhclient \
         iputils \
         NetworkManager-config-server \
         ovirt-openvswitch \
