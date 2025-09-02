@@ -64,6 +64,17 @@ from ovntestlib import OvnSecurityGroupRow
 from ovntestlib import OvnSecurityGroupRuleRow
 from ovntestlib import OvnSubnetRow
 
+from ovsdbapp import __version__ as ovsdbapp_version
+
+ovsdbapp_major = int(ovsdbapp_version.split('.')[0])
+
+
+def extend_call_by_version(original_call, *args, **kwargs):
+    if ovsdbapp_major < 2:
+        return original_call
+
+    return mock.call(*original_call.args, *args, **kwargs)
+
 
 @mock.patch('ovsdbapp.backend.ovs_idl.connection', autospec=False)
 class TestOvnNorth(object):
@@ -565,28 +576,34 @@ class TestOvnNorth(object):
         ]
 
         ovn_north.update_network(mtu_update, TestOvnNorth.NETWORK_IDMTU)
-        expected_external_ids_update = mock.call(
-            ovn_north.idl,
-            ovnconst.TABLE_LS,
-            TestOvnNorth.NETWORK_IDMTU,
-            (
-                ovnconst.ROW_LS_EXTERNAL_IDS,
-                {
-                    NetworkMapper.OVN_NETWORK_NAME: (
-                        TestOvnNorth.NETWORK_NAMEMTU
-                    ),
-                    NetworkMapper.REST_MTU: str(new_mtu),
-                },
+        expected_external_ids_update = extend_call_by_version(
+            mock.call(
+                ovn_north.idl,
+                ovnconst.TABLE_LS,
+                TestOvnNorth.NETWORK_IDMTU,
+                (
+                    ovnconst.ROW_LS_EXTERNAL_IDS,
+                    {
+                        NetworkMapper.OVN_NETWORK_NAME: (
+                            TestOvnNorth.NETWORK_NAMEMTU
+                        ),
+                        NetworkMapper.REST_MTU: str(new_mtu),
+                    },
+                ),
             ),
+            if_exists=True,
         )
-        expected_network_mtu_update = mock.call(
-            ovn_north.idl,
-            ovnconst.TABLE_DHCP_Options,
-            TestOvnNorth.SUBNET_IDMTU,
-            (
-                ovnconst.ROW_DHCP_OPTIONS,
-                {SubnetMapper.OVN_DHCP_MTU: str(new_mtu)},
+        expected_network_mtu_update = extend_call_by_version(
+            mock.call(
+                ovn_north.idl,
+                ovnconst.TABLE_DHCP_Options,
+                TestOvnNorth.SUBNET_IDMTU,
+                (
+                    ovnconst.ROW_DHCP_OPTIONS,
+                    {SubnetMapper.OVN_DHCP_MTU: str(new_mtu)},
+                ),
             ),
+            if_exists=True,
         )
         assert expected_external_ids_update in mock_dbset_command.mock_calls
         assert expected_network_mtu_update in mock_dbset_command.mock_calls
@@ -612,18 +629,21 @@ class TestOvnNorth(object):
         network = Network(ls=TestOvnNorth.NETWORK_10, localnet_lsp=None)
         assert_network_equal(result, network)
         assert mock_set_command.call_count == 1
-        assert mock_set_command.mock_calls[0] == mock.call(
-            ovn_north.idl,
-            ovnconst.TABLE_LS,
-            TestOvnNorth.NETWORK_ID10,
-            (
-                ovnconst.ROW_LS_EXTERNAL_IDS,
-                {
-                    NetworkMapper.OVN_NETWORK_NAME: (
-                        TestOvnNorth.NETWORK_NAME10
-                    )
-                },
+        assert mock_set_command.mock_calls[0] == extend_call_by_version(
+            mock.call(
+                ovn_north.idl,
+                ovnconst.TABLE_LS,
+                TestOvnNorth.NETWORK_ID10,
+                (
+                    ovnconst.ROW_LS_EXTERNAL_IDS,
+                    {
+                        NetworkMapper.OVN_NETWORK_NAME: (
+                            TestOvnNorth.NETWORK_NAME10
+                        )
+                    },
+                ),
             ),
+            if_exists=True,
         )
 
     @mock.patch(
@@ -655,18 +675,21 @@ class TestOvnNorth(object):
             ),
         )
         assert mock_set_command.call_count == 2
-        assert mock_set_command.mock_calls[0] == mock.call(
-            ovn_north.idl,
-            ovnconst.TABLE_LS,
-            TestOvnNorth.NETWORK_ID12,
-            (
-                ovnconst.ROW_LS_EXTERNAL_IDS,
-                {
-                    NetworkMapper.OVN_NETWORK_NAME: (
-                        TestOvnNorth.NETWORK_NAME12
-                    )
-                },
+        assert mock_set_command.mock_calls[0] == extend_call_by_version(
+            mock.call(
+                ovn_north.idl,
+                ovnconst.TABLE_LS,
+                TestOvnNorth.NETWORK_ID12,
+                (
+                    ovnconst.ROW_LS_EXTERNAL_IDS,
+                    {
+                        NetworkMapper.OVN_NETWORK_NAME: (
+                            TestOvnNorth.NETWORK_NAME12
+                        )
+                    },
+                ),
             ),
+            if_exists=True,
         )
 
     @mock.patch(
@@ -773,50 +796,59 @@ class TestOvnNorth(object):
         assert mock_db_set.call_count == 4
 
         assert (
-            mock.call(
-                ovn_north.idl,
-                ovnconst.TABLE_LSP,
-                mock.ANY,
-                (
-                    ovnconst.ROW_LSP_EXTERNAL_IDS,
-                    {PortMapper.OVN_DEVICE_ID: TestOvnNorth.DEVICE_ID},
+            extend_call_by_version(
+                mock.call(
+                    ovn_north.idl,
+                    ovnconst.TABLE_LSP,
+                    mock.ANY,
+                    (
+                        ovnconst.ROW_LSP_EXTERNAL_IDS,
+                        {PortMapper.OVN_DEVICE_ID: TestOvnNorth.DEVICE_ID},
+                    ),
+                    (
+                        ovnconst.ROW_LSP_EXTERNAL_IDS,
+                        {PortMapper.OVN_NIC_NAME: TestOvnNorth.PORT_NAME01},
+                    ),
+                    (
+                        ovnconst.ROW_LSP_EXTERNAL_IDS,
+                        {
+                            PortMapper.OVN_DEVICE_OWNER: TestOvnNorth.DEVICE_OWNER_OVIRT  # noqa: E501
+                        },
+                    ),
+                    (ovnconst.ROW_LSP_ENABLED, True),
+                    (
+                        ovnconst.ROW_LSP_OPTIONS,
+                        {
+                            PortMapper.OVN_REQUESTED_CHASSIS: TestOvnNorth.PORT_BINDING_ID  # noqa: E501
+                        },
+                    ),
                 ),
-                (
-                    ovnconst.ROW_LSP_EXTERNAL_IDS,
-                    {PortMapper.OVN_NIC_NAME: TestOvnNorth.PORT_NAME01},
-                ),
-                (
-                    ovnconst.ROW_LSP_EXTERNAL_IDS,
-                    {
-                        PortMapper.OVN_DEVICE_OWNER: TestOvnNorth.DEVICE_OWNER_OVIRT  # noqa: E501
-                    },
-                ),
-                (ovnconst.ROW_LSP_ENABLED, True),
-                (
-                    ovnconst.ROW_LSP_OPTIONS,
-                    {
-                        PortMapper.OVN_REQUESTED_CHASSIS: TestOvnNorth.PORT_BINDING_ID  # noqa: E501
-                    },
-                ),
+                if_exists=True,
             )
             in mock_db_set.mock_calls
         )
 
         assert (
-            mock.call(
-                ovn_north.idl,
-                ovnconst.TABLE_LSP,
-                mock.ANY,
-                (ovnconst.ROW_LSP_DHCPV4_OPTIONS, TestOvnNorth.SUBNET_ID101),
-                (
-                    ovnconst.ROW_LSP_ADDRESSES,
-                    [
-                        '{mac_address} {ip_address}'.format(
-                            mac_address=TestOvnNorth.MAC_ADDRESS,
-                            ip_address=TestOvnNorth.PORT_NAME01_FIXED_IP,
-                        )
-                    ],
+            extend_call_by_version(
+                mock.call(
+                    ovn_north.idl,
+                    ovnconst.TABLE_LSP,
+                    mock.ANY,
+                    (
+                        ovnconst.ROW_LSP_DHCPV4_OPTIONS,
+                        TestOvnNorth.SUBNET_ID101,
+                    ),
+                    (
+                        ovnconst.ROW_LSP_ADDRESSES,
+                        [
+                            '{mac_address} {ip_address}'.format(
+                                mac_address=TestOvnNorth.MAC_ADDRESS,
+                                ip_address=TestOvnNorth.PORT_NAME01_FIXED_IP,
+                            )
+                        ],
+                    ),
                 ),
+                if_exists=True,
             )
             in mock_db_set.mock_calls
         )
@@ -1090,14 +1122,17 @@ class TestOvnNorth(object):
         assert mock_add_command.call_count == 1
         assert mock_setoptions_command.call_count == 1
 
-        expected_dbset_call = mock.call(
-            ovn_north.idl,
-            ovnconst.TABLE_LS,
-            str(TestOvnNorth.NETWORK_ID10),
-            (
-                ovnconst.ROW_LS_OTHER_CONFIG,
-                {NetworkMapper.OVN_SUBNET: TestOvnNorth.SUBNET_CIDR},
+        expected_dbset_call = extend_call_by_version(
+            mock.call(
+                ovn_north.idl,
+                ovnconst.TABLE_LS,
+                str(TestOvnNorth.NETWORK_ID10),
+                (
+                    ovnconst.ROW_LS_OTHER_CONFIG,
+                    {NetworkMapper.OVN_SUBNET: TestOvnNorth.SUBNET_CIDR},
+                ),
             ),
+            if_exists=True,
         )
         assert mock_dbset_command.mock_calls[0] == expected_dbset_call
 
@@ -1743,12 +1778,15 @@ class TestOvnNorth(object):
             TestOvnNorth.SECURITY_GROUP_RULE_ID_01
         )
         assert mock_delete_rule.call_count == 1
-        expected_del_call = mock.call(
-            ovn_north.idl,
-            str(TestOvnNorth.SECURITY_GROUP_ID),
-            'from-lport',
-            1001,
-            'ip4 && tcp',
+        expected_del_call = extend_call_by_version(
+            mock.call(
+                ovn_north.idl,
+                str(TestOvnNorth.SECURITY_GROUP_ID),
+                'from-lport',
+                1001,
+                'ip4 && tcp',
+            ),
+            False,
         )
         assert mock_delete_rule.mock_calls[0] == expected_del_call
 
