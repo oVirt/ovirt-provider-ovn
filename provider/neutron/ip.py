@@ -107,7 +107,7 @@ def _get_ip_from_addresses(addresses):
 def _is_valid_ip(candidate):
     try:
         IPAddress(candidate)
-    except AddrFormatError:
+    except (AddrFormatError, TypeError):
         return False
     return True
 
