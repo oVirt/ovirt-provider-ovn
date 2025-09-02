@@ -3,3 +3,20 @@
 
 cloud_name: ovirt
 debug_icmpv6: false
+
+# DHCP client configuration per OS version
+dhcp_package_name:
+  "9": "dhcp-client"
+  "10": "dhcpcd"
+
+dhcp_lease_directory:
+  "9": "/var/lib/dhclient"
+  "10": "/var/lib/dhcpcd"
+
+dhcp_ipv4_command:
+  "9": "timeout 1m ip netns exec {{ item.ns }} dhclient -4 -lf {{ dhcp_lease_directory[os_major_version] }}/{{ item.ns }}.lease --no-pid {{ item.name }}"
+  "10": "ip netns exec {{ item.ns }} dhcpcd -4 -1 -L {{ dhcp_lease_directory[os_major_version] }}/{{ item.ns }}.lease {{ item.name }}"
+
+dhcp_ipv6_command:
+  "9": "timeout 1m ip netns exec {{ item.ns }} dhclient -6 -lf {{ dhcp_lease_directory[os_major_version] }}/{{ item.ns }}.lease --no-pid {{ item.name }}"
+  "10": "ip netns exec {{ item.ns }} dhcpcd -6 -1 -L {{ dhcp_lease_directory[os_major_version] }}/{{ item.ns }}.lease {{ item.name }}"

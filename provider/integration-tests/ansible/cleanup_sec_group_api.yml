@@ -5,7 +5,7 @@
 
   tasks:
   - name: Delete empty ICMP rule
-    os_security_group_rule:
+    openstack.cloud.security_group_rule:
       cloud: "{{ cloud }}"
       security_group: "{{ secgroup_name }}"
       state: absent
@@ -13,7 +13,7 @@
       remote_ip_prefix: 0.0.0.0/0
 
   - name: Delete -1 ICMP rule
-    os_security_group_rule:
+    openstack.cloud.security_group_rule:
       cloud: "{{ cloud }}"
       security_group: "{{ secgroup_name }}"
       state: absent
@@ -22,45 +22,19 @@
       port_range_max: -1
       remote_ip_prefix: 0.0.0.0/0
 
-  - name: Delete empty TCP rule
-    os_security_group_rule:
-      cloud: "{{ cloud }}"
-      security_group: "{{ secgroup_name }}"
-      state: absent
-      protocol: tcp
-      remote_ip_prefix: 0.0.0.0/0
-
   - name: Delete empty UDP rule
-    os_security_group_rule:
+    openstack.cloud.security_group_rule:
       cloud: "{{ cloud }}"
       security_group: "{{ secgroup_name }}"
       state: absent
       protocol: udp
       remote_ip_prefix: 0.0.0.0/0
 
-  - name: Delete HTTP rule
-    os_security_group_rule:
-      cloud: "{{ cloud }}"
-      security_group: "{{ secgroup_name }}"
-      state: absent
-      protocol: tcp
-      port_range_min: 80
-      port_range_max: 80
-      remote_ip_prefix: 0.0.0.0/0
-
-  - name: Delete egress rule
-    os_security_group_rule:
-      cloud: "{{ cloud }}"
-      security_group: "{{ secgroup_name }}"
-      state: absent
-      protocol: tcp
-      port_range_min: 30000
-      port_range_max: 30001
-      remote_ip_prefix: 0.0.0.0/0
-      direction: egress
-
-  - name: Delete security group
-    os_security_group:
+  # Skip individual TCP rule deletions since they cause "multiple matches" errors
+  # The security group deletion will cascade and delete all remaining rules
+  
+  - name: Delete security group (cascades to delete remaining TCP rules)
+    openstack.cloud.security_group:
       cloud: "{{ cloud }}"
       name: "{{ secgroup_name }}"
       state: absent

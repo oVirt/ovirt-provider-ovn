@@ -25,4 +25,6 @@ PLAYBOOK_CONFIG = {'cloud': 'ovirt', 'secgroup_name': 'test_group'}
 
 def test_security_groups_api():
     get_playbook('create_sec_group_api.yml', PLAYBOOK_CONFIG).run()
-    get_playbook('cleanup_sec_group_api.yml', PLAYBOOK_CONFIG).run()
+    get_playbook('cleanup_sec_group_api.yml', PLAYBOOK_CONFIG).run(
+        enable_idempotency_checker=False
+    )

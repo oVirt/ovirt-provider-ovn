@@ -65,9 +65,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install podman python3-pip
-          sudo python3 -m pip install --upgrade pip
-          sudo python3 -m pip install tox
+          sudo apt install podman tox
       - name: Run itegration tests
         run: sudo -E ./automation/create_it_env.sh
       - uses: actions/upload-artifact@main
