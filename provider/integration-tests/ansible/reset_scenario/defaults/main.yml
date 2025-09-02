@@ -3,3 +3,7 @@
 cloud_name: ovirt
 debug_icmpv6: false
 enable_data_plane_reset: true
+
+dhcp_lease_directory:
+  "9": "/var/lib/dhclient"
+  "10": "/var/lib/dhcpcd"

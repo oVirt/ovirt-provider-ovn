@@ -1,6 +1,15 @@
 ---
+- name: gather facts from controller container
+  delegate_to: "{{ controller_container_id }}"
+  setup:
+
+- name: detect OS version
+  delegate_to: "{{ controller_container_id }}"
+  set_fact:
+    os_major_version: "{{ ansible_distribution_major_version }}"
+
 - name: delete all routers
-  os_router:
+  openstack.cloud.router:
     cloud: "{{ cloud_name }}"
     name: "{{ item.name }}"
     state: absent
@@ -9,13 +18,13 @@
 
 - name: reset the ovs network, deleting all ports connected to it
   delegate_to: "{{ controller_container_id }}"
-  openvswitch_bridge:
+  openvswitch.openvswitch.openvswitch_bridge:
     bridge: br-int
     state: absent
   when: enable_data_plane_reset
 
 - name: delete all ports
-  os_port:
+  openstack.cloud.port:
     cloud: "{{ cloud_name }}"
     name: "{{ item.name }}"
     state: absent
@@ -23,16 +32,16 @@
     - "{{ network_points }}"
 
 - name: read current ports from provider ...
-  os_port_facts:
+  openstack.cloud.port_info:
     cloud: "{{ cloud_name }}"
   register: result
 
 - fail:
     msg: 'ports were not deleted'
-  when: result.openstack_ports | length > 0
-
+  when: result.ports | length > 0
+ 
 - name: delete all subnets
-  os_subnet:
+  openstack.cloud.subnet:
     cloud: "{{ cloud_name }}"
     name: "{{ item.subnet_name }}"
     state: absent
@@ -40,16 +49,16 @@
   - "{{ network_points }}"
 
 - name: read current subnets from provider ...
-  os_subnets_facts:
+  openstack.cloud.subnets_info:
     cloud: "{{ cloud_name }}"
   register: result
 
 - fail:
-    msg: 'Networks were not deleted'
-  when: result.openstack_subnets | length > 0
+    msg: 'Subnets were not deleted'
+  when: result.subnets | length > 0
 
 - name: delete all networks
-  os_network:
+  openstack.cloud.network:
     cloud: "{{ cloud_name }}"
     name: "{{ item.network }}"
     state: absent
@@ -57,18 +66,18 @@
     - "{{ network_points }}"
 
 - name: read current networks from provider ...
-  os_networks_facts:
+  openstack.cloud.networks_info:
     cloud: "{{ cloud_name }}"
   register: result
 
 - fail:
     msg: 'Networks were not deleted'
-  when: result.openstack_networks | length > 0
+  when: result.networks | length > 0
 
 - name: delete the dhcp leases
   delegate_to: "{{ controller_container_id }}"
   file:
-    path: "/var/lib/dhclient/{{ item.ns }}.lease"
+    path: "{{ dhcp_lease_directory[os_major_version] }}/{{ item.ns }}.lease"
     state: absent
   with_items:
     - "{{ network_points }}"
@@ -87,6 +96,6 @@
     - [ 'autoconf', 'accept_ra', 'accept_redirects' ,'accept_ra_pinfo' ]
 
 - name: stop tcpdump captures
-  include: stop_tcpdump_debug.yml
+  include_tasks: stop_tcpdump_debug.yml
   when:
     - debug_icmpv6

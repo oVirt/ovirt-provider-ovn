@@ -5,15 +5,19 @@
 
   tasks:
   - name: Create security group
-    os_security_group:
+    openstack.cloud.security_group:
       cloud: "{{ cloud }}"
       name: "{{ secgroup_name }}"
       state: present
       description: Created from Ansible playbook
     register: sec_group
 
+  - name: Unpack sec_group
+    set_fact:
+      sec_group: "{{ sec_group.security_group }}"
+
   - name: Create empty ICMP rule
-    os_security_group_rule:
+    openstack.cloud.security_group_rule:
       cloud: "{{ cloud }}"
       security_group: "{{ sec_group.id }}"
       state: present
@@ -21,7 +25,7 @@
       remote_ip_prefix: 0.0.0.0/0
 
   - name: Create -1 ICMP rule
-    os_security_group_rule:
+    openstack.cloud.security_group_rule:
       cloud: "{{ cloud }}"
       security_group: "{{ sec_group.id }}"
       state: present
@@ -30,39 +34,50 @@
       port_range_max: -1
       remote_ip_prefix: 0.0.0.0/0
 
-  - name: Create empty TCP rule
-    os_security_group_rule:
+  - name: Get all tcp rules
+    openstack.cloud.security_group_rule_info:
       cloud: "{{ cloud }}"
       security_group: "{{ sec_group.id }}"
-      state: present
       protocol: tcp
-      remote_ip_prefix: 0.0.0.0/0
+    register: tcp_rules
+
+  - name: Create tcp rules
+    # to fix idempotency check
+    when: tcp_rules.security_group_rules | length == 0  
+    block:
+      - name: Create empty TCP rule
+        openstack.cloud.security_group_rule:
+          cloud: "{{ cloud }}"
+          security_group: "{{ sec_group.id }}"
+          state: present
+          protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+
+      - name: Create HTTP rule
+        openstack.cloud.security_group_rule:
+          cloud: "{{ cloud }}"
+          security_group: "{{ sec_group.id }}"
+          state: present
+          protocol: tcp
+          port_range_min: 80
+          port_range_max: 80
+          remote_ip_prefix: 0.0.0.0/0
+
+      - name: Create egress rule
+        openstack.cloud.security_group_rule:
+          cloud: "{{ cloud }}"
+          security_group: "{{ sec_group.id }}"
+          state: present
+          protocol: tcp
+          port_range_min: 30000
+          port_range_max: 30001
+          remote_ip_prefix: 0.0.0.0/0
+          direction: egress
 
   - name: Create empty UDP rule
-    os_security_group_rule:
+    openstack.cloud.security_group_rule:
       cloud: "{{ cloud }}"
       security_group: "{{ sec_group.id }}"
       state: present
       protocol: udp
       remote_ip_prefix: 0.0.0.0/0
-
-  - name: Create HTTP rule
-    os_security_group_rule:
-      cloud: "{{ cloud }}"
-      security_group: "{{ sec_group.id }}"
-      state: present
-      protocol: tcp
-      port_range_min: 80
-      port_range_max: 80
-      remote_ip_prefix: 0.0.0.0/0
-
-  - name: Create egress rule
-    os_security_group_rule:
-      cloud: "{{ cloud }}"
-      security_group: "{{ sec_group.id }}"
-      state: present
-      protocol: tcp
-      port_range_min: 30000
-      port_range_max: 30001
-      remote_ip_prefix: 0.0.0.0/0
-      direction: egress

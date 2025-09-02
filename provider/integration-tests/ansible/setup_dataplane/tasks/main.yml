@@ -1,7 +1,29 @@
 ---
+- name: gather facts from controller container
+  delegate_to: "{{ controller_container_id }}"
+  setup:
+
+- name: detect OS version
+  delegate_to: "{{ controller_container_id }}"
+  set_fact:
+    os_major_version: "{{ ansible_facts['distribution_major_version'] }}"
+
+- name: install DHCP client for DHCP client functionality
+  delegate_to: "{{ controller_container_id }}"
+  package:
+    name: "{{ dhcp_package_name[os_major_version] }}"
+    state: present
+
+- name: create DHCP lease directory
+  delegate_to: "{{ controller_container_id }}"
+  file:
+    path: "{{ dhcp_lease_directory[os_major_version] }}"
+    state: directory
+    mode: '0755'
+
 - name: create the ip namespaces
   delegate_to: "{{ controller_container_id }}"
-  ip_netns:
+  community.general.ip_netns:
     name: "{{ item.ns }}"
     state: present
   with_items:
@@ -24,7 +46,7 @@
     - "{{ network_points }}"
 
 - name: debug filters
-  include: start_tcpdump_debug.yml
+  include_tasks: start_tcpdump_debug.yml
   when:
   - debug_icmpv6
 
@@ -54,8 +76,7 @@
 
 - name: namespace dynamic ipv4 configuration
   delegate_to: "{{ controller_container_id }}"
-  command:
-    "timeout 1m ip netns exec {{ item.ns }} dhclient -4 -lf /var/lib/dhclient/{{ item.ns }}.lease --no-pid {{ item.name }}"
+  command: "{{ dhcp_ipv4_command[os_major_version] }}"
   with_items:
     - "{{ network_points }}"
   when:
@@ -64,8 +85,7 @@
 
 - name: namespace dynamic ipv6 configuration through dhcpv6
   delegate_to: "{{ controller_container_id }}"
-  command:
-    "timeout 1m ip netns exec {{ item.ns }} dhclient -6 -lf /var/lib/dhclient/{{ item.ns }}.lease --no-pid {{ item.name }}"
+  command: "{{ dhcp_ipv6_command[os_major_version] }}"
   when:
     - "'ip' not in item"
     - item.cidr | ipv6

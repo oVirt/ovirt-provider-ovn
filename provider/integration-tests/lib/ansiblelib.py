@@ -31,10 +31,12 @@ PLAYBOOK_DIR = os.path.join(os.environ['INTEG_TEST_ROOT_FOLDER'], 'ansible')
 PY_INTERPRETER = os.environ['PY_INTERPRETER']
 
 
-def get_playbook(playbook_name, playbook_vars):
+def get_playbook(playbook_name, playbook_vars, verbosity=0):
     playbook_vars.update(COMMON_PLAYBOOK_VARS)
     playbook_path = os.path.join(PLAYBOOK_DIR, playbook_name)
-    return Playbook(playbook_path, extra_vars=playbook_vars)
+    return Playbook(
+        playbook_path, extra_vars=playbook_vars, verbosity=verbosity
+    )
 
 
 class AnsibleExecutionFailure(Exception):
@@ -42,11 +44,12 @@ class AnsibleExecutionFailure(Exception):
 
 
 class Playbook(object):
-    def __init__(self, playbook, extra_vars=None):
+    def __init__(self, playbook, extra_vars=None, verbosity=0):
         self._execution_stats = None
         self._idempotency_check_stats = None
         self._playbook = playbook
         self._extra_vars = extra_vars or {}
+        self._verbosity = verbosity
 
     @property
     def execution_stats(self):
@@ -68,6 +71,7 @@ class Playbook(object):
             extravars=self._extra_vars,
             inventory='localhost ansible_connection=local '
             'ansible_python_interpreter={}'.format(PY_INTERPRETER),
+            verbosity=self._verbosity,
         )
         if runner.status != 'successful':
             raise AnsibleExecutionFailure
