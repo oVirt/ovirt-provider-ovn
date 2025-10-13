@@ -81,14 +81,14 @@
     - "{{ network_points }}"
   when:
     - "'ip' not in item"
-    - item.cidr | ipv4
+    - item.cidr is ansible.utils.ipv4
 
 - name: namespace dynamic ipv6 configuration through dhcpv6
   delegate_to: "{{ controller_container_id }}"
   command: "{{ dhcp_ipv6_command[os_major_version] }}"
   when:
     - "'ip' not in item"
-    - item.cidr | ipv6
+    - item.cidr is ansible.utils.ipv6
     - "'ipv6_address_mode' not in item or item.ipv6_address_mode == 'dhcpv6-stateful'"
   with_items:
   - "{{ network_points }}"
@@ -100,7 +100,7 @@
   when:
     - "'ip' not in item[0]"
     - "'ipv6_address_mode' in item[0]"
-    - item[0].cidr | ipv6
+    - item[0].cidr is ansible.utils.ipv6
     - item[0].ipv6_address_mode == 'dhcpv6-stateless'
   with_nested:
     - "{{ network_points }}"
