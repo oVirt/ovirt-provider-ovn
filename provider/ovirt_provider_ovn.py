@@ -143,13 +143,15 @@ class HTTPServerIPv6(HTTPServer):
 
 def _ssl_wrap(server):
     if ssl_enabled():
-        server.socket = ssl.wrap_socket(
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
+        context.load_cert_chain(
+            certfile=ssl_cert_file(), keyfile=ssl_key_file()
+        )
+        context.set_ciphers(ssl_ciphers_string())
+        server.socket = context.wrap_socket(
             server.socket,
-            keyfile=ssl_key_file(),
-            certfile=ssl_cert_file(),
             server_side=True,
-            ssl_version=ssl.PROTOCOL_TLSv1_2,
-            ciphers=ssl_ciphers_string(),
         )
 
 
