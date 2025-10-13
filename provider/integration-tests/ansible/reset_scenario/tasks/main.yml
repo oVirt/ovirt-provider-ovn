@@ -89,7 +89,7 @@
   when:
     - "'ip' not in item[0]"
     - "'ipv6_address_mode' in item[0]"
-    - item[0].cidr | ipv6
+    - item[0].cidr is ansible.utils.ipv6 
     - item[0].ipv6_address_mode == 'dhcpv6-stateless'
   with_nested:
     - "{{ network_points }}"
