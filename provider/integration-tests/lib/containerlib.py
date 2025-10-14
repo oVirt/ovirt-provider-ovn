@@ -21,7 +21,7 @@ import os
 import subprocess
 
 
-CONTAINER_CLI = os.environ['CONTAINER_PLATFORM']
+CONTAINER_CLI = os.environ.get('CONTAINER_PLATFORM', 'podman')
 
 
 def get_container_ip(container_name):
