@@ -17,12 +17,12 @@
 # Refer to the README and COPYING files for full details of the license
 
 NAME=ovirt-provider-ovn
-VERSION=1.2.37
+VERSION=1.2.38
 DIST_DIR=$(NAME)-$(VERSION)
 GITHASH=$(shell git rev-parse --short HEAD)
 TIMESTAMP:=$(shell date +'%Y%m%d%H%M%S')
-#RELEASE_SUFFIX=0.$(TIMESTAMP).git$(GITHASH)
-RELEASE_SUFFIX=1
+RELEASE_SUFFIX=0.$(TIMESTAMP).git$(GITHASH)
+#RELEASE_SUFFIX=1
 
 DIST_FILE=$(NAME)-$(VERSION).tar.gz
 PYTHON ?= python3
