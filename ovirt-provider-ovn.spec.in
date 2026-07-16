@@ -22,11 +22,11 @@
 
 Name:           ovirt-provider-ovn
 Version:        @VERSION@
-Release:        @RELEASE_SUFFIX@%{?dist}
+Release:        @PACKAGE_RPM_RELEASE@%{?release_suffix}%{?dist}
 Summary:        The oVirt external network provider for OVN
 License:        GPLv2+
 BuildArch:      noarch
-URL:            https://gerrit.ovirt.org/#/admin/projects/ovirt-provider-ovn
+URL:            https://github.com/oVirt/ovirt-provider-ovn
 Source0:        %{name}-%{version}.tar.gz
 
 Requires: firewalld-filesystem

@@ -21,8 +21,8 @@ VERSION=1.2.38
 DIST_DIR=$(NAME)-$(VERSION)
 GITHASH=$(shell git rev-parse --short HEAD)
 TIMESTAMP:=$(shell date +'%Y%m%d%H%M%S')
-RELEASE_SUFFIX=0.$(TIMESTAMP).git$(GITHASH)
-#RELEASE_SUFFIX=1
+PACKAGE_RPM_RELEASE ?= 0.master
+RELEASE_SUFFIX ?=
 
 DIST_FILE=$(NAME)-$(VERSION).tar.gz
 PYTHON ?= python3
@@ -30,7 +30,9 @@ GET_LIB_PATH_COMMAND='from distutils.sysconfig import get_python_lib; print(get_
 
 PYTHON_LIBS=$(shell $(PYTHON) -c $(GET_LIB_PATH_COMMAND))
 MKDIR=mkdir -p
-RPM_SOURCE_DIR=$(shell rpm --eval %_sourcedir)
+TMPREPOS = tmp.repos
+RPMBUILD_ARGS = --define="_topdir $(shell pwd)/$(TMPREPOS)"
+RPMBUILD_ARGS += $(if $(RELEASE_SUFFIX),--define="release_suffix $(RELEASE_SUFFIX)")
 
 PROVIDER_PYTHON_FILES_DIR=$(DESTDIR)/usr/share/ovirt-provider-ovn/
 DRIVER_CONFIG_PYTHON_FILES_DIR=$(DESTDIR)$(PYTHON_LIBS)
@@ -113,16 +115,17 @@ dist: version.py
 	cp ovirt-provider-ovn.logrotate build/$(DIST_DIR)/
 	cp driver/vdsm_hooks/sudoers build/$(DIST_DIR)/driver/vdsm_hooks/
 	sed -i \
-		-e s/@RELEASE_SUFFIX@/$(RELEASE_SUFFIX)/ \
+		-e s/@PACKAGE_RPM_RELEASE@/$(PACKAGE_RPM_RELEASE)/ \
 		-e s/@VERSION@/$(VERSION)/ \
 		build/$(DIST_DIR)/ovirt-provider-ovn.spec
 	tar -zcf $(DIST_FILE) -C build $(DIST_DIR)
 	rm -rf build
 
 rpm: dist
-	$(MKDIR) $(RPM_SOURCE_DIR)
-	cp $(DIST_FILE) $(RPM_SOURCE_DIR)
-	rpmbuild -ta $(DIST_FILE)
+	rm -rf $(TMPREPOS)
+	mkdir -vp $(TMPREPOS)/{SPECS,RPMS,SRPMS,SOURCES}
+	rpmbuild $(RPMBUILD_ARGS) -ts $(DIST_FILE)
+	rpmbuild $(RPMBUILD_ARGS) --rebuild $(TMPREPOS)/SRPMS/*.src.rpm
 
 check: flake8 black
 
