@@ -3,8 +3,10 @@ on:
   push:
     branches:
       - master
-      - ovirt-4.4
   pull_request:
+    branches:
+      - master
+  workflow_dispatch:
 env:
   EXPORT_DIR: exported-artifacts
 jobs:
@@ -15,7 +17,7 @@ jobs:
       matrix:
         tag: [ centos-9, centos-10 ]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Run check
       run: make check
 
@@ -26,7 +28,7 @@ jobs:
       matrix:
         tag: [ centos-9, centos-10 ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run unit tests
         run: make unittest
 
@@ -37,7 +39,7 @@ jobs:
       matrix:
         tag: [ centos-9, centos-10 ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run lint
         run: make lint
 
@@ -48,7 +50,7 @@ jobs:
       matrix:
         tag: [ centos-9, centos-10 ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run coverage
         run: make coverage
 
@@ -61,35 +63,16 @@ jobs:
       matrix:
         tag: [ centos-9, centos-10 ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install dependencies
         run: |
           sudo apt update
           sudo apt install podman tox
-      - name: Run itegration tests
+      - name: Run integration tests
         run: sudo -E ./automation/create_it_env.sh
-      - uses: actions/upload-artifact@main
+      - uses: actions/upload-artifact@v7
         if: ${{ failure() }}
         with:
           name: ovirt-provider-ovn-integ-tests-${{ matrix.tag }}
           path: ${{ env.EXPORT_DIR }}
           retention-days: 5
-
-  rpm:
-    runs-on: ubuntu-latest
-    name: rpm-${{ matrix.distro }}
-    container: quay.io/ovirt/ovirt-provider-ovn-tests:${{ matrix.tag }}
-    strategy:
-      matrix:
-        include:
-          - distro: el9stream
-            tag: centos-9
-          - distro: el10stream
-            tag: centos-10
-    steps:
-    - uses: actions/checkout@v4
-    - name: Build RPMs
-      run: ./automation/rpm.sh
-    - uses: ovirt/upload-rpms-action@main
-      with:
-        directory: ${{ env.EXPORT_DIR }}
