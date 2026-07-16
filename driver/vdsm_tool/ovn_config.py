@@ -23,7 +23,6 @@ import subprocess
 from vdsm.network.api import network_caps
 from vdsm.tool import expose, ExtraArgsError
 
-
 OVN_SCRIPT_DIR = '/usr/libexec/ovirt-provider-ovn'
 OVN_CONFIG_SCRIPT = '{}/setup_ovn_controller.sh'.format(OVN_SCRIPT_DIR)
 OVN_UNCONFIGURE_SCRIPT = '{}/unconfigure_ovn_controller.sh'.format(

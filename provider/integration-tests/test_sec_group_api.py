@@ -19,7 +19,6 @@
 
 from lib.ansiblelib import get_playbook
 
-
 PLAYBOOK_CONFIG = {'cloud': 'ovirt', 'secgroup_name': 'test_group'}
 
 

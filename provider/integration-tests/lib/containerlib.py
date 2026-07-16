@@ -20,7 +20,6 @@
 import os
 import subprocess
 
-
 CONTAINER_CLI = os.environ.get('CONTAINER_PLATFORM', 'podman')
 
 

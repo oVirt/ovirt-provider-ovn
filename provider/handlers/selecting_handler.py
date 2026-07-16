@@ -24,7 +24,6 @@ from handlers.base_handler import BaseHandler
 from handlers.base_handler import PathNotFoundError
 from handlers.base_handler import MethodNotAllowedError
 
-
 PATH_SEPARATOR = '/'
 RESPONSE_VALUE_KEY = '#VALUE'
 RESPONSE_VALUE_PARAMETER = '#PARAMETER'

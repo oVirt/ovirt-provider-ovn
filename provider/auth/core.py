@@ -24,7 +24,6 @@ import logging
 from ovirt_provider_config_common import auth_plugin
 from .plugin import Plugin
 
-
 TOKEN_HTTP_HEADER_FIELD_NAME = 'X-Auth-Token'
 
 plugin = None

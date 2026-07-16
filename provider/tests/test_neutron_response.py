@@ -61,7 +61,6 @@ from neutron.neutron_api import NeutronApi
 
 from ovntestlib import OvnRouterRow
 
-
 NOT_RELEVANT = None
 
 NETWORK_ID01 = UUID(int=1)

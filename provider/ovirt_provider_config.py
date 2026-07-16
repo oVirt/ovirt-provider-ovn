@@ -22,7 +22,6 @@ import glob
 import os
 import configparser
 
-
 CONFIG_FILE = '/etc/ovirt-provider-ovn/ovirt-provider-ovn.conf'
 CONFD_DIR = '/etc/ovirt-provider-ovn/conf.d'
 CONFD_FILES = '*.conf'

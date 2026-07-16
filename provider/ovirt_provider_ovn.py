@@ -44,7 +44,6 @@ from ovirt_provider_config_common import ssl_cert_file
 from ovirt_provider_config_common import neturon_port
 from ovirt_provider_config_common import keystone_port
 
-
 LOG_CONFIG_FILE = '/etc/ovirt-provider-ovn/logger.conf'
 
 

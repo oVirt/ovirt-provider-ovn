@@ -21,7 +21,6 @@
 import os
 import hooking
 
-
 BRIDGE_NAME = 'br-int'
 PROVIDER_TYPE_KEY = 'provider_type'
 PROVIDER_TYPE = 'EXTERNAL_NETWORK'
