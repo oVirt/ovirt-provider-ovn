@@ -15,7 +15,7 @@ jobs:
     container: quay.io/ovirt/ovirt-provider-ovn-tests:${{ matrix.tag }}
     strategy:
       matrix:
-        tag: [ centos-9, centos-10 ]
+        tag: [ centos-9, centos-10, almalinux-9, almalinux-10 ]
     steps:
     - uses: actions/checkout@v7
     - name: Run check
@@ -26,7 +26,7 @@ jobs:
     container: quay.io/ovirt/ovirt-provider-ovn-tests:${{ matrix.tag }}
     strategy:
       matrix:
-        tag: [ centos-9, centos-10 ]
+        tag: [ centos-9, centos-10, almalinux-9, almalinux-10 ]
     steps:
       - uses: actions/checkout@v7
       - name: Run unit tests
@@ -37,7 +37,7 @@ jobs:
     container: quay.io/ovirt/ovirt-provider-ovn-tests:${{ matrix.tag }}
     strategy:
       matrix:
-        tag: [ centos-9, centos-10 ]
+        tag: [ centos-9, centos-10, almalinux-9, almalinux-10 ]
     steps:
       - uses: actions/checkout@v7
       - name: Run lint
@@ -48,7 +48,7 @@ jobs:
     container: quay.io/ovirt/ovirt-provider-ovn-tests:${{ matrix.tag }}
     strategy:
       matrix:
-        tag: [ centos-9, centos-10 ]
+        tag: [ centos-9, centos-10, almalinux-9, almalinux-10 ]
     steps:
       - uses: actions/checkout@v7
       - name: Run coverage
@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        tag: [ centos-9, centos-10 ]
+        tag: [ centos-9, centos-10, almalinux-9, almalinux-10 ]
     steps:
       - uses: actions/checkout@v7
       - name: Install dependencies

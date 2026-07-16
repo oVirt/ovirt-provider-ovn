@@ -1,12 +1,12 @@
-ARG CENTOS_VERSION=9
-FROM centos/centos:stream${CENTOS_VERSION}
+ARG BASE_IMAGE=quay.io/centos/centos:stream9
+FROM ${BASE_IMAGE}
 LABEL maintainer="devel@ovirt.org" purpose="ovirt_provider_ovn_integ_tests"
 
-ARG CENTOS_VERSION
+ARG COPR_CHROOT=centos-stream-9-x86_64
 
-RUN dnf -y install yum-plugin-copr \
+RUN dnf -y install dnf-plugins-core \
     && \
-    dnf copr enable -y ovirt/ovirt-master-snapshot centos-stream-${CENTOS_VERSION}-x86_64 \
+    dnf copr enable -y ovirt/ovirt-master-snapshot ${COPR_CHROOT} \
     && \
     dnf install -y ovirt-release-master \
     && \

@@ -14,7 +14,7 @@ jobs:
       matrix:
         container: [ ovirt-provider-ovn, ovn-controller, ovirt-provider-ovn-tests ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
       - name: Install dependencies
         run: |
           sudo apt update
@@ -27,7 +27,7 @@ jobs:
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ovirt/${{ matrix.container }}
-          tags: centos-9 centos-10
+          tags: centos-9 centos-10 almalinux-9 almalinux-10
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ secrets.QUAY_USERNAME  }}
           password: ${{ secrets.QUAY_TOKEN }}
