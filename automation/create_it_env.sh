@@ -88,7 +88,7 @@ function cleanup_past_builds {
 }
 
 function install_provider_on_container {
-  container_exec "$PROVIDER_ID" "dnf install -y --disablerepo=* ~/rpmbuild/RPMS/noarch/ovirt-provider-ovn-1.*.rpm"
+  container_exec "$PROVIDER_ID" "dnf install -y --disablerepo=* $CONTAINER_SRC_CODE_PATH/tmp.repos/RPMS/noarch/ovirt-provider-ovn-1.*.rpm"
 }
 
 function start_provider_container_services {
