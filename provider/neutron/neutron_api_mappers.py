@@ -37,7 +37,6 @@ from ovirt_provider_config_common import max_allowed_mtu
 from handlers.base_handler import MethodNotAllowedError
 from handlers.base_handler import BadRequestError
 
-
 NetworkPort = namedtuple('NetworkPort', ['lsp', 'ls', 'dhcp_options', 'lrp'])
 Network = namedtuple('Network', ['ls', 'localnet_lsp'])
 Router = namedtuple(

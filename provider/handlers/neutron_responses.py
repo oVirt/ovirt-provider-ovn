@@ -29,7 +29,6 @@ from handlers.responses_utils import get_entity
 from handlers.selecting_handler import rest
 from ovirt_provider_config_common import neutron_url_with_version
 
-
 NETWORK_ID = 'network_id'
 PORT_ID = 'port_id'
 SUBNET_ID = 'subnet_id'

@@ -38,7 +38,6 @@ from ovirt_provider_config import CONFIG_SECTION_OVIRT
 from ovirt_provider_config import KEY_OVIRT_ADMIN_ROLE_ID
 from ovirt_provider_config import DEFAULT_ENGINE_NETWORK_ADMIN_ROLE_ID
 
-
 STRING_ENCODING = 'ascii'
 
 

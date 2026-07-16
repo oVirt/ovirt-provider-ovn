@@ -21,7 +21,6 @@ import pytest
 
 from lib.ansiblelib import get_playbook
 
-
 PLAYBOOK_CONFIG = {
     'cloud_name': 'ovirt',
 }

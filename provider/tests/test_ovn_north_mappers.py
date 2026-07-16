@@ -54,7 +54,6 @@ from ovntestlib import OvnSecurityGroupRow
 from ovntestlib import OvnSecurityGroupRuleRow
 from ovntestlib import StaticRouteRow
 
-
 FIXED_IP_ADDRESS = '1.1.1.1'
 MAC_ADDRESS = '01:00:00:00:00:11'
 NETWORK_ID1 = '1'

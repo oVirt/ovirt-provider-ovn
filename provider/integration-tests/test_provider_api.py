@@ -28,7 +28,6 @@ from lib.api_lib import update_and_assert
 from lib.api_lib import SecurityGroup
 from lib.api_lib import SecurityGroupRule
 
-
 ENDPOINT_HOST = 'localhost:9696'
 ENDPOINT_PATH = '/v2.0/'
 ENDPOINT = 'http://' + ENDPOINT_HOST + ENDPOINT_PATH

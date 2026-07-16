@@ -42,7 +42,6 @@ from handlers.selecting_handler import rest
 
 import auth
 
-
 SSL_CONFIG_SECTION = 'SSL'
 
 TENANTS = 'tenants'

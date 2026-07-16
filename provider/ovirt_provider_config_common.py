@@ -79,7 +79,6 @@ from ovirt_provider_config import KEY_SSL_KEY_FILE
 from ovirt_provider_config import KEY_URL_FILTER_EXCEPTION
 from ovirt_provider_config import KEY_VALIDATION_MAX_ALLOWED_MTU
 
-
 PROTOCOL_HTTP = 'http'
 PROTOCOL_HTTPS = 'https'
 PROTOCOL_SSL = 'ssl'

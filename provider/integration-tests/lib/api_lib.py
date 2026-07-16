@@ -19,7 +19,6 @@
 
 import requests
 
-
 ENDPOINT = 'http://localhost:9696/v2.0/'
 NETWORK_ENDPOINT = ENDPOINT + 'networks/'
 PORT_ENDPOINT = ENDPOINT + 'ports/'

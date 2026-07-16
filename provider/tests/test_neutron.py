@@ -27,7 +27,6 @@ from handlers.neutron import NeutronHandler
 
 from handlers.selecting_handler import rest
 
-
 REST_RESPONSE_GET = 'REST_RESPONSE_GET'
 REST_RESPONSE_SHOW = 'REST_RESPONSE_SHOW'
 REST_RESPONSE_POST = 'REST_RESPONSE_POST'
